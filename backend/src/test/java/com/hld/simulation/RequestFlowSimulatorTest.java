@@ -1,0 +1,65 @@
+package com.hld.simulation;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+import org.junit.jupiter.api.Test;
+
+class RequestFlowSimulatorTest {
+    private final RequestFlowSimulator simulator = new RequestFlowSimulator();
+
+    @Test
+    void baselineMatchesTheHandCalculatedFixture() {
+        RequestFlowResult result = simulator.run(new RequestFlowInput(
+                RoutingPolicy.ROUND_ROBIN,
+                List.of(0L, 0L, 0L, 0L, 0L, 0L),
+                List.of(100L, 100L),
+                1,
+                10,
+                7));
+
+        assertThat(result.outcomes()).extracting(RequestOutcome::nodeId)
+                .containsExactly("Node A", "Node B", "Node A", "Node B", "Node A", "Node B");
+        assertThat(result.outcomes()).extracting(RequestOutcome::latencyMs)
+                .containsExactly(100L, 100L, 200L, 200L, 300L, 300L);
+        assertThat(result.metrics().meanLatencyMs()).isEqualTo(200.0);
+        assertThat(result.metrics().p95LatencyMs()).isEqualTo(300L);
+        assertThat(result.metrics().throughputPerSecond()).isEqualTo(20.0);
+    }
+
+    @Test
+    void aFiniteQueueRejectsOnlyRequestsWithoutAWaitingSlot() {
+        RequestFlowResult result = simulator.run(new RequestFlowInput(
+                RoutingPolicy.ROUND_ROBIN,
+                List.of(0L, 0L, 0L, 0L, 0L, 0L),
+                List.of(100L, 100L),
+                1,
+                1,
+                7));
+
+        assertThat(result.metrics().completed()).isEqualTo(4);
+        assertThat(result.metrics().rejected()).isEqualTo(2);
+        assertThat(result.outcomes()).extracting(RequestOutcome::status)
+                .containsExactly("COMPLETED", "COMPLETED", "COMPLETED", "COMPLETED", "REJECTED", "REJECTED");
+    }
+
+    @Test
+    void leastOutstandingChangesTheSlowNodeFixtureForRequestFour() {
+        List<Long> arrivals = List.of(0L, 0L, 150L, 200L);
+        RequestFlowResult roundRobin = simulator.run(new RequestFlowInput(
+                RoutingPolicy.ROUND_ROBIN, arrivals, List.of(100L, 400L), 1, 10, 7));
+        RequestFlowResult leastOutstanding = simulator.run(new RequestFlowInput(
+                RoutingPolicy.LEAST_OUTSTANDING, arrivals, List.of(100L, 400L), 1, 10, 7));
+
+        assertThat(roundRobin.outcomes().get(3).latencyMs()).isEqualTo(600L);
+        assertThat(leastOutstanding.outcomes().get(3).nodeId()).isEqualTo("Node A");
+        assertThat(leastOutstanding.outcomes().get(3).latencyMs()).isEqualTo(150L);
+    }
+
+    @Test
+    void eachRunOwnsItsState() {
+        RequestFlowInput input = new RequestFlowInput(
+                RoutingPolicy.ROUND_ROBIN, List.of(0L, 0L), List.of(100L, 100L), 1, 1, 42);
+        assertThat(simulator.run(input)).isEqualTo(simulator.run(input));
+    }
+}

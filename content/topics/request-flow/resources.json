@@ -1,0 +1,20 @@
+[
+  {
+    "id": "google-sre-overload",
+    "title": "Handling Overload",
+    "organization": "Google",
+    "url": "https://sre.google/sre-book/handling-overload/",
+    "sourceType": "book-chapter",
+    "supports": "Finite capacity, queueing, and load-shedding discussion",
+    "reviewedAt": "2026-09-22"
+  },
+  {
+    "id": "aws-load-shedding",
+    "title": "Using load shedding to avoid overload",
+    "organization": "Amazon Web Services",
+    "url": "https://aws.amazon.com/builders-library/using-load-shedding-to-avoid-overload/",
+    "sourceType": "engineering-article",
+    "supports": "Overload behavior and early rejection tradeoffs",
+    "reviewedAt": "2026-09-22"
+  }
+]

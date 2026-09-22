@@ -7,9 +7,8 @@ frontend_dir="$project_root/frontend"
 
 if [[ ! -f "$backend_dir/pom.xml" || ! -f "$frontend_dir/package.json" ]]; then
   printf '%s\n' \
-    'HLD with UI is still in the planning phase.' \
-    'start.sh needs backend/pom.xml and frontend/package.json.' \
-    'Build the P0-01 foundation described in docs/FIRST_CONTRIBUTION.md first.' >&2
+    'The application layout is incomplete.' \
+    'start.sh requires backend/pom.xml and frontend/package.json.' >&2
   exit 1
 fi
 

@@ -1,0 +1,43 @@
+[
+  {
+    "id": "request-flow-queue-time",
+    "kind": "prediction",
+    "prompt": "Two nodes have one worker each. Six requests arrive together and each needs 100 ms. When do requests 5 and 6 complete?",
+    "options": [
+      {"id": "a", "label": "100 ms"},
+      {"id": "b", "label": "200 ms"},
+      {"id": "c", "label": "300 ms"},
+      {"id": "d", "label": "600 ms"}
+    ],
+    "correctOptionId": "c",
+    "explanation": "Each node processes three requests in sequence. The third request at each node waits 200 ms and runs for 100 ms, so it completes at 300 ms.",
+    "followUp": "What metric would prove that 200 ms came from waiting rather than service work?"
+  },
+  {
+    "id": "request-flow-balancer-capacity",
+    "kind": "diagnosis",
+    "prompt": "Queue time rises while service time remains 100 ms. What is the strongest first conclusion?",
+    "options": [
+      {"id": "a", "label": "The handler code became three times slower"},
+      {"id": "b", "label": "Work is arriving faster than available workers can immediately serve it"},
+      {"id": "c", "label": "Round robin is always incorrect"},
+      {"id": "d", "label": "The database must be unavailable"}
+    ],
+    "correctOptionId": "b",
+    "explanation": "Stable service time with growing waits is evidence of contention or burstiness around finite workers. More evidence is needed before choosing a fix.",
+    "followUp": "How would a finite queue change the user-visible outcome during sustained overload?"
+  },
+  {
+    "id": "request-flow-interview",
+    "kind": "design-decision",
+    "prompt": "Explain to an interviewer why adding a load balancer does not guarantee low latency.",
+    "rubric": [
+      "States that each node still has finite workers and queue capacity.",
+      "Separates queue time from service time.",
+      "Names workload shape and node speed as assumptions.",
+      "Mentions a signal such as queue depth, utilization, or rejection count.",
+      "Explains one tradeoff rather than claiming one routing policy always wins."
+    ],
+    "modelAnswer": "A load balancer chooses where work goes, but it does not create processing capacity. If arrivals exceed the selected node's available workers, requests queue and latency rises even when handler time is unchanged. I would state the workload and worker assumptions, compare queue time and service time, and decide whether routing, capacity, queue limits, or load shedding addresses the observed bottleneck."
+  }
+]

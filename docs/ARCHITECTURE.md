@@ -1,6 +1,6 @@
-# Proposed application architecture
+# Application architecture
 
-Status: implementation defaults, not existing code. React and Java are fixed user requirements. Record changes to other consequential defaults in an architecture decision.
+Status: the foundation and request-flow slice implement the defaults below. Later capabilities remain proposed. Record consequential changes in an architecture decision.
 
 ## 1. Stack and boundaries
 
@@ -11,13 +11,13 @@ Status: implementation defaults, not existing code. React and Java are fixed use
 | Server data | Typed fetch client initially; add a cache library if repeated data flows justify it | Keep first slice small; centralize errors and cancellation |
 | Static content | Markdown, structured JSON metadata/questions, build-rendered diagrams | Reviewable content and validation without a CMS |
 | Topology | SVG for initial fixed topology; evaluate React Flow for later editing | Playback does not initially require a graph editor |
-| Backend | Java 21, Spring Boot, Maven Wrapper | Java LTS baseline and familiar application framework |
+| Backend | Java 17 bytecode, Spring Boot 4, Maven Wrapper; CI on Java 21 | Works with the owner's local Java 17 and remains tested on the newer CI LTS |
 | Execution | Plain Java domain modules and deterministic discrete-event engine | Testable without Spring or external infrastructure |
 | Contracts | OpenAPI for HTTP; JSON Schema for authored data and simulation events | Shared validation and generated TypeScript types |
 | Tests | JUnit, Spring API tests; Vitest and React Testing Library; Playwright browser flows | Verify model semantics, integration, and actual learning journeys |
 | Delivery | One frontend build and one backend image; optional Docker Compose | Simple local and hosted deployment |
 
-React's documentation describes Vite-based setups and their routing/data-fetching responsibilities. Spring's current requirements permit Java 21. See [official sources](RESOURCES.md#implementation-references). During `P0-01`, select compatible supported releases, pin actual versions and Node requirements, commit lockfiles/wrapper, and record the choice. Do not copy old sibling-repository dependency versions blindly.
+React's documentation describes Vite-based setups and their routing/data-fetching responsibilities. Spring Boot 4 supports the selected Java 17 baseline. See [official sources](RESOURCES.md#implementation-references) and [decision 0001](decisions/0001-java-runtime-baseline.md). Dependencies are pinned in the Maven build and npm lockfile.
 
 ## 2. Runtime shape
 
@@ -35,7 +35,7 @@ flowchart LR
 
 The application is a modular monolith. The systems drawn inside a simulation are modeled entities, not separate deployed services. Reading content and simulation execution have separate frontend routes and code chunks.
 
-### Proposed repository layout
+### Repository layout
 
 ```text
 frontend/
@@ -73,7 +73,7 @@ Package validated lessons and metadata into the backend artifact during build; d
 
 ## 4. Initial API contract
 
-All endpoints below are planned. Freeze detailed schemas and examples in `P0-02` before parallel client/server changes.
+The topic and simulation endpoints are implemented for `request-flow`; search, estimators, case studies, stats, and formal OpenAPI schemas remain planned for `P0-02` and later phases.
 
 | Endpoint | Purpose and behavior |
 | --- | --- |
@@ -112,7 +112,7 @@ Use same-origin API routing; configure allowed origins explicitly for any separa
 
 ## 7. Delivery and performance
 
-First local workflow: wrapper-backed Java startup, locked frontend dependencies, a root launcher with cleanup, environment-overridable ports, and printed URLs. Proposed defaults: frontend 5173, backend 8080. An occupied port should cause a clear message or explicitly reported fallback.
+The local workflow uses wrapper-backed Java startup, locked frontend dependencies, and a root launcher with cleanup, environment-overridable ports, and printed URLs. Defaults are frontend 5173 and backend 8080. An occupied port causes the corresponding service to fail and the launcher stops its sibling process.
 
 First hosted workflow: build frontend assets and backend image, proxy `/api`, support deep-link refresh, configure health checks and resource limits. No provider or free-tier guarantee is assumed.
 

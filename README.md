@@ -4,7 +4,7 @@ Learn high-level system design by reading, experimenting, diagnosing failures, a
 
 The idea is simple: **see a system work, change one condition, explain what happened, then choose a design.** Each module will help you answer both “How does this work?” and “How would I explain it to my team or in an interview?”
 
-**Status: planning foundation.** The application has not been implemented. The planned stack is React with TypeScript and a Java Spring Boot backend.
+**Status: first working vertical slice.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, and the interactive Request Flow & Load Balancing module. Later roadmap modules remain planned.
 
 ## Start here
 
@@ -34,9 +34,37 @@ The first complete learning experience will cover **request flow and load balanc
 
 ## Development
 
-There is no application yet. `start.sh` currently reports which frontend and backend files are missing; roadmap item `P0-01` makes it operational and verifies startup/cleanup on a clean checkout.
+Requirements: Java 17 or newer, Node.js 20.19 or newer, and npm.
 
-Planning checks run now with `node scripts/validate-plan.mjs` and `bash -n start.sh`. The [CI workflow](.github/workflows/ci.yaml) runs these checks on PRs and `main`, and runs Java and React builds/tests once both applications exist.
+```bash
+npm ci --prefix frontend
+./start.sh
+```
+
+Open `http://localhost:5173`. The launcher starts the frontend and backend, prints both URLs, and stops both when you press Ctrl+C. Override its ports with `FRONTEND_PORT` and `BACKEND_PORT`.
+
+Run the same local checks as CI:
+
+```bash
+node scripts/validate-plan.mjs
+bash -n start.sh
+(cd backend && ./mvnw -B verify)
+(cd frontend && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build)
+```
+
+The [CI workflow](.github/workflows/ci.yaml) runs these gates on pull requests and `main`.
+
+## Implemented learning module
+
+**Request Flow & Load Balancing** follows the complete learning loop:
+
+- study a plain-language model of routing, finite workers, queues, and rejection;
+- run bounded deterministic experiments against the Java model;
+- play, pause, step, and seek through the authoritative event trace;
+- inspect latency, throughput, rejection, and per-request outcomes;
+- use architecture, sequence, quiz, and interview-answer views to explain the result.
+
+Model v1.0.0 intentionally excludes network delay, failures, retries, and health-check delay. Its metrics describe a finite illustrative run, not a production benchmark.
 
 ## References
 
