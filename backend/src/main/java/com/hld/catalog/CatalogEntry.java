@@ -16,5 +16,10 @@ public record CatalogEntry(
         List<String> capabilities,
         String lessonPath,
         String questionsPath,
-        String contentVersion) {
+        String resourcesPath,
+        List<String> simulationIds,
+        List<String> estimatorIds,
+        String contentVersion,
+        String reviewedAt,
+        List<String> sourceIds) {
 }

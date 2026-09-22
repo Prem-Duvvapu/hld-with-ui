@@ -3,6 +3,7 @@ package com.hld.simulation;
 import java.util.List;
 
 public record RequestFlowResult(
+        String schemaVersion,
         String simulationId,
         String modelVersion,
         long seed,

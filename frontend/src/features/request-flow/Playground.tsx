@@ -56,7 +56,10 @@ function parseList(
   return values;
 }
 
-function buildInput(form: FormState): RequestFlowInput {
+function buildInput(
+  form: FormState,
+  modelVersion: RequestFlowInput["modelVersion"],
+): RequestFlowInput {
   const arrivalTimesMs = parseList(
     form.arrivals,
     "Arrival times",
@@ -92,6 +95,8 @@ function buildInput(form: FormState): RequestFlowInput {
   )
     throw new Error("Queue capacity must be from 0 to 100.");
   return {
+    schemaVersion: "1.0",
+    modelVersion,
     policy: form.policy,
     arrivalTimesMs,
     nodeServiceTimesMs,
@@ -120,7 +125,7 @@ export function Playground({
     setError("");
     setPlaying(false);
     try {
-      const input = buildInput(form);
+      const input = buildInput(form, descriptor.modelVersion);
       setRunning(true);
       const next = await api.runRequestFlow(input);
       setResult(next);

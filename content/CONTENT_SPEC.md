@@ -1,6 +1,6 @@
 # Content authoring contract
 
-Status: specification for future lessons. No topic is currently published. Use this contract with [the curriculum](../docs/CURRICULUM.md) and the assigned roadmap item.
+Status: active specification. Request Flow & Load Balancing is the first published topic. Use this contract with [the curriculum](../docs/CURRICULUM.md), the JSON Schemas in `contracts/`, and the assigned roadmap item.
 
 ## 1. What a complete module contains
 

@@ -32,7 +32,7 @@ npm ci --prefix frontend
 node scripts/validate-plan.mjs
 bash -n start.sh
 (cd backend && ./mvnw -B verify)
-(cd frontend && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build)
+(cd frontend && npm run contracts:check && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build)
 ```
 
 The root launcher is for Linux/WSL and accepts `BACKEND_PORT` and `FRONTEND_PORT`. It starts only this repository's two services and stops both when interrupted. Run it after installing frontend dependencies with `npm ci --prefix frontend`.

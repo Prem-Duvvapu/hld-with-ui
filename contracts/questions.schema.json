@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hld-with-ui.dev/schemas/questions.schema.json",
+  "title": "HLD practice questions",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "topicId", "level", "kind", "prompt"],
+    "properties": {
+      "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+      "topicId": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+      "level": { "enum": ["beginner", "intermediate", "advanced"] },
+      "kind": {
+        "enum": [
+          "recall",
+          "prediction",
+          "diagnosis",
+          "design-decision",
+          "calculation"
+        ]
+      },
+      "prompt": { "type": "string", "minLength": 15 },
+      "options": {
+        "type": "array",
+        "minItems": 2,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "label"],
+          "properties": {
+            "id": { "type": "string", "pattern": "^[a-z0-9]+$" },
+            "label": { "type": "string", "minLength": 1 },
+            "distractorExplanation": { "type": "string", "minLength": 10 }
+          }
+        }
+      },
+      "correctOptionId": { "type": "string" },
+      "explanation": { "type": "string", "minLength": 20 },
+      "followUp": { "type": "string", "minLength": 10 },
+      "rubric": {
+        "type": "array",
+        "minItems": 2,
+        "items": { "type": "string", "minLength": 10 }
+      },
+      "modelAnswer": { "type": "string", "minLength": 40 },
+      "sourceIds": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+      }
+    },
+    "oneOf": [
+      {
+        "required": ["options", "correctOptionId", "explanation", "followUp"],
+        "not": { "required": ["rubric", "modelAnswer"] }
+      },
+      {
+        "required": ["rubric", "modelAnswer"],
+        "not": { "required": ["options", "correctOptionId"] }
+      }
+    ]
+  }
+}

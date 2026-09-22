@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "policy": "LEAST_OUTSTANDING",
+  "arrivalTimesMs": [0, 0, 0, 0, 25, 25],
+  "nodeServiceTimesMs": [100, 250],
+  "workersPerNode": 1,
+  "queueCapacity": 1,
+  "seed": 42
+}

@@ -1,0 +1,747 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "HLD with UI API",
+    "version": "1.0.0",
+    "description": "Versioned contract for the HLD learning application. Simulation results are illustrative modeled runs."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Same-origin application"
+    }
+  ],
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Read application readiness",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/topics": {
+      "get": {
+        "operationId": "listTopics",
+        "summary": "List published topics",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CatalogEntry"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/topics/{id}": {
+      "get": {
+        "operationId": "getTopic",
+        "summary": "Read one published topic",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ContentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/{id}": {
+      "get": {
+        "operationId": "getSimulation",
+        "summary": "Read a simulation descriptor",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ContentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationDescriptor"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/{id}/runs": {
+      "post": {
+        "operationId": "runSimulation",
+        "summary": "Run one bounded deterministic simulation",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ContentId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestFlowInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestFlowResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "ContentId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        }
+      }
+    },
+    "schemas": {
+      "Health": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ready"
+          }
+        }
+      },
+      "CatalogEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "summary",
+          "category",
+          "level",
+          "order",
+          "status",
+          "prerequisites",
+          "outcomes",
+          "capabilities",
+          "lessonPath",
+          "questionsPath",
+          "resourcesPath",
+          "simulationIds",
+          "estimatorIds",
+          "contentVersion",
+          "reviewedAt",
+          "sourceIds"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["topic", "case-study"]
+          },
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["published"]
+          },
+          "prerequisites": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "study",
+                "simulation",
+                "estimator",
+                "case-study",
+                "practice"
+              ]
+            }
+          },
+          "lessonPath": {
+            "type": "string"
+          },
+          "questionsPath": {
+            "type": "string"
+          },
+          "resourcesPath": {
+            "type": "string"
+          },
+          "simulationIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "estimatorIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "contentVersion": {
+            "type": "string"
+          },
+          "reviewedAt": {
+            "type": "string",
+            "format": "date"
+          },
+          "sourceIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "QuestionOption": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "distractorExplanation": {
+            "type": "string"
+          }
+        }
+      },
+      "Question": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "topicId", "level", "kind", "prompt"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "topicId": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string",
+            "enum": ["beginner", "intermediate", "advanced"]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "recall",
+              "prediction",
+              "diagnosis",
+              "design-decision",
+              "calculation"
+            ]
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuestionOption"
+            }
+          },
+          "correctOptionId": {
+            "type": "string"
+          },
+          "explanation": {
+            "type": "string"
+          },
+          "followUp": {
+            "type": "string"
+          },
+          "rubric": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "modelAnswer": {
+            "type": "string"
+          },
+          "sourceIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "TopicDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["topic", "lessonMarkdown", "questions"],
+        "properties": {
+          "topic": {
+            "$ref": "#/components/schemas/CatalogEntry"
+          },
+          "lessonMarkdown": {
+            "type": "string"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            }
+          }
+        }
+      },
+      "RequestFlowInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "modelVersion",
+          "policy",
+          "arrivalTimesMs",
+          "nodeServiceTimesMs",
+          "workersPerNode",
+          "queueCapacity",
+          "seed"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "policy": {
+            "type": "string",
+            "enum": ["ROUND_ROBIN", "LEAST_OUTSTANDING"]
+          },
+          "arrivalTimesMs": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "items": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0,
+              "maximum": 60000
+            }
+          },
+          "nodeServiceTimesMs": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "items": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1,
+              "maximum": 10000
+            }
+          },
+          "workersPerNode": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8
+          },
+          "queueCapacity": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "seed": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "SimulationPreset": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "question", "input"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "input": {
+            "$ref": "#/components/schemas/RequestFlowInput"
+          }
+        }
+      },
+      "SimulationDescriptor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "modelVersion",
+          "description",
+          "limits",
+          "presets",
+          "assumptions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "const": "request-flow"
+          },
+          "title": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "const": "simulation"
+          },
+          "modelVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "description": {
+            "type": "string"
+          },
+          "limits": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            }
+          },
+          "presets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimulationPreset"
+            }
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "SimulationEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sequence",
+          "timeMs",
+          "kind",
+          "requestId",
+          "nodeId",
+          "message"
+        ],
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "timeMs": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "request.arrived",
+              "request.routed",
+              "request.queued",
+              "request.started",
+              "request.completed",
+              "request.rejected"
+            ]
+          },
+          "requestId": {
+            "type": ["string", "null"]
+          },
+          "nodeId": {
+            "type": ["string", "null"]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "RequestOutcome": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "nodeId",
+          "status",
+          "arrivalMs",
+          "startMs",
+          "completionMs",
+          "queueMs",
+          "serviceMs",
+          "latencyMs"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "nodeId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["COMPLETED", "REJECTED"]
+          },
+          "arrivalMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "startMs": {
+            "type": ["integer", "null"],
+            "format": "int64"
+          },
+          "completionMs": {
+            "type": ["integer", "null"],
+            "format": "int64"
+          },
+          "queueMs": {
+            "type": ["integer", "null"],
+            "format": "int64"
+          },
+          "serviceMs": {
+            "type": ["integer", "null"],
+            "format": "int64"
+          },
+          "latencyMs": {
+            "type": ["integer", "null"],
+            "format": "int64"
+          }
+        }
+      },
+      "RequestFlowMetrics": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "completed",
+          "rejected",
+          "meanLatencyMs",
+          "p95LatencyMs",
+          "throughputPerSecond",
+          "observationWindowMs"
+        ],
+        "properties": {
+          "completed": {
+            "type": "integer"
+          },
+          "rejected": {
+            "type": "integer"
+          },
+          "meanLatencyMs": {
+            "type": ["number", "null"]
+          },
+          "p95LatencyMs": {
+            "type": ["integer", "null"],
+            "format": "int64"
+          },
+          "throughputPerSecond": {
+            "type": ["number", "null"]
+          },
+          "observationWindowMs": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "RequestFlowResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "simulationId",
+          "modelVersion",
+          "seed",
+          "status",
+          "assumptions",
+          "events",
+          "outcomes",
+          "metrics"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "simulationId": {
+            "type": "string",
+            "const": "request-flow"
+          },
+          "modelVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "seed": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "type": "string",
+            "const": "completed"
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimulationEvent"
+            }
+          },
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestOutcome"
+            }
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/RequestFlowMetrics"
+          }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message", "fieldErrors"],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "fieldErrors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
