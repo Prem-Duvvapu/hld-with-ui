@@ -89,6 +89,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/estimators/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read a capacity estimator descriptor */
+    get: operations["getEstimator"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/estimators/{id}/calculations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Calculate a bounded capacity estimate */
+    post: operations["calculateEstimate"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -256,6 +290,86 @@ export interface components {
         [key: string]: string;
       };
     };
+    CapacityEstimateInput: {
+      /** @constant */
+      schemaVersion: "1.0";
+      /** Format: int64 */
+      dailyActiveUsers: number;
+      requestsPerUserPerDay: number;
+      peakFactor: number;
+      readPercentage: number;
+      recordSizeKb: number;
+      responseSizeKb: number;
+      retentionDays: number;
+      replicationFactor: number;
+      meanLatencyMs: number;
+      headroomPercentage: number;
+    };
+    CapacityMetrics: {
+      dailyRequests: number;
+      averageRequestsPerSecond: number;
+      peakRequestsPerSecond: number;
+      peakReadsPerSecond: number;
+      peakWritesPerSecond: number;
+      dailyWrites: number;
+      rawStorageGigabytes: number;
+      replicatedStorageGigabytes: number;
+      dailyResponseGigabytes: number;
+      peakResponseMegabitsPerSecond: number;
+      meanConcurrentRequests: number;
+      peakRequestsWithHeadroom: number;
+    };
+    CalculationStep: {
+      id: string;
+      label: string;
+      formula: string;
+      unit: string;
+      meaning: string;
+      value: number;
+    };
+    SensitivityPoint: {
+      id: string;
+      label: string;
+      trafficMultiplier: number;
+      peakRequestsPerSecond: number;
+      peakResponseMegabitsPerSecond: number;
+      meanConcurrentRequests: number;
+    };
+    CapacityEstimateResult: {
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      estimatorId: "capacity-estimation";
+      /** @constant */
+      status: "estimated";
+      metrics: components["schemas"]["CapacityMetrics"];
+      steps: components["schemas"]["CalculationStep"][];
+      sensitivity: components["schemas"]["SensitivityPoint"][];
+      assumptions: string[];
+      warnings: string[];
+    };
+    CapacityEstimatorPreset: {
+      id: string;
+      title: string;
+      question: string;
+      input: components["schemas"]["CapacityEstimateInput"];
+    };
+    CapacityEstimatorDescriptor: {
+      /** @constant */
+      id: "capacity-estimation";
+      title: string;
+      /** @constant */
+      kind: "estimator";
+      /** @constant */
+      schemaVersion: "1.0";
+      description: string;
+      defaultInput: components["schemas"]["CapacityEstimateInput"];
+      presets: components["schemas"]["CapacityEstimatorPreset"][];
+      limits: {
+        [key: string]: unknown;
+      };
+      assumptions: string[];
+    };
   };
   responses: never;
   parameters: {
@@ -391,6 +505,81 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["RequestFlowResult"];
+        };
+      };
+      /** @description Structured error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Structured error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  getEstimator: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components["parameters"]["ContentId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CapacityEstimatorDescriptor"];
+        };
+      };
+      /** @description Structured error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  calculateEstimate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components["parameters"]["ContentId"];
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CapacityEstimateInput"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CapacityEstimateResult"];
         };
       };
       /** @description Structured error */

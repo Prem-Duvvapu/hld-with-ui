@@ -131,7 +131,10 @@ export function HomePage() {
                   </span>
                   <span className="status-dot">Interactive</span>
                 </div>
-                <div className="module-glyph" aria-hidden="true">
+                <div
+                  className={`module-glyph ${topic.id === "capacity-estimation" ? "capacity-glyph" : ""}`}
+                  aria-hidden="true"
+                >
                   <span />
                   <span />
                   <span />

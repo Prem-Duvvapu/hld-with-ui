@@ -2,38 +2,48 @@ import type { KeyboardEvent, ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { CatalogEntry } from "../api/types";
 
-export const moduleViews = [
+export const requestFlowViews = [
   "playground",
   "study",
   "architecture",
   "sequence",
   "practice",
 ] as const;
-export type ModuleView = (typeof moduleViews)[number];
-const labels: Record<ModuleView, string> = {
-  playground: "Playground",
-  study: "Study",
-  architecture: "Architecture",
-  sequence: "Request sequence",
-  practice: "Practice",
-};
+export type ModuleView = (typeof requestFlowViews)[number];
 
-export function ModuleShell({
+export interface ModuleTab<T extends string> {
+  id: T;
+  label: string;
+}
+
+export const requestFlowTabs: ReadonlyArray<ModuleTab<ModuleView>> = [
+  { id: "playground", label: "Playground" },
+  { id: "study", label: "Study" },
+  { id: "architecture", label: "Architecture" },
+  { id: "sequence", label: "Request sequence" },
+  { id: "practice", label: "Practice" },
+];
+
+export function ModuleShell<T extends string>({
   topic,
+  tabs,
+  defaultView,
   children,
 }: {
   topic: CatalogEntry;
-  children: (view: ModuleView) => ReactNode;
+  tabs: ReadonlyArray<ModuleTab<T>>;
+  defaultView: T;
+  children: (view: T) => ReactNode;
 }) {
   const [params, setParams] = useSearchParams();
   const requested = params.get("view");
-  const active: ModuleView = moduleViews.includes(requested as ModuleView)
-    ? (requested as ModuleView)
-    : "playground";
+  const active = tabs.some((tab) => tab.id === requested)
+    ? (requested as T)
+    : defaultView;
 
-  function select(view: ModuleView) {
+  function select(view: T) {
     const next = new URLSearchParams(params);
-    if (view === "playground") next.delete("view");
+    if (view === defaultView) next.delete("view");
     else next.set("view", view);
     setParams(next, { replace: true });
   }
@@ -41,18 +51,16 @@ export function ModuleShell({
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
     event.preventDefault();
-    const index = moduleViews.indexOf(active);
+    const index = tabs.findIndex((tab) => tab.id === active);
     const target =
       event.key === "Home"
         ? 0
         : event.key === "End"
-          ? moduleViews.length - 1
-          : (index +
-              (event.key === "ArrowRight" ? 1 : -1) +
-              moduleViews.length) %
-            moduleViews.length;
-    select(moduleViews[target]!);
-    document.getElementById(`tab-${moduleViews[target]!}`)?.focus();
+          ? tabs.length - 1
+          : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) %
+            tabs.length;
+    select(tabs[target]!.id);
+    document.getElementById(`tab-${tabs[target]!.id}`)?.focus();
   }
 
   return (
@@ -89,19 +97,19 @@ export function ModuleShell({
           aria-label="Module views"
           onKeyDown={onKeyDown}
         >
-          {moduleViews.map((view, index) => (
+          {tabs.map((tab, index) => (
             <button
-              key={view}
-              id={`tab-${view}`}
+              key={tab.id}
+              id={`tab-${tab.id}`}
               role="tab"
               type="button"
-              aria-selected={active === view}
+              aria-selected={active === tab.id}
               aria-controls="module-panel"
-              tabIndex={active === view ? 0 : -1}
-              onClick={() => select(view)}
+              tabIndex={active === tab.id ? 0 : -1}
+              onClick={() => select(tab.id)}
             >
               <span>{String(index + 1).padStart(2, "0")}</span>
-              {labels[view]}
+              {tab.label}
             </button>
           ))}
         </div>

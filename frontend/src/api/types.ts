@@ -15,4 +15,13 @@ export type SimulationDescriptor =
 export type SimulationEvent = components["schemas"]["SimulationEvent"];
 export type RequestOutcome = components["schemas"]["RequestOutcome"];
 export type RequestFlowResult = components["schemas"]["RequestFlowResult"];
+export type CapacityEstimateInput =
+  components["schemas"]["CapacityEstimateInput"];
+export type CapacityMetrics = components["schemas"]["CapacityMetrics"];
+export type CalculationStep = components["schemas"]["CalculationStep"];
+export type SensitivityPoint = components["schemas"]["SensitivityPoint"];
+export type CapacityEstimateResult =
+  components["schemas"]["CapacityEstimateResult"];
+export type CapacityEstimatorDescriptor =
+  components["schemas"]["CapacityEstimatorDescriptor"];
 export type ApiError = components["schemas"]["ApiError"];

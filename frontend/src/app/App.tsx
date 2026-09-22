@@ -3,6 +3,7 @@ import { HomePage } from "../pages/HomePage";
 import { RequestFlowPage } from "../pages/RequestFlowPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { ThemeToggle } from "../components/ThemeToggle";
+import { CapacityEstimationPage } from "../pages/CapacityEstimationPage";
 
 export function App() {
   return (
@@ -29,6 +30,10 @@ export function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/topics/request-flow" element={<RequestFlowPage />} />
+          <Route
+            path="/topics/capacity-estimation"
+            element={<CapacityEstimationPage />}
+          />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>

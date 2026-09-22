@@ -73,7 +73,7 @@ Package validated lessons and metadata into the backend artifact during build; d
 
 ## 4. Initial API contract
 
-The topic and simulation endpoints and their OpenAPI schemas are implemented for `request-flow`; search, estimators, case studies, and stats remain planned for later phases.
+The topic and simulation endpoints are implemented for `request-flow`. The estimator endpoints are implemented for `capacity-estimation`. Search, case studies, and stats remain planned for later phases.
 
 | Endpoint | Purpose and behavior |
 | --- | --- |
@@ -81,7 +81,8 @@ The topic and simulation endpoints and their OpenAPI schemas are implemented for
 | `GET /api/v1/topics/{id}` | Lesson, structured questions/resources, declared experiment or estimator references |
 | `GET /api/v1/simulations/{id}` | Version, input schema, defaults, presets, limits, model assumptions |
 | `POST /api/v1/simulations/{id}/runs` | Validate and execute one bounded simulation, returning a complete trace |
-| `POST /api/v1/estimators/{id}/calculate` | Return unit-aware calculations, intermediate values, assumptions, and sensitivity range |
+| `GET /api/v1/estimators/{id}` | Read estimator defaults, presets, limits, and assumptions |
+| `POST /api/v1/estimators/{id}/calculations` | Return unit-aware calculations, intermediate values, assumptions, and sensitivity range |
 | `GET /api/v1/search?q=...` | Search published titles, body text, and glossary terms; bounded results |
 | `GET /api/v1/case-studies/{id}` | Guided case-study document and rubric |
 | `GET /api/v1/catalog/stats` | Generated counts by publication state and available capability |

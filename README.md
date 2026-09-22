@@ -4,7 +4,7 @@ Learn high-level system design by reading, experimenting, diagnosing failures, a
 
 The idea is simple: **see a system work, change one condition, explain what happened, then choose a design.** Each module will help you answer both “How does this work?” and “How would I explain it to my team or in an interview?”
 
-**Status: first working vertical slice.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, and the interactive Request Flow & Load Balancing module. Later roadmap modules remain planned.
+**Status: two working learning modules.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, and an interactive Capacity Estimation module. Later roadmap modules remain planned.
 
 ## Start here
 
@@ -57,7 +57,7 @@ The [CI workflow](.github/workflows/ci.yaml) runs these gates on pull requests a
 
 API and content contracts live in [contracts](contracts/README.md). React API types are generated from OpenAPI, and CI rejects generated-type drift, malformed content, broken prerequisites, unresolved sources, and capabilities without a registered model.
 
-## Implemented learning module
+## Implemented learning modules
 
 **Request Flow & Load Balancing** follows the complete learning loop:
 
@@ -68,6 +68,16 @@ API and content contracts live in [contracts](contracts/README.md). React API ty
 - use architecture, sequence, quiz, and interview-answer views to explain the result.
 
 Model v1.0.0 intentionally excludes network delay, failures, retries, and health-check delay. Its metrics describe a finite illustrative run, not a production benchmark.
+
+**Capacity Estimation** turns explicit usage assumptions into a first-pass planning range:
+
+- change traffic, read/write, payload, retention, latency, replication, and headroom assumptions;
+- compare three presets and low/base/high traffic sensitivity;
+- inspect every Java-computed formula, intermediate value, unit, assumption, and exclusion;
+- connect traffic, retained data, bandwidth, and mean concurrency to design questions;
+- practice the worked fixture and explain why mean concurrency does not prove burst capacity.
+
+The estimator uses decimal units and intentionally does not recommend instance counts, cloud prices, or production capacity.
 
 ## References
 

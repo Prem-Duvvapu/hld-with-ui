@@ -1,0 +1,49 @@
+[
+  {
+    "id": "capacity-peak-change",
+    "topicId": "capacity-estimation",
+    "level": "beginner",
+    "kind": "prediction",
+    "prompt": "You double only the peak factor. Which baseline outputs should double?",
+    "options": [
+      {
+        "id": "a",
+        "label": "Peak RPS, peak response bandwidth, and mean peak concurrency"
+      },
+      { "id": "b", "label": "Daily requests and retained storage" },
+      { "id": "c", "label": "Write percentage and replication factor" }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Those three results use peak RPS directly. Daily volume and retained data do not use the peak factor in this model.",
+    "followUp": "Try a 10× peak factor in the calculator and compare the calculation trail."
+  },
+  {
+    "id": "capacity-average-rps",
+    "topicId": "capacity-estimation",
+    "level": "beginner",
+    "kind": "calculation",
+    "prompt": "Ten million requests arrive across a day. What is the average request rate?",
+    "options": [
+      { "id": "a", "label": "About 11.57 requests/s" },
+      { "id": "b", "label": "About 115.74 requests/s" },
+      { "id": "c", "label": "About 1,157.41 requests/s" }
+    ],
+    "correctOptionId": "b",
+    "explanation": "Divide 10,000,000 by 86,400 seconds. The result is approximately 115.74 requests per second.",
+    "followUp": "Explain why this average alone is unsafe as a peak capacity target."
+  },
+  {
+    "id": "capacity-burst-interview",
+    "topicId": "capacity-estimation",
+    "level": "intermediate",
+    "kind": "design-decision",
+    "prompt": "Mean peak concurrency is 116, but 500 requests arrive at once. Why does 116 not prove the service can absorb the burst?",
+    "rubric": [
+      "Distinguishes a long-run average from an instantaneous burst.",
+      "Mentions workers, queues, service-time variation, or dependency limits.",
+      "Proposes a bounded load test or request-flow experiment with explicit success criteria."
+    ],
+    "modelAnswer": "The 116 figure is peak rate multiplied by mean latency, so it describes mean work in flight under a stable workload. A burst of 500 can exceed available workers, queue capacity, connections, or a dependency limit before that average says anything useful. I would model the burst and then load test the chosen design, checking rejection rate and latency percentiles.",
+    "sourceIds": ["little-law", "google-sre-load-balancing"]
+  }
+]

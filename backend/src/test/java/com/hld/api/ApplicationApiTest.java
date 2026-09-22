@@ -63,4 +63,25 @@ class ApplicationApiTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("invalid_input"));
     }
+
+    @Test
+    void exposesAndCalculatesTheCapacityEstimate() throws Exception {
+        mvc.perform(get("/api/v1/estimators/capacity-estimation"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.defaultInput.dailyActiveUsers").value(1_000_000))
+                .andExpect(jsonPath("$.presets.length()").value(3));
+
+        mvc.perform(post("/api/v1/estimators/capacity-estimation/calculations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"schemaVersion":"1.0","dailyActiveUsers":1000000,
+                                "requestsPerUserPerDay":10,"peakFactor":5,"readPercentage":90,
+                                "recordSizeKb":1,"responseSizeKb":2,"retentionDays":365,
+                                "replicationFactor":3,"meanLatencyMs":200,"headroomPercentage":30}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.metrics.rawStorageGigabytes").value(365))
+                .andExpect(jsonPath("$.metrics.replicatedStorageGigabytes").value(1095))
+                .andExpect(jsonPath("$.metrics.meanConcurrentRequests").value(115.74074074074075));
+    }
 }
