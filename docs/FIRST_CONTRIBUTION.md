@@ -1,5 +1,7 @@
 # First implementation brief: P0-01
 
+Status: completed in the first request-flow vertical slice. This file remains as the historical acceptance brief; use `P0-02` in the roadmap for the next contribution.
+
 Status: ready to start after this planning task. Implementation follows the user's requested scope and the repository contribution instructions.
 
 ## Objective
@@ -12,7 +14,7 @@ Make a fresh checkout start a React/TypeScript frontend and Java backend, with a
 
 ## Implementation steps
 
-1. Inspect the environment and current files; preserve unrelated changes. Select mutually compatible supported React/Vite/TypeScript, Node, Java 21, Spring Boot, Maven, and testing versions. Record exact requirements in README and build files.
+1. Inspect the environment and current files; preserve unrelated changes. Select mutually compatible supported React/Vite/TypeScript, Node, Java, Spring Boot, Maven, and testing versions. Record exact requirements in README and build files.
 2. Create `frontend/` with a minimal accessible app, strict TypeScript, theme tokens, a typed API helper, and one honest welcome/status view. It should state that the curriculum is being built without displaying fabricated completed topics.
 3. Create `backend/` with Maven Wrapper and a single Spring Boot entry point. Add a bounded health response suitable for local readiness. Choose its precise route and document it; it is not a curriculum endpoint.
 4. Configure the frontend development proxy and environment-overridable ports. A user-visible backend error must remain an error, not a successful-looking mock result.

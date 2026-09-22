@@ -1,6 +1,6 @@
 # Delivery roadmap and work queue
 
-Planning baseline: 2026-09-22. **No implementation item is started or completed.** The planning documents themselves are the output of the initial project-planning task.
+Planning baseline: 2026-09-22. Implementation evidence is recorded per work item; partial slices stay in progress until every acceptance criterion is met.
 
 Statuses: `planned` → `in-progress` → `review` → `done`; `blocked` requires a named dependency or missing decision. Update the evidence column when changing status. Do not call a phase complete while its release gates remain unverified.
 
@@ -12,10 +12,10 @@ Goal: one coherent shell and a working contract path, without producing a broad 
 
 | ID | Work package | Depends on | Size | Acceptance | Status / evidence |
 | --- | --- | --- | --- | --- | --- |
-| `P0-01` | Bootstrap React/TypeScript and Java/Spring toolchain | None | M | Locked dependencies, Maven Wrapper, clean builds, health endpoint, API proxy, root launcher with cleanup, exact setup docs | planned |
+| `P0-01` | Bootstrap React/TypeScript and Java/Spring toolchain | None | M | Locked dependencies, Maven Wrapper, clean builds, health endpoint, API proxy, root launcher with cleanup, exact setup docs | **done** — lockfile/wrapper committed; Java and React gates pass; health endpoint, proxy, launcher, and README commands implemented |
 | `P0-02` | Catalog and HTTP/event/content contracts | P0-01 | M | OpenAPI/JSON Schemas, generated frontend types, examples validate, unique IDs and prerequisite DAG checks, published-capability checks | planned |
-| `P0-03` | Shared HLD module shell | P0-01, P0-02 | M | LLD-inspired tabs; URL-selected view; home/category navigation; deep-link and unknown route behavior; both themes; responsive keyboard navigation | planned |
-| `P0-04` | Repository quality gates | P0-01, P0-02 | M | CI runs applicable backend/frontend builds, tests, type/lint checks, content/contract validation; no success from missing tests; clean-checkout instructions verified | planned |
+| `P0-03` | Shared HLD module shell | P0-01, P0-02 | M | LLD-inspired tabs; URL-selected view; home/category navigation; deep-link and unknown route behavior; both themes; responsive keyboard navigation | **in-progress** — request-flow proves the shell, URL tabs, unknown route, themes, and responsive keyboard tab behavior; catalog contracts are not yet generated |
+| `P0-04` | Repository quality gates | P0-01, P0-02 | M | CI runs applicable backend/frontend builds, tests, type/lint checks, content/contract validation; no success from missing tests; clean-checkout instructions verified | **in-progress** — CI runs Java verify plus frontend typecheck/lint/tests/build; formal schema and capability validation remain in P0-02 |
 
 Exit: a developer can start both applications, navigate the shell, fetch a validated draft catalog entry, and see honest unavailable states. No fake simulation is necessary to prove the shell.
 
@@ -24,9 +24,9 @@ Exit: a developer can start both applications, navigate the shell, fetch a valid
 | ID | Work package | Depends on | Size | Acceptance | Status / evidence |
 | --- | --- | --- | --- | --- | --- |
 | `P1-01` | Bounded deterministic runner | P0-02, P0-04 | M | Virtual clock, stable scheduler, seeded RNG, request isolation, event/byte/time budgets, trace envelope, explicit limits/errors | planned |
-| `P1-02` | Request-flow/load-balancing model | P1-01 | M | Round-robin and least-outstanding, finite workers/queues, health/failure schedule, exact six-request fixture and divergent policy preset | planned |
-| `P1-03` | Playground and guided playback | P0-03, P1-02 | M | Schema-driven inputs, start/step/back/reset/seek/speed, topology, request sequence, trace log, inspector, Java-computed metrics, error/limited states | planned |
-| `P1-04` | Request-flow teaching content | P1-02, P1-03 | M | Full lesson/questions/resources, architecture/sequence views, prediction and transfer prompts, trace-aligned explanations, source links | planned |
+| `P1-02` | Request-flow/load-balancing model | P1-01 | M | Round-robin and least-outstanding, finite workers/queues, health/failure schedule, exact six-request fixture and divergent policy preset | **in-progress** — deterministic policies, finite capacity, overload, exact fixture, replay, and divergence tests pass; failure schedules wait for P1-01 runner contracts |
+| `P1-03` | Playground and guided playback | P0-03, P1-02 | M | Schema-driven inputs, start/step/back/reset/seek/speed, topology, request sequence, trace log, inspector, Java-computed metrics, error/limited states | **in-progress** — presets, validated controls, play/pause/step/back/seek, topology, outcomes, Java metrics, and error/empty states work; schema generation, speed control, and limited trace state remain |
+| `P1-04` | Request-flow teaching content | P1-02, P1-03 | M | Full lesson/questions/resources, architecture/sequence views, prediction and transfer prompts, trace-aligned explanations, source links | **in-progress** — original lesson, primary sources, architecture/sequence explanations, two feedback questions, and an interview rubric are published; release review remains |
 | `P1-05` | Reference module release review | P1-04, P0-04 | S | Browser journey, accessibility/manual mobile review, numeric reconciliation, measured trace/bundle baseline, model limits documented | planned |
 
 Exit: `request-flow` can be published with all declared capabilities. Review whether the shell and engine support a second module without copy-paste before expanding.
@@ -109,4 +109,4 @@ For documentation-only work, check internal links, IDs/dependencies, numbers, an
 - Keep architecture and content contracts authoritative; task notes do not silently override them.
 - No schedule is committed. Re-estimate after the reference slice reveals actual content/model/UI cost.
 
-**Next action:** `P0-01`. Its detailed execution brief is [FIRST_CONTRIBUTION.md](FIRST_CONTRIBUTION.md).
+**Next action:** `P0-02`, starting with versioned OpenAPI and authored-content schemas so frontend types and publication checks derive from one contract.

@@ -25,16 +25,17 @@ Do not treat opening a PR or passing a format check as proof that a module works
 
 ## Local checks
 
-Today, while this repository contains planning documents only:
+Install the locked frontend dependencies, then run the full gate:
 
 ```bash
+npm ci --prefix frontend
 node scripts/validate-plan.mjs
 bash -n start.sh
+(cd backend && ./mvnw -B verify)
+(cd frontend && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build)
 ```
 
-`start.sh` is included now and clearly reports the missing application files. It becomes runnable after `P0-01` adds the frontend and backend. Once both projects exist, CI also requires Maven verification and frontend installation, typecheck, lint, tests, and build. Run the checks relevant to your change before opening a PR; the workflow defines the authoritative commands.
-
-The root launcher is for Linux/WSL and accepts `BACKEND_PORT` and `FRONTEND_PORT`. It starts only this repository's two services and stops both when interrupted. Its full startup/cleanup behavior must be verified when `P0-01` completes.
+The root launcher is for Linux/WSL and accepts `BACKEND_PORT` and `FRONTEND_PORT`. It starts only this repository's two services and stops both when interrupted. Run it after installing frontend dependencies with `npm ci --prefix frontend`.
 
 ## Contribution boundaries
 

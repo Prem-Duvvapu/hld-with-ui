@@ -1,0 +1,22 @@
+[
+  {
+    "id": "request-flow",
+    "kind": "topic",
+    "title": "Request Flow & Load Balancing",
+    "summary": "See how routing, finite workers, and queues combine to determine response time.",
+    "category": "Foundations",
+    "level": "Beginner",
+    "order": 1,
+    "status": "published",
+    "prerequisites": [],
+    "outcomes": [
+      "Separate queue time from service time in an end-to-end request.",
+      "Compare round-robin and least-outstanding routing under stated assumptions.",
+      "Explain why load balancing cannot create service capacity."
+    ],
+    "capabilities": ["study", "simulation", "practice"],
+    "lessonPath": "topics/request-flow/lesson.md",
+    "questionsPath": "topics/request-flow/questions.json",
+    "contentVersion": "1.0.0"
+  }
+]
