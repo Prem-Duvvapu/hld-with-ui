@@ -18,6 +18,7 @@ Read the [project plan](docs/PROJECT_PLAN.md) for the product vision, learning e
 | [Experience and quality](docs/EXPERIENCE_AND_QUALITY.md) | UI/UX and frontend/backend engineering standards |
 | [Learning standard](docs/LEARNING_STANDARD.md) | Make every concept simple to understand and explain |
 | [Curriculum](docs/CURRICULUM.md) | Ordered concepts, experiments, case studies, and learning paths |
+| [SDE-2 interview priority](docs/SDE2_INTERVIEW_PRIORITY.md) | Evidence-based case order and recurring backend follow-ups |
 | [First release blueprint](docs/RELEASE_ONE_BLUEPRINT.md) | Exact learning flows and worked fixtures for the first four modules |
 | [Architecture](docs/ARCHITECTURE.md) | Proposed stack, modules, storage, and API boundaries |
 | [Simulation specification](docs/SIMULATION_SPEC.md) | Deterministic execution, event contracts, metrics, and correctness |
