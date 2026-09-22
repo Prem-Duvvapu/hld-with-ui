@@ -13,6 +13,7 @@ Read the [project plan](docs/PROJECT_PLAN.md) for the product vision, learning e
 | Document | Purpose |
 | --- | --- |
 | [Agent instructions](AGENTS.md) | How to start, contribute, validate, and hand off work |
+| [Contributing](CONTRIBUTING.md) | Branch, PR, CI, and local-check workflow |
 | [Project plan](docs/PROJECT_PLAN.md) | What we are building and why |
 | [Experience and quality](docs/EXPERIENCE_AND_QUALITY.md) | UI/UX and frontend/backend engineering standards |
 | [Learning standard](docs/LEARNING_STANDARD.md) | Make every concept simple to understand and explain |
@@ -33,7 +34,9 @@ The first complete learning experience will cover **request flow and load balanc
 
 ## Development
 
-There are no application startup or test commands yet. Roadmap item `P0-01` establishes the toolchain and documents commands after they work on a clean checkout.
+There is no application yet. `start.sh` currently reports which frontend and backend files are missing; roadmap item `P0-01` makes it operational and verifies startup/cleanup on a clean checkout.
+
+Planning checks run now with `node scripts/validate-plan.mjs` and `bash -n start.sh`. The [CI workflow](.github/workflows/ci.yaml) runs these checks on PRs and `main`, and runs Java and React builds/tests once both applications exist.
 
 ## References
 

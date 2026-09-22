@@ -25,6 +25,14 @@ The owner considers **lld-with-ui the best existing project**. Use it as the pri
 - Update the relevant roadmap row with status and evidence. `done` requires working artifacts and the applicable checks, not just scaffolding.
 - Record consequential architecture changes in `docs/decisions/NNNN-short-title.md`: context, decision, alternatives, consequences, migration, verification. Create that directory when the first decision is recorded.
 
+## Git workflow
+
+- Create a fresh branch from current `main` for every distinct change or work item; never commit directly to `main`.
+- Keep a PR focused, push the branch, and open a pull request targeting `main`.
+- Run relevant local checks and wait for required CI checks to pass before merging. Address review feedback on the same branch.
+- Squash merge completed PRs and delete their branches. Then update local `main` before starting the next change.
+- Follow [CONTRIBUTING.md](CONTRIBUTING.md) for commands, PR content, and current checks. User instructions about whether to publish or merge a specific change still govern the task.
+
 ## Engineering rules
 
 - Use stable semantic IDs, explicit schemas, and a single catalog source. Do not create separate hand-maintained frontend and backend topic lists.
