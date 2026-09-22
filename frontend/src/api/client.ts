@@ -1,5 +1,8 @@
 import type {
   CatalogEntry,
+  CapacityEstimateInput,
+  CapacityEstimateResult,
+  CapacityEstimatorDescriptor,
   RequestFlowInput,
   RequestFlowResult,
   SimulationDescriptor,
@@ -59,4 +62,15 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     }),
+  estimator: (id: string) =>
+    request<CapacityEstimatorDescriptor>(`/api/v1/estimators/${id}`),
+  calculateCapacity: (input: CapacityEstimateInput) =>
+    request<CapacityEstimateResult>(
+      "/api/v1/estimators/capacity-estimation/calculations",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      },
+    ),
 };

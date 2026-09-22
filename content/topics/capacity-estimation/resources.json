@@ -1,0 +1,36 @@
+[
+  {
+    "id": "little-law",
+    "title": "A Proof for the Queuing Formula: L = λW",
+    "author": "John D. C. Little",
+    "organization": "INFORMS",
+    "url": "https://pubsonline.informs.org/doi/10.1287/opre.9.3.383",
+    "sourceType": "paper",
+    "relevantSections": "The theorem and stated steady-state conditions",
+    "supports": "The relationship used to estimate mean concurrent work from arrival rate and mean time in the system.",
+    "reviewedAt": "2026-09-22",
+    "accessStatus": "available"
+  },
+  {
+    "id": "google-sre-load-balancing",
+    "title": "Load Balancing at the Frontend",
+    "organization": "Google",
+    "url": "https://sre.google/sre-book/load-balancing-frontend/",
+    "sourceType": "book-chapter",
+    "relevantSections": "Load balancing using DNS and at the virtual IP address",
+    "supports": "Why demand, resource capacity, traffic distribution, and overload behavior must be considered together.",
+    "reviewedAt": "2026-09-22",
+    "accessStatus": "available"
+  },
+  {
+    "id": "aws-performance-efficiency",
+    "title": "Performance Efficiency Pillar",
+    "organization": "Amazon Web Services",
+    "url": "https://docs.aws.amazon.com/wellarchitected/latest/performance-efficiency-pillar/welcome.html",
+    "sourceType": "documentation",
+    "relevantSections": "Design principles and performance review",
+    "supports": "Using data, experimentation, and review cycles when making performance and capacity decisions.",
+    "reviewedAt": "2026-09-22",
+    "accessStatus": "available"
+  }
+]

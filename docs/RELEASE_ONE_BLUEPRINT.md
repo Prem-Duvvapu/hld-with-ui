@@ -1,6 +1,6 @@
 # First release module blueprint
 
-Status: proposed examples and acceptance notes for `P1`–`P2`. This document does not claim the modules exist. The four first-release modules are `request-flow`, `capacity-estimation`, `cache-aside`, and `url-shortener`. Their shipped schemas and precise behavior must agree with these teaching outcomes; material differences need a documented revision to the examples.
+Status: acceptance notes for `P1`–`P2`. `request-flow` and `capacity-estimation` have working slices; their remaining release checks are tracked in the roadmap. `cache-aside` and `url-shortener` remain proposed. Their shipped schemas and precise behavior must agree with these teaching outcomes; material differences need a documented revision to the examples.
 
 ## 1. Cohesive learner journey
 

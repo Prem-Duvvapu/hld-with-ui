@@ -23,5 +23,34 @@
     "contentVersion": "1.0.0",
     "reviewedAt": "2026-09-22",
     "sourceIds": ["google-sre-overload", "aws-load-shedding"]
+  },
+  {
+    "id": "capacity-estimation",
+    "kind": "topic",
+    "title": "Capacity Estimation",
+    "summary": "Turn product assumptions into transparent ranges for traffic, storage, bandwidth, and concurrent work.",
+    "category": "Foundations",
+    "level": "Beginner",
+    "order": 2,
+    "status": "published",
+    "prerequisites": ["request-flow"],
+    "outcomes": [
+      "Convert daily usage into average and peak request rates with explicit units.",
+      "Estimate retained data, response bandwidth, and mean concurrency from stated assumptions.",
+      "Explain uncertainty, exclusions, and the difference between an estimate and measured capacity."
+    ],
+    "capabilities": ["study", "estimator", "practice"],
+    "lessonPath": "topics/capacity-estimation/lesson.md",
+    "questionsPath": "topics/capacity-estimation/questions.json",
+    "resourcesPath": "topics/capacity-estimation/resources.json",
+    "simulationIds": [],
+    "estimatorIds": ["capacity-estimation"],
+    "contentVersion": "1.0.0",
+    "reviewedAt": "2026-09-22",
+    "sourceIds": [
+      "little-law",
+      "google-sre-load-balancing",
+      "aws-performance-efficiency"
+    ]
   }
 ]

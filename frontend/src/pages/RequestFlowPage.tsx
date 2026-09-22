@@ -2,12 +2,16 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { api, ApiClientError } from "../api/client";
 import type { SimulationDescriptor, TopicDetail } from "../api/types";
 import { ErrorState, LoadingState } from "../components/AsyncState";
-import { ModuleShell, type ModuleView } from "../components/ModuleShell";
+import {
+  ModuleShell,
+  requestFlowTabs,
+  type ModuleView,
+} from "../components/ModuleShell";
 import { ArchitectureView } from "../features/request-flow/ArchitectureView";
 import { Playground } from "../features/request-flow/Playground";
-import { PracticeView } from "../features/request-flow/PracticeView";
+import { PracticeView } from "../features/learning/PracticeView";
 import { SequenceView } from "../features/request-flow/SequenceView";
-import { StudyView } from "../features/request-flow/StudyView";
+import { StudyView } from "../features/learning/StudyView";
 
 export function RequestFlowPage() {
   const [data, setData] = useState<{
@@ -61,6 +65,12 @@ export function RequestFlowPage() {
     practice: <PracticeView questions={data.topic.questions} />,
   };
   return (
-    <ModuleShell topic={data.topic.topic}>{(view) => views[view]}</ModuleShell>
+    <ModuleShell
+      topic={data.topic.topic}
+      tabs={requestFlowTabs}
+      defaultView="playground"
+    >
+      {(view) => views[view]}
+    </ModuleShell>
   );
 }

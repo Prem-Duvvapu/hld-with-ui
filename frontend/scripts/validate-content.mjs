@@ -8,6 +8,7 @@ const frontendRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const root = resolve(frontendRoot, "..");
 const contentRoot = resolve(root, "content");
 const errors = [];
+const schemaValidators = new Map();
 const readJson = (path) =>
   JSON.parse(readFileSync(resolve(root, path), "utf8"));
 const catalog = readJson("content/catalog.json");
@@ -22,7 +23,11 @@ addFormats(ajv);
 ajv.addFormat("int64", true);
 
 function validateSchema(schemaPath, value, label) {
-  const validate = ajv.compile(readJson(schemaPath));
+  let validate = schemaValidators.get(schemaPath);
+  if (!validate) {
+    validate = ajv.compile(readJson(schemaPath));
+    schemaValidators.set(schemaPath, validate);
+  }
   if (!validate(value)) {
     for (const issue of validate.errors ?? []) {
       errors.push(`${label}${issue.instancePath || "/"} ${issue.message}`);
@@ -104,6 +109,12 @@ const knownSimulationIds = new Set(
     openapi.components?.schemas?.SimulationDescriptor?.properties?.id?.const,
   ].filter(Boolean),
 );
+const knownEstimatorIds = new Set(
+  [
+    openapi.components?.schemas?.CapacityEstimatorDescriptor?.properties?.id
+      ?.const,
+  ].filter(Boolean),
+);
 const questionIds = [];
 
 const requiredHeadings = [
@@ -134,6 +145,12 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
     for (const id of entry.simulationIds ?? []) {
       if (!knownSimulationIds.has(id))
         errors.push(`${entry.id}: simulation ${id} is absent from OpenAPI`);
+    }
+  }
+  if (entry.capabilities.includes("estimator")) {
+    for (const id of entry.estimatorIds ?? []) {
+      if (!knownEstimatorIds.has(id))
+        errors.push(`${entry.id}: estimator ${id} is absent from OpenAPI`);
     }
   }
 

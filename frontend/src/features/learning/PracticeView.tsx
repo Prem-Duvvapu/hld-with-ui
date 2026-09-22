@@ -107,16 +107,21 @@ function InterviewQuestion({
   );
 }
 
-export function PracticeView({ questions }: { questions: Question[] }) {
+export function PracticeView({
+  questions,
+  title = "Turn the model into interview language",
+  description = "Answer before revealing the explanation. The final prompt asks you to make the reasoning clear without relying on the visual.",
+}: {
+  questions: Question[];
+  title?: string;
+  description?: string;
+}) {
   return (
     <div className="practice-view">
       <div className="concept-intro">
         <p className="eyebrow">Recall and explain</p>
-        <h2>Turn the trace into interview language</h2>
-        <p>
-          Answer before revealing the explanation. The final prompt asks you to
-          make the system behavior clear without relying on the diagram.
-        </p>
+        <h2>{title}</h2>
+        <p>{description}</p>
       </div>
       <div className="question-list">
         {questions.map((question, index) =>

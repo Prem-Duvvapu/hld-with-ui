@@ -169,6 +169,92 @@
           }
         }
       }
+    },
+    "/api/v1/estimators/{id}": {
+      "get": {
+        "operationId": "getEstimator",
+        "summary": "Read a capacity estimator descriptor",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ContentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapacityEstimatorDescriptor"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/estimators/{id}/calculations": {
+      "post": {
+        "operationId": "calculateEstimate",
+        "summary": "Calculate a bounded capacity estimate",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ContentId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CapacityEstimateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapacityEstimateResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -737,6 +823,321 @@
           "fieldErrors": {
             "type": "object",
             "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CapacityEstimateInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "dailyActiveUsers",
+          "requestsPerUserPerDay",
+          "peakFactor",
+          "readPercentage",
+          "recordSizeKb",
+          "responseSizeKb",
+          "retentionDays",
+          "replicationFactor",
+          "meanLatencyMs",
+          "headroomPercentage"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "dailyActiveUsers": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "maximum": 1000000000
+          },
+          "requestsPerUserPerDay": {
+            "type": "number",
+            "minimum": 0.01,
+            "maximum": 100000
+          },
+          "peakFactor": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "readPercentage": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "recordSizeKb": {
+            "type": "number",
+            "minimum": 0.001,
+            "maximum": 1000000
+          },
+          "responseSizeKb": {
+            "type": "number",
+            "minimum": 0.001,
+            "maximum": 1000000
+          },
+          "retentionDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 36500
+          },
+          "replicationFactor": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "meanLatencyMs": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 600000
+          },
+          "headroomPercentage": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 300
+          }
+        }
+      },
+      "CapacityMetrics": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "dailyRequests",
+          "averageRequestsPerSecond",
+          "peakRequestsPerSecond",
+          "peakReadsPerSecond",
+          "peakWritesPerSecond",
+          "dailyWrites",
+          "rawStorageGigabytes",
+          "replicatedStorageGigabytes",
+          "dailyResponseGigabytes",
+          "peakResponseMegabitsPerSecond",
+          "meanConcurrentRequests",
+          "peakRequestsWithHeadroom"
+        ],
+        "properties": {
+          "dailyRequests": {
+            "type": "number"
+          },
+          "averageRequestsPerSecond": {
+            "type": "number"
+          },
+          "peakRequestsPerSecond": {
+            "type": "number"
+          },
+          "peakReadsPerSecond": {
+            "type": "number"
+          },
+          "peakWritesPerSecond": {
+            "type": "number"
+          },
+          "dailyWrites": {
+            "type": "number"
+          },
+          "rawStorageGigabytes": {
+            "type": "number"
+          },
+          "replicatedStorageGigabytes": {
+            "type": "number"
+          },
+          "dailyResponseGigabytes": {
+            "type": "number"
+          },
+          "peakResponseMegabitsPerSecond": {
+            "type": "number"
+          },
+          "meanConcurrentRequests": {
+            "type": "number"
+          },
+          "peakRequestsWithHeadroom": {
+            "type": "number"
+          }
+        }
+      },
+      "CalculationStep": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "formula", "value", "unit", "meaning"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "formula": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "meaning": {
+            "type": "string"
+          },
+          "value": {
+            "type": "number"
+          }
+        }
+      },
+      "SensitivityPoint": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "trafficMultiplier",
+          "peakRequestsPerSecond",
+          "peakResponseMegabitsPerSecond",
+          "meanConcurrentRequests"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "trafficMultiplier": {
+            "type": "number"
+          },
+          "peakRequestsPerSecond": {
+            "type": "number"
+          },
+          "peakResponseMegabitsPerSecond": {
+            "type": "number"
+          },
+          "meanConcurrentRequests": {
+            "type": "number"
+          }
+        }
+      },
+      "CapacityEstimateResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "estimatorId",
+          "status",
+          "metrics",
+          "steps",
+          "sensitivity",
+          "assumptions",
+          "warnings"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "estimatorId": {
+            "type": "string",
+            "const": "capacity-estimation"
+          },
+          "status": {
+            "type": "string",
+            "const": "estimated"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/CapacityMetrics"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalculationStep"
+            }
+          },
+          "sensitivity": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SensitivityPoint"
+            }
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CapacityEstimatorPreset": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "question", "input"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "input": {
+            "$ref": "#/components/schemas/CapacityEstimateInput"
+          }
+        }
+      },
+      "CapacityEstimatorDescriptor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "schemaVersion",
+          "description",
+          "defaultInput",
+          "presets",
+          "limits",
+          "assumptions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "const": "capacity-estimation"
+          },
+          "title": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "const": "estimator"
+          },
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "description": {
+            "type": "string"
+          },
+          "defaultInput": {
+            "$ref": "#/components/schemas/CapacityEstimateInput"
+          },
+          "presets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CapacityEstimatorPreset"
+            }
+          },
+          "limits": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
               "type": "string"
             }
           }

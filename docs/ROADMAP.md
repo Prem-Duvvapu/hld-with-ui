@@ -35,7 +35,7 @@ Exit: `request-flow` can be published with all declared capabilities. Review whe
 
 | ID | Work package | Depends on | Size | Acceptance | Status / evidence |
 | --- | --- | --- | --- | --- | --- |
-| `P2-01` | Capacity estimator and lesson | P1-05 | M | Validated units, explicit assumptions, average/peak/bytes/concurrency calculations, sensitivity, small numeric fixtures, question feedback | planned |
+| `P2-01` | Capacity estimator and lesson | P1-05 | M | Validated units, explicit assumptions, average/peak/bytes/concurrency calculations, sensitivity, small numeric fixtures, question feedback | **in-progress** — published lesson and practice, bounded Java estimator, OpenAPI generated types, three presets, transparent formulas, sensitivity range, and reconciled numeric fixtures pass automated checks; browser accessibility/mobile/theme review remains |
 | `P2-02` | Cache-aside module | P1-05, P2-01 | L | Modeled keys/values/TTL/origin versions, cold/warm/update/outage presets, trace/metrics, full learning tabs, staleness and expiry boundary tests | planned |
 | `P2-03` | URL shortener guided workshop | P2-01, P2-02 | M | Baseline/evolved design, two request flows, APIs/data model, collision/expiry/abuse treatment, experiment links, editable decisions and rubric | planned |
 | `P2-04` | Search, bookmarks, progress, practice | P1-05 | M | Published-content search; local versioned progress; recall feedback; export/import validation/conflicts; storage-error handling | planned |
