@@ -1,6 +1,8 @@
 [
   {
     "id": "request-flow-queue-time",
+    "topicId": "request-flow",
+    "level": "beginner",
     "kind": "prediction",
     "prompt": "Two nodes have one worker each. Six requests arrive together and each needs 100 ms. When do requests 5 and 6 complete?",
     "options": [
@@ -15,6 +17,8 @@
   },
   {
     "id": "request-flow-balancer-capacity",
+    "topicId": "request-flow",
+    "level": "intermediate",
     "kind": "diagnosis",
     "prompt": "Queue time rises while service time remains 100 ms. What is the strongest first conclusion?",
     "options": [
@@ -29,6 +33,8 @@
   },
   {
     "id": "request-flow-interview",
+    "topicId": "request-flow",
+    "level": "intermediate",
     "kind": "design-decision",
     "prompt": "Explain to an interviewer why adding a load balancer does not guarantee low latency.",
     "rubric": [

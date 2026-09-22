@@ -13,9 +13,9 @@ Goal: one coherent shell and a working contract path, without producing a broad 
 | ID | Work package | Depends on | Size | Acceptance | Status / evidence |
 | --- | --- | --- | --- | --- | --- |
 | `P0-01` | Bootstrap React/TypeScript and Java/Spring toolchain | None | M | Locked dependencies, Maven Wrapper, clean builds, health endpoint, API proxy, root launcher with cleanup, exact setup docs | **done** — lockfile/wrapper committed; Java and React gates pass; health endpoint, proxy, launcher, and README commands implemented |
-| `P0-02` | Catalog and HTTP/event/content contracts | P0-01 | M | OpenAPI/JSON Schemas, generated frontend types, examples validate, unique IDs and prerequisite DAG checks, published-capability checks | planned |
-| `P0-03` | Shared HLD module shell | P0-01, P0-02 | M | LLD-inspired tabs; URL-selected view; home/category navigation; deep-link and unknown route behavior; both themes; responsive keyboard navigation | **in-progress** — request-flow proves the shell, URL tabs, unknown route, themes, and responsive keyboard tab behavior; catalog contracts are not yet generated |
-| `P0-04` | Repository quality gates | P0-01, P0-02 | M | CI runs applicable backend/frontend builds, tests, type/lint checks, content/contract validation; no success from missing tests; clean-checkout instructions verified | **in-progress** — CI runs Java verify plus frontend typecheck/lint/tests/build; formal schema and capability validation remain in P0-02 |
+| `P0-02` | Catalog and HTTP/event/content contracts | P0-01 | M | OpenAPI/JSON Schemas, generated frontend types, examples validate, unique IDs and prerequisite DAG checks, published-capability checks | **done** — OpenAPI 3.1 and content schemas committed; frontend types generated; CI checks two inputs plus catalog IDs, DAG, paths, questions, sources, and capabilities |
+| `P0-03` | Shared HLD module shell | P0-01, P0-02 | M | LLD-inspired tabs; URL-selected view; home/category navigation; deep-link and unknown route behavior; both themes; responsive keyboard navigation | **in-progress** — request-flow proves the shell, URL tabs, unknown route, themes, responsive keyboard tabs, and generated catalog types; browser route/accessibility review remains |
+| `P0-04` | Repository quality gates | P0-01, P0-02 | M | CI runs applicable backend/frontend builds, tests, type/lint checks, content/contract validation; no success from missing tests; clean-checkout instructions verified | **in-progress** — CI runs contract drift/content checks, Java verify, and frontend typecheck/lint/format/tests/build; clean-checkout browser smoke remains |
 
 Exit: a developer can start both applications, navigate the shell, fetch a validated draft catalog entry, and see honest unavailable states. No fake simulation is necessary to prove the shell.
 
@@ -109,4 +109,4 @@ For documentation-only work, check internal links, IDs/dependencies, numbers, an
 - Keep architecture and content contracts authoritative; task notes do not silently override them.
 - No schedule is committed. Re-estimate after the reference slice reveals actual content/model/UI cost.
 
-**Next action:** `P0-02`, starting with versioned OpenAPI and authored-content schemas so frontend types and publication checks derive from one contract.
+**Next action:** finish the `P0-03` browser/accessibility review, then complete `P1-01` runner bounds so request-flow failure schedules can be added safely.

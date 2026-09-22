@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class RequestFlowSimulator {
-    public static final String MODEL_VERSION = "1.0.0";
+    public static final String MODEL_VERSION = RequestFlowInput.CURRENT_MODEL_VERSION;
     private static final List<String> ASSUMPTIONS = List.of(
             "All nodes are healthy for the full run.",
             "Network and load-balancer overhead are zero.",
@@ -84,11 +84,17 @@ public class RequestFlowSimulator {
                     draft.nodeId(), draft.message()));
         }
 
-        return new RequestFlowResult("request-flow", MODEL_VERSION, input.seed(), "completed", ASSUMPTIONS,
+        return new RequestFlowResult("1.0", "request-flow", MODEL_VERSION, input.seed(), "completed", ASSUMPTIONS,
                 List.copyOf(events), List.copyOf(outcomes), metrics(outcomes));
     }
 
     private void validate(RequestFlowInput input) {
+        if (!RequestFlowInput.CURRENT_SCHEMA_VERSION.equals(input.schemaVersion())) {
+            throw new IllegalArgumentException("schemaVersion must be " + RequestFlowInput.CURRENT_SCHEMA_VERSION);
+        }
+        if (!MODEL_VERSION.equals(input.modelVersion())) {
+            throw new IllegalArgumentException("modelVersion must be " + MODEL_VERSION);
+        }
         long previous = -1;
         for (long arrival : input.arrivalTimesMs()) {
             if (arrival < previous) throw new IllegalArgumentException("arrivalTimesMs must be nondecreasing");

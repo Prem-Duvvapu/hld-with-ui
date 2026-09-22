@@ -1,6 +1,7 @@
 package com.hld.simulation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -10,7 +11,7 @@ class RequestFlowSimulatorTest {
 
     @Test
     void baselineMatchesTheHandCalculatedFixture() {
-        RequestFlowResult result = simulator.run(new RequestFlowInput(
+        RequestFlowResult result = simulator.run(RequestFlowInput.current(
                 RoutingPolicy.ROUND_ROBIN,
                 List.of(0L, 0L, 0L, 0L, 0L, 0L),
                 List.of(100L, 100L),
@@ -29,7 +30,7 @@ class RequestFlowSimulatorTest {
 
     @Test
     void aFiniteQueueRejectsOnlyRequestsWithoutAWaitingSlot() {
-        RequestFlowResult result = simulator.run(new RequestFlowInput(
+        RequestFlowResult result = simulator.run(RequestFlowInput.current(
                 RoutingPolicy.ROUND_ROBIN,
                 List.of(0L, 0L, 0L, 0L, 0L, 0L),
                 List.of(100L, 100L),
@@ -46,9 +47,9 @@ class RequestFlowSimulatorTest {
     @Test
     void leastOutstandingChangesTheSlowNodeFixtureForRequestFour() {
         List<Long> arrivals = List.of(0L, 0L, 150L, 200L);
-        RequestFlowResult roundRobin = simulator.run(new RequestFlowInput(
+        RequestFlowResult roundRobin = simulator.run(RequestFlowInput.current(
                 RoutingPolicy.ROUND_ROBIN, arrivals, List.of(100L, 400L), 1, 10, 7));
-        RequestFlowResult leastOutstanding = simulator.run(new RequestFlowInput(
+        RequestFlowResult leastOutstanding = simulator.run(RequestFlowInput.current(
                 RoutingPolicy.LEAST_OUTSTANDING, arrivals, List.of(100L, 400L), 1, 10, 7));
 
         assertThat(roundRobin.outcomes().get(3).latencyMs()).isEqualTo(600L);
@@ -58,8 +59,18 @@ class RequestFlowSimulatorTest {
 
     @Test
     void eachRunOwnsItsState() {
-        RequestFlowInput input = new RequestFlowInput(
+        RequestFlowInput input = RequestFlowInput.current(
                 RoutingPolicy.ROUND_ROBIN, List.of(0L, 0L), List.of(100L, 100L), 1, 1, 42);
         assertThat(simulator.run(input)).isEqualTo(simulator.run(input));
+    }
+
+    @Test
+    void rejectsAnIncompatibleModelVersion() {
+        RequestFlowInput input = new RequestFlowInput("1.0", "2.0.0", RoutingPolicy.ROUND_ROBIN,
+                List.of(0L), List.of(100L), 1, 1, 42);
+
+        assertThatThrownBy(() -> simulator.run(input))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("modelVersion must be 1.0.0");
     }
 }

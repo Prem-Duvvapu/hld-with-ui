@@ -49,10 +49,12 @@ Run the same local checks as CI:
 node scripts/validate-plan.mjs
 bash -n start.sh
 (cd backend && ./mvnw -B verify)
-(cd frontend && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build)
+(cd frontend && npm run contracts:check && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build)
 ```
 
 The [CI workflow](.github/workflows/ci.yaml) runs these gates on pull requests and `main`.
+
+API and content contracts live in [contracts](contracts/README.md). React API types are generated from OpenAPI, and CI rejects generated-type drift, malformed content, broken prerequisites, unresolved sources, and capabilities without a registered model.
 
 ## Implemented learning module
 

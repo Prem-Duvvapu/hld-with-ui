@@ -13,7 +13,7 @@ Status: the foundation and request-flow slice implement the defaults below. Late
 | Topology | SVG for initial fixed topology; evaluate React Flow for later editing | Playback does not initially require a graph editor |
 | Backend | Java 17 bytecode, Spring Boot 4, Maven Wrapper; CI on Java 21 | Works with the owner's local Java 17 and remains tested on the newer CI LTS |
 | Execution | Plain Java domain modules and deterministic discrete-event engine | Testable without Spring or external infrastructure |
-| Contracts | OpenAPI for HTTP; JSON Schema for authored data and simulation events | Shared validation and generated TypeScript types |
+| Contracts | OpenAPI 3.1 for HTTP/events; JSON Schema 2020-12 for authored data | Shared validation and generated TypeScript types; see [decision 0002](decisions/0002-contracts-generate-frontend-types.md) |
 | Tests | JUnit, Spring API tests; Vitest and React Testing Library; Playwright browser flows | Verify model semantics, integration, and actual learning journeys |
 | Delivery | One frontend build and one backend image; optional Docker Compose | Simple local and hosted deployment |
 
@@ -73,7 +73,7 @@ Package validated lessons and metadata into the backend artifact during build; d
 
 ## 4. Initial API contract
 
-The topic and simulation endpoints are implemented for `request-flow`; search, estimators, case studies, stats, and formal OpenAPI schemas remain planned for `P0-02` and later phases.
+The topic and simulation endpoints and their OpenAPI schemas are implemented for `request-flow`; search, estimators, case studies, and stats remain planned for later phases.
 
 | Endpoint | Purpose and behavior |
 | --- | --- |

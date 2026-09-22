@@ -17,6 +17,11 @@
     "capabilities": ["study", "simulation", "practice"],
     "lessonPath": "topics/request-flow/lesson.md",
     "questionsPath": "topics/request-flow/questions.json",
-    "contentVersion": "1.0.0"
+    "resourcesPath": "topics/request-flow/resources.json",
+    "simulationIds": ["request-flow"],
+    "estimatorIds": [],
+    "contentVersion": "1.0.0",
+    "reviewedAt": "2026-09-22",
+    "sourceIds": ["google-sre-overload", "aws-load-shedding"]
   }
 ]

@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hld-with-ui.dev/schemas/catalog.schema.json",
+  "title": "HLD learning catalog",
+  "type": "array",
+  "items": { "$ref": "#/$defs/entry" },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "title",
+        "summary",
+        "category",
+        "level",
+        "order",
+        "status",
+        "prerequisites",
+        "outcomes",
+        "capabilities",
+        "contentVersion"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "kind": { "enum": ["topic", "case-study"] },
+        "title": { "type": "string", "minLength": 3, "maxLength": 100 },
+        "summary": { "type": "string", "minLength": 20, "maxLength": 240 },
+        "category": {
+          "enum": [
+            "Foundations",
+            "Data & Storage",
+            "Caching & Performance",
+            "Messaging & Reliability",
+            "Distributed Systems",
+            "Production Architecture",
+            "Case Studies"
+          ]
+        },
+        "level": { "enum": ["Beginner", "Intermediate", "Advanced"] },
+        "order": { "type": "integer", "minimum": 1 },
+        "status": { "enum": ["planned", "draft", "published"] },
+        "prerequisites": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "outcomes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 10 }
+        },
+        "capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "study",
+              "simulation",
+              "estimator",
+              "case-study",
+              "practice"
+            ]
+          }
+        },
+        "lessonPath": { "$ref": "#/$defs/contentPath" },
+        "questionsPath": { "$ref": "#/$defs/contentPath" },
+        "resourcesPath": { "$ref": "#/$defs/contentPath" },
+        "simulationIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "estimatorIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "contentVersion": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "reviewedAt": { "type": "string", "format": "date" },
+        "sourceIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "enum": ["draft", "published"] } }
+          },
+          "then": {
+            "required": [
+              "lessonPath",
+              "questionsPath",
+              "resourcesPath",
+              "reviewedAt",
+              "sourceIds"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capabilities": {
+                "type": "array",
+                "contains": { "const": "simulation" }
+              }
+            }
+          },
+          "then": {
+            "required": ["simulationIds"],
+            "properties": {
+              "simulationIds": { "type": "array", "minItems": 1 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capabilities": {
+                "type": "array",
+                "contains": { "const": "estimator" }
+              }
+            }
+          },
+          "then": {
+            "required": ["estimatorIds"],
+            "properties": { "estimatorIds": { "type": "array", "minItems": 1 } }
+          }
+        }
+      ]
+    },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "contentPath": {
+      "type": "string",
+      "pattern": "^(topics|case-studies)/[a-z0-9-]+/[a-z0-9.-]+$"
+    }
+  }
+}

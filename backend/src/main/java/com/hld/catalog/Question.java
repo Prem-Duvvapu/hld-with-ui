@@ -4,6 +4,8 @@ import java.util.List;
 
 public record Question(
         String id,
+        String topicId,
+        String level,
         String kind,
         String prompt,
         List<Option> options,
@@ -11,7 +13,8 @@ public record Question(
         String explanation,
         String followUp,
         List<String> rubric,
-        String modelAnswer) {
-    public record Option(String id, String label) {
+        String modelAnswer,
+        List<String> sourceIds) {
+    public record Option(String id, String label, String distractorExplanation) {
     }
 }

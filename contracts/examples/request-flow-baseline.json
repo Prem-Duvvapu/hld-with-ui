@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "policy": "ROUND_ROBIN",
+  "arrivalTimesMs": [0, 0, 0, 0, 0, 0],
+  "nodeServiceTimesMs": [100, 100],
+  "workersPerNode": 1,
+  "queueCapacity": 10,
+  "seed": 7
+}

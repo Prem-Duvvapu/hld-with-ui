@@ -17,6 +17,8 @@ const descriptor: SimulationDescriptor = {
       title: "Balanced burst",
       question: "What happens?",
       input: {
+        schemaVersion: "1.0",
+        modelVersion: "1.0.0",
         policy: "ROUND_ROBIN",
         arrivalTimesMs: [0, 0],
         nodeServiceTimesMs: [100, 100],
@@ -28,6 +30,7 @@ const descriptor: SimulationDescriptor = {
   ],
 };
 const result: RequestFlowResult = {
+  schemaVersion: "1.0",
   simulationId: "request-flow",
   modelVersion: "1.0.0",
   seed: 42,
@@ -82,6 +85,8 @@ describe("Request flow playground", () => {
     expect(screen.getByText("10.0")).toBeInTheDocument();
     const [, options] = fetchMock.mock.calls[0]!;
     expect(JSON.parse(options.body)).toMatchObject({
+      schemaVersion: "1.0",
+      modelVersion: "1.0.0",
       policy: "ROUND_ROBIN",
       arrivalTimesMs: [0, 0],
       nodeServiceTimesMs: [100, 100],

@@ -24,10 +24,14 @@ class ApplicationApiTest {
                 .andExpect(jsonPath("$.status").value("ready"));
         mvc.perform(get("/api/v1/topics"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value("request-flow"));
+                .andExpect(jsonPath("$[0].id").value("request-flow"))
+                .andExpect(jsonPath("$[0].simulationIds[0]").value("request-flow"))
+                .andExpect(jsonPath("$[0].sourceIds.length()").value(2));
         mvc.perform(get("/api/v1/topics/request-flow"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.questions.length()").value(3));
+                .andExpect(jsonPath("$.questions.length()").value(3))
+                .andExpect(jsonPath("$.questions[0].topicId").value("request-flow"))
+                .andExpect(jsonPath("$.questions[2].options").doesNotExist());
     }
 
     @Test
@@ -35,7 +39,8 @@ class ApplicationApiTest {
         mvc.perform(post("/api/v1/simulations/request-flow/runs")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"policy":"ROUND_ROBIN","arrivalTimesMs":[0,0,0,0,0,0],
+                                {"schemaVersion":"1.0","modelVersion":"1.0.0",
+                                "policy":"ROUND_ROBIN","arrivalTimesMs":[0,0,0,0,0,0],
                                 "nodeServiceTimesMs":[100,100],"workersPerNode":1,
                                 "queueCapacity":10,"seed":7}
                                 """))
@@ -50,7 +55,8 @@ class ApplicationApiTest {
         mvc.perform(post("/api/v1/simulations/request-flow/runs")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"policy":"ROUND_ROBIN","arrivalTimesMs":[0],
+                                {"schemaVersion":"1.0","modelVersion":"1.0.0",
+                                "policy":"ROUND_ROBIN","arrivalTimesMs":[0],
                                 "nodeServiceTimesMs":[100],"workersPerNode":0,
                                 "queueCapacity":10,"seed":7,"surprise":true}
                                 """))

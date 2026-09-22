@@ -45,17 +45,17 @@ public class SimulationController {
                         new SimulationDescriptor.SimulationPreset(
                                 "baseline", "Six-request baseline",
                                 "Where are requests 5 and 6 while the first four are processed?",
-                                new RequestFlowInput(RoutingPolicy.ROUND_ROBIN,
+                                RequestFlowInput.current(RoutingPolicy.ROUND_ROBIN,
                                         List.of(0L, 0L, 0L, 0L, 0L, 0L), List.of(100L, 100L), 1, 10, 7)),
                         new SimulationDescriptor.SimulationPreset(
                                 "slow-node", "One slow node",
                                 "Does the routing policy notice that Node B keeps work longer?",
-                                new RequestFlowInput(RoutingPolicy.ROUND_ROBIN,
+                                RequestFlowInput.current(RoutingPolicy.ROUND_ROBIN,
                                         List.of(0L, 0L, 150L, 200L), List.of(100L, 400L), 1, 10, 7)),
                         new SimulationDescriptor.SimulationPreset(
                                 "overload", "Finite queue overload",
                                 "Which requests are rejected when each node has one waiting slot?",
-                                new RequestFlowInput(RoutingPolicy.ROUND_ROBIN,
+                                RequestFlowInput.current(RoutingPolicy.ROUND_ROBIN,
                                         List.of(0L, 0L, 0L, 0L, 0L, 0L), List.of(100L, 100L), 1, 1, 7))),
                 assumptions);
     }
