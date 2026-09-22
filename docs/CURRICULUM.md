@@ -83,6 +83,8 @@ Lesson reviewers must challenge slogans: CAP needs a partition and precise consi
 
 ## 7. Case-study progression
 
+Use the [SDE-2 backend interview priority](SDE2_INTERVIEW_PRIORITY.md) to order interview practice after prerequisite closure. Its public reports guide emphasis but are not frequency statistics.
+
 Every case includes baseline → observed limitation → justified evolution. All names describe educational designs; do not claim to reproduce a company's private architecture.
 
 | ID | Main prerequisites | Required design challenge | Release |
