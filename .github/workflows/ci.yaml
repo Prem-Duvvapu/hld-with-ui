@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Validate plan and launcher
+        run: |
+          node scripts/validate-plan.mjs
+          bash -n start.sh
+      - name: Verify planning-phase launcher
+        if: ${{ hashFiles('backend/pom.xml', 'frontend/package.json') == '' }}
+        run: |
+          if bash ./start.sh; then
+            echo 'The launcher reported success without an application' >&2
+            exit 1
+          fi
+      - name: Verify application layout
+        if: ${{ hashFiles('backend/pom.xml', 'frontend/package.json') != '' }}
+        run: |
+          test -f backend/pom.xml
+          test -f frontend/package.json
+          test -x backend/mvnw
+          test -f frontend/package-lock.json
+      - name: Backend tests and package
+        if: ${{ hashFiles('backend/pom.xml', 'frontend/package.json') != '' }}
+        run: ./mvnw -B verify
+        working-directory: backend
+      - name: Frontend install
+        if: ${{ hashFiles('backend/pom.xml', 'frontend/package.json') != '' }}
+        run: npm ci
+        working-directory: frontend
+      - name: Frontend typecheck, lint, tests and build
+        if: ${{ hashFiles('backend/pom.xml', 'frontend/package.json') != '' }}
+        run: |
+          npm run typecheck
+          npm run lint
+          npm test
+          npm run build
+        working-directory: frontend

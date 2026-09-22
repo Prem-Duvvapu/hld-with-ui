@@ -16,7 +16,7 @@ Make a fresh checkout start a React/TypeScript frontend and Java backend, with a
 2. Create `frontend/` with a minimal accessible app, strict TypeScript, theme tokens, a typed API helper, and one honest welcome/status view. It should state that the curriculum is being built without displaying fabricated completed topics.
 3. Create `backend/` with Maven Wrapper and a single Spring Boot entry point. Add a bounded health response suitable for local readiness. Choose its precise route and document it; it is not a curriculum endpoint.
 4. Configure the frontend development proxy and environment-overridable ports. A user-visible backend error must remain an error, not a successful-looking mock result.
-5. Add a root launcher for Linux/WSL, with executable permissions, toolchain checks, clear output, interrupt cleanup, and no broad killing of unrelated Java/Node processes. Document separate frontend/backend commands for other environments until tested launchers exist.
+5. Complete and test the existing root launcher for Linux/WSL against the real applications. Confirm executable permissions, toolchain checks, clear output, interrupt cleanup, and no broad killing of unrelated Java/Node processes. Document separate frontend/backend commands for other environments until tested launchers exist.
 6. Add a minimal `.gitignore` for dependencies, builds, logs, local secrets, and IDE metadata. Do not delete the existing user's `.idea/` directory.
 7. Add targeted tests for API readiness/error behavior and launcher cleanup where useful. Existing toolchain-generated smoke tests do not substitute for verifying a real browser-to-Java request.
 8. Update README with actual tested setup/build/check commands and update `P0-01` with evidence.
