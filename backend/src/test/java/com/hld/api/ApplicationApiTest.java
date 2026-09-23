@@ -45,6 +45,11 @@ class ApplicationApiTest {
                                 "queueCapacity":10,"seed":7}
                                 """))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("completed"))
+                .andExpect(jsonPath("$.truncationReason").doesNotExist())
+                .andExpect(jsonPath("$.lastVirtualTimeMs").value(300))
+                .andExpect(jsonPath("$.incompleteRequests").value(0))
+                .andExpect(jsonPath("$.limits.maxEvents").value(10_000))
                 .andExpect(jsonPath("$.metrics.completed").value(6))
                 .andExpect(jsonPath("$.metrics.meanLatencyMs").value(200.0))
                 .andExpect(jsonPath("$.outcomes[4].queueMs").value(200));

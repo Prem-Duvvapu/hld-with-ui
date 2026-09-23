@@ -760,6 +760,9 @@
           "modelVersion",
           "seed",
           "status",
+          "lastVirtualTimeMs",
+          "incompleteRequests",
+          "limits",
           "assumptions",
           "events",
           "outcomes",
@@ -784,7 +787,7 @@
           },
           "status": {
             "type": "string",
-            "const": "completed"
+            "enum": ["completed", "limited"]
           },
           "assumptions": {
             "type": "array",
@@ -806,6 +809,20 @@
           },
           "metrics": {
             "$ref": "#/components/schemas/RequestFlowMetrics"
+          },
+          "truncationReason": {
+            "type": ["string", "null"],
+            "enum": ["event_limit", "virtual_time_limit", null]
+          },
+          "lastVirtualTimeMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "incompleteRequests": {
+            "type": "integer"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/SimulationLimits"
           }
         }
       },
@@ -1140,6 +1157,39 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "SimulationLimits": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "maxRequests",
+          "maxNodes",
+          "maxWorkersPerNode",
+          "maxQueueCapacity",
+          "maxEvents",
+          "maxVirtualTimeMs"
+        ],
+        "properties": {
+          "maxRequests": {
+            "type": "integer"
+          },
+          "maxNodes": {
+            "type": "integer"
+          },
+          "maxWorkersPerNode": {
+            "type": "integer"
+          },
+          "maxQueueCapacity": {
+            "type": "integer"
+          },
+          "maxEvents": {
+            "type": "integer"
+          },
+          "maxVirtualTimeMs": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       }

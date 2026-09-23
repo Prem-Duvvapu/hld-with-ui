@@ -40,7 +40,13 @@ public class SimulationController {
                 "simulation",
                 RequestFlowSimulator.MODEL_VERSION,
                 "A deterministic model of routing, finite worker pools, queueing, and rejection.",
-                Map.of("maxRequests", 100, "maxNodes", 8, "maxWorkersPerNode", 8, "maxQueueCapacity", 100),
+                Map.of(
+                        "maxRequests", simulator.limits().maxRequests(),
+                        "maxNodes", simulator.limits().maxNodes(),
+                        "maxWorkersPerNode", simulator.limits().maxWorkersPerNode(),
+                        "maxQueueCapacity", simulator.limits().maxQueueCapacity(),
+                        "maxEvents", simulator.limits().maxEvents(),
+                        "maxVirtualTimeMs", simulator.limits().maxVirtualTimeMs()),
                 List.of(
                         new SimulationDescriptor.SimulationPreset(
                                 "baseline", "Six-request baseline",

@@ -35,6 +35,17 @@ const result: RequestFlowResult = {
   modelVersion: "1.0.0",
   seed: 42,
   status: "completed",
+  truncationReason: null,
+  lastVirtualTimeMs: 100,
+  incompleteRequests: 0,
+  limits: {
+    maxRequests: 100,
+    maxNodes: 8,
+    maxWorkersPerNode: 8,
+    maxQueueCapacity: 100,
+    maxEvents: 10000,
+    maxVirtualTimeMs: 60000,
+  },
   assumptions: ["Nodes stay healthy."],
   events: [
     {
@@ -120,5 +131,30 @@ describe("Request flow playground", () => {
       "simulation-input-error",
     );
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("explains limited traces and labels their metrics as partial", async () => {
+    const limited: RequestFlowResult = {
+      ...result,
+      status: "limited",
+      truncationReason: "virtual_time_limit",
+      lastVirtualTimeMs: 60_000,
+      incompleteRequests: 2,
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: async () => limited }),
+    );
+    render(<Playground descriptor={descriptor} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Run experiment/ }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "60,000 ms virtual time limit",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "2 requests are incomplete",
+    );
+    expect(screen.getByLabelText("Partial run metrics")).toBeInTheDocument();
   });
 });

@@ -26,6 +26,10 @@ class RequestFlowSimulatorTest {
         assertThat(result.metrics().meanLatencyMs()).isEqualTo(200.0);
         assertThat(result.metrics().p95LatencyMs()).isEqualTo(300L);
         assertThat(result.metrics().throughputPerSecond()).isEqualTo(20.0);
+        assertThat(result.status()).isEqualTo("completed");
+        assertThat(result.truncationReason()).isNull();
+        assertThat(result.lastVirtualTimeMs()).isEqualTo(300);
+        assertThat(result.incompleteRequests()).isZero();
     }
 
     @Test
@@ -62,6 +66,37 @@ class RequestFlowSimulatorTest {
         RequestFlowInput input = RequestFlowInput.current(
                 RoutingPolicy.ROUND_ROBIN, List.of(0L, 0L), List.of(100L, 100L), 1, 1, 42);
         assertThat(simulator.run(input)).isEqualTo(simulator.run(input));
+    }
+
+    @Test
+    void returnsAnExplicitLimitedResultWhenTheVirtualTimeBudgetIsReached() {
+        RequestFlowSimulator bounded = new RequestFlowSimulator(new SimulationLimits(100, 8, 8, 100, 10_000, 150));
+
+        RequestFlowResult result = bounded.run(RequestFlowInput.current(
+                RoutingPolicy.ROUND_ROBIN, List.of(0L, 0L, 0L, 0L, 0L, 0L),
+                List.of(100L, 100L), 1, 10, 7));
+
+        assertThat(result.status()).isEqualTo("limited");
+        assertThat(result.truncationReason()).isEqualTo("virtual_time_limit");
+        assertThat(result.lastVirtualTimeMs()).isEqualTo(100);
+        assertThat(result.incompleteRequests()).isEqualTo(4);
+        assertThat(result.outcomes()).hasSize(2);
+        assertThat(result.metrics().completed()).isEqualTo(2);
+        assertThat(result.events()).allMatch(event -> event.timeMs() <= 150);
+    }
+
+    @Test
+    void eventBudgetStopsTheTraceWithoutReportingUnseenOutcomes() {
+        RequestFlowSimulator bounded = new RequestFlowSimulator(new SimulationLimits(100, 8, 8, 100, 3, 60_000));
+
+        RequestFlowResult result = bounded.run(RequestFlowInput.current(
+                RoutingPolicy.ROUND_ROBIN, List.of(0L, 0L), List.of(100L), 1, 10, 7));
+
+        assertThat(result.status()).isEqualTo("limited");
+        assertThat(result.truncationReason()).isEqualTo("event_limit");
+        assertThat(result.events()).hasSize(3);
+        assertThat(result.outcomes()).isEmpty();
+        assertThat(result.incompleteRequests()).isEqualTo(2);
     }
 
     @Test
