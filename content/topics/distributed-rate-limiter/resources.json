@@ -1,0 +1,29 @@
+[
+  {
+    "id": "rfc-6585-429",
+    "title": "Additional HTTP Status Codes: 429 Too Many Requests",
+    "organization": "IETF",
+    "url": "https://www.rfc-editor.org/rfc/rfc6585#section-4",
+    "sourceType": "standard",
+    "supports": "HTTP rejection semantics and Retry-After guidance",
+    "reviewedAt": "2026-09-23"
+  },
+  {
+    "id": "rfc-9331-rate-limit-fields",
+    "title": "RateLimit Fields for HTTP",
+    "organization": "IETF",
+    "url": "https://www.rfc-editor.org/rfc/rfc9331.html",
+    "sourceType": "standard",
+    "supports": "Communicating quota and reset information to HTTP clients",
+    "reviewedAt": "2026-09-23"
+  },
+  {
+    "id": "google-rate-limiting",
+    "title": "Rate limiting strategies and techniques",
+    "organization": "Google Cloud",
+    "url": "https://cloud.google.com/architecture/rate-limiting-strategies-techniques",
+    "sourceType": "documentation",
+    "supports": "Algorithm, placement, distributed enforcement, and operational tradeoffs",
+    "reviewedAt": "2026-09-23"
+  }
+]

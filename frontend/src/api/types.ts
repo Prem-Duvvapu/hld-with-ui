@@ -15,6 +15,10 @@ export type SimulationDescriptor =
 export type SimulationEvent = components["schemas"]["SimulationEvent"];
 export type RequestOutcome = components["schemas"]["RequestOutcome"];
 export type RequestFlowResult = components["schemas"]["RequestFlowResult"];
+export type RateLimiterInput = components["schemas"]["RateLimiterInput"];
+export type RateLimiterResult = components["schemas"]["RateLimiterResult"];
+export type RateLimiterDescriptor =
+  components["schemas"]["RateLimiterDescriptor"];
 export type CapacityEstimateInput =
   components["schemas"]["CapacityEstimateInput"];
 export type CapacityMetrics = components["schemas"]["CapacityMetrics"];

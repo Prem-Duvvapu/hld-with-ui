@@ -104,17 +104,31 @@ function visit(id) {
 }
 for (const id of entries.keys()) visit(id);
 
-const knownSimulationIds = new Set(
-  [
-    openapi.components?.schemas?.SimulationDescriptor?.properties?.id?.const,
-  ].filter(Boolean),
-);
-const knownEstimatorIds = new Set(
-  [
-    openapi.components?.schemas?.CapacityEstimatorDescriptor?.properties?.id
-      ?.const,
-  ].filter(Boolean),
-);
+function descriptorIds(pathPrefix) {
+  return new Set(
+    Object.entries(openapi.paths ?? {})
+      .filter(
+        ([path, item]) =>
+          path.startsWith(pathPrefix) && !path.endsWith("/runs") && item.get,
+      )
+      .map(([, item]) =>
+        item.get.responses?.["200"]?.content?.["application/json"]?.schema?.[
+          "$ref"
+        ]
+          ?.split("/")
+          .at(-1),
+      )
+      .map((schemaName) =>
+        schemaName
+          ? openapi.components?.schemas?.[schemaName]?.properties?.id?.const
+          : undefined,
+      )
+      .filter(Boolean),
+  );
+}
+
+const knownSimulationIds = descriptorIds("/api/v1/simulations/");
+const knownEstimatorIds = descriptorIds("/api/v1/estimators/");
 const questionIds = [];
 
 const requiredHeadings = [

@@ -4,7 +4,7 @@ Learn high-level system design by reading, experimenting, diagnosing failures, a
 
 The idea is simple: **see a system work, change one condition, explain what happened, then choose a design.** Each module will help you answer both “How does this work?” and “How would I explain it to my team or in an interview?”
 
-**Status: two working learning modules.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, and an interactive Capacity Estimation module. Later roadmap modules remain planned.
+**Status: three working learning modules.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, and a deterministic Distributed Rate Limiter module. Later roadmap modules remain planned.
 
 ## Start here
 
@@ -78,6 +78,16 @@ Model v1.0.0 intentionally excludes network delay, failures, retries, and health
 - practice the worked fixture and explain why mean concurrency does not prove burst capacity.
 
 The estimator uses decimal units and intentionally does not recommend instance counts, cloud prices, or production capacity.
+
+**Distributed Rate Limiter** makes enforcement tradeoffs observable:
+
+- compare fixed-window and token-bucket decisions under virtual time;
+- move state between one atomic shared counter and independent per-node counters;
+- calculate aggregate overshoot rather than treating a configured limit as automatically global;
+- test fail-open and fail-closed behavior during shared-counter failure;
+- inspect every allowed, rejected, and bypassed decision and practice a two-minute design defense.
+
+The model uses one identity, one-token requests, round-robin routing, and zero counter-network latency. These bounds keep the algorithm and state-placement decisions hand-checkable.
 
 ## References
 

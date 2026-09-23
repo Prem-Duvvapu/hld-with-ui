@@ -1,0 +1,71 @@
+[
+  {
+    "id": "distributed-rate-limiter-overshoot",
+    "topicId": "distributed-rate-limiter",
+    "level": "beginner",
+    "kind": "calculation",
+    "prompt": "Three nodes each enforce a local limit of five requests per window. What maximum aggregate allowance can they provide?",
+    "options": [
+      { "id": "a", "label": "5" },
+      { "id": "b", "label": "8" },
+      { "id": "c", "label": "15" },
+      { "id": "d", "label": "Unlimited" }
+    ],
+    "correctOptionId": "c",
+    "explanation": "Each independent node can allow five requests, so three local counters can collectively allow fifteen during the same window.",
+    "followUp": "How could allocated per-node quotas reduce overshoot, and what utilization tradeoff would that introduce?"
+  },
+  {
+    "id": "distributed-rate-limiter-failure-policy",
+    "topicId": "distributed-rate-limiter",
+    "level": "intermediate",
+    "kind": "design-decision",
+    "prompt": "Choose and defend a counter-backend failure policy for login attempts and for a public product-catalog read.",
+    "rubric": [
+      "Defines the risk protected by each limit before choosing a policy.",
+      "Explains that fail-open preserves availability but bypasses enforcement.",
+      "Explains that fail-closed protects the boundary but rejects legitimate work.",
+      "Names a fallback, operational signal, or recovery action.",
+      "Allows different policies for the two operations with clear reasoning."
+    ],
+    "modelAnswer": "I would normally fail closed for repeated login attempts because bypassing enforcement weakens an account-protection boundary, while providing a carefully bounded recovery path. For low-risk catalog reads I may fail open if the origin has separate overload protection, because availability has higher value and the request has little abuse impact. I would count bypassed decisions, counter errors, rejections, and downstream saturation, and make both choices explicit configuration rather than accidental timeout behavior."
+  },
+  {
+    "id": "distributed-rate-limiter-algorithm",
+    "topicId": "distributed-rate-limiter",
+    "level": "intermediate",
+    "kind": "diagnosis",
+    "prompt": "A client sends five requests just before a fixed-window boundary and five immediately after it. Why can all ten pass quickly?",
+    "options": [
+      { "id": "a", "label": "The counter is necessarily inconsistent" },
+      {
+        "id": "b",
+        "label": "Each group belongs to a different aligned window"
+      },
+      { "id": "c", "label": "Retries do not consume limits" },
+      {
+        "id": "d",
+        "label": "Fixed windows automatically borrow future capacity"
+      }
+    ],
+    "correctOptionId": "b",
+    "explanation": "The first five consume the old window and the next five consume the new one, producing a boundary burst while each window remains within its limit.",
+    "followUp": "Which token-bucket capacity and refill choices would express the burst you actually want to permit?",
+    "sourceIds": ["google-rate-limiting"]
+  },
+  {
+    "id": "distributed-rate-limiter-interview",
+    "topicId": "distributed-rate-limiter",
+    "level": "advanced",
+    "kind": "design-decision",
+    "prompt": "Give a two-minute design for a distributed per-tenant API rate limiter and explain one acceptable approximation.",
+    "rubric": [
+      "States operation, identity, scope, limit semantics, and burst requirement.",
+      "Places enforcement and traces one allowed and one rejected request.",
+      "Defines an atomic shared-state decision or clearly bounded approximation.",
+      "Covers hot tenants, backend failure, retry behavior, and cardinality.",
+      "Names metrics, rollout strategy, and a credible alternative."
+    ],
+    "modelAnswer": "I would enforce near the API boundary after authenticating the tenant. A token bucket keyed by tenant and route gives a bounded burst and sustained refill. Application nodes call one atomic consume operation in a partitioned counter store, returning remaining allowance and a retry delay. The main costs are backend latency, availability, and hot-tenant keys. For lower-risk traffic I could allocate regional or per-node quotas, accepting measured overshoot for lower latency. I would define fail-open or fail-closed per operation, bound key retention, roll out in observe-only mode, and monitor allowed, rejected, bypassed, decision latency, backend errors, and protected-resource saturation."
+  }
+]

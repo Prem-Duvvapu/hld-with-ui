@@ -123,6 +123,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/simulations/distributed-rate-limiter": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read the distributed rate limiter descriptor */
+    get: operations["getRateLimiterSimulation"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/simulations/distributed-rate-limiter/runs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Run one deterministic rate limiter simulation */
+    post: operations["runRateLimiterSimulation"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -387,6 +421,99 @@ export interface components {
       /** Format: int64 */
       maxServiceTimeMs: number;
     };
+    RateLimiterInput: {
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      modelVersion: "1.0.0";
+      /** @enum {string} */
+      algorithm: "FIXED_WINDOW" | "TOKEN_BUCKET";
+      /** @enum {string} */
+      counterScope: "SHARED" | "LOCAL_PER_NODE";
+      nodeCount: number;
+      limit: number;
+      /** Format: int64 */
+      windowMs: number;
+      refillTokensPerSecond: number;
+      counterBackendAvailable: boolean;
+      /** @enum {string} */
+      backendFailurePolicy: "FAIL_OPEN" | "FAIL_CLOSED";
+      arrivalTimesMs: number[];
+      /** Format: int64 */
+      seed: number;
+    };
+    RateLimitEvent: {
+      sequence: number;
+      /** Format: int64 */
+      timeMs: number;
+      /** @enum {string} */
+      kind:
+        | "request.arrived"
+        | "request.allowed"
+        | "request.rejected"
+        | "request.bypassed";
+      requestId: string;
+      nodeId: string;
+      message: string;
+    };
+    RateLimitOutcome: {
+      requestId: string;
+      nodeId: string;
+      /** Format: int64 */
+      timeMs: number;
+      /** @enum {string} */
+      decision: "ALLOWED" | "REJECTED" | "BYPASSED";
+      remaining: number;
+      /** Format: int64 */
+      retryAfterMs?: number | null;
+      reason: string;
+    };
+    RateLimitMetrics: {
+      total: number;
+      allowed: number;
+      rejected: number;
+      bypassed: number;
+      configuredLimit: number;
+      counters: number;
+      maximumAggregateAllowance: number;
+    };
+    RateLimiterResult: {
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      simulationId: "distributed-rate-limiter";
+      /** @constant */
+      modelVersion: "1.0.0";
+      /** Format: int64 */
+      seed: number;
+      /** @constant */
+      status: "completed";
+      assumptions: string[];
+      events: components["schemas"]["RateLimitEvent"][];
+      outcomes: components["schemas"]["RateLimitOutcome"][];
+      metrics: components["schemas"]["RateLimitMetrics"];
+    };
+    RateLimiterPreset: {
+      id: string;
+      title: string;
+      question: string;
+      input: components["schemas"]["RateLimiterInput"];
+    };
+    RateLimiterDescriptor: {
+      /** @constant */
+      id: "distributed-rate-limiter";
+      title: string;
+      /** @constant */
+      kind: "simulation";
+      /** @constant */
+      modelVersion: "1.0.0";
+      description: string;
+      limits: {
+        [key: string]: number;
+      };
+      presets: components["schemas"]["RateLimiterPreset"][];
+      assumptions: string[];
+    };
   };
   responses: never;
   parameters: {
@@ -610,6 +737,59 @@ export interface operations {
       };
       /** @description Structured error */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  getRateLimiterSimulation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RateLimiterDescriptor"];
+        };
+      };
+    };
+  };
+  runRateLimiterSimulation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RateLimiterInput"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RateLimiterResult"];
+        };
+      };
+      /** @description Structured error */
+      400: {
         headers: {
           [name: string]: unknown;
         };

@@ -76,6 +76,29 @@ class ApplicationApiTest {
     }
 
     @Test
+    void exposesAndRunsTheDistributedRateLimiter() throws Exception {
+        mvc.perform(get("/api/v1/simulations/distributed-rate-limiter"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.presets.length()").value(3))
+                .andExpect(jsonPath("$.presets[1].id").value("local-overshoot"));
+
+        mvc.perform(post("/api/v1/simulations/distributed-rate-limiter/runs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"schemaVersion":"1.0","modelVersion":"1.0.0",
+                                "algorithm":"FIXED_WINDOW","counterScope":"SHARED",
+                                "nodeCount":3,"limit":2,"windowMs":1000,
+                                "refillTokensPerSecond":2,"counterBackendAvailable":true,
+                                "backendFailurePolicy":"FAIL_CLOSED",
+                                "arrivalTimesMs":[0,0,0],"seed":42}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.metrics.allowed").value(2))
+                .andExpect(jsonPath("$.metrics.rejected").value(1))
+                .andExpect(jsonPath("$.outcomes[2].retryAfterMs").value(1000));
+    }
+
+    @Test
     void exposesAndCalculatesTheCapacityEstimate() throws Exception {
         mvc.perform(get("/api/v1/estimators/capacity-estimation"))
                 .andExpect(status().isOk())

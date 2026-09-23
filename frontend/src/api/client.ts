@@ -5,6 +5,9 @@ import type {
   CapacityEstimatorDescriptor,
   RequestFlowInput,
   RequestFlowResult,
+  RateLimiterDescriptor,
+  RateLimiterInput,
+  RateLimiterResult,
   SimulationDescriptor,
   TopicDetail,
 } from "./types";
@@ -62,6 +65,19 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     }),
+  rateLimiterDescriptor: () =>
+    request<RateLimiterDescriptor>(
+      "/api/v1/simulations/distributed-rate-limiter",
+    ),
+  runRateLimiter: (input: RateLimiterInput) =>
+    request<RateLimiterResult>(
+      "/api/v1/simulations/distributed-rate-limiter/runs",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      },
+    ),
   estimator: (id: string) =>
     request<CapacityEstimatorDescriptor>(`/api/v1/estimators/${id}`),
   calculateCapacity: (input: CapacityEstimateInput) =>

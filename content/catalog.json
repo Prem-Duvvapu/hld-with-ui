@@ -52,5 +52,34 @@
       "google-sre-load-balancing",
       "aws-performance-efficiency"
     ]
+  },
+  {
+    "id": "distributed-rate-limiter",
+    "kind": "topic",
+    "title": "Distributed Rate Limiter",
+    "summary": "Control bursts and protect shared capacity while making counter scope, overshoot, and failure policy explicit.",
+    "category": "Messaging & Reliability",
+    "level": "Intermediate",
+    "order": 3,
+    "status": "published",
+    "prerequisites": ["capacity-estimation"],
+    "outcomes": [
+      "Compare fixed-window and token-bucket decisions for the same request schedule.",
+      "Explain and calculate overshoot from independent per-node counters.",
+      "Choose an enforcement scope and backend-failure policy for a concrete operation."
+    ],
+    "capabilities": ["study", "simulation", "practice"],
+    "lessonPath": "topics/distributed-rate-limiter/lesson.md",
+    "questionsPath": "topics/distributed-rate-limiter/questions.json",
+    "resourcesPath": "topics/distributed-rate-limiter/resources.json",
+    "simulationIds": ["distributed-rate-limiter"],
+    "estimatorIds": [],
+    "contentVersion": "1.0.0",
+    "reviewedAt": "2026-09-23",
+    "sourceIds": [
+      "rfc-6585-429",
+      "rfc-9331-rate-limit-fields",
+      "google-rate-limiting"
+    ]
   }
 ]
