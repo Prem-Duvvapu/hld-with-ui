@@ -967,6 +967,28 @@ summary:focus-visible,
   font-size: 12px;
   color: var(--muted);
 }
+.trace-log {
+  margin: 18px 0;
+}
+.trace-log tbody tr.selected {
+  background: color-mix(in srgb, var(--green) 10%, transparent);
+}
+.trace-event-link {
+  border: 0;
+  background: transparent;
+  color: var(--green);
+  padding: 4px 7px;
+  font: 10px var(--mono);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.trace-event-link[aria-current="step"] {
+  border-radius: 2px;
+  background: var(--green);
+  color: var(--paper);
+  text-decoration: none;
+}
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);

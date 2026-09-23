@@ -450,6 +450,55 @@ export function Playground({
                 <p>{event?.message}</p>
               </div>
             </div>
+            <details className="trace-details trace-log" open>
+              <summary>Inspect the complete event trace</summary>
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Virtual time</th>
+                      <th>Event</th>
+                      <th>Request</th>
+                      <th>Node</th>
+                      <th>Explanation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.events.map((traceEvent, index) => (
+                      <tr
+                        className={
+                          index === eventIndex ? "selected" : undefined
+                        }
+                        key={traceEvent.sequence}
+                      >
+                        <td>
+                          <button
+                            className="trace-event-link"
+                            type="button"
+                            aria-label={`View event ${traceEvent.sequence}`}
+                            aria-current={
+                              index === eventIndex ? "step" : undefined
+                            }
+                            onClick={() => {
+                              setPlaying(false);
+                              setEventIndex(index);
+                            }}
+                          >
+                            {traceEvent.sequence}
+                          </button>
+                        </td>
+                        <td>{traceEvent.timeMs.toLocaleString()} ms</td>
+                        <td>{traceEvent.kind.replace("request.", "")}</td>
+                        <td>{traceEvent.requestId}</td>
+                        <td>{traceEvent.nodeId ?? "—"}</td>
+                        <td>{traceEvent.message}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
             <MetricGrid result={result} />
             <details className="trace-details">
               <summary>Inspect every request outcome</summary>
