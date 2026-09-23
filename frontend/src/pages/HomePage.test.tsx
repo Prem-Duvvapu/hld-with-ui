@@ -45,6 +45,7 @@ describe("HomePage", () => {
       "/api/v1/topics",
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
+    expect(document.title).toBe("HLD with UI · Visual system design lab");
   });
 
   it("shows a recoverable backend error", async () => {

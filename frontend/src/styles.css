@@ -60,7 +60,8 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
-summary:focus-visible {
+summary:focus-visible,
+[role="tabpanel"]:focus-visible {
   outline: 3px solid var(--orange);
   outline-offset: 3px;
 }
@@ -761,6 +762,17 @@ summary:focus-visible {
   font-size: 11px;
   margin: 3px 0 12px;
 }
+.stale-result {
+  margin: 0 0 18px;
+  border-left: 3px solid var(--orange);
+  background: color-mix(in srgb, var(--orange) 10%, transparent);
+  padding: 10px 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.stale-result strong {
+  color: var(--ink);
+}
 .run-button {
   width: 100%;
   justify-content: space-between;
@@ -899,8 +911,10 @@ summary:focus-visible {
   background: var(--ink);
   color: var(--paper);
 }
+.play-button:disabled,
 .step-button:disabled {
   opacity: 0.35;
+  cursor: not-allowed;
 }
 .current-event {
   min-height: 85px;
@@ -1558,7 +1572,7 @@ th {
   font-size: 10px;
   font-weight: 800;
 }
-.capacity-field-grid label > span {
+.capacity-field-grid label > .field-label-row {
   display: flex;
   justify-content: space-between;
   gap: 6px;
@@ -1567,6 +1581,11 @@ th {
   color: var(--muted);
   font: 8px var(--mono);
   font-weight: 400;
+}
+.capacity-field-grid .field-error {
+  color: var(--red);
+  font-family: var(--sans);
+  font-size: 9px;
 }
 .capacity-field-grid input {
   min-width: 0;

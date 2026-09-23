@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { api } from "../../api/client";
+import { api, ApiClientError } from "../../api/client";
 import type {
   CapacityEstimateResult,
   CapacityEstimatorDescriptor,
@@ -99,5 +99,30 @@ describe("CapacityCalculator", () => {
     expect(await screen.findByText("1,095")).toBeInTheDocument();
     expect(screen.getByText("daily requests ÷ 86,400")).toBeInTheDocument();
     expect(screen.getByText("Estimate · not a benchmark")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/Peak factor/), {
+      target: { value: "9" },
+    });
+    expect(
+      screen.getByText(/These results still use/).closest('[role="status"]'),
+    ).toHaveTextContent("Assumptions changed");
+    expect(screen.getByText("→ × 8")).toBeInTheDocument();
+
+    calculate.mockRejectedValueOnce(
+      new ApiClientError("Check the highlighted fields.", 400, {
+        peakFactor: "must be within the supported range",
+      }),
+    );
+    fireEvent.submit(submit.closest("form")!);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Check the highlighted fields",
+    );
+    expect(screen.getByLabelText("Peak factor")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(screen.getByLabelText("Peak factor")).toHaveAccessibleDescription(
+      /must be within the supported range/,
+    );
   });
 });
