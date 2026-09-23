@@ -15,6 +15,11 @@ const CapacityEstimationPage = lazy(() =>
     default: module.CapacityEstimationPage,
   })),
 );
+const RateLimiterPage = lazy(() =>
+  import("../pages/RateLimiterPage").then((module) => ({
+    default: module.RateLimiterPage,
+  })),
+);
 
 export function App() {
   return (
@@ -51,6 +56,10 @@ export function App() {
             <Route
               path="/topics/capacity-estimation"
               element={<CapacityEstimationPage />}
+            />
+            <Route
+              path="/topics/distributed-rate-limiter"
+              element={<RateLimiterPage />}
             />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

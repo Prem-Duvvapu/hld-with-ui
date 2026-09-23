@@ -53,7 +53,7 @@ All entries depend on `P2-05` and the prerequisite closure in the curriculum. Bu
 | `P3-01` | Requirements, edge networking, APIs, scaling, data models and indexes | Learner can derive a baseline architecture and access patterns | planned |
 | `P3-02` | Replication, partitioning, consistent hashing, transactions | Learner can explain read/write placement and preserve a stated invariant | planned |
 | `P3-03` | Cache policies/failures, CDN, saturation | Learner diagnoses origin overload, skew, and queue growth | planned |
-| `P3-04` | Queues/streams, idempotency, retries, breakers, rate limiting | Learner traces duplicates, retries, backpressure, and recovery | planned |
+| `P3-04` | Queues/streams, idempotency, retries, breakers, rate limiting | Learner traces duplicates, retries, backpressure, and recovery | **in-progress** — a standalone distributed-rate-limiter topic now compares fixed window/token bucket, shared/local counter scope, overshoot, and backend failure policy; queue, stream, retry, idempotency, and breaker modules plus the Phase 3 wave gate remain |
 | `P3-05` | Architecture boundaries, observability, security/tenancy | Learner defends boundaries and diagnoses an incident with evidence | planned |
 | `P3-06` | Notification, rate limiter, chat, feed cases; timed practice | Four integrated cases plus 45-minute configurable interview flow and self-assessment | planned |
 

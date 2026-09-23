@@ -255,6 +255,62 @@
           }
         }
       }
+    },
+    "/api/v1/simulations/distributed-rate-limiter": {
+      "get": {
+        "operationId": "getRateLimiterSimulation",
+        "summary": "Read the distributed rate limiter descriptor",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimiterDescriptor"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/distributed-rate-limiter/runs": {
+      "post": {
+        "operationId": "runRateLimiterSimulation",
+        "summary": "Run one deterministic rate limiter simulation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RateLimiterInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateLimiterResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1197,6 +1253,327 @@
           "maxServiceTimeMs": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "RateLimiterInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "modelVersion",
+          "algorithm",
+          "counterScope",
+          "nodeCount",
+          "limit",
+          "windowMs",
+          "refillTokensPerSecond",
+          "counterBackendAvailable",
+          "backendFailurePolicy",
+          "arrivalTimesMs",
+          "seed"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "algorithm": {
+            "type": "string",
+            "enum": ["FIXED_WINDOW", "TOKEN_BUCKET"]
+          },
+          "counterScope": {
+            "type": "string",
+            "enum": ["SHARED", "LOCAL_PER_NODE"]
+          },
+          "nodeCount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "windowMs": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 100,
+            "maximum": 60000
+          },
+          "refillTokensPerSecond": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "counterBackendAvailable": {
+            "type": "boolean"
+          },
+          "backendFailurePolicy": {
+            "type": "string",
+            "enum": ["FAIL_OPEN", "FAIL_CLOSED"]
+          },
+          "arrivalTimesMs": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 500,
+            "items": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0,
+              "maximum": 300000
+            }
+          },
+          "seed": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "RateLimitEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sequence",
+          "timeMs",
+          "kind",
+          "requestId",
+          "nodeId",
+          "message"
+        ],
+        "properties": {
+          "sequence": {
+            "type": "integer"
+          },
+          "timeMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "request.arrived",
+              "request.allowed",
+              "request.rejected",
+              "request.bypassed"
+            ]
+          },
+          "requestId": {
+            "type": "string"
+          },
+          "nodeId": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "RateLimitOutcome": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requestId",
+          "nodeId",
+          "timeMs",
+          "decision",
+          "remaining",
+          "reason"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "nodeId": {
+            "type": "string"
+          },
+          "timeMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "decision": {
+            "type": "string",
+            "enum": ["ALLOWED", "REJECTED", "BYPASSED"]
+          },
+          "remaining": {
+            "type": "integer"
+          },
+          "retryAfterMs": {
+            "type": ["integer", "null"],
+            "format": "int64"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "RateLimitMetrics": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "total",
+          "allowed",
+          "rejected",
+          "bypassed",
+          "configuredLimit",
+          "counters",
+          "maximumAggregateAllowance"
+        ],
+        "properties": {
+          "total": {
+            "type": "integer"
+          },
+          "allowed": {
+            "type": "integer"
+          },
+          "rejected": {
+            "type": "integer"
+          },
+          "bypassed": {
+            "type": "integer"
+          },
+          "configuredLimit": {
+            "type": "integer"
+          },
+          "counters": {
+            "type": "integer"
+          },
+          "maximumAggregateAllowance": {
+            "type": "integer"
+          }
+        }
+      },
+      "RateLimiterResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "simulationId",
+          "modelVersion",
+          "seed",
+          "status",
+          "assumptions",
+          "events",
+          "outcomes",
+          "metrics"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "simulationId": {
+            "type": "string",
+            "const": "distributed-rate-limiter"
+          },
+          "modelVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "seed": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "type": "string",
+            "const": "completed"
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RateLimitEvent"
+            }
+          },
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RateLimitOutcome"
+            }
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/RateLimitMetrics"
+          }
+        }
+      },
+      "RateLimiterPreset": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "question", "input"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "input": {
+            "$ref": "#/components/schemas/RateLimiterInput"
+          }
+        }
+      },
+      "RateLimiterDescriptor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "modelVersion",
+          "description",
+          "limits",
+          "presets",
+          "assumptions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "const": "distributed-rate-limiter"
+          },
+          "title": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "const": "simulation"
+          },
+          "modelVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "description": {
+            "type": "string"
+          },
+          "limits": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          },
+          "presets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RateLimiterPreset"
+            }
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       }
