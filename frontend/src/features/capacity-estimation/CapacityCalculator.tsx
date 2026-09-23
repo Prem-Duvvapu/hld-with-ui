@@ -134,8 +134,11 @@ export function CapacityCalculator({
     descriptor.defaultInput,
   );
   const [result, setResult] = useState<CapacityEstimateResult | null>(null);
+  const [calculatedInput, setCalculatedInput] =
+    useState<CapacityEstimateInput | null>(null);
   const [prompt, setPrompt] = useState(descriptor.presets[0]?.question ?? "");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
 
   function choosePreset(index: number) {
@@ -144,25 +147,35 @@ export function CapacityCalculator({
     setInput(preset.input);
     setPrompt(preset.question);
     setResult(null);
+    setCalculatedInput(null);
     setError("");
+    setFieldErrors({});
   }
 
   async function calculate(event: FormEvent) {
     event.preventDefault();
+    const requestInput = input;
     setBusy(true);
     setError("");
+    setFieldErrors({});
     try {
-      setResult(await api.calculateCapacity(input));
+      setResult(await api.calculateCapacity(requestInput));
+      setCalculatedInput(requestInput);
     } catch (cause) {
-      setError(
-        cause instanceof ApiClientError
-          ? cause.message
-          : "The estimate could not be calculated.",
-      );
+      if (cause instanceof ApiClientError) {
+        setError(cause.message);
+        setFieldErrors(cause.fieldErrors);
+      } else {
+        setError("The estimate could not be calculated.");
+      }
     } finally {
       setBusy(false);
     }
   }
+
+  const inputsChanged = calculatedInput
+    ? JSON.stringify(input) !== JSON.stringify(calculatedInput)
+    : false;
 
   return (
     <div className="capacity-workbench">
@@ -197,24 +210,39 @@ export function CapacityCalculator({
                 .filter((field) => field.group === group)
                 .map((field) => (
                   <label key={field.key}>
-                    <span>
-                      {field.label}
-                      <small>{field.unit}</small>
+                    <span className="field-label-row">
+                      <span id={`${field.key}-label`}>{field.label}</span>
+                      <small id={`${field.key}-unit`}>{field.unit}</small>
                     </span>
                     <input
+                      aria-labelledby={`${field.key}-label`}
+                      aria-describedby={`${field.key}-unit${fieldErrors[field.key] ? ` ${field.key}-error` : ""}`}
+                      aria-invalid={
+                        Boolean(fieldErrors[field.key]) || undefined
+                      }
                       type="number"
                       required
                       min={field.min}
                       max={field.max}
                       step={field.step ?? 1}
                       value={input[field.key]}
-                      onChange={(event) =>
+                      onChange={(event) => {
                         setInput({
                           ...input,
                           [field.key]: Number(event.target.value),
-                        })
-                      }
+                        });
+                        setFieldErrors((current) => {
+                          const next = { ...current };
+                          delete next[field.key];
+                          return next;
+                        });
+                      }}
                     />
+                    {fieldErrors[field.key] && (
+                      <small className="field-error" id={`${field.key}-error`}>
+                        {fieldErrors[field.key]}
+                      </small>
+                    )}
                   </label>
                 ))}
             </div>
@@ -236,7 +264,7 @@ export function CapacityCalculator({
         <p className="model-note">Java computes every result · decimal units</p>
       </form>
 
-      <section className="capacity-results" aria-live="polite" aria-busy={busy}>
+      <section className="capacity-results" aria-busy={busy}>
         {!result ? (
           <div className="capacity-empty">
             <div className="estimate-funnel" aria-hidden="true">
@@ -255,6 +283,10 @@ export function CapacityCalculator({
           </div>
         ) : (
           <>
+            <p className="sr-only" role="status">
+              Capacity estimate ready. Review the planning range and calculation
+              trail.
+            </p>
             <div className="result-heading">
               <div>
                 <p className="eyebrow">Planning range</p>
@@ -264,6 +296,12 @@ export function CapacityCalculator({
                 Estimate · not a benchmark
               </span>
             </div>
+            {inputsChanged && (
+              <div className="stale-result" role="status">
+                <strong>Assumptions changed.</strong> These results still use
+                the previous values. Calculate again to update them.
+              </div>
+            )}
             <div className="capacity-metrics">
               {metricCards.map((card) => (
                 <article key={card.key}>
@@ -280,7 +318,9 @@ export function CapacityCalculator({
                   {format(result.metrics.averageRequestsPerSecond)} req/s
                 </strong>
               </div>
-              <i aria-hidden="true">→ × {format(input.peakFactor)}</i>
+              <i aria-hidden="true">
+                → × {format(calculatedInput?.peakFactor ?? input.peakFactor)}
+              </i>
               <div>
                 <span>Peak reads</span>
                 <strong>

@@ -116,6 +116,11 @@ export function Playground({
     initial ? toForm(initial) : emptyForm,
   );
   const [result, setResult] = useState<RequestFlowResult | null>(null);
+  const [runInput, setRunInput] = useState<RequestFlowInput | null>(null);
+  const [prediction, setPrediction] = useState(
+    descriptor.presets[0]?.question ??
+      "Predict what will queue before running.",
+  );
   const [error, setError] = useState("");
   const [running, setRunning] = useState(false);
   const [eventIndex, setEventIndex] = useState(-1);
@@ -129,6 +134,7 @@ export function Playground({
       setRunning(true);
       const next = await api.runRequestFlow(input);
       setResult(next);
+      setRunInput(input);
       setEventIndex(0);
     } catch (cause) {
       setError(
@@ -144,22 +150,29 @@ export function Playground({
   useEffect(() => {
     if (!playing || !result) return;
     if (eventIndex >= result.events.length - 1) return;
-    const timer = window.setTimeout(
-      () => setEventIndex((value) => value + 1),
-      600,
-    );
+    const timer = window.setTimeout(() => {
+      const nextIndex = eventIndex + 1;
+      setEventIndex(nextIndex);
+      if (nextIndex >= result.events.length - 1) setPlaying(false);
+    }, 600);
     return () => window.clearTimeout(timer);
   }, [playing, eventIndex, result]);
 
   const event = result?.events[eventIndex];
-  const nodeIds = useMemo(
-    () =>
-      form.services
-        .split(",")
-        .filter((item) => item.trim())
-        .map((_, index) => `Node ${String.fromCharCode(65 + index)}`),
-    [form.services],
-  );
+  const nodeIds = useMemo(() => {
+    const count = runInput
+      ? runInput.nodeServiceTimesMs.length
+      : form.services.split(",").filter((item) => item.trim()).length;
+    return Array.from(
+      { length: count },
+      (_, index) => `Node ${String.fromCharCode(65 + index)}`,
+    );
+  }, [form.services, runInput]);
+  const inputsChanged = runInput
+    ? JSON.stringify(form) !== JSON.stringify(toForm(runInput))
+    : false;
+  const hasFieldError = (field: string) =>
+    error.toLowerCase().startsWith(field.toLowerCase());
 
   return (
     <div className="playground-layout">
@@ -179,6 +192,8 @@ export function Playground({
               onClick={() => {
                 setForm(toForm(preset.input));
                 setResult(null);
+                setRunInput(null);
+                setPrediction(preset.question);
                 setError("");
               }}
               title={preset.question}
@@ -187,9 +202,15 @@ export function Playground({
             </button>
           ))}
         </div>
+        <div className="prediction-callout">
+          <span>Predict first</span>
+          <p>{prediction}</p>
+        </div>
         <label>
-          Routing policy
+          <span id="routing-policy-label">Routing policy</span>
           <select
+            aria-labelledby="routing-policy-label"
+            aria-describedby="routing-policy-help"
             value={form.policy}
             onChange={(e) =>
               setForm({
@@ -201,31 +222,47 @@ export function Playground({
             <option value="ROUND_ROBIN">Round robin</option>
             <option value="LEAST_OUTSTANDING">Least outstanding</option>
           </select>
-          <small>How the balancer chooses a node.</small>
+          <small id="routing-policy-help">
+            How the balancer chooses a node.
+          </small>
         </label>
         <label>
-          Arrival times (ms)
+          <span id="arrival-times-label">Arrival times (ms)</span>
           <input
+            aria-labelledby="arrival-times-label"
+            aria-describedby={`arrival-times-help${hasFieldError("Arrival times") ? " simulation-input-error" : ""}`}
+            aria-invalid={hasFieldError("Arrival times") || undefined}
             value={form.arrivals}
             onChange={(e) => setForm({ ...form, arrivals: e.target.value })}
             placeholder="0, 0, 100"
           />
-          <small>One timestamp per request, in order.</small>
+          <small id="arrival-times-help">
+            One timestamp per request, in order.
+          </small>
         </label>
         <label>
-          Node service times (ms)
+          <span id="service-times-label">Node service times (ms)</span>
           <input
+            aria-labelledby="service-times-label"
+            aria-describedby={`service-times-help${hasFieldError("Node service times") ? " simulation-input-error" : ""}`}
+            aria-invalid={hasFieldError("Node service times") || undefined}
             value={form.services}
             onChange={(e) => setForm({ ...form, services: e.target.value })}
             placeholder="100, 250"
           />
-          <small>One duration creates one service node.</small>
+          <small id="service-times-help">
+            One duration creates one service node.
+          </small>
         </label>
         <div className="field-row">
           <label>
             Workers / node
             <input
               type="number"
+              aria-describedby={
+                hasFieldError("Workers") ? "simulation-input-error" : undefined
+              }
+              aria-invalid={hasFieldError("Workers") || undefined}
               min="1"
               max="8"
               value={form.workers}
@@ -236,6 +273,10 @@ export function Playground({
             Queue / node
             <input
               type="number"
+              aria-describedby={
+                hasFieldError("Queue") ? "simulation-input-error" : undefined
+              }
+              aria-invalid={hasFieldError("Queue") || undefined}
               min="0"
               max="100"
               value={form.queue}
@@ -244,7 +285,11 @@ export function Playground({
           </label>
         </div>
         {error && (
-          <div className="inline-error" role="alert">
+          <div
+            className="inline-error"
+            id="simulation-input-error"
+            role="alert"
+          >
             {error}
           </div>
         )}
@@ -272,6 +317,12 @@ export function Playground({
             <span className="time-display">T+ {event?.timeMs ?? 0} ms</span>
           )}
         </div>
+        {inputsChanged && (
+          <div className="stale-result" role="status">
+            <strong>Inputs changed.</strong> This trace still represents the
+            previous run. Run the experiment again to update it.
+          </div>
+        )}
         {!result ? (
           <EmptyExperiment assumptions={descriptor.assumptions} />
         ) : (
@@ -290,9 +341,10 @@ export function Playground({
                   else {
                     if (eventIndex >= result.events.length - 1)
                       setEventIndex(0);
-                    setPlaying(true);
+                    setPlaying(result.events.length > 1);
                   }
                 }}
+                disabled={result.events.length < 2}
                 aria-label={playing ? "Pause trace" : "Play trace"}
               >
                 {playing ? "Ⅱ" : "▶"}
@@ -335,7 +387,10 @@ export function Playground({
                 {eventIndex + 1} / {result.events.length}
               </span>
             </div>
-            <div className="current-event" aria-live="polite">
+            <div
+              className="current-event"
+              aria-live={playing ? "off" : "polite"}
+            >
               <span>{event?.kind.replace("request.", "")}</span>
               <div>
                 <strong>{event?.requestId ?? "System event"}</strong>

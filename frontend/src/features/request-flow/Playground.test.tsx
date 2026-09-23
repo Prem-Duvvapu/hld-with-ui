@@ -83,6 +83,7 @@ describe("Request flow playground", () => {
 
     expect(await screen.findByText("Request 1 arrived.")).toBeInTheDocument();
     expect(screen.getByText("10.0")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Play trace" })).toBeDisabled();
     const [, options] = fetchMock.mock.calls[0]!;
     expect(JSON.parse(options.body)).toMatchObject({
       schemaVersion: "1.0",
@@ -91,6 +92,12 @@ describe("Request flow playground", () => {
       arrivalTimesMs: [0, 0],
       nodeServiceTimesMs: [100, 100],
     });
+
+    fireEvent.change(screen.getByLabelText(/^Node service times/), {
+      target: { value: "100, 100, 100" },
+    });
+    expect(screen.getByText(/This trace still represents/)).toBeInTheDocument();
+    expect(screen.queryByText("Node C")).not.toBeInTheDocument();
   });
 
   it("rejects invalid input before calling the backend", () => {
@@ -103,6 +110,14 @@ describe("Request flow playground", () => {
     fireEvent.click(screen.getByRole("button", { name: /Run experiment/ }));
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Workers per node must be from 1 to 8",
+    );
+    expect(screen.getByLabelText("Workers / node")).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(screen.getByLabelText("Workers / node")).toHaveAttribute(
+      "aria-describedby",
+      "simulation-input-error",
     );
     expect(fetchMock).not.toHaveBeenCalled();
   });

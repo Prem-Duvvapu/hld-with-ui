@@ -5,7 +5,7 @@ export function LoadingState({
 }) {
   return (
     <div className="state-card" role="status">
-      <span className="spinner" />
+      <span className="spinner" aria-hidden="true" />
       {label}…
     </div>
   );

@@ -1,6 +1,7 @@
 import type { KeyboardEvent, ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { CatalogEntry } from "../api/types";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 export const requestFlowViews = [
   "playground",
@@ -40,6 +41,10 @@ export function ModuleShell<T extends string>({
   const active = tabs.some((tab) => tab.id === requested)
     ? (requested as T)
     : defaultView;
+  const activeLabel = tabs.find((tab) => tab.id === active)?.label;
+  const panelId = `module-panel-${topic.id}`;
+
+  usePageTitle(`${activeLabel ?? "Module"} · ${topic.title} | HLD with UI`);
 
   function select(view: T) {
     const next = new URLSearchParams(params);
@@ -51,7 +56,10 @@ export function ModuleShell<T extends string>({
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
     event.preventDefault();
-    const index = tabs.findIndex((tab) => tab.id === active);
+    const focusedId = document.activeElement?.id;
+    const index = tabs.findIndex(
+      (tab) => `tab-${topic.id}-${tab.id}` === focusedId,
+    );
     const target =
       event.key === "Home"
         ? 0
@@ -59,8 +67,8 @@ export function ModuleShell<T extends string>({
           ? tabs.length - 1
           : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) %
             tabs.length;
-    select(tabs[target]!.id);
-    document.getElementById(`tab-${tabs[target]!.id}`)?.focus();
+    const targetId = tabs[target]!.id;
+    document.getElementById(`tab-${topic.id}-${targetId}`)?.focus();
   }
 
   return (
@@ -100,11 +108,11 @@ export function ModuleShell<T extends string>({
           {tabs.map((tab, index) => (
             <button
               key={tab.id}
-              id={`tab-${tab.id}`}
+              id={`tab-${topic.id}-${tab.id}`}
               role="tab"
               type="button"
               aria-selected={active === tab.id}
-              aria-controls="module-panel"
+              aria-controls={panelId}
               tabIndex={active === tab.id ? 0 : -1}
               onClick={() => select(tab.id)}
             >
@@ -115,9 +123,10 @@ export function ModuleShell<T extends string>({
         </div>
       </div>
       <section
-        id="module-panel"
+        id={panelId}
         role="tabpanel"
-        aria-labelledby={`tab-${active}`}
+        aria-labelledby={`tab-${topic.id}-${active}`}
+        tabIndex={0}
         className="module-content page-width"
       >
         {children(active)}

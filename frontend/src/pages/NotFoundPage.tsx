@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 export function NotFoundPage() {
+  usePageTitle("Page not found | HLD with UI");
   return (
     <section className="not-found">
       <p className="eyebrow">404</p>

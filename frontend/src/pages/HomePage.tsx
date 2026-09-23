@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { api, ApiClientError } from "../api/client";
 import type { CatalogEntry } from "../api/types";
 import { ErrorState, LoadingState } from "../components/AsyncState";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 export function HomePage() {
+  usePageTitle("HLD with UI · Visual system design lab");
   const [topics, setTopics] = useState<CatalogEntry[] | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
