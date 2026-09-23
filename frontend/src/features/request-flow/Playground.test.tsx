@@ -80,7 +80,10 @@ const result: RequestFlowResult = {
   },
 };
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe("Request flow playground", () => {
   it("sends controls to Java and renders its trace and metrics", async () => {
@@ -156,5 +159,43 @@ describe("Request flow playground", () => {
       "2 requests are incomplete",
     );
     expect(screen.getByLabelText("Partial run metrics")).toBeInTheDocument();
+  });
+
+  it("changes playback cadence without changing modeled event times", async () => {
+    const playable: RequestFlowResult = {
+      ...result,
+      events: [
+        ...result.events,
+        {
+          sequence: 2,
+          timeMs: 100,
+          kind: "request.completed",
+          requestId: "Request 1",
+          nodeId: "Node A",
+          message: "Request 1 completed.",
+        },
+      ],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: async () => playable }),
+    );
+    const timerSpy = vi.spyOn(window, "setTimeout");
+    render(<Playground descriptor={descriptor} />);
+    fireEvent.click(screen.getByRole("button", { name: /Run experiment/ }));
+    await screen.findByText("Request 1 arrived.");
+
+    fireEvent.change(screen.getByLabelText("Playback speed"), {
+      target: { value: "300" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Play trace" }));
+
+    expect(timerSpy).toHaveBeenLastCalledWith(expect.any(Function), 300);
+    expect(playable.events[1]?.timeMs).toBe(100);
+
+    fireEvent.click(screen.getByRole("button", { name: "Next event" }));
+    expect(screen.getByText("Request 1 completed.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Reset trace" }));
+    expect(screen.getByText("Request 1 arrived.")).toBeInTheDocument();
   });
 });

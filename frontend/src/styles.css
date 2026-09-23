@@ -896,6 +896,7 @@ summary:focus-visible,
 }
 .playback {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   padding: 13px 0;
@@ -903,6 +904,7 @@ summary:focus-visible,
 }
 .playback input {
   flex: 1;
+  min-width: 120px;
   accent-color: var(--green);
 }
 .playback > span {
@@ -910,6 +912,23 @@ summary:focus-visible,
   font: 9px var(--mono);
   min-width: 45px;
   text-align: right;
+}
+.playback-speed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font: 9px var(--mono);
+  text-transform: uppercase;
+  margin-left: auto;
+}
+.playback-speed select {
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 7px 6px;
+  font: 10px var(--mono);
 }
 .play-button,
 .step-button {

@@ -21,6 +21,12 @@ const emptyForm: FormState = {
   queue: "4",
 };
 
+const playbackSpeeds = [
+  { label: "0.5×", intervalMs: 1_200 },
+  { label: "1×", intervalMs: 600 },
+  { label: "2×", intervalMs: 300 },
+] as const;
+
 function toForm(input: RequestFlowInput): FormState {
   return {
     policy: input.policy,
@@ -125,6 +131,7 @@ export function Playground({
   const [running, setRunning] = useState(false);
   const [eventIndex, setEventIndex] = useState(-1);
   const [playing, setPlaying] = useState(false);
+  const [playbackIntervalMs, setPlaybackIntervalMs] = useState(600);
 
   async function run() {
     setError("");
@@ -154,9 +161,9 @@ export function Playground({
       const nextIndex = eventIndex + 1;
       setEventIndex(nextIndex);
       if (nextIndex >= result.events.length - 1) setPlaying(false);
-    }, 600);
+    }, playbackIntervalMs);
     return () => window.clearTimeout(timer);
-  }, [playing, eventIndex, result]);
+  }, [playing, eventIndex, playbackIntervalMs, result]);
 
   const event = result?.events[eventIndex];
   const nodeIds = useMemo(() => {
@@ -366,7 +373,10 @@ export function Playground({
               <button
                 className="step-button"
                 type="button"
-                onClick={() => setEventIndex(Math.max(0, eventIndex - 1))}
+                onClick={() => {
+                  setPlaying(false);
+                  setEventIndex(Math.max(0, eventIndex - 1));
+                }}
                 disabled={eventIndex <= 0}
                 aria-label="Previous event"
               >
@@ -387,19 +397,48 @@ export function Playground({
               <button
                 className="step-button"
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  setPlaying(false);
                   setEventIndex(
                     Math.min(result.events.length - 1, eventIndex + 1),
-                  )
-                }
+                  );
+                }}
                 disabled={eventIndex >= result.events.length - 1}
                 aria-label="Next event"
               >
                 →
               </button>
+              <button
+                className="step-button"
+                type="button"
+                onClick={() => {
+                  setPlaying(false);
+                  setEventIndex(0);
+                }}
+                disabled={eventIndex <= 0}
+                aria-label="Reset trace"
+              >
+                ↺
+              </button>
               <span>
                 {eventIndex + 1} / {result.events.length}
               </span>
+              <label className="playback-speed">
+                <span>Speed</span>
+                <select
+                  aria-label="Playback speed"
+                  value={playbackIntervalMs}
+                  onChange={(e) =>
+                    setPlaybackIntervalMs(Number(e.target.value))
+                  }
+                >
+                  {playbackSpeeds.map((speed) => (
+                    <option key={speed.intervalMs} value={speed.intervalMs}>
+                      {speed.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
             <div
               className="current-event"
