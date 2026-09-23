@@ -276,12 +276,18 @@ export interface components {
       modelVersion: "1.0.0";
       /** Format: int64 */
       seed: number;
-      /** @constant */
-      status: "completed";
+      /** @enum {string} */
+      status: "completed" | "limited";
       assumptions: string[];
       events: components["schemas"]["SimulationEvent"][];
       outcomes: components["schemas"]["RequestOutcome"][];
       metrics: components["schemas"]["RequestFlowMetrics"];
+      /** @enum {string|null} */
+      truncationReason?: "event_limit" | "virtual_time_limit" | null;
+      /** Format: int64 */
+      lastVirtualTimeMs: number;
+      incompleteRequests: number;
+      limits: components["schemas"]["SimulationLimits"];
     };
     ApiError: {
       code: string;
@@ -369,6 +375,15 @@ export interface components {
         [key: string]: unknown;
       };
       assumptions: string[];
+    };
+    SimulationLimits: {
+      maxRequests: number;
+      maxNodes: number;
+      maxWorkersPerNode: number;
+      maxQueueCapacity: number;
+      maxEvents: number;
+      /** Format: int64 */
+      maxVirtualTimeMs: number;
     };
   };
   responses: never;

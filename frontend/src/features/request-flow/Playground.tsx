@@ -323,6 +323,20 @@ export function Playground({
             previous run. Run the experiment again to update it.
           </div>
         )}
+        {result?.status === "limited" && (
+          <div className="limited-result" role="status">
+            <strong>Trace stopped at its safety limit.</strong>
+            <span>
+              {result.truncationReason === "event_limit"
+                ? `The ${result.limits.maxEvents.toLocaleString()} event limit was reached.`
+                : `The ${result.limits.maxVirtualTimeMs.toLocaleString()} ms virtual time limit was reached.`}{" "}
+              {result.incompleteRequests} request
+              {result.incompleteRequests === 1 ? " is" : "s are"} incomplete.
+              Metrics below cover only terminal outcomes through T+
+              {result.lastVirtualTimeMs.toLocaleString()} ms.
+            </span>
+          </div>
+        )}
         {!result ? (
           <EmptyExperiment assumptions={descriptor.assumptions} />
         ) : (
@@ -521,7 +535,12 @@ function SystemMap({
 function MetricGrid({ result }: { result: RequestFlowResult }) {
   const metrics = result.metrics;
   return (
-    <div className="metric-grid">
+    <div
+      className="metric-grid"
+      aria-label={
+        result.status === "limited" ? "Partial run metrics" : "Run metrics"
+      }
+    >
       <article>
         <small>COMPLETED</small>
         <strong>{metrics.completed}</strong>

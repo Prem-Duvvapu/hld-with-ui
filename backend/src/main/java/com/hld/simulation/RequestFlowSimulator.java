@@ -15,6 +15,19 @@ public class RequestFlowSimulator {
             "Each node uses a FIFO queue and identical workers.",
             "A request keeps the service time of its selected node.",
             "Retries, cancellation, and health-check delay are outside this model version.");
+    private final SimulationLimits limits;
+
+    public RequestFlowSimulator() {
+        this(SimulationLimits.defaults());
+    }
+
+    RequestFlowSimulator(SimulationLimits limits) {
+        this.limits = limits;
+    }
+
+    public SimulationLimits limits() {
+        return limits;
+    }
 
     public RequestFlowResult run(RequestFlowInput input) {
         validate(input);
@@ -78,14 +91,34 @@ public class RequestFlowSimulator {
 
         drafts.sort(Comparator.comparingLong(EventDraft::timeMs).thenComparingLong(EventDraft::order));
         List<SimulationEvent> events = new ArrayList<>();
-        for (int i = 0; i < drafts.size(); i++) {
-            EventDraft draft = drafts.get(i);
-            events.add(new SimulationEvent(i + 1, draft.timeMs(), draft.kind(), draft.requestId(),
+        String truncationReason = null;
+        for (EventDraft draft : drafts) {
+            if (draft.timeMs() > limits.maxVirtualTimeMs()) {
+                truncationReason = "virtual_time_limit";
+                break;
+            }
+            if (events.size() >= limits.maxEvents()) {
+                truncationReason = "event_limit";
+                break;
+            }
+            events.add(new SimulationEvent(events.size() + 1, draft.timeMs(), draft.kind(), draft.requestId(),
                     draft.nodeId(), draft.message()));
         }
 
-        return new RequestFlowResult("1.0", "request-flow", MODEL_VERSION, input.seed(), "completed", ASSUMPTIONS,
-                List.copyOf(events), List.copyOf(outcomes), metrics(outcomes));
+        List<String> terminalRequestIds = events.stream()
+                .filter(event -> "request.completed".equals(event.kind()) || "request.rejected".equals(event.kind()))
+                .map(SimulationEvent::requestId)
+                .toList();
+        List<RequestOutcome> visibleOutcomes = outcomes.stream()
+                .filter(outcome -> terminalRequestIds.contains(outcome.requestId()))
+                .toList();
+        long lastVirtualTimeMs = events.isEmpty() ? 0 : events.get(events.size() - 1).timeMs();
+        int incompleteRequests = input.arrivalTimesMs().size() - visibleOutcomes.size();
+        String status = truncationReason == null ? "completed" : "limited";
+
+        return new RequestFlowResult("1.0", "request-flow", MODEL_VERSION, input.seed(), status, truncationReason,
+                lastVirtualTimeMs, incompleteRequests, limits, ASSUMPTIONS, List.copyOf(events),
+                List.copyOf(visibleOutcomes), metrics(visibleOutcomes));
     }
 
     private void validate(RequestFlowInput input) {
@@ -94,6 +127,12 @@ public class RequestFlowSimulator {
         }
         if (!MODEL_VERSION.equals(input.modelVersion())) {
             throw new IllegalArgumentException("modelVersion must be " + MODEL_VERSION);
+        }
+        if (input.arrivalTimesMs().size() > limits.maxRequests()) {
+            throw new IllegalArgumentException("arrivalTimesMs cannot exceed " + limits.maxRequests() + " requests");
+        }
+        if (input.nodeServiceTimesMs().size() > limits.maxNodes()) {
+            throw new IllegalArgumentException("nodeServiceTimesMs cannot exceed " + limits.maxNodes() + " nodes");
         }
         long previous = -1;
         for (long arrival : input.arrivalTimesMs()) {

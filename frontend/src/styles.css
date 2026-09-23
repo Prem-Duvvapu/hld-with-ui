@@ -773,6 +773,19 @@ summary:focus-visible,
 .stale-result strong {
   color: var(--ink);
 }
+.limited-result {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 18px;
+  border-left: 3px solid var(--orange);
+  background: color-mix(in srgb, var(--orange) 10%, transparent);
+  padding: 10px 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.limited-result strong {
+  color: var(--ink);
+}
 .run-button {
   width: 100%;
   justify-content: space-between;
