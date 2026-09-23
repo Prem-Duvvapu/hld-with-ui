@@ -70,7 +70,8 @@ class RequestFlowSimulatorTest {
 
     @Test
     void returnsAnExplicitLimitedResultWhenTheVirtualTimeBudgetIsReached() {
-        RequestFlowSimulator bounded = new RequestFlowSimulator(new SimulationLimits(100, 8, 8, 100, 10_000, 150));
+        RequestFlowSimulator bounded = new RequestFlowSimulator(
+                new SimulationLimits(100, 8, 8, 100, 60_000, 10_000, 10_000, 150));
 
         RequestFlowResult result = bounded.run(RequestFlowInput.current(
                 RoutingPolicy.ROUND_ROBIN, List.of(0L, 0L, 0L, 0L, 0L, 0L),
@@ -87,7 +88,8 @@ class RequestFlowSimulatorTest {
 
     @Test
     void eventBudgetStopsTheTraceWithoutReportingUnseenOutcomes() {
-        RequestFlowSimulator bounded = new RequestFlowSimulator(new SimulationLimits(100, 8, 8, 100, 3, 60_000));
+        RequestFlowSimulator bounded = new RequestFlowSimulator(
+                new SimulationLimits(100, 8, 8, 100, 60_000, 10_000, 3, 60_000));
 
         RequestFlowResult result = bounded.run(RequestFlowInput.current(
                 RoutingPolicy.ROUND_ROBIN, List.of(0L, 0L), List.of(100L), 1, 10, 7));
@@ -107,5 +109,17 @@ class RequestFlowSimulatorTest {
         assertThatThrownBy(() -> simulator.run(input))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("modelVersion must be 1.0.0");
+    }
+
+    @Test
+    void enforcesConfiguredInputLimitsForDirectModelCalls() {
+        RequestFlowSimulator bounded = new RequestFlowSimulator(
+                new SimulationLimits(10, 2, 2, 5, 1_000, 500, 100, 2_000));
+        RequestFlowInput input = RequestFlowInput.current(
+                RoutingPolicy.ROUND_ROBIN, List.of(0L), List.of(100L), 3, 1, 42);
+
+        assertThatThrownBy(() -> bounded.run(input))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("workersPerNode must be from 1 to 2");
     }
 }

@@ -604,10 +604,7 @@
             "type": "string"
           },
           "limits": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "number"
-            }
+            "$ref": "#/components/schemas/SimulationLimits"
           },
           "presets": {
             "type": "array",
@@ -1168,6 +1165,8 @@
           "maxNodes",
           "maxWorkersPerNode",
           "maxQueueCapacity",
+          "maxArrivalTimeMs",
+          "maxServiceTimeMs",
           "maxEvents",
           "maxVirtualTimeMs"
         ],
@@ -1188,6 +1187,14 @@
             "type": "integer"
           },
           "maxVirtualTimeMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "maxArrivalTimeMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "maxServiceTimeMs": {
             "type": "integer",
             "format": "int64"
           }

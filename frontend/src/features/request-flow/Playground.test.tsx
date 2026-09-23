@@ -9,7 +9,16 @@ const descriptor: SimulationDescriptor = {
   kind: "simulation",
   modelVersion: "1.0.0",
   description: "A model",
-  limits: {},
+  limits: {
+    maxRequests: 100,
+    maxNodes: 8,
+    maxWorkersPerNode: 8,
+    maxQueueCapacity: 100,
+    maxArrivalTimeMs: 60_000,
+    maxServiceTimeMs: 10_000,
+    maxEvents: 10_000,
+    maxVirtualTimeMs: 60_000,
+  },
   assumptions: ["Nodes stay healthy."],
   presets: [
     {
@@ -43,6 +52,8 @@ const result: RequestFlowResult = {
     maxNodes: 8,
     maxWorkersPerNode: 8,
     maxQueueCapacity: 100,
+    maxArrivalTimeMs: 60_000,
+    maxServiceTimeMs: 10_000,
     maxEvents: 10000,
     maxVirtualTimeMs: 60000,
   },
@@ -136,6 +147,27 @@ describe("Request flow playground", () => {
     expect(screen.getByLabelText("Workers / node")).toHaveAttribute(
       "aria-describedby",
       "simulation-input-error",
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("uses descriptor limits for control attributes and validation", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const constrained: SimulationDescriptor = {
+      ...descriptor,
+      limits: { ...descriptor.limits, maxWorkersPerNode: 2 },
+    };
+    render(<Playground descriptor={constrained} />);
+
+    expect(screen.getByLabelText("Workers / node")).toHaveAttribute("max", "2");
+    fireEvent.change(screen.getByLabelText("Workers / node"), {
+      target: { value: "3" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Run experiment/ }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Workers per node must be from 1 to 2",
     );
     expect(fetchMock).not.toHaveBeenCalled();
   });

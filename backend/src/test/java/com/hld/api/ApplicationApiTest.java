@@ -32,6 +32,12 @@ class ApplicationApiTest {
                 .andExpect(jsonPath("$.questions.length()").value(3))
                 .andExpect(jsonPath("$.questions[0].topicId").value("request-flow"))
                 .andExpect(jsonPath("$.questions[2].options").doesNotExist());
+        mvc.perform(get("/api/v1/simulations/request-flow"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.limits.maxRequests").value(100))
+                .andExpect(jsonPath("$.limits.maxArrivalTimeMs").value(60_000))
+                .andExpect(jsonPath("$.limits.maxServiceTimeMs").value(10_000))
+                .andExpect(jsonPath("$.presets.length()").value(3));
     }
 
     @Test
