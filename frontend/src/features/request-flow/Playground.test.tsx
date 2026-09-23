@@ -95,7 +95,11 @@ describe("Request flow playground", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Run experiment/ }));
 
-    expect(await screen.findByText("Request 1 arrived.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Request 1 arrived.", {
+        selector: ".current-event p",
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByText("10.0")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Play trace" })).toBeDisabled();
     const [, options] = fetchMock.mock.calls[0]!;
@@ -183,7 +187,9 @@ describe("Request flow playground", () => {
     const timerSpy = vi.spyOn(window, "setTimeout");
     render(<Playground descriptor={descriptor} />);
     fireEvent.click(screen.getByRole("button", { name: /Run experiment/ }));
-    await screen.findByText("Request 1 arrived.");
+    await screen.findByText("Request 1 arrived.", {
+      selector: ".current-event p",
+    });
 
     fireEvent.change(screen.getByLabelText("Playback speed"), {
       target: { value: "300" },
@@ -194,8 +200,26 @@ describe("Request flow playground", () => {
     expect(playable.events[1]?.timeMs).toBe(100);
 
     fireEvent.click(screen.getByRole("button", { name: "Next event" }));
-    expect(screen.getByText("Request 1 completed.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Request 1 completed.", {
+        selector: ".current-event p",
+      }),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Reset trace" }));
-    expect(screen.getByText("Request 1 arrived.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Request 1 arrived.", {
+        selector: ".current-event p",
+      }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "View event 2" }));
+    expect(
+      screen.getByRole("button", { name: "View event 2" }),
+    ).toHaveAttribute("aria-current", "step");
+    expect(
+      screen.getByText("Request 1 completed.", {
+        selector: ".current-event p",
+      }),
+    ).toBeInTheDocument();
   });
 });
