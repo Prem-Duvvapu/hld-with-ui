@@ -65,13 +65,14 @@ function parseList(
 function buildInput(
   form: FormState,
   modelVersion: RequestFlowInput["modelVersion"],
+  limits: SimulationDescriptor["limits"],
 ): RequestFlowInput {
   const arrivalTimesMs = parseList(
     form.arrivals,
     "Arrival times",
     0,
-    60_000,
-    100,
+    limits.maxArrivalTimeMs,
+    limits.maxRequests,
   );
   if (
     arrivalTimesMs.some(
@@ -83,23 +84,27 @@ function buildInput(
     form.services,
     "Node service times",
     1,
-    10_000,
-    8,
+    limits.maxServiceTimeMs,
+    limits.maxNodes,
   );
   const workersPerNode = Number(form.workers);
   const queueCapacity = Number(form.queue);
   if (
     !Number.isInteger(workersPerNode) ||
     workersPerNode < 1 ||
-    workersPerNode > 8
+    workersPerNode > limits.maxWorkersPerNode
   )
-    throw new Error("Workers per node must be from 1 to 8.");
+    throw new Error(
+      `Workers per node must be from 1 to ${limits.maxWorkersPerNode}.`,
+    );
   if (
     !Number.isInteger(queueCapacity) ||
     queueCapacity < 0 ||
-    queueCapacity > 100
+    queueCapacity > limits.maxQueueCapacity
   )
-    throw new Error("Queue capacity must be from 0 to 100.");
+    throw new Error(
+      `Queue capacity must be from 0 to ${limits.maxQueueCapacity}.`,
+    );
   return {
     schemaVersion: "1.0",
     modelVersion,
@@ -137,7 +142,11 @@ export function Playground({
     setError("");
     setPlaying(false);
     try {
-      const input = buildInput(form, descriptor.modelVersion);
+      const input = buildInput(
+        form,
+        descriptor.modelVersion,
+        descriptor.limits,
+      );
       setRunning(true);
       const next = await api.runRequestFlow(input);
       setResult(next);
@@ -244,7 +253,8 @@ export function Playground({
             placeholder="0, 0, 100"
           />
           <small id="arrival-times-help">
-            One timestamp per request, in order.
+            Up to {descriptor.limits.maxRequests} timestamps, in order; maximum{" "}
+            {descriptor.limits.maxArrivalTimeMs.toLocaleString()} ms.
           </small>
         </label>
         <label>
@@ -258,7 +268,8 @@ export function Playground({
             placeholder="100, 250"
           />
           <small id="service-times-help">
-            One duration creates one service node.
+            Up to {descriptor.limits.maxNodes} nodes; maximum{" "}
+            {descriptor.limits.maxServiceTimeMs.toLocaleString()} ms each.
           </small>
         </label>
         <div className="field-row">
@@ -271,7 +282,7 @@ export function Playground({
               }
               aria-invalid={hasFieldError("Workers") || undefined}
               min="1"
-              max="8"
+              max={descriptor.limits.maxWorkersPerNode}
               value={form.workers}
               onChange={(e) => setForm({ ...form, workers: e.target.value })}
             />
@@ -285,7 +296,7 @@ export function Playground({
               }
               aria-invalid={hasFieldError("Queue") || undefined}
               min="0"
-              max="100"
+              max={descriptor.limits.maxQueueCapacity}
               value={form.queue}
               onChange={(e) => setForm({ ...form, queue: e.target.value })}
             />

@@ -217,9 +217,7 @@ export interface components {
       /** @constant */
       modelVersion: "1.0.0";
       description: string;
-      limits: {
-        [key: string]: number;
-      };
+      limits: components["schemas"]["SimulationLimits"];
       presets: components["schemas"]["SimulationPreset"][];
       assumptions: string[];
     };
@@ -384,6 +382,10 @@ export interface components {
       maxEvents: number;
       /** Format: int64 */
       maxVirtualTimeMs: number;
+      /** Format: int64 */
+      maxArrivalTimeMs: number;
+      /** Format: int64 */
+      maxServiceTimeMs: number;
     };
   };
   responses: never;

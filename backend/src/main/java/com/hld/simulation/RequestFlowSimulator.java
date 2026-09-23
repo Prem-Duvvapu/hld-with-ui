@@ -134,10 +134,26 @@ public class RequestFlowSimulator {
         if (input.nodeServiceTimesMs().size() > limits.maxNodes()) {
             throw new IllegalArgumentException("nodeServiceTimesMs cannot exceed " + limits.maxNodes() + " nodes");
         }
+        if (input.workersPerNode() < 1 || input.workersPerNode() > limits.maxWorkersPerNode()) {
+            throw new IllegalArgumentException("workersPerNode must be from 1 to " + limits.maxWorkersPerNode());
+        }
+        if (input.queueCapacity() < 0 || input.queueCapacity() > limits.maxQueueCapacity()) {
+            throw new IllegalArgumentException("queueCapacity must be from 0 to " + limits.maxQueueCapacity());
+        }
         long previous = -1;
         for (long arrival : input.arrivalTimesMs()) {
+            if (arrival < 0 || arrival > limits.maxArrivalTimeMs()) {
+                throw new IllegalArgumentException("arrivalTimesMs values must be from 0 to "
+                        + limits.maxArrivalTimeMs());
+            }
             if (arrival < previous) throw new IllegalArgumentException("arrivalTimesMs must be nondecreasing");
             previous = arrival;
+        }
+        for (long serviceTime : input.nodeServiceTimesMs()) {
+            if (serviceTime < 1 || serviceTime > limits.maxServiceTimeMs()) {
+                throw new IllegalArgumentException("nodeServiceTimesMs values must be from 1 to "
+                        + limits.maxServiceTimeMs());
+            }
         }
     }
 

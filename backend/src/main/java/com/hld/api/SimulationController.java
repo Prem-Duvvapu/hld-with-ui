@@ -7,7 +7,6 @@ import com.hld.simulation.RoutingPolicy;
 import com.hld.simulation.SimulationDescriptor;
 import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,13 +39,7 @@ public class SimulationController {
                 "simulation",
                 RequestFlowSimulator.MODEL_VERSION,
                 "A deterministic model of routing, finite worker pools, queueing, and rejection.",
-                Map.of(
-                        "maxRequests", simulator.limits().maxRequests(),
-                        "maxNodes", simulator.limits().maxNodes(),
-                        "maxWorkersPerNode", simulator.limits().maxWorkersPerNode(),
-                        "maxQueueCapacity", simulator.limits().maxQueueCapacity(),
-                        "maxEvents", simulator.limits().maxEvents(),
-                        "maxVirtualTimeMs", simulator.limits().maxVirtualTimeMs()),
+                simulator.limits(),
                 List.of(
                         new SimulationDescriptor.SimulationPreset(
                                 "baseline", "Six-request baseline",
