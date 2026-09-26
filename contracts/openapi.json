@@ -564,7 +564,7 @@
           },
           "modelVersion": {
             "type": "string",
-            "const": "1.0.0"
+            "enum": ["1.0.0", "1.1.0"]
           },
           "policy": {
             "type": "string",
@@ -601,6 +601,13 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 100
+          },
+          "failureSchedule": {
+            "type": ["array", "null"],
+            "items": {
+              "$ref": "#/components/schemas/FailureScheduleEntry"
+            },
+            "description": "Optional failure schedule for model version 1.1.0. Not allowed with model version 1.0.0."
           },
           "seed": {
             "type": "integer",
@@ -654,7 +661,7 @@
           },
           "modelVersion": {
             "type": "string",
-            "const": "1.0.0"
+            "enum": ["1.0.0", "1.1.0"]
           },
           "description": {
             "type": "string"
@@ -705,7 +712,10 @@
               "request.queued",
               "request.started",
               "request.completed",
-              "request.rejected"
+              "request.rejected",
+              "request.failed",
+              "node.failed",
+              "node.recovered"
             ]
           },
           "requestId": {
@@ -738,11 +748,11 @@
             "type": "string"
           },
           "nodeId": {
-            "type": "string"
+            "type": ["string", "null"]
           },
           "status": {
             "type": "string",
-            "enum": ["COMPLETED", "REJECTED"]
+            "enum": ["COMPLETED", "REJECTED", "FAILED"]
           },
           "arrivalMs": {
             "type": "integer",
@@ -776,6 +786,7 @@
         "required": [
           "completed",
           "rejected",
+          "failed",
           "meanLatencyMs",
           "p95LatencyMs",
           "throughputPerSecond",
@@ -786,6 +797,9 @@
             "type": "integer"
           },
           "rejected": {
+            "type": "integer"
+          },
+          "failed": {
             "type": "integer"
           },
           "meanLatencyMs": {
@@ -832,7 +846,7 @@
           },
           "modelVersion": {
             "type": "string",
-            "const": "1.0.0"
+            "enum": ["1.0.0", "1.1.0"]
           },
           "seed": {
             "type": "integer",
@@ -865,7 +879,13 @@
           },
           "truncationReason": {
             "type": ["string", "null"],
-            "enum": ["event_limit", "virtual_time_limit", null]
+            "enum": [
+              "event_limit",
+              "virtual_time_limit",
+              "trace_size_limit",
+              "wall_time_limit",
+              null
+            ]
           },
           "lastVirtualTimeMs": {
             "type": "integer",
@@ -1574,6 +1594,33 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "FailureScheduleEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["entityId", "failAtMs", "inFlightBehavior"],
+        "properties": {
+          "entityId": {
+            "type": "string",
+            "description": "Stable identifier of the entity that fails (e.g. Node A)"
+          },
+          "failAtMs": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0,
+            "description": "Virtual time in milliseconds when the failure occurs"
+          },
+          "recoverAtMs": {
+            "type": ["integer", "null"],
+            "format": "int64",
+            "description": "Virtual time when the entity recovers; null means permanent failure for this run"
+          },
+          "inFlightBehavior": {
+            "type": "string",
+            "enum": ["FAIL", "COMPLETE"],
+            "description": "What happens to work already assigned at failure time"
           }
         }
       }
