@@ -5,6 +5,8 @@ import com.hld.simulation.RequestFlowResult;
 import com.hld.simulation.RequestFlowSimulator;
 import com.hld.simulation.RoutingPolicy;
 import com.hld.simulation.SimulationDescriptor;
+import com.hld.simulation.engine.FailureScheduleEntry;
+import com.hld.simulation.engine.InFlightBehavior;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -29,16 +31,16 @@ public class SimulationController {
     public SimulationDescriptor descriptor(@PathVariable String id) {
         requireRequestFlow(id);
         List<String> assumptions = List.of(
-                "All nodes remain healthy during this model version.",
                 "Network and balancer overhead are zero.",
                 "Queues are FIFO and each node's workers are identical.",
+                "Node failures follow the provided schedule when present.",
                 "Metrics describe this finite modeled run, not a production benchmark.");
         return new SimulationDescriptor(
                 "request-flow",
                 "Request Flow & Load Balancing",
                 "simulation",
                 RequestFlowSimulator.MODEL_VERSION,
-                "A deterministic model of routing, finite worker pools, queueing, and rejection.",
+                "A deterministic model of routing, finite worker pools, queueing, failure, and rejection.",
                 simulator.limits(),
                 List.of(
                         new SimulationDescriptor.SimulationPreset(
@@ -55,7 +57,15 @@ public class SimulationController {
                                 "overload", "Finite queue overload",
                                 "Which requests are rejected when each node has one waiting slot?",
                                 RequestFlowInput.current(RoutingPolicy.ROUND_ROBIN,
-                                        List.of(0L, 0L, 0L, 0L, 0L, 0L), List.of(100L, 100L), 1, 1, 7))),
+                                        List.of(0L, 0L, 0L, 0L, 0L, 0L), List.of(100L, 100L), 1, 1, 7)),
+                        new SimulationDescriptor.SimulationPreset(
+                                "node-failure", "Node failure mid-run",
+                                "What happens to in-flight requests when Node B fails at 50 ms?",
+                                RequestFlowInput.withFailures(RoutingPolicy.ROUND_ROBIN,
+                                        List.of(0L, 0L, 0L, 0L, 0L, 0L), List.of(100L, 100L), 1, 10,
+                                        List.of(new FailureScheduleEntry(
+                                                "Node B", 50L, 250L, InFlightBehavior.FAIL)),
+                                        7))),
                 assumptions);
     }
 

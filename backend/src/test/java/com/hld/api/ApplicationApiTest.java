@@ -37,7 +37,7 @@ class ApplicationApiTest {
                 .andExpect(jsonPath("$.limits.maxRequests").value(100))
                 .andExpect(jsonPath("$.limits.maxArrivalTimeMs").value(60_000))
                 .andExpect(jsonPath("$.limits.maxServiceTimeMs").value(10_000))
-                .andExpect(jsonPath("$.presets.length()").value(3));
+                .andExpect(jsonPath("$.presets.length()").value(4));
     }
 
     @Test

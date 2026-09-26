@@ -84,6 +84,7 @@ const result: RequestFlowResult = {
   metrics: {
     completed: 1,
     rejected: 0,
+    failed: 0,
     meanLatencyMs: 100,
     p95LatencyMs: 100,
     throughputPerSecond: 10,

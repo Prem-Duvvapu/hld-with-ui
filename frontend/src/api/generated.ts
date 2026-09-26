@@ -225,14 +225,16 @@ export interface components {
     RequestFlowInput: {
       /** @constant */
       schemaVersion: "1.0";
-      /** @constant */
-      modelVersion: "1.0.0";
+      /** @enum {string} */
+      modelVersion: "1.0.0" | "1.1.0";
       /** @enum {string} */
       policy: "ROUND_ROBIN" | "LEAST_OUTSTANDING";
       arrivalTimesMs: number[];
       nodeServiceTimesMs: number[];
       workersPerNode: number;
       queueCapacity: number;
+      /** @description Optional failure schedule for model version 1.1.0. Not allowed with model version 1.0.0. */
+      failureSchedule?: components["schemas"]["FailureScheduleEntry"][] | null;
       /** Format: int64 */
       seed: number;
     };
@@ -248,8 +250,8 @@ export interface components {
       title: string;
       /** @constant */
       kind: "simulation";
-      /** @constant */
-      modelVersion: "1.0.0";
+      /** @enum {string} */
+      modelVersion: "1.0.0" | "1.1.0";
       description: string;
       limits: components["schemas"]["SimulationLimits"];
       presets: components["schemas"]["SimulationPreset"][];
@@ -266,16 +268,19 @@ export interface components {
         | "request.queued"
         | "request.started"
         | "request.completed"
-        | "request.rejected";
+        | "request.rejected"
+        | "request.failed"
+        | "node.failed"
+        | "node.recovered";
       requestId: string | null;
       nodeId: string | null;
       message: string;
     };
     RequestOutcome: {
       requestId: string;
-      nodeId: string;
+      nodeId: string | null;
       /** @enum {string} */
-      status: "COMPLETED" | "REJECTED";
+      status: "COMPLETED" | "REJECTED" | "FAILED";
       /** Format: int64 */
       arrivalMs: number;
       /** Format: int64 */
@@ -292,6 +297,7 @@ export interface components {
     RequestFlowMetrics: {
       completed: number;
       rejected: number;
+      failed: number;
       meanLatencyMs: number | null;
       /** Format: int64 */
       p95LatencyMs: number | null;
@@ -304,8 +310,8 @@ export interface components {
       schemaVersion: "1.0";
       /** @constant */
       simulationId: "request-flow";
-      /** @constant */
-      modelVersion: "1.0.0";
+      /** @enum {string} */
+      modelVersion: "1.0.0" | "1.1.0";
       /** Format: int64 */
       seed: number;
       /** @enum {string} */
@@ -315,7 +321,12 @@ export interface components {
       outcomes: components["schemas"]["RequestOutcome"][];
       metrics: components["schemas"]["RequestFlowMetrics"];
       /** @enum {string|null} */
-      truncationReason?: "event_limit" | "virtual_time_limit" | null;
+      truncationReason?:
+        | "event_limit"
+        | "virtual_time_limit"
+        | "trace_size_limit"
+        | "wall_time_limit"
+        | null;
       /** Format: int64 */
       lastVirtualTimeMs: number;
       incompleteRequests: number;
@@ -513,6 +524,25 @@ export interface components {
       };
       presets: components["schemas"]["RateLimiterPreset"][];
       assumptions: string[];
+    };
+    FailureScheduleEntry: {
+      /** @description Stable identifier of the entity that fails (e.g. Node A) */
+      entityId: string;
+      /**
+       * Format: int64
+       * @description Virtual time in milliseconds when the failure occurs
+       */
+      failAtMs: number;
+      /**
+       * Format: int64
+       * @description Virtual time when the entity recovers; null means permanent failure for this run
+       */
+      recoverAtMs?: number | null;
+      /**
+       * @description What happens to work already assigned at failure time
+       * @enum {string}
+       */
+      inFlightBehavior: "FAIL" | "COMPLETE";
     };
   };
   responses: never;
