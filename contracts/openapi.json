@@ -311,6 +311,62 @@
           }
         }
       }
+    },
+    "/api/v1/simulations/cache-aside": {
+      "get": {
+        "operationId": "getCacheAsideSimulation",
+        "summary": "Read the cache-aside simulation descriptor",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CacheAsideDescriptor"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/cache-aside/runs": {
+      "post": {
+        "operationId": "runCacheAsideSimulation",
+        "summary": "Run one deterministic cache-aside simulation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CacheAsideInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CacheAsideResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1621,6 +1677,306 @@
             "type": "string",
             "enum": ["FAIL", "COMPLETE"],
             "description": "What happens to work already assigned at failure time"
+          }
+        }
+      },
+      "CacheOperation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "key", "timeMs"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["GET", "UPDATE"]
+          },
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": ["string", "null"]
+          },
+          "timeMs": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "CacheAsideInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "modelVersion",
+          "cacheLookupLatencyMs",
+          "originReadLatencyMs",
+          "ttlMs",
+          "initialOriginValue",
+          "operations",
+          "cacheAvailable",
+          "originAvailable",
+          "seed"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "cacheLookupLatencyMs": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "originReadLatencyMs": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "ttlMs": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0,
+            "maximum": 60000
+          },
+          "initialOriginValue": {
+            "type": "string"
+          },
+          "operations": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/CacheOperation"
+            }
+          },
+          "cacheAvailable": {
+            "type": "boolean"
+          },
+          "originAvailable": {
+            "type": "boolean"
+          },
+          "seed": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CacheGetOutcome": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "hitOrMiss",
+          "stale",
+          "requestTimeMs",
+          "responseTimeMs",
+          "latencyMs"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "returnedValue": {
+            "type": ["string", "null"]
+          },
+          "hitOrMiss": {
+            "type": "string",
+            "enum": ["HIT", "MISS"]
+          },
+          "stale": {
+            "type": "boolean"
+          },
+          "requestTimeMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "responseTimeMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "latencyMs": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CacheAsideMetrics": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "totalGets",
+          "cacheHits",
+          "cacheMisses",
+          "staleReads",
+          "originReads",
+          "hitRatio",
+          "observationWindowMs"
+        ],
+        "properties": {
+          "totalGets": {
+            "type": "integer"
+          },
+          "cacheHits": {
+            "type": "integer"
+          },
+          "cacheMisses": {
+            "type": "integer"
+          },
+          "staleReads": {
+            "type": "integer"
+          },
+          "originReads": {
+            "type": "integer"
+          },
+          "hitRatio": {
+            "type": "number"
+          },
+          "observationWindowMs": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CacheAsideResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "simulationId",
+          "modelVersion",
+          "seed",
+          "status",
+          "lastVirtualTimeMs",
+          "assumptions",
+          "events",
+          "outcomes",
+          "metrics"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1.0"
+          },
+          "simulationId": {
+            "type": "string",
+            "const": "cache-aside"
+          },
+          "modelVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "seed": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["completed", "limited"]
+          },
+          "truncationReason": {
+            "type": ["string", "null"],
+            "enum": [
+              "event_limit",
+              "virtual_time_limit",
+              "trace_size_limit",
+              "wall_time_limit",
+              null
+            ]
+          },
+          "lastVirtualTimeMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimulationEvent"
+            }
+          },
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CacheGetOutcome"
+            }
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/CacheAsideMetrics"
+          }
+        }
+      },
+      "CacheAsidePreset": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "question", "input"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "input": {
+            "$ref": "#/components/schemas/CacheAsideInput"
+          }
+        }
+      },
+      "CacheAsideDescriptor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "modelVersion",
+          "description",
+          "presets",
+          "assumptions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "const": "cache-aside"
+          },
+          "title": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "const": "simulation"
+          },
+          "modelVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "description": {
+            "type": "string"
+          },
+          "presets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CacheAsidePreset"
+            }
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       }

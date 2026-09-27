@@ -157,6 +157,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/simulations/cache-aside": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read the cache-aside simulation descriptor */
+    get: operations["getCacheAsideSimulation"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/simulations/cache-aside/runs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Run one deterministic cache-aside simulation */
+    post: operations["runCacheAsideSimulation"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -544,6 +578,98 @@ export interface components {
        */
       inFlightBehavior: "FAIL" | "COMPLETE";
     };
+    CacheOperation: {
+      /** @enum {string} */
+      kind: "GET" | "UPDATE";
+      key: string;
+      value?: string | null;
+      /** Format: int64 */
+      timeMs: number;
+    };
+    CacheAsideInput: {
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      modelVersion: "1.0.0";
+      /** Format: int64 */
+      cacheLookupLatencyMs: number;
+      /** Format: int64 */
+      originReadLatencyMs: number;
+      /** Format: int64 */
+      ttlMs: number;
+      initialOriginValue: string;
+      operations: components["schemas"]["CacheOperation"][];
+      cacheAvailable: boolean;
+      originAvailable: boolean;
+      /** Format: int64 */
+      seed: number;
+    };
+    CacheGetOutcome: {
+      key: string;
+      returnedValue?: string | null;
+      /** @enum {string} */
+      hitOrMiss: "HIT" | "MISS";
+      stale: boolean;
+      /** Format: int64 */
+      requestTimeMs: number;
+      /** Format: int64 */
+      responseTimeMs: number;
+      /** Format: int64 */
+      latencyMs: number;
+    };
+    CacheAsideMetrics: {
+      totalGets: number;
+      cacheHits: number;
+      cacheMisses: number;
+      staleReads: number;
+      originReads: number;
+      hitRatio: number;
+      /** Format: int64 */
+      observationWindowMs: number;
+    };
+    CacheAsideResult: {
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      simulationId: "cache-aside";
+      /** @constant */
+      modelVersion: "1.0.0";
+      /** Format: int64 */
+      seed: number;
+      /** @enum {string} */
+      status: "completed" | "limited";
+      /** @enum {string|null} */
+      truncationReason?:
+        | "event_limit"
+        | "virtual_time_limit"
+        | "trace_size_limit"
+        | "wall_time_limit"
+        | null;
+      /** Format: int64 */
+      lastVirtualTimeMs: number;
+      assumptions: string[];
+      events: components["schemas"]["SimulationEvent"][];
+      outcomes: components["schemas"]["CacheGetOutcome"][];
+      metrics: components["schemas"]["CacheAsideMetrics"];
+    };
+    CacheAsidePreset: {
+      id: string;
+      title: string;
+      question: string;
+      input: components["schemas"]["CacheAsideInput"];
+    };
+    CacheAsideDescriptor: {
+      /** @constant */
+      id: "cache-aside";
+      title: string;
+      /** @constant */
+      kind: "simulation";
+      /** @constant */
+      modelVersion: "1.0.0";
+      description: string;
+      presets: components["schemas"]["CacheAsidePreset"][];
+      assumptions: string[];
+    };
   };
   responses: never;
   parameters: {
@@ -816,6 +942,59 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["RateLimiterResult"];
+        };
+      };
+      /** @description Structured error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  getCacheAsideSimulation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CacheAsideDescriptor"];
+        };
+      };
+    };
+  };
+  runCacheAsideSimulation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CacheAsideInput"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CacheAsideResult"];
         };
       };
       /** @description Structured error */

@@ -118,4 +118,45 @@ class ApplicationApiTest {
                 .andExpect(jsonPath("$.metrics.replicatedStorageGigabytes").value(1095))
                 .andExpect(jsonPath("$.metrics.meanConcurrentRequests").value(115.74074074074075));
     }
+
+    @Test
+    void exposesAndRunsTheCacheAsideSimulator() throws Exception {
+        mvc.perform(get("/api/v1/simulations/cache-aside"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("cache-aside"))
+                .andExpect(jsonPath("$.presets.length()").value(4))
+                .andExpect(jsonPath("$.presets[0].id").value("baseline"));
+
+        mvc.perform(post("/api/v1/simulations/cache-aside/runs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "schemaVersion": "1.0",
+                                  "modelVersion": "1.0.0",
+                                  "cacheLookupLatencyMs": 2,
+                                  "originReadLatencyMs": 20,
+                                  "ttlMs": 100,
+                                  "initialOriginValue": "v1",
+                                  "operations": [
+                                    {"kind": "GET", "key": "k", "timeMs": 0},
+                                    {"kind": "GET", "key": "k", "timeMs": 30},
+                                    {"kind": "UPDATE", "key": "k", "value": "v2", "timeMs": 40},
+                                    {"kind": "GET", "key": "k", "timeMs": 70},
+                                    {"kind": "GET", "key": "k", "timeMs": 120}
+                                  ],
+                                  "cacheAvailable": true,
+                                  "originAvailable": true,
+                                  "seed": 7
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("completed"))
+                .andExpect(jsonPath("$.metrics.totalGets").value(4))
+                .andExpect(jsonPath("$.metrics.cacheHits").value(2))
+                .andExpect(jsonPath("$.metrics.cacheMisses").value(2))
+                .andExpect(jsonPath("$.metrics.staleReads").value(1))
+                .andExpect(jsonPath("$.metrics.hitRatio").value(0.5))
+                .andExpect(jsonPath("$.outcomes[2].stale").value(true))
+                .andExpect(jsonPath("$.outcomes[2].returnedValue").value("v1"));
+    }
 }
