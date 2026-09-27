@@ -13,6 +13,8 @@ export type SimulationPreset = components["schemas"]["SimulationPreset"];
 export type SimulationDescriptor =
   components["schemas"]["SimulationDescriptor"];
 export type SimulationEvent = components["schemas"]["SimulationEvent"];
+export type FailureScheduleEntry =
+  components["schemas"]["FailureScheduleEntry"];
 export type RequestOutcome = components["schemas"]["RequestOutcome"];
 export type RequestFlowResult = components["schemas"]["RequestFlowResult"];
 export type RateLimiterInput = components["schemas"]["RateLimiterInput"];

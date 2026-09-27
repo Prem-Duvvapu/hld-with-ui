@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api/client";
 import type {
+  FailureScheduleEntry,
   RequestFlowInput,
   RequestFlowResult,
   SimulationDescriptor,
@@ -12,6 +13,7 @@ interface FormState {
   services: string;
   workers: string;
   queue: string;
+  failureSchedule: FailureScheduleEntry[] | null;
 }
 const emptyForm: FormState = {
   policy: "ROUND_ROBIN",
@@ -19,6 +21,7 @@ const emptyForm: FormState = {
   services: "100, 100",
   workers: "1",
   queue: "4",
+  failureSchedule: null,
 };
 
 const playbackSpeeds = [
@@ -34,6 +37,7 @@ function toForm(input: RequestFlowInput): FormState {
     services: input.nodeServiceTimesMs.join(", "),
     workers: String(input.workersPerNode),
     queue: String(input.queueCapacity),
+    failureSchedule: input.failureSchedule ?? null,
   };
 }
 
@@ -113,6 +117,12 @@ function buildInput(
     nodeServiceTimesMs,
     workersPerNode,
     queueCapacity,
+    failureSchedule:
+      modelVersion === "1.1.0" &&
+      form.failureSchedule &&
+      form.failureSchedule.length > 0
+        ? form.failureSchedule
+        : null,
     seed: 42,
   };
 }
@@ -184,6 +194,19 @@ export function Playground({
       (_, index) => `Node ${String.fromCharCode(65 + index)}`,
     );
   }, [form.services, runInput]);
+  const failedNodeIds = useMemo(() => {
+    if (!result) return new Set<string>();
+    const failed = new Set<string>();
+    for (let i = 0; i <= eventIndex && i < result.events.length; i++) {
+      const e = result.events[i]!;
+      if (e.kind === "node.failed" && e.nodeId) {
+        failed.add(e.nodeId);
+      } else if (e.kind === "node.recovered" && e.nodeId) {
+        failed.delete(e.nodeId);
+      }
+    }
+    return failed;
+  }, [result, eventIndex]);
   const inputsChanged = runInput
     ? JSON.stringify(form) !== JSON.stringify(toForm(runInput))
     : false;
@@ -302,6 +325,36 @@ export function Playground({
             />
           </label>
         </div>
+        {form.failureSchedule && form.failureSchedule.length > 0 && (
+          <div
+            className="failure-schedule-control"
+            aria-label="Scheduled node failures"
+          >
+            <div className="failure-schedule-header">
+              <span className="eyebrow">Scheduled failure</span>
+              <button
+                type="button"
+                className="button-link"
+                onClick={() => setForm({ ...form, failureSchedule: null })}
+                aria-label="Remove failure schedule"
+              >
+                Clear
+              </button>
+            </div>
+            {form.failureSchedule.map((entry, index) => (
+              <div key={index} className="failure-entry">
+                <strong>{entry.entityId}</strong>
+                <span>
+                  Fails at {entry.failAtMs} ms
+                  {entry.recoverAtMs != null
+                    ? ` → Recovers at ${entry.recoverAtMs} ms`
+                    : " (no recovery)"}
+                </span>
+                <small>In-flight: {entry.inFlightBehavior}</small>
+              </div>
+            ))}
+          </div>
+        )}
         {error && (
           <div
             className="inline-error"
@@ -347,7 +400,11 @@ export function Playground({
             <span>
               {result.truncationReason === "event_limit"
                 ? `The ${result.limits.maxEvents.toLocaleString()} event limit was reached.`
-                : `The ${result.limits.maxVirtualTimeMs.toLocaleString()} ms virtual time limit was reached.`}{" "}
+                : result.truncationReason === "trace_size_limit"
+                  ? "The trace byte size budget was reached."
+                  : result.truncationReason === "wall_time_limit"
+                    ? "The execution wall-time deadline was reached."
+                    : `The ${result.limits.maxVirtualTimeMs.toLocaleString()} ms virtual time limit was reached.`}{" "}
               {result.incompleteRequests} request
               {result.incompleteRequests === 1 ? " is" : "s are"} incomplete.
               Metrics below cover only terminal outcomes through T+
@@ -363,6 +420,7 @@ export function Playground({
               nodeIds={nodeIds}
               eventKind={event?.kind}
               activeNode={event?.nodeId}
+              failedNodeIds={failedNodeIds}
             />
             <div className="playback">
               <button
@@ -529,7 +587,7 @@ export function Playground({
                     {result.outcomes.map((outcome) => (
                       <tr key={outcome.requestId}>
                         <td>{outcome.requestId}</td>
-                        <td>{outcome.nodeId}</td>
+                        <td>{outcome.nodeId ?? "—"}</td>
                         <td>
                           <span
                             className={`outcome ${outcome.status.toLowerCase()}`}
@@ -592,10 +650,12 @@ function SystemMap({
   nodeIds,
   eventKind,
   activeNode,
+  failedNodeIds,
 }: {
   nodeIds: string[];
   eventKind?: string;
   activeNode?: string | null;
+  failedNodeIds?: Set<string>;
 }) {
   return (
     <div
@@ -617,15 +677,25 @@ function SystemMap({
       </div>
       <span className="map-arrow">→</span>
       <div className="trace-nodes">
-        {nodeIds.map((node) => (
-          <div
-            key={node}
-            className={`trace-node ${activeNode === node ? "active" : ""} ${eventKind === "request.rejected" && activeNode === node ? "danger" : ""}`}
-          >
-            <small>SERVICE</small>
-            <strong>{node}</strong>
-          </div>
-        ))}
+        {nodeIds.map((node) => {
+          const isNodeFailed = failedNodeIds?.has(node);
+          const isDanger =
+            (eventKind === "request.rejected" ||
+              eventKind === "request.failed" ||
+              eventKind === "node.failed") &&
+            activeNode === node;
+          return (
+            <div
+              key={node}
+              className={`trace-node ${activeNode === node ? "active" : ""} ${
+                isDanger || isNodeFailed ? "danger" : ""
+              }`}
+            >
+              <small>{isNodeFailed ? "FAILED" : "SERVICE"}</small>
+              <strong>{node}</strong>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -648,6 +718,11 @@ function MetricGrid({ result }: { result: RequestFlowResult }) {
       <article>
         <small>REJECTED</small>
         <strong>{metrics.rejected}</strong>
+        <span>requests</span>
+      </article>
+      <article>
+        <small>FAILED</small>
+        <strong>{metrics.failed}</strong>
         <span>requests</span>
       </article>
       <article>

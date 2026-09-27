@@ -991,7 +991,7 @@ summary:focus-visible,
 }
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   border: 1px solid var(--line);
 }
 .metric-grid article {
@@ -1013,6 +1013,57 @@ summary:focus-visible,
 .metric-grid span {
   font-size: 9px;
   color: var(--muted);
+}
+.failure-schedule-control {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 14px;
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  background: var(--surface-2);
+}
+.failure-schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.failure-schedule-header .eyebrow {
+  margin: 0;
+  font: 8px var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.failure-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+}
+.failure-entry strong {
+  color: var(--red);
+}
+.failure-entry span {
+  color: var(--ink);
+}
+.failure-entry small {
+  color: var(--muted);
+  font: 9px var(--mono);
+}
+.button-link {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font: 9px var(--mono);
+  padding: 0;
+  text-decoration: underline;
+}
+.button-link:hover {
+  color: var(--ink);
+}
+.trace-node.danger small {
+  color: var(--red);
 }
 .trace-details,
 .assumptions {
@@ -1058,7 +1109,8 @@ th {
   font: 7px var(--mono);
   color: var(--green);
 }
-.outcome.rejected {
+.outcome.rejected,
+.outcome.failed {
   color: var(--red);
 }
 .outcome.bypassed {

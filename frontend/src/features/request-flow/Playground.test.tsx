@@ -255,4 +255,214 @@ describe("Request flow playground", () => {
       }),
     ).toBeInTheDocument();
   });
+
+  it("handles node failure presets, displays scheduled failure, and sends failureSchedule to Java", async () => {
+    const failurePresetDescriptor: SimulationDescriptor = {
+      ...descriptor,
+      modelVersion: "1.1.0",
+      presets: [
+        ...descriptor.presets,
+        {
+          id: "node-failure",
+          title: "Node failure mid-run",
+          question: "What happens to in-flight requests?",
+          input: {
+            schemaVersion: "1.0",
+            modelVersion: "1.1.0",
+            policy: "ROUND_ROBIN",
+            arrivalTimesMs: [0, 0],
+            nodeServiceTimesMs: [100, 100],
+            workersPerNode: 1,
+            queueCapacity: 10,
+            failureSchedule: [
+              {
+                entityId: "Node B",
+                failAtMs: 50,
+                recoverAtMs: 250,
+                inFlightBehavior: "FAIL",
+              },
+            ],
+            seed: 7,
+          },
+        },
+      ],
+    };
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => result });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<Playground descriptor={failurePresetDescriptor} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Node failure mid-run" }),
+    );
+
+    expect(
+      screen.getByLabelText("Scheduled node failures"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Node B")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Fails at 50 ms → Recovers at 250 ms/),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Run experiment/ }));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, options] = fetchMock.mock.calls[0]!;
+    expect(JSON.parse(options.body)).toMatchObject({
+      schemaVersion: "1.0",
+      modelVersion: "1.1.0",
+      failureSchedule: [
+        {
+          entityId: "Node B",
+          failAtMs: 50,
+          recoverAtMs: 250,
+          inFlightBehavior: "FAIL",
+        },
+      ],
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Remove failure schedule" }),
+    );
+    expect(
+      screen.queryByLabelText("Scheduled node failures"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders failed metrics, failed outcome status, and marks failed nodes in the topology", async () => {
+    const failureResult: RequestFlowResult = {
+      ...result,
+      modelVersion: "1.1.0",
+      metrics: {
+        completed: 1,
+        rejected: 0,
+        failed: 1,
+        meanLatencyMs: 100,
+        p95LatencyMs: 100,
+        throughputPerSecond: 10,
+        observationWindowMs: 100,
+      },
+      outcomes: [
+        {
+          requestId: "Request 1",
+          nodeId: "Node A",
+          status: "COMPLETED",
+          arrivalMs: 0,
+          startMs: 0,
+          completionMs: 100,
+          queueMs: 0,
+          serviceMs: 100,
+          latencyMs: 100,
+        },
+        {
+          requestId: "Request 2",
+          nodeId: "Node B",
+          status: "FAILED",
+          arrivalMs: 0,
+          startMs: 0,
+          completionMs: 50,
+          queueMs: 0,
+          serviceMs: 50,
+          latencyMs: 50,
+        },
+      ],
+      events: [
+        {
+          sequence: 1,
+          timeMs: 0,
+          kind: "request.arrived",
+          requestId: "Request 1",
+          nodeId: null,
+          message: "Request 1 arrived.",
+        },
+        {
+          sequence: 2,
+          timeMs: 50,
+          kind: "node.failed",
+          requestId: null,
+          nodeId: "Node B",
+          message: "Node B failed at 50 ms.",
+        },
+      ],
+    };
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: async () => failureResult }),
+    );
+
+    render(
+      <Playground descriptor={{ ...descriptor, modelVersion: "1.1.0" }} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Run experiment/ }));
+
+    expect(
+      await screen.findByText("FAILED", { selector: "small" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("FAILED", { selector: "small" }).closest("article"),
+    ).toHaveTextContent("1");
+    expect(
+      screen.getByText("FAILED", { selector: ".outcome" }),
+    ).toBeInTheDocument();
+
+    // Step to the node.failed event and verify Node B is marked as FAILED in topology
+    fireEvent.click(screen.getByRole("button", { name: "Next event" }));
+    expect(
+      screen.getByText("Node B failed at 50 ms.", {
+        selector: ".current-event p",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("FAILED", { selector: ".trace-node.danger small" }),
+    ).toBeInTheDocument();
+  });
+
+  it("explains trace_size_limit and wall_time_limit truncation reasons", async () => {
+    const traceSizeLimited: RequestFlowResult = {
+      ...result,
+      status: "limited",
+      truncationReason: "trace_size_limit",
+      lastVirtualTimeMs: 100,
+      incompleteRequests: 1,
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue({ ok: true, json: async () => traceSizeLimited }),
+    );
+
+    const { unmount } = render(<Playground descriptor={descriptor} />);
+    fireEvent.click(screen.getByRole("button", { name: /Run experiment/ }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "The trace byte size budget was reached.",
+    );
+    unmount();
+
+    const wallTimeLimited: RequestFlowResult = {
+      ...result,
+      status: "limited",
+      truncationReason: "wall_time_limit",
+      lastVirtualTimeMs: 100,
+      incompleteRequests: 1,
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue({ ok: true, json: async () => wallTimeLimited }),
+    );
+
+    render(<Playground descriptor={descriptor} />);
+    fireEvent.click(screen.getByRole("button", { name: /Run experiment/ }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "The execution wall-time deadline was reached.",
+    );
+  });
 });
