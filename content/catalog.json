@@ -81,5 +81,34 @@
       "rfc-9331-rate-limit-fields",
       "google-rate-limiting"
     ]
+  },
+  {
+    "id": "cache-aside",
+    "kind": "topic",
+    "title": "Cache-Aside",
+    "summary": "Understand cache hits, misses, TTL expiry, stale data, and origin load through a deterministic cache-aside simulation.",
+    "category": "Caching & Performance",
+    "level": "Beginner",
+    "order": 4,
+    "status": "published",
+    "prerequisites": ["request-flow", "capacity-estimation"],
+    "outcomes": [
+      "Trace a GET through cache lookup, origin read, and cache fill with explicit latencies.",
+      "Explain why an origin update does not invalidate a cached entry under cache-aside.",
+      "Identify stale reads, cold-start bursts, and the effect of cache or origin unavailability."
+    ],
+    "capabilities": ["study", "simulation", "practice"],
+    "lessonPath": "topics/cache-aside/lesson.md",
+    "questionsPath": "topics/cache-aside/questions.json",
+    "resourcesPath": "topics/cache-aside/resources.json",
+    "simulationIds": ["cache-aside"],
+    "estimatorIds": [],
+    "contentVersion": "1.0.0",
+    "reviewedAt": "2026-09-28",
+    "sourceIds": [
+      "aws-caching-strategies",
+      "azure-caching-best-practices",
+      "caffeine-cache-design"
+    ]
   }
 ]

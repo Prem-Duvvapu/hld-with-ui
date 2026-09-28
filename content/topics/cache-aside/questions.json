@@ -1,0 +1,49 @@
+[
+  {
+    "id": "cache-aside-stale-read",
+    "topicId": "cache-aside",
+    "level": "beginner",
+    "kind": "diagnosis",
+    "prompt": "A GET at 70 ms returns v1 even though the origin was updated to v2 at 40 ms. Why?",
+    "options": [
+      { "id": "a", "label": "The cache entry was invalidated but not yet refreshed" },
+      { "id": "b", "label": "The cached v1 has not expired and the origin update did not notify the cache" },
+      { "id": "c", "label": "The origin update failed silently" },
+      { "id": "d", "label": "The cache uses write-through and rejected the update" }
+    ],
+    "correctOptionId": "b",
+    "explanation": "In cache-aside, an origin update does not touch the cache. The cached entry remains valid until its TTL expires, so any GET before expiry returns the stale value.",
+    "followUp": "What additional mechanism would reduce the staleness window, and what failure mode would it introduce?"
+  },
+  {
+    "id": "cache-aside-cold-burst",
+    "topicId": "cache-aside",
+    "level": "beginner",
+    "kind": "calculation",
+    "prompt": "Five concurrent GETs arrive for the same key on an empty cache. Under the basic cache-aside model (no coalescing), how many origin reads occur?",
+    "options": [
+      { "id": "a", "label": "1" },
+      { "id": "b", "label": "2" },
+      { "id": "c", "label": "5" },
+      { "id": "d", "label": "It depends on TTL" }
+    ],
+    "correctOptionId": "c",
+    "explanation": "Without request coalescing, each miss independently reads from the origin. All five arrive before any fill completes, so each sees a miss and reads the origin separately.",
+    "followUp": "How would request coalescing or a singleflight mechanism change the origin load and the latency distribution?"
+  },
+  {
+    "id": "cache-aside-origin-down",
+    "topicId": "cache-aside",
+    "level": "intermediate",
+    "kind": "design-decision",
+    "prompt": "The cache is healthy but the origin database is unreachable. Describe what happens to cache hits and cache misses, and propose a mitigation strategy.",
+    "rubric": [
+      "Explains that cache hits still succeed and return the cached value.",
+      "Explains that cache misses fail because the origin cannot be reached.",
+      "Notes that stale data may be served on hits without the client knowing.",
+      "Proposes a fallback such as serving stale data beyond TTL, returning a cached error, or circuit-breaking.",
+      "Identifies tradeoffs of the proposed mitigation."
+    ],
+    "modelAnswer": "Cache hits continue to work normally — the cached value is returned at cache lookup latency. Cache misses fail because the origin cannot respond. If the TTL expires during the outage, previously cached entries also start failing. A mitigation could extend the TTL of existing entries during outage (stale-while-error), but this trades correctness for availability. I would add a circuit breaker to avoid overwhelming a recovering origin, monitor the miss-failure rate, and make the stale-serving policy an explicit configuration."
+  }
+]

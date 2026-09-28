@@ -31,3 +31,12 @@ export type CapacityEstimateResult =
 export type CapacityEstimatorDescriptor =
   components["schemas"]["CapacityEstimatorDescriptor"];
 export type ApiError = components["schemas"]["ApiError"];
+export type CacheOperation = components["schemas"]["CacheOperation"];
+export type CacheAsideInput = components["schemas"]["CacheAsideInput"];
+export type CacheGetOutcome = components["schemas"]["CacheGetOutcome"];
+export type CacheAsideMetrics = components["schemas"]["CacheAsideMetrics"];
+export type CacheAsideResult = components["schemas"]["CacheAsideResult"];
+export type CacheAsidePreset = components["schemas"]["CacheAsidePreset"];
+export type CacheAsideDescriptor =
+  components["schemas"]["CacheAsideDescriptor"];
+

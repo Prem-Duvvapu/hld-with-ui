@@ -20,6 +20,11 @@ const RateLimiterPage = lazy(() =>
     default: module.RateLimiterPage,
   })),
 );
+const CacheAsidePage = lazy(() =>
+  import("../pages/CacheAsidePage").then((module) => ({
+    default: module.CacheAsidePage,
+  })),
+);
 
 export function App() {
   return (
@@ -60,6 +65,10 @@ export function App() {
             <Route
               path="/topics/distributed-rate-limiter"
               element={<RateLimiterPage />}
+            />
+            <Route
+              path="/topics/cache-aside"
+              element={<CacheAsidePage />}
             />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

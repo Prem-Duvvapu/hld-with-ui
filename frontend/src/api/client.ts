@@ -1,5 +1,8 @@
 import type {
   CatalogEntry,
+  CacheAsideDescriptor,
+  CacheAsideInput,
+  CacheAsideResult,
   CapacityEstimateInput,
   CapacityEstimateResult,
   CapacityEstimatorDescriptor,
@@ -89,4 +92,12 @@ export const api = {
         body: JSON.stringify(input),
       },
     ),
+  cacheAsideDescriptor: () =>
+    request<CacheAsideDescriptor>("/api/v1/simulations/cache-aside"),
+  runCacheAside: (input: CacheAsideInput) =>
+    request<CacheAsideResult>("/api/v1/simulations/cache-aside/runs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }),
 };

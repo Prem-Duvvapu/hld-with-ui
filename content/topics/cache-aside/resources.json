@@ -1,0 +1,29 @@
+[
+  {
+    "id": "aws-caching-strategies",
+    "title": "Caching Strategies",
+    "organization": "AWS",
+    "url": "https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/Strategies.html",
+    "sourceType": "documentation",
+    "supports": "Lazy loading pattern, write-through comparison, and TTL guidance",
+    "reviewedAt": "2026-09-28"
+  },
+  {
+    "id": "azure-caching-best-practices",
+    "title": "Caching Best Practices",
+    "organization": "Microsoft Azure",
+    "url": "https://learn.microsoft.com/en-us/azure/architecture/best-practices/caching",
+    "sourceType": "documentation",
+    "supports": "Cache-aside pattern, consistency, expiration, and eviction strategies",
+    "reviewedAt": "2026-09-28"
+  },
+  {
+    "id": "caffeine-cache-design",
+    "title": "Design of a Modern Cache",
+    "organization": "ACM",
+    "url": "https://dl.acm.org/doi/10.1145/3230543.3230553",
+    "sourceType": "paper",
+    "supports": "Eviction algorithms, hit-rate optimization, and concurrency in cache implementations",
+    "reviewedAt": "2026-09-28"
+  }
+]

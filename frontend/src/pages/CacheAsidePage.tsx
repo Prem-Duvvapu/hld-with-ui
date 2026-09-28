@@ -1,0 +1,83 @@
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { api, ApiClientError } from "../api/client";
+import type { CacheAsideDescriptor, TopicDetail } from "../api/types";
+import { ErrorState, LoadingState } from "../components/AsyncState";
+import { ModuleShell, type ModuleTab } from "../components/ModuleShell";
+import { PracticeView } from "../features/learning/PracticeView";
+import { StudyView } from "../features/learning/StudyView";
+import { CacheAsidePlayground } from "../features/cache-aside/CacheAsidePlayground";
+
+type View = "playground" | "study" | "practice";
+const tabs: ReadonlyArray<ModuleTab<View>> = [
+  { id: "playground", label: "Playground" },
+  { id: "study", label: "Study" },
+  { id: "practice", label: "Practice" },
+];
+
+export function CacheAsidePage() {
+  const [data, setData] = useState<{
+    topic: TopicDetail;
+    descriptor: CacheAsideDescriptor;
+  } | null>(null);
+  const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => {
+    setError("");
+    setData(null);
+    setAttempt((value) => value + 1);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([api.topic("cache-aside"), api.cacheAsideDescriptor()])
+      .then(([topic, descriptor]) => active && setData({ topic, descriptor }))
+      .catch(
+        (cause: unknown) =>
+          active &&
+          setError(
+            cause instanceof ApiClientError
+              ? cause.message
+              : "Something went wrong.",
+          ),
+      );
+    return () => {
+      active = false;
+    };
+  }, [attempt]);
+
+  if (error)
+    return (
+      <div className="page-width standalone-state">
+        <ErrorState message={error} retry={retry} />
+      </div>
+    );
+  if (!data)
+    return (
+      <div className="page-width standalone-state">
+        <LoadingState />
+      </div>
+    );
+
+  const panels: Record<View, ReactNode> = {
+    playground: <CacheAsidePlayground descriptor={data.descriptor} />,
+    study: (
+      <StudyView
+        markdown={data.topic.lessonMarkdown}
+        title="Trace every read through cache and origin."
+        guidance="Run each preset after reading the worked example. Explain the stale read and cold burst using the event trace."
+      />
+    ),
+    practice: (
+      <PracticeView
+        questions={data.topic.questions}
+        title="Explain cache behavior under failure"
+        description="Identify stale reads, calculate cold-start origin load, and design a mitigation for origin unavailability."
+      />
+    ),
+  };
+  return (
+    <ModuleShell topic={data.topic.topic} tabs={tabs} defaultView="playground">
+      {(view) => panels[view]}
+    </ModuleShell>
+  );
+}
