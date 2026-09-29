@@ -34,9 +34,7 @@ function toForm(input: CacheAsideInput): FormState {
   };
 }
 
-function parseOperations(
-  text: string,
-): CacheAsideInput["operations"] {
+function parseOperations(text: string): CacheAsideInput["operations"] {
   const lines = text
     .split("\n")
     .map((line) => line.trim())
@@ -44,10 +42,11 @@ function parseOperations(
   if (!lines.length || lines.length > 100)
     throw new Error("Operations need 1–100 lines.");
   return lines.map((line, index) => {
-    const match = line.match(
-      /^(GET|UPDATE)\s+(\S+)(?:\s+(\S+))?\s+@(\d+)$/i,
-    );
-    if (!match) throw new Error(`Line ${index + 1}: expected "GET key @time" or "UPDATE key value @time".`);
+    const match = line.match(/^(GET|UPDATE)\s+(\S+)(?:\s+(\S+))?\s+@(\d+)$/i);
+    if (!match)
+      throw new Error(
+        `Line ${index + 1}: expected "GET key @time" or "UPDATE key value @time".`,
+      );
     const kind = match[1]!.toUpperCase() as "GET" | "UPDATE";
     const key = match[2]!;
     const value = match[3] ?? null;
@@ -293,11 +292,7 @@ function CacheAsideResults({ result }: { result: CacheAsideResult }) {
             </thead>
             <tbody>
               {outcomes.map((outcome, index) => (
-                <OutcomeRow
-                  key={index}
-                  outcome={outcome}
-                  index={index}
-                />
+                <OutcomeRow key={index} outcome={outcome} index={index} />
               ))}
             </tbody>
           </table>

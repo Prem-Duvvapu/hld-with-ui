@@ -66,10 +66,7 @@ export function App() {
               path="/topics/distributed-rate-limiter"
               element={<RateLimiterPage />}
             />
-            <Route
-              path="/topics/cache-aside"
-              element={<CacheAsidePage />}
-            />
+            <Route path="/topics/cache-aside" element={<CacheAsidePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
