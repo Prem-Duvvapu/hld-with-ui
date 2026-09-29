@@ -1843,6 +1843,52 @@
           }
         }
       },
+      "CacheAsideEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sequence",
+          "timeMs",
+          "kind",
+          "requestId",
+          "nodeId",
+          "message"
+        ],
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "timeMs": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "cache.hit",
+              "cache.miss",
+              "cache.fill",
+              "cache.bypass",
+              "cache.error",
+              "origin.read",
+              "origin.update"
+            ]
+          },
+          "requestId": {
+            "type": "string",
+            "description": "The cache key the event applies to."
+          },
+          "nodeId": {
+            "type": "string",
+            "enum": ["cache", "origin"]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
       "CacheAsideResult": {
         "type": "object",
         "additionalProperties": false,
@@ -1902,7 +1948,7 @@
           "events": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SimulationEvent"
+              "$ref": "#/components/schemas/CacheAsideEvent"
             }
           },
           "outcomes": {
