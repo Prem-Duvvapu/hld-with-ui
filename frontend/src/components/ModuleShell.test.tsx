@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import type { CatalogEntry } from "../api/types";
-import { ModuleShell, type ModuleTab } from "./ModuleShell";
+import { ModuleShell, usePanelActive, type ModuleTab } from "./ModuleShell";
 
 type View = "playground" | "study" | "architecture";
 const tabs: ReadonlyArray<ModuleTab<View>> = [
@@ -32,13 +32,30 @@ const topic: CatalogEntry = {
   sourceIds: ["source"],
 };
 
+const panels: Record<View, React.ReactNode> = {
+  playground: <p>playground content</p>,
+  study: <p>study content</p>,
+  architecture: <p>architecture content</p>,
+};
+
+function ActivityProbe({ label }: { label: string }) {
+  return (
+    <p>
+      {label} is {usePanelActive() ? "active" : "inactive"}
+    </p>
+  );
+}
+
 describe("ModuleShell", () => {
   it("uses manual keyboard activation and connects tabs to the panel", () => {
     render(
       <MemoryRouter initialEntries={["/topics/request-flow?view=study"]}>
-        <ModuleShell topic={topic} tabs={tabs} defaultView="playground">
-          {(view) => <p>{view} content</p>}
-        </ModuleShell>
+        <ModuleShell
+          topic={topic}
+          tabs={tabs}
+          defaultView="playground"
+          panels={panels}
+        />
       </MemoryRouter>,
     );
 
@@ -58,6 +75,41 @@ describe("ModuleShell", () => {
 
     fireEvent.click(architecture);
     expect(architecture).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByText("architecture content")).toBeInTheDocument();
+    expect(screen.getByText("architecture content")).toBeVisible();
+    expect(screen.getByRole("tabpanel")).toHaveAttribute(
+      "aria-labelledby",
+      architecture.id,
+    );
+  });
+
+  it("mounts panels on first visit and keeps visited panels mounted but hidden", () => {
+    render(
+      <MemoryRouter initialEntries={["/topics/request-flow"]}>
+        <ModuleShell
+          topic={topic}
+          tabs={tabs}
+          defaultView="playground"
+          panels={{
+            playground: <ActivityProbe label="Playground" />,
+            study: <ActivityProbe label="Study" />,
+            architecture: <ActivityProbe label="Architecture" />,
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Playground is active")).toBeVisible();
+    expect(screen.queryByText(/Study is/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: /Study/ }));
+
+    expect(screen.getByText("Study is active")).toBeVisible();
+    expect(screen.getByText("Playground is inactive")).not.toBeVisible();
+    expect(screen.queryByText(/Architecture is/)).not.toBeInTheDocument();
+    for (const tab of screen.getAllByRole("tab")) {
+      expect(
+        document.getElementById(tab.getAttribute("aria-controls")!),
+      ).toBeInTheDocument();
+    }
   });
 });

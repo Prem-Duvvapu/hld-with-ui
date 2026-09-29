@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { RateLimiterDescriptor, RateLimiterResult } from "../../api/types";
 import { RateLimiterPlayground } from "./RateLimiterPlayground";
@@ -155,5 +155,25 @@ describe("Rate limiter playground", () => {
       "Arrival times must be ordered",
     );
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it("disables presets while a run is pending so an older response cannot replace a newer preset", async () => {
+    let respond: (value: unknown) => void = () => undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise((resolve) => {
+            respond = resolve;
+          }),
+      ),
+    );
+    render(<RateLimiterPlayground descriptor={descriptor} />);
+    fireEvent.click(screen.getByRole("button", { name: "Run request burst" }));
+
+    expect(screen.getByRole("button", { name: "Baseline" })).toBeDisabled();
+    respond({ ok: true, json: async () => result });
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Baseline" })).toBeEnabled(),
+    );
   });
 });

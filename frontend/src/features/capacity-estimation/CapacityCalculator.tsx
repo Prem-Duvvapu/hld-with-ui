@@ -192,6 +192,7 @@ export function CapacityCalculator({
             <button
               type="button"
               key={preset.id}
+              disabled={busy}
               onClick={() => choosePreset(index)}
             >
               {preset.title}

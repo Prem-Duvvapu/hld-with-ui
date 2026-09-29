@@ -640,6 +640,10 @@ summary:focus-visible,
 .module-content {
   padding-block: 42px 100px;
 }
+/* Visited panels stay mounted; keep hidden ones hidden if a layout rule sets display. */
+.module-content[hidden] {
+  display: none;
+}
 .standalone-state {
   padding-block: 100px;
 }

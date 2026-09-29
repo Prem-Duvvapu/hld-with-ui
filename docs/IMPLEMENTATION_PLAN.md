@@ -55,8 +55,8 @@ Recorded PR #20 evidence: 83 backend tests, 31 frontend tests, CI, and selected 
 
 ### Concrete gaps to address first
 
-1. `frontend/src/components/ModuleShell.tsx` displays `topic.contentVersion` beneath a **MODEL** label. Content and simulation versions must be presented separately.
-2. Module pages conditionally render their selected feature. Feature-local form/run/practice state can be lost when switching tabs. Preserve it deliberately and test a complete tab round trip.
+1. `frontend/src/components/ModuleShell.tsx` displays `topic.contentVersion` beneath a **MODEL** label. Content and simulation versions must be presented separately. *Resolved by HLD-02.*
+2. Module pages conditionally render their selected feature. Feature-local form/run/practice state can be lost when switching tabs. Preserve it deliberately and test a complete tab round trip. *Resolved by HLD-02.*
 3. `SimulationEvent` contains sequence, time, kind, request/node IDs, and a message. Cache events do not expose the structured cache/origin state required for reliable visual playback. Never extract state from English messages.
 4. Cache descriptors lack explicit input-limit metadata, while controls currently repeat numeric bounds. Move these bounds into the contract before adding more controls.
 5. The curriculum lists `distributed-rate-limiter` as a future case while the catalog already publishes that ID as a topic. Resolve the identity before introducing a second case with that ID. *Resolved by HLD-01: [decision 0005](decisions/0005-rate-limiter-topic-and-workshop-ids.md).*

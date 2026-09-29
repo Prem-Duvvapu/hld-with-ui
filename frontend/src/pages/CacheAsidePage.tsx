@@ -76,8 +76,11 @@ export function CacheAsidePage() {
     ),
   };
   return (
-    <ModuleShell topic={data.topic.topic} tabs={tabs} defaultView="playground">
-      {(view) => panels[view]}
-    </ModuleShell>
+    <ModuleShell
+      topic={data.topic.topic}
+      tabs={tabs}
+      defaultView="playground"
+      panels={panels}
+    />
   );
 }

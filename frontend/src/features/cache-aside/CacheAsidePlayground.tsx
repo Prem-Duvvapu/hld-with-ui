@@ -177,6 +177,7 @@ export function CacheAsidePlayground({
           Change the workload, predict the result, then follow the
           Java-generated trace.
         </p>
+        <p className="model-note">Java model · v{descriptor.modelVersion}</p>
         {activePreset && (
           <p>
             {descriptor.presets.find((p) => p.id === activePreset)?.question}

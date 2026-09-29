@@ -1,6 +1,12 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { RequestFlowResult, SimulationDescriptor } from "../../api/types";
+import type {
+  CatalogEntry,
+  RequestFlowResult,
+  SimulationDescriptor,
+} from "../../api/types";
+import { ModuleShell } from "../../components/ModuleShell";
 import { Playground } from "./Playground";
 
 const descriptor: SimulationDescriptor = {
@@ -463,6 +469,89 @@ describe("Request flow playground", () => {
 
     expect(await screen.findByRole("status")).toHaveTextContent(
       "The execution wall-time deadline was reached.",
+    );
+  });
+  it("pauses playback while its tab is hidden and keeps the trace position", async () => {
+    const playable: RequestFlowResult = {
+      ...result,
+      events: [
+        ...result.events,
+        {
+          sequence: 2,
+          timeMs: 100,
+          kind: "request.completed",
+          requestId: "Request 1",
+          nodeId: "Node A",
+          message: "Request 1 completed.",
+        },
+      ],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: async () => playable }),
+    );
+    const topic = {
+      id: "request-flow",
+      title: "Request Flow",
+      category: "Foundations",
+      level: "Beginner",
+      summary: "Trace requests.",
+      outcomes: [],
+      contentVersion: "1.0.0",
+    } as unknown as CatalogEntry;
+    render(
+      <MemoryRouter initialEntries={["/topics/request-flow"]}>
+        <ModuleShell
+          topic={topic}
+          tabs={[
+            { id: "playground", label: "Playground" },
+            { id: "study", label: "Study" },
+          ]}
+          defaultView="playground"
+          panels={{
+            playground: <Playground descriptor={descriptor} />,
+            study: <p>Lesson</p>,
+          }}
+        />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Run experiment/ }));
+    await screen.findByText("Request 1 arrived.", {
+      selector: ".current-event p",
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Play trace" }));
+    expect(screen.getByRole("button", { name: "Pause trace" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("tab", { name: /Study/ }));
+    fireEvent.click(screen.getByRole("tab", { name: /Playground/ }));
+
+    expect(screen.getByRole("button", { name: "Play trace" })).toBeVisible();
+    expect(
+      screen.getByText("Request 1 arrived.", { selector: ".current-event p" }),
+    ).toBeVisible();
+  });
+  it("disables presets while a run is pending so an older response cannot replace a newer preset", async () => {
+    let respond: (value: unknown) => void = () => undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise((resolve) => {
+            respond = resolve;
+          }),
+      ),
+    );
+    render(<Playground descriptor={descriptor} />);
+    fireEvent.click(screen.getByRole("button", { name: /Run experiment/ }));
+
+    expect(
+      screen.getByRole("button", { name: "Balanced burst" }),
+    ).toBeDisabled();
+    respond({ ok: true, json: async () => result });
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Balanced burst" }),
+      ).toBeEnabled(),
     );
   });
 });
