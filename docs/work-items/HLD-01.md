@@ -15,7 +15,8 @@ A contributor can tell what is implemented, which documents are current, and whi
 - Artifacts to add/change: `FIRST_CONTRIBUTION.md`, `SIMULATION_SPEC.md`, `ARCHITECTURE.md`, `CURRICULUM.md`, `ROADMAP.md`, `IMPLEMENTATION_PLAN.md` (gap annotations and canonical ID list), decision 0005, `scripts/validate-plan.mjs`, `frontend/scripts/validate-content.mjs`, this work item.
 - User-visible behavior: none. Published URLs, catalog entries, content versions, and model versions are unchanged.
 - Stable IDs/contracts touched: curriculum IDs only. The planned concept `rate-limiting` merges into the published `distributed-rate-limiter`; the planned case `distributed-rate-limiter` becomes `rate-limiter-workshop`.
-- Explicit exclusions: no simulator, API, or UI change. The `cache-aside` trace starting at `sequence` 0 while other models start at 1 is documented, not changed (HLD-04 owns the cache contract).
+- Explicit exclusions: no simulator, API, or UI change. HLD-04 owns the structured cache event contract.
+- *Correction after merge:* this work item and `SIMULATION_SPEC.md` originally said cache-aside numbers events from 0 and uses the cache key as `requestId`. Both described code from before PR #20. Current cache events number from 1 and use `Operation N` as `requestId`; the follow-up documentation fix corrects the spec and the OpenAPI field description.
 
 ## Design
 

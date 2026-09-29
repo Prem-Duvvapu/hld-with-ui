@@ -1898,7 +1898,7 @@
           },
           "requestId": {
             "type": "string",
-            "description": "The cache key the event applies to."
+            "description": "The operation the event belongs to, as \"Operation N\" in input order."
           },
           "nodeId": {
             "type": "string",
