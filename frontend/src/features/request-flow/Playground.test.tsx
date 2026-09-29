@@ -259,7 +259,7 @@ describe("Request flow playground", () => {
   it("handles node failure presets, displays scheduled failure, and sends failureSchedule to Java", async () => {
     const failurePresetDescriptor: SimulationDescriptor = {
       ...descriptor,
-      modelVersion: "1.1.0",
+      modelVersion: "1.1.1",
       presets: [
         ...descriptor.presets,
         {
@@ -268,7 +268,7 @@ describe("Request flow playground", () => {
           question: "What happens to in-flight requests?",
           input: {
             schemaVersion: "1.0",
-            modelVersion: "1.1.0",
+            modelVersion: "1.1.1",
             policy: "ROUND_ROBIN",
             arrivalTimesMs: [0, 0],
             nodeServiceTimesMs: [100, 100],
@@ -313,7 +313,7 @@ describe("Request flow playground", () => {
     const [, options] = fetchMock.mock.calls[0]!;
     expect(JSON.parse(options.body)).toMatchObject({
       schemaVersion: "1.0",
-      modelVersion: "1.1.0",
+      modelVersion: "1.1.1",
       failureSchedule: [
         {
           entityId: "Node B",
@@ -335,7 +335,7 @@ describe("Request flow playground", () => {
   it("renders failed metrics, failed outcome status, and marks failed nodes in the topology", async () => {
     const failureResult: RequestFlowResult = {
       ...result,
-      modelVersion: "1.1.0",
+      modelVersion: "1.1.1",
       metrics: {
         completed: 1,
         rejected: 0,
@@ -395,7 +395,7 @@ describe("Request flow playground", () => {
     );
 
     render(
-      <Playground descriptor={{ ...descriptor, modelVersion: "1.1.0" }} />,
+      <Playground descriptor={{ ...descriptor, modelVersion: "1.1.1" }} />,
     );
     fireEvent.click(screen.getByRole("button", { name: /Run experiment/ }));
 

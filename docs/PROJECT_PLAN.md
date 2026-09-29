@@ -1,6 +1,6 @@
 # HLD with UI: project plan
 
-Planning baseline: 2026-09-22. Status: proposed product and implementation plan; no application features shipped.
+Planning baseline: 2026-09-22. Status: product plan with an implemented React/Java foundation and four published modules; see ROADMAP.md for unfinished release gates.
 
 ## 1. Product goal
 

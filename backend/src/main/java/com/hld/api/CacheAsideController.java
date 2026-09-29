@@ -29,14 +29,6 @@ public class CacheAsideController {
 
     @GetMapping("/cache-aside")
     public CacheAsideDescriptor descriptor() {
-        List<String> assumptions = List.of(
-                "Cache lookup latency is a fixed constant.",
-                "Origin read latency is a fixed constant.",
-                "Cache fill after origin read is instantaneous.",
-                "TTL is measured from fill time; expiry checked at lookup time.",
-                "An origin UPDATE does not notify the cache (cache-aside pattern).",
-                "No coalescing of concurrent cache misses.",
-                "Stale detection is an observer view; a real client may not know.");
         return new CacheAsideDescriptor(
                 "cache-aside",
                 "Cache-Aside",
@@ -80,7 +72,7 @@ public class CacheAsideController {
                                                 new CacheOperation("GET", "k", null, 0),
                                                 new CacheOperation("GET", "k", null, 30)),
                                         true, false, 7))),
-                assumptions);
+                CacheAsideSimulator.ASSUMPTIONS);
     }
 
     @PostMapping("/cache-aside/runs")

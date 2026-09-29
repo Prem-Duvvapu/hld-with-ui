@@ -1,5 +1,6 @@
 package com.hld.cache;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -15,19 +16,28 @@ import java.util.List;
  * origin value, and a sequence of GET/UPDATE operations.
  */
 public record CacheAsideInput(
+        @JsonProperty(required = true)
         @NotNull @Pattern(regexp = "1\\.0") String schemaVersion,
-        @NotNull @Pattern(regexp = "1\\.0\\.0") String modelVersion,
+        @JsonProperty(required = true)
+        @NotNull @Pattern(regexp = "1\\.0\\.1") String modelVersion,
+        @JsonProperty(required = true)
         @Min(0) @Max(10_000) long cacheLookupLatencyMs,
+        @JsonProperty(required = true)
         @Min(0) @Max(10_000) long originReadLatencyMs,
+        @JsonProperty(required = true)
         @Min(0) @Max(60_000) long ttlMs,
-        @NotNull String initialOriginValue,
+        @JsonProperty(required = true)
+        @NotNull @Size(max = 256) String initialOriginValue,
+        @JsonProperty(required = true)
         @NotNull @Size(min = 1, max = 100) List<@Valid @NotNull CacheOperation> operations,
+        @JsonProperty(required = true)
         boolean cacheAvailable,
+        @JsonProperty(required = true)
         boolean originAvailable,
-        long seed) {
+        @JsonProperty(required = true) long seed) {
 
     public static final String CURRENT_SCHEMA_VERSION = "1.0";
-    public static final String CURRENT_MODEL_VERSION = "1.0.0";
+    public static final String CURRENT_MODEL_VERSION = "1.0.1";
 
     /**
      * Convenience factory for standard inputs.

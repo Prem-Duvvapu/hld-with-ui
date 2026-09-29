@@ -292,4 +292,44 @@ class RequestFlowSimulatorTest {
         assertThat(result.status()).isEqualTo("completed");
         assertThat(result.modelVersion()).isEqualTo("1.0.0");
     }
+
+    @Test
+    void failureDropsQueuedWorkWithoutStartingItOnADownNode() {
+        RequestFlowResult result = simulator.run(RequestFlowInput.withFailures(RoutingPolicy.ROUND_ROBIN,
+                List.of(0L, 0L, 0L), List.of(100L), 1, 10,
+                List.of(new FailureScheduleEntry("Node A", 50, 150L, InFlightBehavior.FAIL)), 7));
+        assertThat(result.outcomes()).extracting(RequestOutcome::status).containsOnly("FAILED");
+        assertThat(result.outcomes()).extracting(RequestOutcome::completionMs).containsOnly(50L);
+        assertThat(result.outcomes().get(1).startMs()).isNull();
+        assertThat(result.events().stream().filter(e -> e.kind().equals("request.started")))
+                .extracting(SimulationEvent::requestId).containsExactly("Request 1");
+    }
+
+    @Test
+    void completeRecoveryDoesNotCreateExtraWorkersOrLoseQueuedWork() {
+        RequestFlowResult result = simulator.run(RequestFlowInput.withFailures(RoutingPolicy.ROUND_ROBIN,
+                List.of(0L, 30L), List.of(100L), 1, 10,
+                List.of(new FailureScheduleEntry("Node A", 10, 20L, InFlightBehavior.COMPLETE)), 7));
+        assertThat(result.outcomes()).extracting(RequestOutcome::completionMs).containsExactly(100L, 200L);
+        assertThat(result.outcomes().get(1).queueMs()).isEqualTo(70);
+    }
+
+    @Test
+    void laterFailOverridesAnEarlierCompleteWindowForAssignedWork() {
+        RequestFlowResult result = simulator.run(RequestFlowInput.withFailures(RoutingPolicy.ROUND_ROBIN,
+                List.of(0L), List.of(100L), 1, 10,
+                List.of(new FailureScheduleEntry("Node A", 10, 20L, InFlightBehavior.COMPLETE),
+                        new FailureScheduleEntry("Node A", 50, 60L, InFlightBehavior.FAIL)), 7));
+        assertThat(result.outcomes().get(0).status()).isEqualTo("FAILED");
+        assertThat(result.outcomes().get(0).completionMs()).isEqualTo(50);
+    }
+
+    @Test
+    void completionAtFailureTimeWinsButQueuedStartDoesNot() {
+        RequestFlowResult result = simulator.run(RequestFlowInput.withFailures(RoutingPolicy.ROUND_ROBIN,
+                List.of(0L, 0L), List.of(100L), 1, 10,
+                List.of(new FailureScheduleEntry("Node A", 100, null, InFlightBehavior.FAIL)), 7));
+        assertThat(result.outcomes()).extracting(RequestOutcome::status).containsExactly("COMPLETED", "FAILED");
+        assertThat(result.outcomes().get(1).startMs()).isNull();
+    }
 }

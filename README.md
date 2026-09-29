@@ -77,7 +77,7 @@ Free Render services sleep when idle. The first request after a pause can exceed
 - inspect latency, throughput, rejection, and per-request outcomes;
 - use architecture, sequence, quiz, and interview-answer views to explain the result.
 
-Model v1.0.0 intentionally excludes network delay, failures, retries, and health-check delay. Its metrics describe a finite illustrative run, not a production benchmark.
+Request-flow v1.1.1 supports scheduled node failure/recovery. FAIL drops running and queued work; COMPLETE retains assigned work while blocking new routing to the failed node. Network delay, retries, and health-check delay remain excluded. The original v1.0.0 input supports runs without failure schedules. Its metrics describe a finite illustrative run, not a production benchmark.
 
 **Capacity Estimation** turns explicit usage assumptions into a first-pass planning range:
 
@@ -98,6 +98,8 @@ The estimator uses decimal units and intentionally does not recommend instance c
 - inspect every allowed, rejected, and bypassed decision and practice a two-minute design defense.
 
 The model uses one identity, one-token requests, round-robin routing, and zero counter-network latency. These bounds keep the algorithm and state-placement decisions hand-checkable.
+
+**Cache-Aside** traces hits, misses, TTL expiry, stale origin versions, concurrent cold misses, and cache/origin outages. Corrected model v1.0.1 uses a stable virtual event queue and bounded traces. Bypasses and failed GETs are explicit; limited runs identify incomplete requests. Only key `k` initially exists; UPDATE can create other keys. Guided playback and architecture/sequence tabs remain unfinished.
 
 ## References
 

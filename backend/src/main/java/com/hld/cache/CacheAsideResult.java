@@ -17,6 +17,7 @@ public record CacheAsideResult(
         String status,
         String truncationReason,
         long lastVirtualTimeMs,
+        int incompleteGets,
         List<String> assumptions,
         List<SimulationEvent> events,
         List<CacheGetOutcome> outcomes,

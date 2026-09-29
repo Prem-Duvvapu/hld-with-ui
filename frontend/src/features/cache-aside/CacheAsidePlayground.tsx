@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./CacheAsidePlayground.css";
 import { api } from "../../api/client";
 import type {
   CacheAsideDescriptor,
@@ -51,10 +52,16 @@ function parseOperations(text: string): CacheAsideInput["operations"] {
     const key = match[2]!;
     const value = match[3] ?? null;
     const timeMs = Number(match[4]);
+    if (kind === "GET" && value !== null)
+      throw new Error(`Line ${index + 1}: GET cannot have a value.`);
+    if (key.length > 64 || (value?.length ?? 0) > 256)
+      throw new Error(
+        `Line ${index + 1}: key allows 64 characters and value allows 256.`,
+      );
     if (kind === "UPDATE" && !value)
       throw new Error(`Line ${index + 1}: UPDATE requires a value.`);
-    if (timeMs < 0 || timeMs > 300_000)
-      throw new Error(`Line ${index + 1}: time must be 0–300,000.`);
+    if (timeMs < 0 || timeMs > 60_000)
+      throw new Error(`Line ${index + 1}: time must be 0–60,000.`);
     return { kind, key, value, timeMs };
   });
 }
@@ -72,10 +79,9 @@ function boundedInteger(
   return number;
 }
 
-function buildInput(form: FormState): CacheAsideInput {
+function buildInput(form: FormState, source: CacheAsideInput): CacheAsideInput {
   return {
-    schemaVersion: "1.0",
-    modelVersion: "1.0.0",
+    ...source,
     cacheLookupLatencyMs: boundedInteger(
       form.cacheLookupLatencyMs,
       "Cache lookup latency",
@@ -89,11 +95,10 @@ function buildInput(form: FormState): CacheAsideInput {
       10_000,
     ),
     ttlMs: boundedInteger(form.ttlMs, "TTL", 0, 60_000),
-    initialOriginValue: form.initialOriginValue.trim() || "v1",
+    initialOriginValue: form.initialOriginValue,
     operations: parseOperations(form.operations),
     cacheAvailable: form.cacheAvailable,
     originAvailable: form.originAvailable,
-    seed: 7,
   };
 }
 
@@ -105,6 +110,7 @@ export function CacheAsidePlayground({
   const [form, setForm] = useState<FormState>(() =>
     toForm(descriptor.presets[0]!.input),
   );
+  const [sourceInput, setSourceInput] = useState(descriptor.presets[0]!.input);
   const [result, setResult] = useState<CacheAsideResult | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
@@ -112,11 +118,19 @@ export function CacheAsidePlayground({
     descriptor.presets[0]?.id ?? "",
   );
 
+  function updateForm(patch: Partial<FormState>) {
+    setForm((previous) => ({ ...previous, ...patch }));
+    setResult(null);
+    setError("");
+    setActivePreset("");
+  }
+
   async function run() {
     setError("");
     setRunning(true);
+    setResult(null);
     try {
-      const input = buildInput(form);
+      const input = buildInput(form, sourceInput);
       const data = await api.runCacheAside(input);
       setResult(data);
     } catch (cause: unknown) {
@@ -130,6 +144,7 @@ export function CacheAsidePlayground({
   function selectPreset(id: string) {
     const preset = descriptor.presets.find((p) => p.id === id);
     if (preset) {
+      setSourceInput(preset.input);
       setForm(toForm(preset.input));
       setActivePreset(id);
       setResult(null);
@@ -147,21 +162,31 @@ export function CacheAsidePlayground({
       <input
         className="field-input"
         value={form[key] as string}
-        onChange={(event) =>
-          setForm((previous) => ({ ...previous, [key]: event.target.value }))
-        }
+        disabled={running}
+        onChange={(event) => updateForm({ [key]: event.target.value })}
         {...props}
       />
     </label>
   );
 
   return (
-    <div className="playground" id="cache-aside-playground">
+    <div className="cache-playground" id="cache-aside-playground">
       <div className="playground-controls">
+        <h2>Trace a read through the cache</h2>
+        <p className="cache-guidance">
+          Change the workload, predict the result, then follow the
+          Java-generated trace.
+        </p>
+        {activePreset && (
+          <p>
+            {descriptor.presets.find((p) => p.id === activePreset)?.question}
+          </p>
+        )}
         <div className="presets" role="group" aria-label="Simulation presets">
           {descriptor.presets.map((preset) => (
             <button
               key={preset.id}
+              disabled={running}
               className={`preset-button ${activePreset === preset.id ? "active" : ""}`}
               onClick={() => selectPreset(preset.id)}
               title={preset.question}
@@ -187,7 +212,9 @@ export function CacheAsidePlayground({
             min: 0,
             max: 60000,
           })}
-          {field("Initial origin value", "initialOriginValue")}
+          {field("Initial origin value", "initialOriginValue", {
+            maxLength: 256,
+          })}
         </div>
 
         <div className="field-group">
@@ -198,12 +225,10 @@ export function CacheAsidePlayground({
             <textarea
               className="field-input operations-input"
               rows={6}
+              disabled={running}
               value={form.operations}
               onChange={(event) =>
-                setForm((previous) => ({
-                  ...previous,
-                  operations: event.target.value,
-                }))
+                updateForm({ operations: event.target.value })
               }
             />
           </label>
@@ -214,11 +239,9 @@ export function CacheAsidePlayground({
             <input
               type="checkbox"
               checked={form.cacheAvailable}
+              disabled={running}
               onChange={(event) =>
-                setForm((previous) => ({
-                  ...previous,
-                  cacheAvailable: event.target.checked,
-                }))
+                updateForm({ cacheAvailable: event.target.checked })
               }
             />
             Cache available
@@ -227,11 +250,9 @@ export function CacheAsidePlayground({
             <input
               type="checkbox"
               checked={form.originAvailable}
+              disabled={running}
               onChange={(event) =>
-                setForm((previous) => ({
-                  ...previous,
-                  originAvailable: event.target.checked,
-                }))
+                updateForm({ originAvailable: event.target.checked })
               }
             />
             Origin available
@@ -254,7 +275,19 @@ export function CacheAsidePlayground({
         )}
       </div>
 
-      {result && <CacheAsideResults result={result} />}
+      {result ? (
+        <CacheAsideResults result={result} />
+      ) : (
+        <section className="cache-empty" aria-live="polite">
+          <h2>
+            {running ? "Running your workload…" : "Ready to trace your reads"}
+          </h2>
+          <p>
+            Run the simulation to see hits, misses, stale reads, and origin load
+            for these inputs.
+          </p>
+        </section>
+      )}
     </div>
   );
 }
@@ -263,21 +296,44 @@ function CacheAsideResults({ result }: { result: CacheAsideResult }) {
   const { metrics, outcomes, assumptions } = result;
   return (
     <div className="playground-results">
+      {result.status === "limited" && (
+        <p role="status" className="notice">
+          Partial result: {result.truncationReason}. {result.incompleteGets}{" "}
+          GET(s) incomplete. Trace stops at {result.lastVirtualTimeMs} ms;
+          metrics cover only observed events.
+        </p>
+      )}
       <div className="metrics-bar">
         <Metric label="Total GETs" value={metrics.totalGets} />
         <Metric label="Cache Hits" value={metrics.cacheHits} />
         <Metric label="Cache Misses" value={metrics.cacheMisses} />
         <Metric label="Stale Reads" value={metrics.staleReads} />
+        <Metric label="Cache Bypasses" value={metrics.cacheBypasses} />
+        <Metric label="Failed GETs" value={metrics.failedGets} />
         <Metric label="Origin Reads" value={metrics.originReads} />
         <Metric
           label="Hit Ratio"
-          value={`${(metrics.hitRatio * 100).toFixed(1)}%`}
+          value={
+            metrics.cacheHits + metrics.cacheMisses === 0
+              ? "—"
+              : `${(metrics.hitRatio * 100).toFixed(1)}%`
+          }
         />
       </div>
 
+      <p>
+        Hit ratio = hits / (hits + misses). Bypasses are excluded; failed misses
+        are included. Observation: 0–{metrics.observationWindowMs} ms. Initially
+        only key k exists.
+      </p>
       <section className="result-section">
         <h3>GET Outcomes</h3>
-        <div className="table-wrap">
+        <div
+          className="table-wrap"
+          tabIndex={0}
+          role="region"
+          aria-label="Scrollable GET outcomes"
+        >
           <table className="data-table" aria-label="Cache GET outcomes">
             <thead>
               <tr>
@@ -302,7 +358,12 @@ function CacheAsideResults({ result }: { result: CacheAsideResult }) {
 
       <section className="result-section">
         <h3>Event Trace</h3>
-        <div className="table-wrap">
+        <div
+          className="table-wrap"
+          tabIndex={0}
+          role="region"
+          aria-label="Scrollable event trace"
+        >
           <table className="data-table" aria-label="Simulation event trace">
             <thead>
               <tr>
@@ -360,7 +421,10 @@ function OutcomeRow({
           {outcome.hitOrMiss}
         </span>
       </td>
-      <td>{outcome.returnedValue ?? "—"}</td>
+      <td>
+        {outcome.returnedValue ??
+          (outcome.hitOrMiss === "ERROR" ? "Unavailable" : "Not found")}
+      </td>
       <td>{outcome.stale ? "⚠ Yes" : "No"}</td>
       <td>{outcome.requestTimeMs}</td>
       <td>{outcome.responseTimeMs}</td>

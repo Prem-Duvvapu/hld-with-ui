@@ -260,14 +260,14 @@ export interface components {
       /** @constant */
       schemaVersion: "1.0";
       /** @enum {string} */
-      modelVersion: "1.0.0" | "1.1.0";
+      modelVersion: "1.0.0" | "1.1.1";
       /** @enum {string} */
       policy: "ROUND_ROBIN" | "LEAST_OUTSTANDING";
       arrivalTimesMs: number[];
       nodeServiceTimesMs: number[];
       workersPerNode: number;
       queueCapacity: number;
-      /** @description Optional failure schedule for model version 1.1.0. Not allowed with model version 1.0.0. */
+      /** @description Optional failure schedule for model version 1.1.1. Not allowed with model version 1.0.0. */
       failureSchedule?: components["schemas"]["FailureScheduleEntry"][] | null;
       /** Format: int64 */
       seed: number;
@@ -285,7 +285,7 @@ export interface components {
       /** @constant */
       kind: "simulation";
       /** @enum {string} */
-      modelVersion: "1.0.0" | "1.1.0";
+      modelVersion: "1.0.0" | "1.1.1";
       description: string;
       limits: components["schemas"]["SimulationLimits"];
       presets: components["schemas"]["SimulationPreset"][];
@@ -345,7 +345,7 @@ export interface components {
       /** @constant */
       simulationId: "request-flow";
       /** @enum {string} */
-      modelVersion: "1.0.0" | "1.1.0";
+      modelVersion: "1.0.0" | "1.1.1";
       /** Format: int64 */
       seed: number;
       /** @enum {string} */
@@ -590,7 +590,7 @@ export interface components {
       /** @constant */
       schemaVersion: "1.0";
       /** @constant */
-      modelVersion: "1.0.0";
+      modelVersion: "1.0.1";
       /** Format: int64 */
       cacheLookupLatencyMs: number;
       /** Format: int64 */
@@ -607,8 +607,11 @@ export interface components {
     CacheGetOutcome: {
       key: string;
       returnedValue?: string | null;
-      /** @enum {string} */
-      hitOrMiss: "HIT" | "MISS";
+      /**
+       * @description ERROR means origin unavailable. A MISS or BYPASS with null returnedValue means key not found; absent keys are not cached.
+       * @enum {string}
+       */
+      hitOrMiss: "HIT" | "MISS" | "BYPASS" | "ERROR";
       stale: boolean;
       /** Format: int64 */
       requestTimeMs: number;
@@ -623,9 +626,12 @@ export interface components {
       cacheMisses: number;
       staleReads: number;
       originReads: number;
+      /** @description Hits divided by hits + misses observed in the trace; bypass excluded, failed misses included. Zero when no eligible lookup exists. */
       hitRatio: number;
       /** Format: int64 */
       observationWindowMs: number;
+      cacheBypasses: number;
+      failedGets: number;
     };
     CacheAsideEvent: {
       sequence: number;
@@ -639,7 +645,8 @@ export interface components {
         | "cache.bypass"
         | "cache.error"
         | "origin.read"
-        | "origin.update";
+        | "origin.update"
+        | "origin.error";
       /** @description The cache key the event applies to. */
       requestId: string;
       /** @enum {string} */
@@ -652,7 +659,7 @@ export interface components {
       /** @constant */
       simulationId: "cache-aside";
       /** @constant */
-      modelVersion: "1.0.0";
+      modelVersion: "1.0.1";
       /** Format: int64 */
       seed: number;
       /** @enum {string} */
@@ -670,6 +677,7 @@ export interface components {
       events: components["schemas"]["CacheAsideEvent"][];
       outcomes: components["schemas"]["CacheGetOutcome"][];
       metrics: components["schemas"]["CacheAsideMetrics"];
+      incompleteGets: number;
     };
     CacheAsidePreset: {
       id: string;
@@ -684,7 +692,7 @@ export interface components {
       /** @constant */
       kind: "simulation";
       /** @constant */
-      modelVersion: "1.0.0";
+      modelVersion: "1.0.1";
       description: string;
       presets: components["schemas"]["CacheAsidePreset"][];
       assumptions: string[];

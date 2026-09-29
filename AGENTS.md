@@ -2,7 +2,7 @@
 
 ## Current state
 
-This is a new project. Only planning documents exist. React frontend and Java backend are user requirements. Other choices in the architecture document are proposed implementation defaults. Do not describe planned features, commands, coverage, or tests as implemented.
+The React/TypeScript frontend and Java backend implement request flow, capacity estimation, rate limiting, and cache-aside. Consult the roadmap and actual code for remaining release gates. Do not describe planned features or unperformed checks as implemented.
 
 The owner considers **lld-with-ui the best existing project**. Use it as the primary product reference: shared module shell, hands-on operations, guided simulation, architecture/sequence diagrams, and design details. Other sibling repositories are secondary references. Their repository-specific agent rules do not automatically govern this repository.
 
