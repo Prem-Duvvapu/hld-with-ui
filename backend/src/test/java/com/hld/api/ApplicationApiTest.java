@@ -41,6 +41,15 @@ class ApplicationApiTest {
     }
 
     @Test
+    void reportsUnknownRoutesAsNotFound() throws Exception {
+        for (String path : new String[] {"/", "/api/v1/nope", "/api/v1/topics/request-flow/extra"}) {
+            mvc.perform(get(path))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("not_found"));
+        }
+    }
+
+    @Test
     void runsTheBaselineThroughTheHttpContract() throws Exception {
         mvc.perform(post("/api/v1/simulations/request-flow/runs")
                         .contentType(MediaType.APPLICATION_JSON)
