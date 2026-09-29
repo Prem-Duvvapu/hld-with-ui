@@ -39,3 +39,4 @@ export type CacheAsideResult = components["schemas"]["CacheAsideResult"];
 export type CacheAsidePreset = components["schemas"]["CacheAsidePreset"];
 export type CacheAsideDescriptor =
   components["schemas"]["CacheAsideDescriptor"];
+export type CacheAsideEvent = components["schemas"]["CacheAsideEvent"];

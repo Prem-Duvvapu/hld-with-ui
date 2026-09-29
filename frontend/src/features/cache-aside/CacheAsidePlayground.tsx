@@ -65,7 +65,8 @@ function boundedInteger(
   min: number,
   max: number,
 ) {
-  const number = Number(value);
+  // Number("") is 0, so a cleared field must be rejected rather than run as zero.
+  const number = value.trim() === "" ? Number.NaN : Number(value);
   if (!Number.isInteger(number) || number < min || number > max)
     throw new Error(`${label} must be a whole number from ${min} to ${max}.`);
   return number;

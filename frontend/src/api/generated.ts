@@ -627,6 +627,25 @@ export interface components {
       /** Format: int64 */
       observationWindowMs: number;
     };
+    CacheAsideEvent: {
+      sequence: number;
+      /** Format: int64 */
+      timeMs: number;
+      /** @enum {string} */
+      kind:
+        | "cache.hit"
+        | "cache.miss"
+        | "cache.fill"
+        | "cache.bypass"
+        | "cache.error"
+        | "origin.read"
+        | "origin.update";
+      /** @description The cache key the event applies to. */
+      requestId: string;
+      /** @enum {string} */
+      nodeId: "cache" | "origin";
+      message: string;
+    };
     CacheAsideResult: {
       /** @constant */
       schemaVersion: "1.0";
@@ -648,7 +667,7 @@ export interface components {
       /** Format: int64 */
       lastVirtualTimeMs: number;
       assumptions: string[];
-      events: components["schemas"]["SimulationEvent"][];
+      events: components["schemas"]["CacheAsideEvent"][];
       outcomes: components["schemas"]["CacheGetOutcome"][];
       metrics: components["schemas"]["CacheAsideMetrics"];
     };
