@@ -6,6 +6,8 @@ Statuses: `planned` → `in-progress` → `review` → `done`; `blocked` require
 
 Sizes are relative work packages: S = focused change; M = several related changes; L = multiple vertical contributions. They are not promises of days or deadlines. Split L items before implementation using the task template.
 
+For the detailed execution sequence and agent handoff, use [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) and [OPUS_START_HERE.md](OPUS_START_HERE.md). Those plans do not change the statuses or release gates recorded here.
+
 ## Phase 0: executable foundation
 
 Goal: one coherent shell and a working contract path, without producing a broad library of unfinished modules.
