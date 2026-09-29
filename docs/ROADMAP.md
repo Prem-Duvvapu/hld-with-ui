@@ -15,7 +15,7 @@ Goal: one coherent shell and a working contract path, without producing a broad 
 | ID | Work package | Depends on | Size | Acceptance | Status / evidence |
 | --- | --- | --- | --- | --- | --- |
 | `P0-01` | Bootstrap React/TypeScript and Java/Spring toolchain | None | M | Locked dependencies, Maven Wrapper, clean builds, health endpoint, API proxy, root launcher with cleanup, exact setup docs | **done** — lockfile/wrapper committed; Java and React gates pass; health endpoint, proxy, launcher, and README commands implemented |
-| `P0-02` | Catalog and HTTP/event/content contracts | P0-01 | M | OpenAPI/JSON Schemas, generated frontend types, examples validate, unique IDs and prerequisite DAG checks, published-capability checks | **done** — OpenAPI 3.1 and content schemas committed; frontend types generated; CI checks two inputs plus catalog IDs, DAG, paths, questions, sources, and capabilities |
+| `P0-02` | Catalog and HTTP/event/content contracts | P0-01 | M | OpenAPI/JSON Schemas, generated frontend types, examples validate, unique IDs and prerequisite DAG checks, published-capability checks | **done** — OpenAPI 3.1 and content schemas committed; frontend types generated; CI checks two inputs plus catalog IDs, DAG, paths, questions, sources, and capabilities; HLD-01 adds catalog-to-curriculum identity/kind/prerequisite agreement and published-only prerequisites ([decision 0005](decisions/0005-rate-limiter-topic-and-workshop-ids.md)) |
 | `P0-03` | Shared HLD module shell | P0-01, P0-02 | M | LLD-inspired tabs; URL-selected view; home/category navigation; deep-link and unknown route behavior; both themes; responsive keyboard navigation | **in-progress** — URL tabs, document titles, manual-activation keyboard semantics, route splitting, themes, and 320/768/1440 initial-state Chrome renders have automated coverage; manual zoom, completed flows, reduced-motion, and screen-reader review remains in `RELEASE_REVIEW.md` |
 | `P0-04` | Repository quality gates | P0-01, P0-02 | M | CI runs applicable backend/frontend builds, tests, type/lint checks, content/contract validation; no success from missing tests; clean-checkout instructions verified | **in-progress** — CI runs contract drift/content checks, Java verify, and frontend typecheck/lint/format/tests/build; clean-checkout browser smoke remains |
 
@@ -57,7 +57,7 @@ All entries depend on `P2-05` and the prerequisite closure in the curriculum. Bu
 | `P3-03` | Cache policies/failures, CDN, saturation | Learner diagnoses origin overload, skew, and queue growth | planned |
 | `P3-04` | Queues/streams, idempotency, retries, breakers, rate limiting | Learner traces duplicates, retries, backpressure, and recovery | **in-progress** — a standalone distributed-rate-limiter topic now compares fixed window/token bucket, shared/local counter scope, overshoot, and backend failure policy; queue, stream, retry, idempotency, and breaker modules plus the Phase 3 wave gate remain |
 | `P3-05` | Architecture boundaries, observability, security/tenancy | Learner defends boundaries and diagnoses an incident with evidence | planned |
-| `P3-06` | Notification, rate limiter, chat, feed cases; timed practice | Four integrated cases plus 45-minute configurable interview flow and self-assessment | planned |
+| `P3-06` | Notification, rate limiter (`rate-limiter-workshop`), chat, feed cases; timed practice | Four integrated cases plus 45-minute configurable interview flow and self-assessment | planned |
 
 Exit: all R2 concepts and cases meet their publication gates. The core release must include executable experiments for replication lag, partition skew, duplicate delivery, retry amplification, and rate limiting. Theory-only publication does not satisfy those five experiment gates.
 
@@ -111,4 +111,4 @@ For documentation-only work, check internal links, IDs/dependencies, numbers, an
 - Keep architecture and content contracts authoritative; task notes do not silently override them.
 - No schedule is committed. Re-estimate after the reference slice reveals actual content/model/UI cost.
 
-**Next action:** complete the remaining browser/accessibility release review, then finish cache-aside guided playback and architecture/sequence views before the URL shortener workshop.
+**Next action:** follow the dependency order in [the implementation plan](IMPLEMENTATION_PLAN.md#5-delivery-sequence-and-dependencies). HLD-01 (baseline and identity reconciliation) is recorded in [its work item](work-items/HLD-01.md); the next task is HLD-02, preserving module state across tabs and correcting shell version metadata (`P0-03`). Browser/accessibility review and cache playback follow as HLD-03 through HLD-06, before the URL shortener workshop.

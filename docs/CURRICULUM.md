@@ -1,6 +1,12 @@
 # Curriculum and learning paths
 
-Status: planned coverage. Every row is a bounded learning module, not a claim of implementation. IDs below become canonical catalog IDs. Dependencies are module IDs; the catalog validator must enforce an acyclic graph. A contributor may split a large module with a documented ID/prerequisite migration before authoring it.
+Status: planned coverage. Every row is a bounded learning module, not a claim of implementation. IDs below are canonical catalog IDs. Dependencies are module IDs; the validators enforce an acyclic graph. A contributor may split a large module with a documented ID/prerequisite migration before authoring it.
+
+**Identity rules** (enforced by `scripts/validate-plan.mjs` and the catalog validator):
+
+- Every catalog entry uses its curriculum ID. A catalog `topic` comes from a concept table (sections 1–6); a catalog `case-study` comes from the case table (section 7). One ID never names both a topic and a case.
+- This file lists each module's full intended prerequisites. A published catalog entry lists only prerequisites that are themselves published, and each must appear in its curriculum row. Planned prerequisites stay here until their modules publish.
+- Published today: `request-flow`, `capacity-estimation`, `distributed-rate-limiter`, and `cache-aside`. See `content/catalog.json` for authoritative publication status.
 
 **Release notation:** R1 = first release; R2 = core expansion; R3 = advanced distributed systems; R4 = specialization. In each row, the named experiment is the intended teaching method. A module may publish with study/practice only if its unfinished experiment is clearly unavailable. Release gates specify which experiments are mandatory.
 
@@ -46,9 +52,11 @@ Status: planned coverage. Every row is a bounded learning module, not a claim of
 | `idempotency` | `transactions-isolation`, `queues-delivery` | Make retried effects safe within a defined scope | Duplicate operation, key conflict, dedupe expiry, lost response | R2 |
 | `timeouts-retries` | `request-flow`, `queues-tail-latency` | Choose deadlines and bounded retry policy | Slow dependency; compare immediate retry, backoff/jitter, and retry budget | R2 |
 | `circuit-breakers` | `timeouts-retries` | Isolate failure with breaker, bulkhead, and load shedding | Dependency failure/recovery; inspect open/half-open probes and rejected work | R2 |
-| `rate-limiting` | `capacity-estimation`, `scaling-state` | Choose a limit algorithm and enforcement scope | Burst inputs against token bucket/window strategies; show distributed overshoot assumptions | R2 |
+| `distributed-rate-limiter` | `capacity-estimation` | Choose a limit algorithm and enforcement scope | Burst inputs against token bucket/window strategies; show distributed overshoot assumptions | R2 |
 | `outbox-cdc` | `transactions-isolation`, `idempotency`, `streams-pubsub` | Avoid a database-write/event-publish gap | Crash at each boundary; replay relay and deduplicate downstream | R3 |
 | `sagas` | `outbox-cdc` | Coordinate long workflows with compensation | Partial checkout failure, compensation failure, and reconciliation | R3 |
+
+`distributed-rate-limiter` was published ahead of its R2 wave and absorbed the previously planned `rate-limiting` concept, so there is one rate-limiting lesson ([decision 0005](decisions/0005-rate-limiter-topic-and-workshop-ids.md)). `scaling-state` is not a prerequisite of the published concept; it is required by the later `rate-limiter-workshop` case.
 
 ## 5. Distributed guarantees
 
@@ -90,8 +98,8 @@ Every case includes baseline → observed limitation → justified evolution. Al
 | ID | Main prerequisites | Required design challenge | Release |
 | --- | --- | --- | --- |
 | `url-shortener` | First three R1 concepts | Key generation and collision handling, redirects, read-heavy cache, hot links, expiry/abuse | R1 |
-| `notification-service` | `queues-delivery`, `idempotency`, `rate-limiting` | User preferences, provider failure, retry/DLQ, per-recipient fairness | R2 |
-| `distributed-rate-limiter` | `rate-limiting`, `replication` | Enforcement location, overshoot tolerance, hot identities, backend failure | R2 |
+| `notification-service` | `queues-delivery`, `idempotency`, `distributed-rate-limiter` | User preferences, provider failure, retry/DLQ, per-recipient fairness | R2 |
+| `rate-limiter-workshop` | `distributed-rate-limiter`, `scaling-state`, `replication` | Enforcement location, overshoot tolerance, hot identities, backend failure | R2 |
 | `chat-service` | `streams-pubsub`, `api-communication`, `replication` | Ordering scope, reconnect, offline delivery, receipts and presence | R2 |
 | `news-feed` | `partitioning`, `cache-failures`, `streams-pubsub` | Push/pull fanout, celebrity skew, freshness, privacy changes | R2 |
 | `file-storage` | `object-storage`, `idempotency`, `security-tenancy` | Upload completion, metadata consistency, sharing, cleanup | R3 |
@@ -101,7 +109,7 @@ Every case includes baseline → observed limitation → justified evolution. Al
 | `payment-ledger` | `idempotency`, `outbox-cdc`, `security-tenancy` | Ledger invariants, retries, audit and reconciliation | R3 |
 | `job-scheduler` | `leases-fencing`, `queues-delivery` | Ownership, retry, cancellation, lost worker and overdue execution | R3 |
 | `metrics-platform` | `streams-pubsub`, `partitioning`, `observability` | Cardinality, ingestion/backpressure, retention and query tradeoffs | R3 |
-| `web-crawler-search` | `search-pipelines`, `rate-limiting` | Frontier scheduling, politeness, dedupe, freshness and indexing | R4 |
+| `web-crawler-search` | `search-pipelines`, `distributed-rate-limiter` | Frontier scheduling, politeness, dedupe, freshness and indexing | R4 |
 | `location-matching` | `partitioning`, `api-communication` | Geospatial search, moving entities, stale locations and dispatch | R4 |
 | `collaborative-editor` | `logical-clocks`, `consistency-models`, `api-communication` | Concurrent edits, reconnect, conflict semantics; compare OT/CRDT assumptions | R4 |
 | `distributed-kv-store` | `quorums-conflicts`, `consensus-raft`, `consistent-hashing` | Partitioning, replication, repair and explicit consistency contract | R3 |
