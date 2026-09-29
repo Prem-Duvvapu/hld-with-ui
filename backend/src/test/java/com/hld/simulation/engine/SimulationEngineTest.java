@@ -76,7 +76,7 @@ class SimulationEngineTest {
 
     @Test
     void reportsAlgorithmName() {
-        assertThat(new SeededRandom(1).algorithm()).isEqualTo("L64X128MixRandom");
+        assertThat(new SeededRandom(1).algorithm()).isEqualTo("SplittableRandom");
     }
 
     // --- SimulationBudget ---

@@ -1,25 +1,26 @@
 package com.hld.simulation.engine;
 
-import java.util.random.RandomGenerator;
-import java.util.random.RandomGeneratorFactory;
+import java.util.SplittableRandom;
 
 /**
  * A versioned, seeded pseudo-random number generator wrapper.
  * <p>
- * Uses {@code L64X128MixRandom} (a SplittableGenerator available since
- * Java 17) for reproducible sequences. The algorithm name is recorded
- * so future changes can detect incompatible replay.
+ * Uses {@link SplittableRandom} for reproducible sequences. It lives in
+ * {@code java.base}, so it exists on every Java runtime, including JRE
+ * images without the {@code jdk.random} module that provides
+ * {@code L64X128MixRandom}. The algorithm name is recorded so future
+ * changes can detect incompatible replay.
  * <p>
  * Two separate instances should be used for workload randomness and
  * failure randomness so that a comparison can retain the same arrivals
  * while varying failures.
  */
 public final class SeededRandom {
-    static final String ALGORITHM = "L64X128MixRandom";
-    private final RandomGenerator generator;
+    static final String ALGORITHM = "SplittableRandom";
+    private final SplittableRandom generator;
 
     public SeededRandom(long seed) {
-        this.generator = RandomGeneratorFactory.of(ALGORITHM).create(seed);
+        this.generator = new SplittableRandom(seed);
     }
 
     /** Returns the algorithm name for replay compatibility checks. */
