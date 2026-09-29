@@ -16,14 +16,14 @@ Cache-aside works the same way: quick when the note is there, slow when it's not
 
 ## Prerequisites
 
-Use **Request Flow** to understand where a cache lookup sits in the request path, and **Capacity Estimation** to quantify the read load a cache absorbs. This module focuses on the read-through pattern and does not cover write-through, invalidation protocols, or eviction policies.
+Use **Request Flow** to understand where a cache lookup sits in the request path, and **Capacity Estimation** to quantify the read load a cache absorbs. This module focuses on application-managed cache-aside reads and does not cover write-through, invalidation protocols, or eviction policies.
 
 ## Mental model
 
 For every read request, answer three questions:
 
 1. **Is it in the cache?** A hit returns immediately at cache-lookup latency. A miss adds origin-read latency.
-2. **Is it fresh?** The entry has a TTL. If the current time exceeds the fill time plus TTL, the entry is treated as expired — a miss.
+2. **Is it fresh?** The entry has a TTL. If the lookup time reaches or exceeds the fill time plus TTL, the entry is treated as expired — a miss.
 3. **Is the origin reachable?** On a miss, the origin must respond. If it is down, the miss fails. A hit still works.
 
 The simulation uses virtual time. Cache fill is instantaneous (zero additional time after the origin read). TTL expiry is checked at lookup time: `lookupTime >= fillTime + ttlMs`.
@@ -40,11 +40,19 @@ If the key is missing or expired, the application reads from the origin. This ta
 
 ### Origin update (cache-aside pattern)
 
-An UPDATE operation changes the value at the origin but does **not** modify or invalidate the cache. Any cached entry for that key remains until its TTL expires. This is the defining behavior of cache-aside: the cache is passive and lazy.
+An UPDATE operation changes the value at the origin but does **not** modify or invalidate the cache. Any cached entry for that key remains until its TTL expires. This is the policy chosen for this model; real cache-aside applications can explicitly invalidate entries on writes.
 
 ### Stale detection
 
-After an origin update, a cache hit may return an outdated value. The simulation detects this by comparing the returned value against the current origin version — an **observer view**. A real application typically cannot detect staleness without querying the origin.
+After an origin update, a cache hit may return an outdated value. The simulation detects this by comparing the cached version against the current committed origin version — an **observer view**. A real application typically cannot detect staleness without querying the origin.
+
+### Timing and result rules
+
+Model v1.0.1 processes events in timestamp order, with insertion order breaking ties. Input arrivals are inserted first in their listed order. A cache fill becomes visible only when its origin read completes. The origin value is sampled at read completion, so an update during that read can change its response.
+
+Initially only `k` exists. UPDATE creates or replaces a key and advances its version, even if its text stays the same. A missing key returns **Not found** and is not cached. If origin is unavailable, UPDATE does not commit and GET returns **ERROR**. Cache outages produce **BYPASS**, counted separately from misses. Hit ratio is hits divided by hits plus misses; failed misses stay in that denominator.
+
+A limited run reports its stopping reason, last event time, and incomplete GET count. Its metrics describe only the observed trace. Operations accept times from 0 to 60,000 ms, up to 100 operations, keys up to 64 characters, and values up to 256 characters.
 
 ## Worked example
 
@@ -65,7 +73,7 @@ Four GETs produce two hits and two misses → 50% hit ratio, two origin reads, a
 1. **Baseline preset** — Run the worked example and verify each outcome in the trace.
 2. **Cold burst** — Five concurrent GETs on an empty cache. Without coalescing, each causes a separate origin read.
 3. **Cache unavailable** — Disable the cache and observe every GET going directly to the origin.
-4. **Origin unavailable** — Disable the origin and observe that cache hits succeed but misses fail.
+4. **Origin unavailable** — Disable the origin and observe failed misses. Each run starts with an empty cache, so this preset cannot demonstrate serving prewarmed hits during an outage.
 5. **TTL experiments** — Change the TTL to see how it affects stale duration and origin load.
 
 ## Failures and tradeoffs
@@ -88,7 +96,7 @@ Cache hits continue to work. Cache misses fail. If TTLs expire during an outage,
 
 ## In a real project
 
-- **Choose TTL based on acceptable staleness**, not arbitrary round numbers. A 60-second TTL means up to 60 seconds of stale data after every origin update.
+- **Choose TTL based on acceptable staleness**, not arbitrary round numbers. In this model, a cached old version remains eligible only until its existing TTL expires. Do not treat TTL alone as a universal production freshness guarantee.
 - **Monitor hit ratio, origin read rate, and stale detection** independently. A high hit ratio with many stale reads may be worse than a lower hit ratio with fresh data.
 - **Plan for cold starts** after deployments, cache restarts, or TTL flushes. Consider warming strategies or gradual rollout.
 - **Separate cache failure from origin failure** in your monitoring. The symptoms overlap (increased latency, origin load) but the mitigations differ.

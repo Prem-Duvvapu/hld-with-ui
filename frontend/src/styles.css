@@ -36,7 +36,7 @@ html {
 }
 body {
   margin: 0;
-  min-width: 320px;
+  min-width: 0;
   background: var(--paper);
   color: var(--ink);
   font-family: var(--sans);

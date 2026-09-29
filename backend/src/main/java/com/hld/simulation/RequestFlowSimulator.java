@@ -27,7 +27,9 @@ public class RequestFlowSimulator {
             "Network and load-balancer overhead are zero.",
             "Each node uses a FIFO queue and identical workers.",
             "A request keeps the service time of its selected node.",
-            "Node failures follow the provided schedule; in-flight behavior is configurable.",
+            "Node failures follow the schedule; FAIL drops running and queued work.",
+            "COMPLETE retains already assigned work during outage and recovery; new arrivals avoid failed nodes.",
+            "Completions at the failure timestamp succeed; queued work cannot start at that timestamp.",
             "Retries, cancellation, and health-check delay are outside this model version.");
     private final SimulationLimits limits;
     private final SimulationBudget budget;
@@ -42,7 +44,9 @@ public class RequestFlowSimulator {
 
     RequestFlowSimulator(SimulationLimits limits, SimulationBudget budget) {
         this.limits = limits;
-        this.budget = budget;
+        this.budget = new SimulationBudget(Math.min(limits.maxEvents(), budget.maxEvents()),
+                Math.min(limits.maxVirtualTimeMs(), budget.maxVirtualTimeMs()),
+                budget.maxTraceBytes(), budget.wallDeadlineMs());
     }
 
     public SimulationLimits limits() {
@@ -96,7 +100,7 @@ public class RequestFlowSimulator {
                 String requestId = "Request " + (index + 1);
 
                 // Apply failures and recoveries up to the arrival time
-                applyFailuresAndRecoveries(nodes, failureSchedule, arrival, drafts, outcomes);
+                applyFailuresAndRecoveries(nodes, failureSchedule, arrival);
 
                 for (NodeRuntime node : nodes) node.removeCompleted(arrival);
                 drafts.add(new EventDraft(arrival, draftOrder++, "request.arrived", requestId, null,
@@ -141,26 +145,27 @@ public class RequestFlowSimulator {
                 long start = Math.max(arrival, workerAvailable);
                 long completion = Math.addExact(start, selected.serviceTimeMs());
 
-                // Check if the node will fail before this request completes
-                Long failureTime = findNextFailure(failureSchedule, selected.id(), start, completion);
+                // FAIL drops both running and queued assignments, including a queued start
+                // exactly at failure time. COMPLETE retains already assigned work.
+                Long failureTime = findNextFailure(failureSchedule, selected.id(), arrival, completion);
                 if (failureTime != null) {
-                    FailureScheduleEntry failEntry = failureSchedule.failureAt(selected.id(), failureTime);
-                    InFlightBehavior behavior = failEntry != null ? failEntry.inFlightBehavior()
-                            : InFlightBehavior.FAIL;
-                    if (behavior == InFlightBehavior.FAIL) {
-                        selected.assignWithFailure(failureTime);
+                    selected.assignWithFailure(failureTime);
+                    Long actualStart = start < failureTime ? start : null;
+                    long queueMs = actualStart == null ? failureTime - arrival : start - arrival;
+                    if (queueMs > 0) {
+                        drafts.add(new EventDraft(arrival, draftOrder++, "request.queued", requestId, selected.id(),
+                                requestId + " waited " + queueMs + " ms before failure or service."));
+                    }
+                    if (actualStart != null) {
                         drafts.add(new EventDraft(start, draftOrder++, "request.started", requestId,
                                 selected.id(), selected.id() + " started " + requestId + "."));
-                        drafts.add(new EventDraft(failureTime, draftOrder++, "request.failed", requestId,
-                                selected.id(),
-                                requestId + " failed because " + selected.id() + " went down at "
-                                        + failureTime + " ms."));
-                        long queueMs = start - arrival;
-                        outcomes.add(new RequestOutcome(requestId, selected.id(), "FAILED", arrival,
-                                start, failureTime, queueMs, null, failureTime - arrival));
-                        continue;
                     }
-                    // COMPLETE behavior: let the request finish normally
+                    drafts.add(new EventDraft(failureTime, draftOrder++, "request.failed", requestId,
+                            selected.id(), requestId + " failed because " + selected.id() + " went down at "
+                                    + failureTime + " ms."));
+                    outcomes.add(new RequestOutcome(requestId, selected.id(), "FAILED", arrival,
+                            actualStart, failureTime, queueMs, null, failureTime - arrival));
+                    continue;
                 }
 
                 long queue = start - arrival;
@@ -220,9 +225,7 @@ public class RequestFlowSimulator {
     private void applyFailuresAndRecoveries(
             List<NodeRuntime> nodes,
             FailureSchedule schedule,
-            long currentTimeMs,
-            List<EventDraft> drafts,
-            List<RequestOutcome> outcomes) {
+            long currentTimeMs) {
         // Process failure effects on in-flight requests
         for (NodeRuntime node : nodes) {
             for (FailureScheduleEntry entry : schedule.entriesFor(node.id())) {
@@ -235,7 +238,9 @@ public class RequestFlowSimulator {
                 if (entry.recoverAtMs() != null && entry.recoverAtMs() <= currentTimeMs
                         && !node.hasAppliedRecovery(entry.recoverAtMs())) {
                     node.markRecoveryApplied(entry.recoverAtMs());
-                    node.recover(entry.recoverAtMs());
+                    if (entry.inFlightBehavior() == InFlightBehavior.FAIL) {
+                        node.recover(entry.recoverAtMs());
+                    }
                 }
             }
         }
@@ -243,7 +248,8 @@ public class RequestFlowSimulator {
 
     private Long findNextFailure(FailureSchedule schedule, String entityId, long start, long end) {
         for (FailureScheduleEntry entry : schedule.entriesFor(entityId)) {
-            if (entry.failAtMs() > start && entry.failAtMs() < end) {
+            if (entry.inFlightBehavior() == InFlightBehavior.FAIL
+                    && entry.failAtMs() > start && entry.failAtMs() < end) {
                 return entry.failAtMs();
             }
         }
@@ -264,6 +270,11 @@ public class RequestFlowSimulator {
                 && input.failureSchedule() != null && !input.failureSchedule().isEmpty()) {
             throw new IllegalArgumentException(
                     "failureSchedule is not supported in model version " + RequestFlowInput.MODEL_VERSION_1_0);
+        }
+        if (input.policy() == null || input.arrivalTimesMs() == null || input.arrivalTimesMs().isEmpty()
+                || input.arrivalTimesMs().stream().anyMatch(java.util.Objects::isNull) || input.nodeServiceTimesMs() == null
+                || input.nodeServiceTimesMs().isEmpty() || input.nodeServiceTimesMs().stream().anyMatch(java.util.Objects::isNull)) {
+            throw new IllegalArgumentException("policy and nonempty, non-null arrival/service times are required");
         }
         if (input.arrivalTimesMs().size() > limits.maxRequests()) {
             throw new IllegalArgumentException("arrivalTimesMs cannot exceed " + limits.maxRequests() + " requests");
@@ -293,6 +304,9 @@ public class RequestFlowSimulator {
             }
         }
         if (input.failureSchedule() != null) {
+            if (input.failureSchedule().size() > 100 || input.failureSchedule().stream().anyMatch(java.util.Objects::isNull)) {
+                throw new IllegalArgumentException("failureSchedule allows at most 100 non-null entries");
+            }
             for (FailureScheduleEntry entry : input.failureSchedule()) {
                 if (entry.inFlightBehavior() == InFlightBehavior.PAUSE) {
                     throw new IllegalArgumentException(

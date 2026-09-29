@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.hld.simulation.SimulationEvent;
+import com.hld.simulation.engine.SimulationBudget;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -107,37 +108,12 @@ class CacheAsideSimulatorTest {
                         new CacheOperation("GET", "k", null, 2)),
                 7));
 
-        // First GET at 0: miss, fills cache at t=22
-        // Second GET at 1: lookup at t=3. Cache was filled at t=22 by the
-        // first GET in the simulation, but operations are processed sequentially
-        // so the fill from GET-0 has already happened. Cache hit.
-        // Third GET at 2: lookup at t=4. Also a cache hit.
-        // Actually wait — the operations are processed sequentially, so the
-        // fill from the first GET (at t=22) does exist in the cache map by
-        // the time the second GET is processed. But in a real system the
-        // second request arrives at t=1 and sees no cache entry because the
-        // fill hasn't happened yet.
-        //
-        // The model processes operations sequentially and each GET completes
-        // before the next starts. So the second GET sees the fill.
-        // This matches the model: operations are a schedule, not concurrent.
-        // For a true cold burst, all must arrive before the first fill.
-        // The model spec says "many same-key reads arrive before the first fill;
-        // each miss causes a separate origin read under the basic model."
-        //
-        // Since the model processes ops in sequence and fills are instant
-        // after the origin read completes, the second GET (at t=1, lookup at t=3)
-        // sees the fill from the first GET which completed at t=22.
-        //
-        // The realistic cold-burst scenario would require concurrent processing.
-        // For now, the model correctly shows that sequential operations see
-        // previous fills. We verify the expected sequential behavior.
-        assertThat(result.outcomes()).hasSize(3);
-        assertThat(result.outcomes().get(0).hitOrMiss()).isEqualTo("MISS");
-        // The sequential model means subsequent GETs see the fill
-        assertThat(result.outcomes().get(1).hitOrMiss()).isEqualTo("HIT");
-        assertThat(result.outcomes().get(2).hitOrMiss()).isEqualTo("HIT");
-        assertThat(result.metrics().originReads()).isEqualTo(1);
+        assertThat(result.outcomes()).extracting(CacheGetOutcome::hitOrMiss)
+                .containsExactly("MISS", "MISS", "MISS");
+        assertThat(result.outcomes()).extracting(CacheGetOutcome::responseTimeMs)
+                .containsExactly(22L, 23L, 24L);
+        assertThat(result.metrics().originReads()).isEqualTo(3);
+        assertThat(result.events()).extracting(SimulationEvent::timeMs).isSorted();
     }
 
     // ── Cache unavailable ──
@@ -153,10 +129,10 @@ class CacheAsideSimulatorTest {
 
         // All GETs bypass cache and go to origin
         assertThat(result.outcomes()).hasSize(2);
-        assertThat(result.outcomes().get(0).hitOrMiss()).isEqualTo("MISS");
+        assertThat(result.outcomes().get(0).hitOrMiss()).isEqualTo("BYPASS");
         assertThat(result.outcomes().get(0).returnedValue()).isEqualTo("v1");
         assertThat(result.outcomes().get(0).latencyMs()).isEqualTo(20); // origin only, no cache lookup
-        assertThat(result.outcomes().get(1).hitOrMiss()).isEqualTo("MISS");
+        assertThat(result.outcomes().get(1).hitOrMiss()).isEqualTo("BYPASS");
         assertThat(result.metrics().cacheHits()).isZero();
         assertThat(result.metrics().originReads()).isEqualTo(2);
 
@@ -181,9 +157,9 @@ class CacheAsideSimulatorTest {
 
         // Both are cache misses because no data was ever cached
         assertThat(result.outcomes()).hasSize(2);
-        assertThat(result.outcomes().get(0).hitOrMiss()).isEqualTo("MISS");
+        assertThat(result.outcomes().get(0).hitOrMiss()).isEqualTo("ERROR");
         assertThat(result.outcomes().get(0).returnedValue()).isNull();
-        assertThat(result.outcomes().get(1).hitOrMiss()).isEqualTo("MISS");
+        assertThat(result.outcomes().get(1).hitOrMiss()).isEqualTo("ERROR");
         assertThat(result.outcomes().get(1).returnedValue()).isNull();
         assertThat(result.metrics().originReads()).isZero();
 
@@ -306,5 +282,88 @@ class CacheAsideSimulatorTest {
         assertThat(staleOutcome.stale()).isTrue();
 
         assertThat(result.metrics().staleReads()).isEqualTo(1);
+    }
+
+    @Test
+    void updatesDuringReadAreSampledAtReadCompletionEvenWithUnsortedInput() {
+        CacheAsideResult result = simulator.run(CacheAsideInput.create(2, 20, 100, "v1",
+                List.of(new CacheOperation("GET", "k", null, 0),
+                        new CacheOperation("GET", "k", null, 30),
+                        new CacheOperation("UPDATE", "k", "v2", 10)), 7));
+        assertThat(result.outcomes()).extracting(CacheGetOutcome::returnedValue).containsExactly("v2", "v2");
+        assertThat(result.events()).extracting(SimulationEvent::timeMs).isSorted();
+    }
+
+    @Test
+    void missingKeyIsNotCachedAndCanLaterBeCreated() {
+        CacheAsideResult result = simulator.run(CacheAsideInput.create(2, 20, 100, "v1",
+                List.of(new CacheOperation("GET", "other", null, 0),
+                        new CacheOperation("UPDATE", "other", "created", 30),
+                        new CacheOperation("GET", "other", null, 40)), 7));
+        assertThat(result.outcomes().get(0).returnedValue()).isNull();
+        assertThat(result.outcomes().get(1).returnedValue()).isEqualTo("created");
+        assertThat(result.metrics().cacheHits()).isZero();
+    }
+
+    @Test
+    void sameValueUpdateStillChangesTheOriginVersion() {
+        CacheAsideResult result = simulator.run(CacheAsideInput.create(2, 20, 100, "v1",
+                List.of(new CacheOperation("GET", "k", null, 0),
+                        new CacheOperation("UPDATE", "k", "v1", 30),
+                        new CacheOperation("GET", "k", null, 40)), 7));
+        assertThat(result.outcomes().get(1).stale()).isTrue();
+    }
+
+    @Test
+    void originOutageRejectsWritesAndSeparatesBypassesFromMisses() {
+        CacheAsideResult result = simulator.run(CacheAsideInput.withAvailability(2, 20, 100, "v1",
+                List.of(new CacheOperation("UPDATE", "k", "v2", 0),
+                        new CacheOperation("GET", "k", null, 1)), false, false, 7));
+        assertThat(result.events()).extracting(SimulationEvent::kind)
+                .containsExactly("origin.error", "cache.bypass", "cache.error");
+        assertThat(result.metrics().cacheMisses()).isZero();
+        assertThat(result.metrics().cacheBypasses()).isEqualTo(1);
+        assertThat(result.metrics().failedGets()).isEqualTo(1);
+        assertThat(result.incompleteGets()).isZero();
+    }
+
+    @Test
+    void everyRuntimeLimitReturnsAPartialTraceWithoutInventingOutcomes() {
+        List<SimulationBudget> budgets = List.of(
+                new SimulationBudget(1, 60_000, 100_000, 0),
+                new SimulationBudget(100, 10, 100_000, 0),
+                new SimulationBudget(100, 60_000, 1, 0));
+        List<String> reasons = List.of("event_limit", "virtual_time_limit", "trace_size_limit");
+        for (int i = 0; i < budgets.size(); i++) {
+            CacheAsideResult result = new CacheAsideSimulator(budgets.get(i)).run(
+                    CacheAsideInput.create(2, 20, 100, "v1",
+                            List.of(new CacheOperation("GET", "k", null, 0)), 7));
+            assertThat(result.status()).isEqualTo("limited");
+            assertThat(result.truncationReason()).isEqualTo(reasons.get(i));
+            assertThat(result.incompleteGets()).isEqualTo(1);
+            assertThat(result.outcomes()).isEmpty();
+            assertThat(result.lastVirtualTimeMs()).isLessThanOrEqualTo(budgets.get(i).maxVirtualTimeMs());
+        }
+    }
+
+    @Test
+    void rejectsUnboundedOrAmbiguousOperations() {
+        for (CacheOperation op : List.of(new CacheOperation("GET", "k", null, Long.MAX_VALUE),
+                new CacheOperation("GET", null, null, 0), new CacheOperation("GET", "k", "ignored", 0),
+                new CacheOperation("UPDATE", "k", "x".repeat(257), 0))) {
+            assertThatThrownBy(() -> simulator.run(CacheAsideInput.create(2, 20, 100, "v1", List.of(op), 7)))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    @Test
+    void simultaneousZeroLatencyReadsUseStableInsertionOrder() {
+        CacheAsideInput input = CacheAsideInput.create(0, 0, 100, "v1",
+                List.of(new CacheOperation("GET", "k", null, 0),
+                        new CacheOperation("GET", "k", null, 0)), 7);
+        CacheAsideResult result = simulator.run(input);
+        assertThat(result.outcomes()).extracting(CacheGetOutcome::hitOrMiss).containsExactly("MISS", "MISS");
+        assertThat(result).isEqualTo(simulator.run(input));
+        assertThat(result.events()).extracting(SimulationEvent::sequence).containsExactly(1, 2, 3, 4, 5, 6);
     }
 }

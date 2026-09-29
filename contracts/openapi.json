@@ -620,7 +620,7 @@
           },
           "modelVersion": {
             "type": "string",
-            "enum": ["1.0.0", "1.1.0"]
+            "enum": ["1.0.0", "1.1.1"]
           },
           "policy": {
             "type": "string",
@@ -663,7 +663,8 @@
             "items": {
               "$ref": "#/components/schemas/FailureScheduleEntry"
             },
-            "description": "Optional failure schedule for model version 1.1.0. Not allowed with model version 1.0.0."
+            "description": "Optional failure schedule for model version 1.1.1. Not allowed with model version 1.0.0.",
+            "maxItems": 100
           },
           "seed": {
             "type": "integer",
@@ -717,7 +718,7 @@
           },
           "modelVersion": {
             "type": "string",
-            "enum": ["1.0.0", "1.1.0"]
+            "enum": ["1.0.0", "1.1.1"]
           },
           "description": {
             "type": "string"
@@ -902,7 +903,7 @@
           },
           "modelVersion": {
             "type": "string",
-            "enum": ["1.0.0", "1.1.0"]
+            "enum": ["1.0.0", "1.1.1"]
           },
           "seed": {
             "type": "integer",
@@ -1690,15 +1691,20 @@
             "enum": ["GET", "UPDATE"]
           },
           "key": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "\\S"
           },
           "value": {
-            "type": ["string", "null"]
+            "type": ["string", "null"],
+            "maxLength": 256
           },
           "timeMs": {
             "type": "integer",
             "format": "int64",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 60000
           }
         }
       },
@@ -1724,7 +1730,7 @@
           },
           "modelVersion": {
             "type": "string",
-            "const": "1.0.0"
+            "const": "1.0.1"
           },
           "cacheLookupLatencyMs": {
             "type": "integer",
@@ -1745,7 +1751,8 @@
             "maximum": 60000
           },
           "initialOriginValue": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 256
           },
           "operations": {
             "type": "array",
@@ -1787,7 +1794,8 @@
           },
           "hitOrMiss": {
             "type": "string",
-            "enum": ["HIT", "MISS"]
+            "enum": ["HIT", "MISS", "BYPASS", "ERROR"],
+            "description": "ERROR means origin unavailable. A MISS or BYPASS with null returnedValue means key not found; absent keys are not cached."
           },
           "stale": {
             "type": "boolean"
@@ -1816,7 +1824,9 @@
           "staleReads",
           "originReads",
           "hitRatio",
-          "observationWindowMs"
+          "observationWindowMs",
+          "cacheBypasses",
+          "failedGets"
         ],
         "properties": {
           "totalGets": {
@@ -1835,11 +1845,20 @@
             "type": "integer"
           },
           "hitRatio": {
-            "type": "number"
+            "type": "number",
+            "description": "Hits divided by hits + misses observed in the trace; bypass excluded, failed misses included. Zero when no eligible lookup exists."
           },
           "observationWindowMs": {
             "type": "integer",
             "format": "int64"
+          },
+          "cacheBypasses": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "failedGets": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       },
@@ -1857,7 +1876,7 @@
         "properties": {
           "sequence": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 1
           },
           "timeMs": {
             "type": "integer",
@@ -1873,7 +1892,8 @@
               "cache.bypass",
               "cache.error",
               "origin.read",
-              "origin.update"
+              "origin.update",
+              "origin.error"
             ]
           },
           "requestId": {
@@ -1902,7 +1922,8 @@
           "assumptions",
           "events",
           "outcomes",
-          "metrics"
+          "metrics",
+          "incompleteGets"
         ],
         "properties": {
           "schemaVersion": {
@@ -1915,7 +1936,7 @@
           },
           "modelVersion": {
             "type": "string",
-            "const": "1.0.0"
+            "const": "1.0.1"
           },
           "seed": {
             "type": "integer",
@@ -1959,6 +1980,10 @@
           },
           "metrics": {
             "$ref": "#/components/schemas/CacheAsideMetrics"
+          },
+          "incompleteGets": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       },
@@ -2007,7 +2032,7 @@
           },
           "modelVersion": {
             "type": "string",
-            "const": "1.0.0"
+            "const": "1.0.1"
           },
           "description": {
             "type": "string"

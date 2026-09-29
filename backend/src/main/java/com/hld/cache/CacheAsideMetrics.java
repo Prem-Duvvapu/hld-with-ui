@@ -13,5 +13,7 @@ public record CacheAsideMetrics(
         int staleReads,
         int originReads,
         double hitRatio,
-        long observationWindowMs) {
+        long observationWindowMs,
+        int cacheBypasses,
+        int failedGets) {
 }

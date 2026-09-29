@@ -33,7 +33,7 @@ class SimulationEngineTest {
 
     @Test
     void emitterRejectsEventsAfterByteBudget() {
-        // Each event ~140+ bytes estimated; a 200 byte budget fits ~1 event
+        // Conservative escaped-string estimate exceeds this small byte budget.
         EventEmitter emitter = new EventEmitter(100, 200);
         emitter.emit(new SimulationEvent(1, 0L, "test.event", "R1", "N1", "A message"));
         assertThat(emitter.emit(new SimulationEvent(2, 0L, "test.event", "R1", "N1", "Another")))
@@ -44,7 +44,7 @@ class SimulationEngineTest {
     @Test
     void emitterTracksEstimatedBytes() {
         EventEmitter emitter = new EventEmitter(100, 100_000);
-        assertThat(emitter.estimatedBytes()).isZero();
+        assertThat(emitter.estimatedBytes()).isEqualTo(2); // empty JSON array
         emitter.emit(new SimulationEvent(1, 0L, "test", "R1", "N1", "msg"));
         assertThat(emitter.estimatedBytes()).isPositive();
     }
@@ -252,5 +252,17 @@ class SimulationEngineTest {
         assertThatThrownBy(() -> new FailureScheduleEntry("N", 200L, 100L, InFlightBehavior.FAIL))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("recoverAtMs must be after failAtMs");
+    }
+
+    @Test
+    void traceEstimateCoversUtf8AndJsonEscaping() {
+        EventEmitter emitter = new EventEmitter(10, 100_000);
+        String text = "漢字\u0001\"\\".repeat(100);
+        emitter.emit(new SimulationEvent(1, 0, "test.event", "R1", "N1", text));
+        // Each repetition needs at least 16 bytes in UTF-8 JSON; Java length is only five.
+        assertThat(emitter.estimatedBytes()).isGreaterThanOrEqualTo(1600);
+        EventEmitter bounded = new EventEmitter(10, 1000);
+        assertThat(bounded.emit(new SimulationEvent(1, 0, "test.event", "R1", "N1", text))).isFalse();
+        assertThat(bounded.truncationReason()).isEqualTo("trace_size_limit");
     }
 }

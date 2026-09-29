@@ -141,7 +141,7 @@ class ApplicationApiTest {
                         .content("""
                                 {
                                   "schemaVersion": "1.0",
-                                  "modelVersion": "1.0.0",
+                                  "modelVersion": "1.0.1",
                                   "cacheLookupLatencyMs": 2,
                                   "originReadLatencyMs": 20,
                                   "ttlMs": 100,
@@ -167,5 +167,29 @@ class ApplicationApiTest {
                 .andExpect(jsonPath("$.metrics.hitRatio").value(0.5))
                 .andExpect(jsonPath("$.outcomes[2].stale").value(true))
                 .andExpect(jsonPath("$.outcomes[2].returnedValue").value("v1"));
+    }
+
+    @Test
+    void rejectsMalformedCacheSchedulesAndRetiredModelVersions() throws Exception {
+        String template = """
+                {"schemaVersion":"1.0","modelVersion":"1.0.1","cacheLookupLatencyMs":2,
+                 "originReadLatencyMs":20,"ttlMs":100,"initialOriginValue":"v1",
+                 "operations":%s,"cacheAvailable":true,"originAvailable":true,"seed":7}
+                """;
+        for (String operations : new String[] {
+                "[{\"kind\":\"GET\",\"key\":null,\"timeMs\":0}]",
+                "[{\"kind\":\"GET\",\"key\":\"k\",\"timeMs\":9223372036854775807}]",
+                "[{\"kind\":\"GET\",\"key\":\"k\"}]", "[null]"}) {
+            mvc.perform(post("/api/v1/simulations/cache-aside/runs")
+                            .contentType(MediaType.APPLICATION_JSON).content(template.formatted(operations)))
+                    .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("invalid_input"));
+        }
+        String valid = template.formatted("[{\"kind\":\"GET\",\"key\":\"k\",\"timeMs\":0}]");
+        for (String invalid : new String[] {valid.replace("1.0.1", "1.0.0"),
+                valid.replace("\"cacheAvailable\":true,", "")}) {
+            mvc.perform(post("/api/v1/simulations/cache-aside/runs")
+                            .contentType(MediaType.APPLICATION_JSON).content(invalid))
+                    .andExpect(status().isBadRequest());
+        }
     }
 }

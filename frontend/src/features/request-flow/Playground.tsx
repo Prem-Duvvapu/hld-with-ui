@@ -118,7 +118,7 @@ function buildInput(
     workersPerNode,
     queueCapacity,
     failureSchedule:
-      modelVersion === "1.1.0" &&
+      modelVersion === "1.1.1" &&
       form.failureSchedule &&
       form.failureSchedule.length > 0
         ? form.failureSchedule

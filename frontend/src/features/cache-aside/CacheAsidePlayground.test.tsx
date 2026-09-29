@@ -10,7 +10,7 @@ import { CacheAsidePlayground } from "./CacheAsidePlayground";
 
 const baseInput: CacheAsideInput = {
   schemaVersion: "1.0",
-  modelVersion: "1.0.0",
+  modelVersion: "1.0.1",
   cacheLookupLatencyMs: 2,
   originReadLatencyMs: 20,
   ttlMs: 100,
@@ -31,7 +31,7 @@ const descriptor: CacheAsideDescriptor = {
   id: "cache-aside",
   title: "Cache-Aside",
   kind: "simulation",
-  modelVersion: "1.0.0",
+  modelVersion: "1.0.1",
   description: "A deterministic cache-aside model.",
   presets: [
     {
@@ -62,10 +62,11 @@ const descriptor: CacheAsideDescriptor = {
 const baselineResult: CacheAsideResult = {
   schemaVersion: "1.0",
   simulationId: "cache-aside",
-  modelVersion: "1.0.0",
+  modelVersion: "1.0.1",
   seed: 7,
   status: "completed",
   lastVirtualTimeMs: 142,
+  incompleteGets: 0,
   assumptions: ["TTL is measured from the fill time."],
   events: (
     [
@@ -85,7 +86,7 @@ const baselineResult: CacheAsideResult = {
       ],
     ] as const
   ).map(([timeMs, kind, nodeId, message], sequence): CacheAsideEvent => ({
-    sequence,
+    sequence: sequence + 1,
     timeMs,
     kind,
     requestId: "k",
@@ -108,6 +109,8 @@ const baselineResult: CacheAsideResult = {
   })),
   metrics: {
     totalGets: 4,
+    cacheBypasses: 0,
+    failedGets: 0,
     cacheHits: 2,
     cacheMisses: 2,
     staleReads: 1,
@@ -237,7 +240,7 @@ describe("Cache-aside playground", () => {
   it.each([
     ["GET k", 'Line 1: expected "GET key @time" or "UPDATE key value @time".'],
     ["GET k @0\nUPDATE k @5", "Line 2: UPDATE requires a value."],
-    ["GET k @300001", "Line 1: time must be 0–300,000."],
+    ["GET k @300001", "Line 1: time must be 0–60,000."],
     ["   \n", "Operations need 1–100 lines."],
     [
       Array.from({ length: 101 }, (_, index) => `GET k @${index}`).join("\n"),
@@ -309,7 +312,7 @@ describe("Cache-aside playground", () => {
       ...baselineResult,
       events: [
         {
-          sequence: 0,
+          sequence: 1,
           timeMs: 2,
           kind: "cache.error",
           requestId: "k",
@@ -320,7 +323,7 @@ describe("Cache-aside playground", () => {
       outcomes: [
         {
           key: "k",
-          hitOrMiss: "MISS",
+          hitOrMiss: "ERROR",
           stale: false,
           requestTimeMs: 0,
           responseTimeMs: 2,
@@ -336,11 +339,60 @@ describe("Cache-aside playground", () => {
       name: "Cache GET outcomes",
     });
     expect(within(outcomes).getAllByRole("row")[1]).toHaveTextContent(
-      "MISS—No",
+      "ERRORUnavailableNo",
     );
     expect(metric("Hit Ratio")).toHaveTextContent("0.0%");
     expect(
       screen.getByText("Origin unavailable; GET fails on miss."),
     ).toBeInTheDocument();
+  });
+  it("clears old outcomes after editing inputs", async () => {
+    mockFetch(baselineResult);
+    render(<CacheAsidePlayground descriptor={descriptor} />);
+    run();
+    await screen.findByRole("table", { name: "Cache GET outcomes" });
+    fireEvent.change(screen.getByLabelText("TTL (ms)"), {
+      target: { value: "500" },
+    });
+    expect(
+      screen.queryByRole("table", { name: "Cache GET outcomes" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows truncation and incomplete GETs instead of a complete result", async () => {
+    mockFetch({
+      ...baselineResult,
+      status: "limited",
+      truncationReason: "virtual_time_limit",
+      incompleteGets: 2,
+      lastVirtualTimeMs: 60000,
+    });
+    render(<CacheAsidePlayground descriptor={descriptor} />);
+    run();
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "2 GET(s) incomplete",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("virtual_time_limit");
+  });
+
+  it("preserves the descriptor seed and prevents preset changes during a pending run", async () => {
+    const fetchMock = vi.fn().mockReturnValue(new Promise(() => {}));
+    vi.stubGlobal("fetch", fetchMock);
+    const seeded = {
+      ...descriptor,
+      presets: descriptor.presets.map((p) => ({
+        ...p,
+        input: { ...p.input, seed: 42 },
+      })),
+    };
+    render(<CacheAsidePlayground descriptor={seeded} />);
+    run();
+    expect(sentInput(fetchMock).seed).toBe(42);
+    expect(screen.getByLabelText("TTL (ms)")).toBeDisabled();
+    for (const button of within(
+      screen.getByRole("group", { name: "Simulation presets" }),
+    ).getAllByRole("button")) {
+      expect(button).toBeDisabled();
+    }
   });
 });

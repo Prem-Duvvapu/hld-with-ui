@@ -1,0 +1,156 @@
+.cache-playground {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.5fr);
+  gap: 24px;
+  align-items: start;
+  padding-block: 24px;
+  scroll-margin-top: 90px;
+}
+.cache-playground .playground-controls,
+.cache-playground .playground-results,
+.cache-playground .cache-empty {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.cache-playground h2 {
+  margin-top: 0;
+  font-size: 1.2rem;
+}
+.cache-playground .cache-guidance,
+.cache-playground .cache-empty p {
+  color: var(--muted);
+}
+.cache-playground .presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 20px;
+}
+.cache-playground .preset-button {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.cache-playground .preset-button.active {
+  border-color: var(--green);
+  color: var(--green);
+}
+.cache-playground .field-group {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.cache-playground .field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.cache-playground .field-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.cache-playground .field-input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+}
+.cache-playground .operations-input {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  resize: vertical;
+}
+.cache-playground .toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cache-playground :disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.cache-playground .metrics-bar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.cache-playground .metric {
+  display: grid;
+  padding: 12px;
+  background: var(--surface-2);
+  border-radius: 6px;
+}
+.cache-playground .metric-value {
+  font: 600 1.4rem var(--mono);
+}
+.cache-playground .metric-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.cache-playground .result-section {
+  margin-top: 24px;
+}
+.cache-playground .table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.cache-playground .table-wrap:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
+}
+.cache-playground table {
+  font-size: 0.8rem;
+}
+.cache-playground th {
+  font: 600 0.75rem var(--sans);
+  white-space: nowrap;
+}
+.cache-playground td {
+  max-width: 360px;
+  overflow-wrap: anywhere;
+}
+.cache-playground .badge {
+  padding: 3px 6px;
+  border-radius: 4px;
+  font: 0.8rem var(--mono);
+  background: var(--surface-2);
+}
+.cache-playground .badge-hit {
+  color: var(--green);
+}
+.cache-playground .stale-row {
+  background: color-mix(in srgb, var(--orange) 10%, var(--surface));
+}
+.cache-playground .error-text {
+  color: var(--red);
+}
+.cache-playground .notice {
+  padding: 12px;
+  border: 1px solid var(--orange);
+  border-radius: 6px;
+}
+.cache-playground .playground-results > p {
+  font-size: 0.85rem;
+}
+@media (max-width: 900px) {
+  .cache-playground {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .cache-playground .playground-controls,
+  .cache-playground .playground-results,
+  .cache-playground .cache-empty {
+    padding: 16px;
+  }
+}

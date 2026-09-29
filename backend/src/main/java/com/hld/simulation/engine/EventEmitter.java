@@ -22,7 +22,7 @@ public final class EventEmitter {
     private final int maxEvents;
     private final long maxTraceBytes;
     private final List<SimulationEvent> events = new ArrayList<>();
-    private long estimatedBytes;
+    private long estimatedBytes = 2; // JSON array brackets
     private String truncationReason;
 
     public EventEmitter(int maxEvents, long maxTraceBytes) {
@@ -89,11 +89,11 @@ public final class EventEmitter {
         size += stringLength(event.kind());
         size += stringLength(event.message());
         // sequence and timeMs are numbers; typically < 20 digits total
-        size += 20;
+        size += 40; // two signed long values
         return size;
     }
 
-    private static int stringLength(String value) {
-        return value == null ? 4 : value.length() + 2; // 2 for quotes
+    private static long stringLength(String value) {
+        return value == null ? 4 : 6L * value.length() + 2; // Worst case: one JSON Unicode escape per UTF-16 code unit.
     }
 }

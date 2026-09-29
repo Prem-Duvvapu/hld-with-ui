@@ -1,5 +1,7 @@
 package com.hld.cache;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * A single operation in a cache-aside simulation schedule.
  *
@@ -8,10 +10,10 @@ package com.hld.cache;
  * without touching the cache.
  */
 public record CacheOperation(
-        String kind,
-        String key,
+        @JsonProperty(required = true) String kind,
+        @JsonProperty(required = true) String key,
         String value,
-        long timeMs) {
+        @JsonProperty(required = true) long timeMs) {
     public static final String GET = "GET";
     public static final String UPDATE = "UPDATE";
 }
