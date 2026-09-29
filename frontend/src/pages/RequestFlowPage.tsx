@@ -69,8 +69,7 @@ export function RequestFlowPage() {
       topic={data.topic.topic}
       tabs={requestFlowTabs}
       defaultView="playground"
-    >
-      {(view) => views[view]}
-    </ModuleShell>
+      panels={views}
+    />
   );
 }

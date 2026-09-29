@@ -1,4 +1,11 @@
-import type { KeyboardEvent, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { CatalogEntry } from "../api/types";
 import { usePageTitle } from "../hooks/usePageTitle";
@@ -25,32 +32,60 @@ export const requestFlowTabs: ReadonlyArray<ModuleTab<ModuleView>> = [
   { id: "practice", label: "Practice" },
 ];
 
+const PanelActiveContext = createContext(true);
+
+/**
+ * Whether the module panel containing the caller is the selected tab.
+ * Panels stay mounted after their first visit so learner state survives tab
+ * changes; anything that runs on its own, such as playback, must pause while
+ * this is false. Outside a ModuleShell it is always true.
+ */
+export function usePanelActive() {
+  return useContext(PanelActiveContext);
+}
+
 export function ModuleShell<T extends string>({
   topic,
   tabs,
   defaultView,
-  children,
+  panels,
 }: {
   topic: CatalogEntry;
   tabs: ReadonlyArray<ModuleTab<T>>;
   defaultView: T;
-  children: (view: T) => ReactNode;
+  panels: Record<T, ReactNode>;
 }) {
   const [params, setParams] = useSearchParams();
   const requested = params.get("view");
-  const active = tabs.some((tab) => tab.id === requested)
-    ? (requested as T)
-    : defaultView;
+  const supported = tabs.some((tab) => tab.id === requested);
+  const active = supported ? (requested as T) : defaultView;
   const activeLabel = tabs.find((tab) => tab.id === active)?.label;
-  const panelId = `module-panel-${topic.id}`;
+  const panelId = (view: T) => `module-panel-${topic.id}-${view}`;
+
+  // Mount a panel on its first visit and keep it mounted afterwards.
+  const [visited, setVisited] = useState<ReadonlySet<T>>(
+    () => new Set([active]),
+  );
+  if (!visited.has(active)) setVisited(new Set(visited).add(active));
 
   usePageTitle(`${activeLabel ?? "Module"} · ${topic.title} | HLD with UI`);
 
+  // An unsupported ?view= falls back to the default; drop it from the URL
+  // without adding a history entry.
+  useEffect(() => {
+    if (requested === null || supported) return;
+    const next = new URLSearchParams(params);
+    next.delete("view");
+    setParams(next, { replace: true });
+  }, [requested, supported, params, setParams]);
+
+  // Tab changes are history entries, so Back and Forward move between views.
   function select(view: T) {
+    if (view === active) return;
     const next = new URLSearchParams(params);
     if (view === defaultView) next.delete("view");
     else next.set("view", view);
-    setParams(next, { replace: true });
+    setParams(next);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -86,7 +121,7 @@ export function ModuleShell<T extends string>({
             <p>{topic.summary}</p>
           </div>
           <div className="version-pill">
-            MODEL <strong>v{topic.contentVersion}</strong>
+            CONTENT <strong>v{topic.contentVersion}</strong>
           </div>
         </div>
         <div className="learning-outcomes">
@@ -112,7 +147,7 @@ export function ModuleShell<T extends string>({
               role="tab"
               type="button"
               aria-selected={active === tab.id}
-              aria-controls={panelId}
+              aria-controls={panelId(tab.id)}
               tabIndex={active === tab.id ? 0 : -1}
               onClick={() => select(tab.id)}
             >
@@ -122,15 +157,23 @@ export function ModuleShell<T extends string>({
           ))}
         </div>
       </div>
-      <section
-        id={panelId}
-        role="tabpanel"
-        aria-labelledby={`tab-${topic.id}-${active}`}
-        tabIndex={0}
-        className="module-content page-width"
-      >
-        {children(active)}
-      </section>
+      {tabs.map((tab) => (
+        <section
+          key={tab.id}
+          id={panelId(tab.id)}
+          role="tabpanel"
+          aria-labelledby={`tab-${topic.id}-${tab.id}`}
+          tabIndex={0}
+          hidden={tab.id !== active}
+          className="module-content page-width"
+        >
+          {visited.has(tab.id) && (
+            <PanelActiveContext.Provider value={tab.id === active}>
+              {panels[tab.id]}
+            </PanelActiveContext.Provider>
+          )}
+        </section>
+      ))}
     </div>
   );
 }

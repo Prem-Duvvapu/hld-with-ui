@@ -136,6 +136,7 @@ export function RateLimiterPlayground({
             <button
               type="button"
               key={preset.id}
+              disabled={running}
               onClick={() => {
                 setForm(toForm(preset.input));
                 setRunForm(null);

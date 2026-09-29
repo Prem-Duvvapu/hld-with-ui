@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api/client";
+import { usePanelActive } from "../../components/ModuleShell";
 import type {
   FailureScheduleEntry,
   RequestFlowInput,
@@ -148,6 +149,15 @@ export function Playground({
   const [playing, setPlaying] = useState(false);
   const [playbackIntervalMs, setPlaybackIntervalMs] = useState(600);
 
+  // The panel stays mounted while another tab is shown; pause playback when
+  // it is hidden and let the learner resume it explicitly.
+  const panelActive = usePanelActive();
+  const [wasPanelActive, setWasPanelActive] = useState(panelActive);
+  if (panelActive !== wasPanelActive) {
+    setWasPanelActive(panelActive);
+    if (!panelActive) setPlaying(false);
+  }
+
   async function run() {
     setError("");
     setPlaying(false);
@@ -228,6 +238,7 @@ export function Playground({
             <button
               type="button"
               key={preset.id}
+              disabled={running}
               onClick={() => {
                 setForm(toForm(preset.input));
                 setResult(null);

@@ -125,4 +125,20 @@ describe("CapacityCalculator", () => {
       /must be within the supported range/,
     );
   });
+  it("disables presets while a calculation is pending so an older response cannot replace a newer preset", async () => {
+    let respond: (value: CapacityEstimateResult) => void = () => undefined;
+    vi.spyOn(api, "calculateCapacity").mockReturnValue(
+      new Promise((resolve) => {
+        respond = resolve;
+      }),
+    );
+    render(<CapacityCalculator descriptor={descriptor} />);
+    const submit = screen.getByRole("button", { name: /Calculate estimate/ });
+    fireEvent.submit(submit.closest("form")!);
+
+    const preset = screen.getByRole("button", { name: "Interview baseline" });
+    await waitFor(() => expect(preset).toBeDisabled());
+    respond(result);
+    await waitFor(() => expect(preset).toBeEnabled());
+  });
 });

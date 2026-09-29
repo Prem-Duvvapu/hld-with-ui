@@ -86,8 +86,11 @@ export function CapacityEstimationPage() {
     ),
   };
   return (
-    <ModuleShell topic={data.topic.topic} tabs={tabs} defaultView="calculator">
-      {(view) => panels[view]}
-    </ModuleShell>
+    <ModuleShell
+      topic={data.topic.topic}
+      tabs={tabs}
+      defaultView="calculator"
+      panels={panels}
+    />
   );
 }
