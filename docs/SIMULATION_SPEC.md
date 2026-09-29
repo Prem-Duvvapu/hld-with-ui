@@ -50,10 +50,10 @@ The context supplies virtual scheduler, seeded randomness, bounded event emissio
 
 | Field | Meaning |
 | --- | --- |
-| `sequence` | Strictly increasing within a trace. `request-flow` and `distributed-rate-limiter` start at 1; `cache-aside` starts at 0 |
+| `sequence` | Strictly increasing within a trace, starting at 1 |
 | `timeMs` | Nondecreasing integer virtual time in milliseconds |
 | `kind` | Closed, versioned event type such as `request.queued` or `cache.fill` |
-| `requestId` | Logical request identity (`cache-aside` uses the cache key) |
+| `requestId` | Logical request or operation identity (`cache-aside` uses `Operation N`, numbered in input order). The cache key is not a structured event field yet (HLD-04) |
 | `nodeId` | The node, cache, or origin the event applies to |
 | `message` | English narration for display only. Never parse it to reconstruct state |
 

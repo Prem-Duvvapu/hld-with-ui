@@ -647,7 +647,7 @@ export interface components {
         | "origin.read"
         | "origin.update"
         | "origin.error";
-      /** @description The cache key the event applies to. */
+      /** @description The operation the event belongs to, as "Operation N" in input order. */
       requestId: string;
       /** @enum {string} */
       nodeId: "cache" | "origin";
