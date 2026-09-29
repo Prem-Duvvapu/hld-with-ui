@@ -57,6 +57,16 @@ The [CI workflow](.github/workflows/ci.yaml) runs these gates on pull requests a
 
 API and content contracts live in [contracts](contracts/README.md). React API types are generated from OpenAPI, and CI rejects generated-type drift, malformed content, broken prerequisites, unresolved sources, and capabilities without a registered model.
 
+## Deployment
+
+The app deploys the same way as lld-with-ui and dsa-with-ui: the Java backend on Render's free tier and the React frontend as a static Vercel build.
+
+1. **Backend (Render):** create a Blueprint from this repository. [render.yaml](render.yaml) builds [backend/Dockerfile](backend/Dockerfile) from the repository root, because the jar packages `content/` onto its classpath. Render injects `PORT`, which takes precedence over `BACKEND_PORT` and `SERVER_PORT`. The health check is `/api/v1/health`.
+2. **Frontend (Vercel):** import the repository with `frontend` as the root directory (Vite preset, `npm run build`, output `dist`). [frontend/vercel.json](frontend/vercel.json) rewrites `/api/*` to the Render service and every other path to `index.html`, so deep links work and the browser stays same-origin with no CORS configuration.
+3. If Render assigns a URL other than `https://hld-backend.onrender.com`, update the destination in `frontend/vercel.json` and redeploy the frontend.
+
+Free Render services sleep when idle. The first request after a pause can exceed the client's 10-second timeout; retry once the service is awake.
+
 ## Implemented learning modules
 
 **Request Flow & Load Balancing** follows the complete learning loop:

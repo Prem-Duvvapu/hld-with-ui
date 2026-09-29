@@ -1,0 +1,7 @@
+# Docker builds from the repository root; only backend/ and content/ are needed.
+*
+!backend/mvnw
+!backend/pom.xml
+!backend/.mvn/
+!backend/src/
+!content/
