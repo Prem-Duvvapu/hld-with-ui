@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -38,6 +39,12 @@ public class GlobalExceptionHandler {
         String code = exception.getStatusCode().value() == 404 ? "not_found" : "request_failed";
         return ResponseEntity.status(exception.getStatusCode())
                 .body(ApiError.of(code, exception.getReason(), Map.of()));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    ResponseEntity<ApiError> unknownRoute(NoResourceFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiError.of("not_found", "No API resource exists at this path.", Map.of()));
     }
 
     @ExceptionHandler(Exception.class)
