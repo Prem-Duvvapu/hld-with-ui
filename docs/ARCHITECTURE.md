@@ -1,6 +1,6 @@
 # Application architecture
 
-Status: the foundation and request-flow slice implement the defaults below. Later capabilities remain proposed. Record consequential changes in an architecture decision.
+Status: the foundation and four published modules (`request-flow`, `capacity-estimation`, `distributed-rate-limiter`, `cache-aside`) implement the defaults below except where a row or paragraph is marked **planned**. Record consequential changes in an architecture decision.
 
 ## 1. Stack and boundaries
 
@@ -14,7 +14,7 @@ Status: the foundation and request-flow slice implement the defaults below. Late
 | Backend | Java 17 bytecode, Spring Boot 4, Maven Wrapper; CI on Java 21 | Works with the owner's local Java 17 and remains tested on the newer CI LTS |
 | Execution | Plain Java domain modules and deterministic discrete-event engine | Testable without Spring or external infrastructure |
 | Contracts | OpenAPI 3.1 for HTTP/events; JSON Schema 2020-12 for authored data | Shared validation and generated TypeScript types; see [decision 0002](decisions/0002-contracts-generate-frontend-types.md) |
-| Tests | JUnit, Spring API tests; Vitest and React Testing Library; Playwright browser flows | Verify model semantics, integration, and actual learning journeys |
+| Tests | JUnit, Spring API tests; Vitest and React Testing Library; Playwright browser flows (**planned**, HLD-03) | Verify model semantics, integration, and actual learning journeys |
 | Delivery | One frontend build and one backend image; optional Docker Compose | Simple local and hosted deployment |
 
 React's documentation describes Vite-based setups and their routing/data-fetching responsibilities. Spring Boot 4 supports the selected Java 17 baseline. See [official sources](RESOURCES.md#implementation-references) and [decision 0001](decisions/0001-java-runtime-baseline.md). Dependencies are pinned in the Maven build and npm lockfile.
@@ -37,35 +37,37 @@ The application is a modular monolith. The systems drawn inside a simulation are
 
 ### Repository layout
 
+Current layout:
+
 ```text
 frontend/
-  src/app/                 routing, shell, theme, error boundaries
-  src/features/learn/      catalog and topic reader
-  src/features/experiment/ inputs, playback, inspector, metrics
-  src/features/design/    guided case-study answers, later editor
-  src/features/practice/  recall and later interview timer
-  src/features/progress/  versioned local persistence
-  src/components/         shared accessible controls and diagrams
-  src/api/                generated types and API client
+  src/app/                routing and application shell
+  src/pages/              one lazy route page per published module, home, not-found
+  src/components/         ModuleShell, async states, shared controls
+  src/features/learning/  Study and Practice views shared by topics
+  src/features/<module>/  request-flow, capacity-estimation, rate-limiter, cache-aside
+  src/hooks/              small shared hooks such as page titles
+  src/api/                generated OpenAPI types, type aliases, API client
+  scripts/                content and contract validation
 backend/
   pom.xml, mvnw, .mvn/
-  src/main/java/com/hld/   catalog, content, simulation, estimation, api
-  src/test/                model, contract, API, and fixture tests
+  src/main/java/com/hld/  api, catalog, simulation (+ engine), cache, ratelimit, estimation
+  src/test/               model, engine, and API tests
 content/
   catalog.json            canonical publication metadata
   topics/<id>/            lesson.md, questions.json, resources.json
-  case-studies/<id>/      lesson.md, questions.json, resources.json
-contracts/                OpenAPI and JSON Schemas
-fixtures/                 inputs and expected semantic outcomes
-scripts/                  content/contract checks and startup verification
-docs/                     plans, decisions, templates, evidence
+contracts/                OpenAPI, JSON Schemas, API examples
+scripts/                  planning-document validation
+docs/                     plans, decisions, work items, templates, evidence
 ```
 
-Create directories when needed. Backend model packages are organized by capability, not one enormous controller or service per topic. Models expose explicit interfaces; renderers are selected by a closed event/state vocabulary.
+**Planned** additions, created only when their work item needs them: `content/case-studies/<id>/` for workshops (HLD-09), a progress/storage feature (HLD-08), and a browser-test harness (HLD-03). Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
+
+Backend model packages are organized by capability, not one enormous controller or service per topic. Each model has its own typed event schema with a closed `kind` vocabulary. A shared model interface and renderer registry are **planned** only if a concrete second consumer needs them (see [SIMULATION_SPEC.md](SIMULATION_SPEC.md#3-proposed-java-interface)).
 
 ## 3. Catalog and content
 
-`content/catalog.json` will be the single source for topic identity, prerequisites, order, level, publication state, and available capabilities. Frontend routes and backend lookup derive from it. Startup/build fails on duplicate IDs or invalid references.
+`content/catalog.json` is the single source for topic identity, prerequisites, order, level, publication state, and available capabilities. Frontend routes and backend lookup derive from it. Startup/build fails on duplicate IDs or invalid references.
 
 Separate editorial status (`planned`, `draft`, `published`) from capabilities (`study`, `simulation`, `estimator`, `case-study`, `practice`). A published lesson may have no simulation; a declared simulation capability requires a registered, validated model. Public navigation shows published entries; planned entries can appear only as clearly labeled roadmap information.
 
@@ -73,7 +75,7 @@ Package validated lessons and metadata into the backend artifact during build; d
 
 ## 4. Initial API contract
 
-The topic and simulation endpoints are implemented for `request-flow`. The estimator endpoints are implemented for `capacity-estimation`. Search, case studies, and stats remain planned for later phases.
+The topic endpoints serve all four published topics. Simulation endpoints are implemented for `request-flow`, `distributed-rate-limiter`, and `cache-aside`; estimator endpoints for `capacity-estimation`. Search, case studies, and stats remain **planned**.
 
 | Endpoint | Purpose and behavior |
 | --- | --- |
@@ -87,9 +89,9 @@ The topic and simulation endpoints are implemented for `request-flow`. The estim
 | `GET /api/v1/case-studies/{id}` | Guided case-study document and rubric |
 | `GET /api/v1/catalog/stats` | Generated counts by publication state and available capability |
 
-Unknown IDs return 404. Invalid parameters return 400 with field paths and readable explanations. Oversized requests return 413; overload protection returns 429 or 503 with an explicit retry policy. Responses use one structured problem format including `code`, `message`, and `fieldErrors` when applicable. No stack traces in client errors.
+Unknown IDs and unknown routes return 404. Invalid parameters return 400 with field paths and readable explanations. Oversized-request (413) and overload (429/503) responses are **planned**; today, bounded input sizes are enforced by validation and return 400. Responses use one structured problem format including `code`, `message`, and `fieldErrors` when applicable. No stack traces in client errors.
 
-Simulation input includes `schemaVersion`, `modelVersion`, `seed`, `parameters`, and a bounded `failureSchedule`. Results include versions, initial state, events, final state, metrics, assumptions, limits, completion status, and truncation reason. See [SIMULATION_SPEC.md](SIMULATION_SPEC.md).
+Simulation input is a flat, per-model object with `schemaVersion`, `modelVersion`, `seed`, and model-specific fields (for example `arrivalTimesMs`, or cache `operations`); `request-flow` v1.1.1 adds a bounded optional `failureSchedule`. Unknown fields are rejected. Results include versions, seed, status, events, per-request outcomes, metrics, and assumptions; limited runs add truncation reason, last virtual time, and incomplete counts. Initial/final state snapshots are **planned** (HLD-04). See [SIMULATION_SPEC.md](SIMULATION_SPEC.md) for accepted versions and envelope details.
 
 Do not retain runs on the server initially. Playback and backwards seek are local operations over the returned trace. A run ID is for correlation, not a promise that a retrieval URL exists. Long-running jobs, cancellation, SSE, and run storage require a later decision if bounded synchronous execution becomes inadequate.
 
@@ -107,7 +109,7 @@ Do not retain runs on the server initially. Playback and backwards seek are loca
 
 Only built-in model IDs execute. No user Java compilation, arbitrary URLs, remote request probes, or shell execution. Enforce request size, numeric bounds, node/request/event counts, concurrent-run limits, and response size on the server.
 
-Initial defaults to validate in the first slice: 1,000 requests, 20 modeled nodes, 10,000 events, 2 MiB serialized trace, and 60 seconds virtual duration. Add a configurable wall-time deadline checked cooperatively by the runner. Tune using measurements and record changes; these are application safeguards, not learning claims.
+Implemented defaults: `request-flow` accepts at most 100 requests and 8 nodes; the rate limiter at most 500 requests; the shared runner allows 10,000 events, an estimated 2 MiB trace, 60 seconds of virtual time, and a 10-second wall-clock deadline checked cooperatively. The wall-clock deadline is an execution guard, not modeled behavior, so a run it stops is censored and not promised to replay identically. Tune using measurements and record changes; these are application safeguards, not learning claims.
 
 Use same-origin API routing; configure allowed origins explicitly for any separate hosting. Log request IDs, model/version, duration, limit outcomes, and errors; avoid logging user notes or entire imported files. Hosted deployment must bound aggregate concurrent memory, not only each run.
 

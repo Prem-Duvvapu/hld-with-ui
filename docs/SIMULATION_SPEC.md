@@ -1,6 +1,16 @@
 # Simulation authoring and correctness contract
 
-Status: proposed contract. `P0-02` implements its machine-readable schemas. The first load-balancing module is the reference implementation; later models must not bypass its execution and validation boundaries.
+Status: authoring contract with an implemented subset. The machine-readable contracts in [`contracts/openapi.json`](../contracts/openapi.json) are authoritative for what the API returns today. Sections below label **implemented** behavior separately from **proposed** extensions; a proposed field or interface is not available until its schema, Java model, and renderer ship together. The first load-balancing module is the reference implementation; later models must not bypass its execution and validation boundaries.
+
+### Implemented baseline (checked 2026-09-29)
+
+| Model | Accepted `modelVersion` | Shared runner | Result `status` values |
+| --- | --- | --- | --- |
+| `request-flow` | `1.0.0` (no failure schedule) and `1.1.1` (current, failure schedules) | `SimulationContext` | `completed`, `limited` |
+| `cache-aside` | `1.0.1` only | `SimulationContext` | `completed`, `limited` |
+| `distributed-rate-limiter` | `1.0.0` only | none; bounded by its own `maxRequests` input limit | `completed` |
+
+Rejected versions (`request-flow` `1.1.0`, `cache-aside` `1.0.0`) and their reasons are recorded in [decision 0004](decisions/0004-simulation-causality-corrections.md). The estimator `capacity-estimation` is not an event simulation and has no trace.
 
 ## 1. What an experiment promises
 
@@ -10,7 +20,7 @@ Distinguish three modes in the UI: **simulation** (modeled behavior), **estimato
 
 ## 2. Deterministic execution
 
-- Run a discrete-event queue ordered by `(virtualTimeMicros, insertionSequence)`. Time is an integer; use documented unit conversions and guard overflow.
+- Run a discrete-event queue ordered by `(virtual time, insertion sequence)`. **Implemented models use integer virtual milliseconds** (`timeMs`, `lastVirtualTimeMs`, `…Ms` inputs). A finer unit such as microseconds is a possible future envelope change, not a current contract; introducing it requires a schema and model version change. Guard overflow in every time calculation.
 - Same model version, normalized inputs, seed, and scheduled actions produce the same semantic trace. Exclude correlation IDs and wall-time metadata from equality.
 - Assign the sequence when scheduling. Events may schedule additional events at the same time; all tie rules are documented and tested.
 - Use a versioned seeded PRNG abstraction; do not depend on unspecified iteration order. Separate workload randomness from failure randomness so a comparison can retain the same arrivals.
@@ -18,10 +28,11 @@ Distinguish three modes in the UI: **simulation** (modeled behavior), **estimato
 - Nodes have finite workers, queues, service times, and explicit failure/recovery rules when those mechanisms are relevant. Merely coloring a node red is not failure simulation.
 - Failure schedules refer to stable entity IDs and virtual timestamps. Specify whether in-flight work fails, pauses, or completes for each modeled failure.
 - Every run stops on completion or a declared budget. No infinite retry or zero-time event loop.
+- **Execution guards (implemented).** `SimulationBudget` defaults are 10,000 events, 60,000 ms of virtual time, 2 MiB of estimated trace bytes, and a 10,000 ms wall-clock deadline. The event, virtual-time, and byte budgets are part of modeled, replayable behavior. The wall-clock deadline is an **external execution guard** checked cooperatively: a result stopped with `wall_time_limit` is censored, and where it stops can differ across machines and load. Replay equivalence is promised only for runs not stopped by that guard. Byte accounting is a conservative estimate and can stop earlier than exact serialization would ([decision 0004](decisions/0004-simulation-causality-corrections.md)).
 
 ## 3. Proposed Java interface
 
-Illustrative API, to finalize with the first slice:
+**Proposed, not implemented.** Current models are concrete simulator classes (for example `RequestFlowSimulator`, `CacheAsideSimulator`) called by their controllers with a request-local `SimulationContext` ([decision 0003](decisions/0003-simulation-context.md)). No shared `SimulationModel` interface, descriptor base type, or model registry exists yet. Introduce one only when a concrete additional model needs it:
 
 ```java
 public interface SimulationModel<I> {
@@ -35,12 +46,25 @@ The context supplies virtual scheduler, seeded randomness, bounded event emissio
 
 ## 4. Trace shape and playback
 
-Required event envelope:
+**Implemented envelope.** Every current trace event has exactly these fields; OpenAPI defines one event schema per model (`SimulationEvent`, `RateLimitEvent`, `CacheAsideEvent`) with its own closed `kind` enum:
+
+| Field | Meaning |
+| --- | --- |
+| `sequence` | Strictly increasing within a trace. `request-flow` and `distributed-rate-limiter` start at 1; `cache-aside` starts at 0 |
+| `timeMs` | Nondecreasing integer virtual time in milliseconds |
+| `kind` | Closed, versioned event type such as `request.queued` or `cache.fill` |
+| `requestId` | Logical request identity (`cache-aside` uses the cache key) |
+| `nodeId` | The node, cache, or origin the event applies to |
+| `message` | English narration for display only. Never parse it to reconstruct state |
+
+Implemented results contain versions, seed, `status`, assumptions, events, per-request outcomes, and metrics; `limited` results add `truncationReason`, `lastVirtualTimeMs`, and incomplete counts. They do **not** yet contain initial or final state snapshots.
+
+**Proposed target envelope** for structured playback (not implemented; see HLD-04 in [the implementation plan](IMPLEMENTATION_PLAN.md#6-detailed-first-release-work)):
 
 | Field | Meaning |
 | --- | --- |
 | `sequence` | Strictly increasing emitted event number |
-| `timeMicros` | Nondecreasing virtual timestamp |
+| `timeMs` | Nondecreasing virtual timestamp |
 | `kind` | Closed, versioned event type such as `request.queued` |
 | `entityId` | A node, queue, cache, replica, or other defined entity |
 | `requestId` | Optional logical request identity; attempts have a separate ID |
@@ -48,7 +72,7 @@ Required event envelope:
 | `payload` | Typed state change or bounded snapshot |
 | `explanationKey` / `explanationArgs` | Rule and actual values used for narration |
 
-A result contains initial state, events, final state, summary metrics, completion status (`completed`, `limited`, `failed`), and model assumptions. `limited` results carry `truncationReason`, last virtual time, and incomplete-request counts. Internal failures return an explicit error; do not present corrupted partial output as a successful lesson.
+A target result contains initial state, events, final state, summary metrics, completion status, and model assumptions. Only `completed` and `limited` are implemented statuses; an internal failure is an HTTP error, not a `failed` result. `limited` results carry `truncationReason`, last virtual time, and incomplete-request counts. Internal failures return an explicit error; do not present corrupted partial output as a successful lesson.
 
 Use bounded snapshots for the first slice. Introduce deltas/checkpoints only after measurement warrants them and replay equivalence is tested. Backwards navigation restores prior state from trace data; it does not call a simulator in reverse. Playback speed changes rendering delay only. Java owns state/metric semantics, while TypeScript applies the schema-defined projection for display.
 
@@ -75,9 +99,9 @@ Two-policy comparisons use the same workload and failure schedule. Display all c
 
 Topology: one client workload, one balancer, and two or more service nodes. Each service node has a FIFO queue and a configured number of identical workers. A request has arrival time, service duration, and target eligibility. Initially model balancer/network overhead as a declared constant; do not claim full DNS/TCP emulation.
 
-Round-robin cycles over eligible nodes. Least-outstanding chooses the node with the fewest queued plus executing requests; ties follow stable node ID order. Name it accurately instead of calling it least-connections without modeling connections. Health eligibility changes according to the configured detection delay.
+Round-robin cycles over eligible nodes. Least-outstanding chooses the node with the fewest queued plus executing requests; ties follow stable node ID order. Name it accurately instead of calling it least-connections without modeling connections.
 
-For initial node-failure behavior, fail in-flight/queued work on that node explicitly; leave retries disabled until their model exists. Recovery restores empty workers. A later implementation may add alternative failure semantics with its own version/preset.
+**Implemented failure semantics (v1.1.1).** A failure schedule marks a node unavailable at an exact virtual time, and new arrivals avoid it immediately: **health-check detection delay and retries are not modeled**. Each schedule entry chooses in-flight behavior. `FAIL` fails the node's running and queued requests at the failure time, including a queued start at that instant; a completion exactly at the failure time succeeds. `COMPLETE` lets already assigned work finish and preserves worker occupancy through recovery, so recovery never creates extra capacity. A later `FAIL` still drops previously assigned work ([decision 0004](decisions/0004-simulation-causality-corrections.md)). Detection delay or retries would be a separate, versioned feature with its own presets.
 
 ### Hand-checkable fixture
 
@@ -89,7 +113,7 @@ Two healthy nodes A and B, one worker each, six requests arriving at time zero i
 - Queue waits are 0, 0, 100, 100, 200, 200 ms.
 - Six completions over the 0–300 ms observation window give 20 requests/s. Label this finite batch measurement.
 
-Required contrasting presets: a staggered workload with one slow node where the policies diverge; a node failure with detection delay; overload with a finite queue and rejected requests. Each preset needs a predictive question and a trace-backed explanation.
+Required contrasting presets: a staggered workload with one slow node where the policies diverge; a node failure (implemented without detection delay, see above); overload with a finite queue and rejected requests. Each preset needs a predictive question and a trace-backed explanation.
 
 ### Acceptance checks
 

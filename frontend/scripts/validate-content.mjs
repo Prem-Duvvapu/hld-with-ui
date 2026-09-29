@@ -85,6 +85,13 @@ for (const entry of catalog) {
       errors.push(`${entry.id}: cannot require itself`);
     if (!entries.has(prerequisite))
       errors.push(`${entry.id}: unknown prerequisite ${prerequisite}`);
+    else if (
+      entry.status === "published" &&
+      entries.get(prerequisite).status !== "published"
+    )
+      errors.push(
+        `${entry.id}: published entry requires unpublished ${prerequisite}`,
+      );
   }
 }
 

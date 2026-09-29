@@ -54,12 +54,17 @@ for (const source of docs) {
 const tick = String.fromCharCode(96);
 const dependencyPattern = new RegExp(tick + '([^' + tick + ']+)' + tick, 'g');
 const topics = new Map();
+// Section 7 of the curriculum lists case studies; earlier sections list concepts.
+const curriculumKind = new Map();
+let section = 'topic';
 for (const line of read('docs/CURRICULUM.md').split('\n')) {
+  if (/^## /.test(line)) section = /case-study/i.test(line) ? 'case-study' : 'topic';
   const columns = line.split('|').map((column) => column.trim());
   if (columns.length < 6 || !columns[1]?.startsWith(tick) || !/^R[1-4]$/.test(columns.at(-2))) continue;
   const id = columns[1].slice(1, -1);
   if (topics.has(id)) errors.push('Duplicate curriculum ID: ' + id);
   topics.set(id, [...columns[2].matchAll(dependencyPattern)].map((match) => match[1]));
+  curriculumKind.set(id, section);
 }
 if (topics.size === 0) errors.push('Curriculum has no entries');
 for (const [id, dependencies] of topics) {
@@ -84,6 +89,30 @@ function visit(id) {
 }
 for (const id of topics.keys()) visit(id);
 
+// The catalog publishes curriculum modules; the two must agree on identity and kind.
+const catalogPath = 'content/catalog.json';
+let catalogCount = 0;
+if (existsSync(join(root, catalogPath))) {
+  const catalog = JSON.parse(read(catalogPath));
+  catalogCount = catalog.length;
+  for (const entry of catalog) {
+    if (!topics.has(entry.id)) {
+      errors.push(catalogPath + ': ' + entry.id + ' is not a curriculum ID');
+      continue;
+    }
+    if (curriculumKind.get(entry.id) !== entry.kind) {
+      errors.push(catalogPath + ': ' + entry.id + ' is a ' + entry.kind +
+        ' in the catalog but a ' + curriculumKind.get(entry.id) + ' in the curriculum');
+    }
+    for (const prerequisite of entry.prerequisites ?? []) {
+      if (!topics.get(entry.id).includes(prerequisite)) {
+        errors.push(catalogPath + ': ' + entry.id + ' requires ' + prerequisite +
+          ', which its curriculum row does not list');
+      }
+    }
+  }
+}
+
 const frontendExists = existsSync(join(root, 'frontend/package.json'));
 const backendExists = existsSync(join(root, 'backend/pom.xml'));
 if (frontendExists !== backendExists) errors.push('Frontend and backend must be bootstrapped together');
@@ -96,5 +125,5 @@ if (errors.length) {
   process.exitCode = 1;
 } else {
   process.stdout.write('Validated ' + docs.length + ' docs, ' + localLinkCount +
-    ' local links, and ' + topics.size + ' curriculum IDs.\n');
+    ' local links, ' + topics.size + ' curriculum IDs, and ' + catalogCount + ' catalog identities.\n');
 }

@@ -59,8 +59,8 @@ Recorded PR #20 evidence: 83 backend tests, 31 frontend tests, CI, and selected 
 2. Module pages conditionally render their selected feature. Feature-local form/run/practice state can be lost when switching tabs. Preserve it deliberately and test a complete tab round trip.
 3. `SimulationEvent` contains sequence, time, kind, request/node IDs, and a message. Cache events do not expose the structured cache/origin state required for reliable visual playback. Never extract state from English messages.
 4. Cache descriptors lack explicit input-limit metadata, while controls currently repeat numeric bounds. Move these bounds into the contract before adding more controls.
-5. The curriculum lists `distributed-rate-limiter` as a future case while the catalog already publishes that ID as a topic. Resolve the identity before introducing a second case with that ID.
-6. `FIRST_CONTRIBUTION.md` contains contradictory historical startup instructions and points at an already completed next task. Make its historical status unambiguous.
+5. The curriculum lists `distributed-rate-limiter` as a future case while the catalog already publishes that ID as a topic. Resolve the identity before introducing a second case with that ID. *Resolved by HLD-01: [decision 0005](decisions/0005-rate-limiter-topic-and-workshop-ids.md).*
+6. `FIRST_CONTRIBUTION.md` contains contradictory historical startup instructions and points at an already completed next task. Make its historical status unambiguous. *Resolved by HLD-01.*
 7. The shared validation currently proves useful structural properties; it does not prove every source supports its claim, every result conforms to its schema, or every route supports its advertised capability.
 
 These observations define follow-up tasks. This planning change does not implement their fixes.
@@ -403,7 +403,7 @@ These are the recommended case targets for this project. A concept simulator and
 
 The case table is a preparation priority, not permission to implement an advanced case before its supporting concepts. Advanced HLD-15 concepts may therefore precede a dependent HLD-14 case.
 
-Use existing canonical IDs where defined: `notification-service`, `chat-service`, `news-feed`, `distributed-kv-store`, `ticket-booking`, `payment-ledger`, `job-scheduler`, and `file-storage`. The cache/KV case requires its advanced quorum/consensus prerequisites; ordering in this table never waives those gates. Video delivery, location matching, autocomplete/search, and collaborative editing follow as specialization.
+Use existing canonical IDs where defined: `rate-limiter-workshop`, `notification-service`, `chat-service`, `news-feed`, `distributed-kv-store`, `ticket-booking`, `payment-ledger`, `job-scheduler`, and `file-storage`. The cache/KV case requires its advanced quorum/consensus prerequisites; ordering in this table never waives those gates. Video delivery, location matching, autocomplete/search, and collaborative editing follow as specialization.
 
 Every case requires: requirements/non-goals, estimates with units, API/data model, baseline architecture, read/write flows, invariant, overload, dependency failure, operational signals, alternative, migration, source review, and an interview rubric. Reuse the URL-shortener workshop machinery only after that concrete experience proves useful.
 

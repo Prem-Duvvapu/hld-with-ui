@@ -1,8 +1,8 @@
-# First implementation brief: P0-01
+# Historical brief: P0-01 bootstrap (completed)
 
-Status: completed in the first request-flow vertical slice. This file remains as the historical acceptance brief; use `P0-02` in the roadmap for the next contribution.
+> **Historical record — not current instructions.** `P0-01` is done (see [the roadmap](ROADMAP.md#phase-0-executable-foundation)). Do not follow the steps below to set up or extend the project. For startup and checks, use the [README](../README.md#development) and [CONTRIBUTING](../CONTRIBUTING.md). For the next task, use [the implementation plan](IMPLEMENTATION_PLAN.md#5-delivery-sequence-and-dependencies) and the roadmap.
 
-Status: ready to start after this planning task. Implementation follows the user's requested scope and the repository contribution instructions.
+The text below is the original acceptance brief, kept unchanged so the bootstrap decisions remain traceable.
 
 ## Objective
 
