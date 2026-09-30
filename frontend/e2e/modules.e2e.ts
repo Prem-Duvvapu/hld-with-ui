@@ -48,16 +48,18 @@ test.describe("published modules run their Java model", () => {
     const outcomes = page.getByRole("table", { name: "Cache GET outcomes" });
     await expect(outcomes.getByRole("row").nth(3)).toContainText("HIT");
     await expect(outcomes.getByRole("row").nth(3)).toContainText("Yes");
-    await expect(page.getByText("Origin Reads", { exact: true }).locator("..")).toContainText(
-      "2",
-    );
+    await expect(
+      page.getByText("Origin Reads", { exact: true }).locator(".."),
+    ).toContainText("2");
 
     await page.getByLabel("TTL (ms)").fill("0");
     await page.getByRole("button", { name: "Run simulation" }).click();
-    await expect(page.getByText("Origin Reads", { exact: true }).locator("..")).toContainText(
-      "4",
-    );
-    await expect(page.getByText("Cache Hits", { exact: true }).locator("..")).toContainText("0");
+    await expect(
+      page.getByText("Origin Reads", { exact: true }).locator(".."),
+    ).toContainText("4");
+    await expect(
+      page.getByText("Cache Hits", { exact: true }).locator(".."),
+    ).toContainText("0");
   });
 
   test("capacity: interview baseline, then a higher peak factor", async ({
