@@ -91,6 +91,8 @@ jobs:
         working-directory: frontend
         env:
           CI: 'true'
+      - name: Launcher smoke (start, proxy health, Ctrl+C cleanup, occupied port)
+        run: bash scripts/start-smoke-test.sh
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
