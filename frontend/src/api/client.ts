@@ -1,3 +1,7 @@
+import {
+  assertCacheCompatibility,
+  CacheCompatibilityError,
+} from "./cacheCompatibility";
 import type {
   CatalogEntry,
   CacheAsideDescriptor,
@@ -26,7 +30,11 @@ export class ApiClientError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  validate?: (body: unknown) => void,
+): Promise<T> {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 10_000);
   try {
@@ -43,9 +51,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
         problem?.fieldErrors,
       );
     }
+    validate?.(body);
     return body as T;
   } catch (error) {
     if (error instanceof ApiClientError) throw error;
+    if (error instanceof CacheCompatibilityError) {
+      throw new ApiClientError(error.message);
+    }
     if (error instanceof DOMException && error.name === "AbortError") {
       throw new ApiClientError("The server took too long to respond.");
     }
@@ -93,11 +105,19 @@ export const api = {
       },
     ),
   cacheAsideDescriptor: () =>
-    request<CacheAsideDescriptor>("/api/v1/simulations/cache-aside"),
+    request<CacheAsideDescriptor>(
+      "/api/v1/simulations/cache-aside",
+      undefined,
+      (body) => assertCacheCompatibility(body, "descriptor"),
+    ),
   runCacheAside: (input: CacheAsideInput) =>
-    request<CacheAsideResult>("/api/v1/simulations/cache-aside/runs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    }),
+    request<CacheAsideResult>(
+      "/api/v1/simulations/cache-aside/runs",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      },
+      (body) => assertCacheCompatibility(body, "result"),
+    ),
 };
