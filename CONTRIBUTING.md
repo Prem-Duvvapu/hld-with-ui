@@ -35,6 +35,13 @@ bash -n start.sh
 (cd frontend && npm run contracts:check && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build)
 ```
 
+Browser journeys run the packaged Java backend and the production frontend build on isolated ports (18080 and 14173, overridable with `E2E_BACKEND_PORT` and `E2E_FRONTEND_PORT`) and stop both afterwards. They need the backend jar and Playwright's Chromium:
+
+```bash
+(cd backend && ./mvnw -B package -DskipTests)
+(cd frontend && npx playwright install chromium && npm run e2e)
+```
+
 The root launcher is for Linux/WSL and accepts `BACKEND_PORT` and `FRONTEND_PORT`. It starts only this repository's two services and stops both when interrupted. Run it after installing frontend dependencies with `npm ci --prefix frontend`.
 
 ## Contribution boundaries

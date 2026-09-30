@@ -1662,7 +1662,9 @@ th {
     min-height: 350px;
   }
   .playground-layout {
-    grid-template-columns: 1fr;
+    /* minmax(0, …) lets the single column shrink below its content's
+       min-content width; wide tables and grids then scroll inside it. */
+    grid-template-columns: minmax(0, 1fr);
   }
   .control-panel {
     position: static;
