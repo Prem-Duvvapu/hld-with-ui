@@ -2006,6 +2006,54 @@
           }
         }
       },
+      "CacheAsideLimits": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Exact input bounds the Java model enforces. Clients validate against these instead of repeating them.",
+        "required": [
+          "maxLatencyMs",
+          "maxTtlMs",
+          "maxOperations",
+          "maxOperationTimeMs",
+          "maxKeyLength",
+          "maxValueLength"
+        ],
+        "properties": {
+          "maxLatencyMs": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Largest cache lookup or origin read latency, in milliseconds.",
+            "format": "int64"
+          },
+          "maxTtlMs": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Largest TTL, in milliseconds.",
+            "format": "int64"
+          },
+          "maxOperations": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Largest number of operations in one run."
+          },
+          "maxOperationTimeMs": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Latest operation arrival time, in milliseconds.",
+            "format": "int64"
+          },
+          "maxKeyLength": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Longest cache key, in characters."
+          },
+          "maxValueLength": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Longest initial or updated value, in characters."
+          }
+        }
+      },
       "CacheAsideDescriptor": {
         "type": "object",
         "additionalProperties": false,
@@ -2015,6 +2063,7 @@
           "kind",
           "modelVersion",
           "description",
+          "limits",
           "presets",
           "assumptions"
         ],
@@ -2036,6 +2085,9 @@
           },
           "description": {
             "type": "string"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/CacheAsideLimits"
           },
           "presets": {
             "type": "array",

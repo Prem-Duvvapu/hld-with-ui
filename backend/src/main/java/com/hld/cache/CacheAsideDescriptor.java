@@ -13,6 +13,7 @@ public record CacheAsideDescriptor(
         String kind,
         String modelVersion,
         String description,
+        CacheAsideLimits limits,
         List<CacheAsidePreset> presets,
         List<String> assumptions) {
 

@@ -33,6 +33,14 @@ const descriptor: CacheAsideDescriptor = {
   kind: "simulation",
   modelVersion: "1.0.1",
   description: "A deterministic cache-aside model.",
+  limits: {
+    maxLatencyMs: 10_000,
+    maxTtlMs: 60_000,
+    maxOperations: 100,
+    maxOperationTimeMs: 60_000,
+    maxKeyLength: 64,
+    maxValueLength: 256,
+  },
   presets: [
     {
       id: "baseline",
@@ -394,5 +402,37 @@ describe("Cache-aside playground", () => {
     ).getAllByRole("button")) {
       expect(button).toBeDisabled();
     }
+  });
+  it("validates against the limits published in the Java descriptor", () => {
+    const fetchMock = mockFetch(baselineResult);
+    render(
+      <CacheAsidePlayground
+        descriptor={{
+          ...descriptor,
+          limits: { ...descriptor.limits, maxTtlMs: 500, maxOperations: 2 },
+        }}
+      />,
+    );
+    expect(screen.getByLabelText("TTL (ms)")).toHaveAttribute("max", "500");
+
+    fireEvent.change(screen.getByLabelText("TTL (ms)"), {
+      target: { value: "501" },
+    });
+    run();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "TTL must be a whole number from 0 to 500.",
+    );
+
+    fireEvent.change(screen.getByLabelText("TTL (ms)"), {
+      target: { value: "100" },
+    });
+    fireEvent.change(screen.getByLabelText(/^Operations/), {
+      target: { value: "GET k @0\nGET k @1\nGET k @2" },
+    });
+    run();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Operations need 1–2 lines.",
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

@@ -685,6 +685,30 @@ export interface components {
       question: string;
       input: components["schemas"]["CacheAsideInput"];
     };
+    /** @description Exact input bounds the Java model enforces. Clients validate against these instead of repeating them. */
+    CacheAsideLimits: {
+      /**
+       * Format: int64
+       * @description Largest cache lookup or origin read latency, in milliseconds.
+       */
+      maxLatencyMs: number;
+      /**
+       * Format: int64
+       * @description Largest TTL, in milliseconds.
+       */
+      maxTtlMs: number;
+      /** @description Largest number of operations in one run. */
+      maxOperations: number;
+      /**
+       * Format: int64
+       * @description Latest operation arrival time, in milliseconds.
+       */
+      maxOperationTimeMs: number;
+      /** @description Longest cache key, in characters. */
+      maxKeyLength: number;
+      /** @description Longest initial or updated value, in characters. */
+      maxValueLength: number;
+    };
     CacheAsideDescriptor: {
       /** @constant */
       id: "cache-aside";
@@ -694,6 +718,7 @@ export interface components {
       /** @constant */
       modelVersion: "1.0.1";
       description: string;
+      limits: components["schemas"]["CacheAsideLimits"];
       presets: components["schemas"]["CacheAsidePreset"][];
       assumptions: string[];
     };

@@ -35,6 +35,14 @@ const descriptor: CacheAsideDescriptor = {
   kind: "simulation",
   modelVersion: "1.0.1",
   description: "A deterministic cache-aside model.",
+  limits: {
+    maxLatencyMs: 10_000,
+    maxTtlMs: 60_000,
+    maxOperations: 100,
+    maxOperationTimeMs: 60_000,
+    maxKeyLength: 64,
+    maxValueLength: 256,
+  },
   presets: [
     {
       id: "baseline",

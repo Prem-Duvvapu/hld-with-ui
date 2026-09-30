@@ -3,6 +3,7 @@ import "./CacheAsidePlayground.css";
 import { api } from "../../api/client";
 import type {
   CacheAsideDescriptor,
+  CacheAsideLimits,
   CacheAsideInput,
   CacheAsideResult,
   CacheGetOutcome,
@@ -35,13 +36,16 @@ function toForm(input: CacheAsideInput): FormState {
   };
 }
 
-function parseOperations(text: string): CacheAsideInput["operations"] {
+function parseOperations(
+  text: string,
+  limits: CacheAsideLimits,
+): CacheAsideInput["operations"] {
   const lines = text
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
-  if (!lines.length || lines.length > 100)
-    throw new Error("Operations need 1–100 lines.");
+  if (!lines.length || lines.length > limits.maxOperations)
+    throw new Error(`Operations need 1–${limits.maxOperations} lines.`);
   return lines.map((line, index) => {
     const match = line.match(/^(GET|UPDATE)\s+(\S+)(?:\s+(\S+))?\s+@(\d+)$/i);
     if (!match)
@@ -54,14 +58,19 @@ function parseOperations(text: string): CacheAsideInput["operations"] {
     const timeMs = Number(match[4]);
     if (kind === "GET" && value !== null)
       throw new Error(`Line ${index + 1}: GET cannot have a value.`);
-    if (key.length > 64 || (value?.length ?? 0) > 256)
+    if (
+      key.length > limits.maxKeyLength ||
+      (value?.length ?? 0) > limits.maxValueLength
+    )
       throw new Error(
-        `Line ${index + 1}: key allows 64 characters and value allows 256.`,
+        `Line ${index + 1}: key allows ${limits.maxKeyLength} characters and value allows ${limits.maxValueLength}.`,
       );
     if (kind === "UPDATE" && !value)
       throw new Error(`Line ${index + 1}: UPDATE requires a value.`);
-    if (timeMs < 0 || timeMs > 60_000)
-      throw new Error(`Line ${index + 1}: time must be 0–60,000.`);
+    if (timeMs < 0 || timeMs > limits.maxOperationTimeMs)
+      throw new Error(
+        `Line ${index + 1}: time must be 0–${limits.maxOperationTimeMs.toLocaleString("en-US")}.`,
+      );
     return { kind, key, value, timeMs };
   });
 }
@@ -79,24 +88,29 @@ function boundedInteger(
   return number;
 }
 
-function buildInput(form: FormState, source: CacheAsideInput): CacheAsideInput {
+// Bounds come from the Java descriptor, which enforces the same values.
+function buildInput(
+  form: FormState,
+  source: CacheAsideInput,
+  limits: CacheAsideLimits,
+): CacheAsideInput {
   return {
     ...source,
     cacheLookupLatencyMs: boundedInteger(
       form.cacheLookupLatencyMs,
       "Cache lookup latency",
       0,
-      10_000,
+      limits.maxLatencyMs,
     ),
     originReadLatencyMs: boundedInteger(
       form.originReadLatencyMs,
       "Origin read latency",
       0,
-      10_000,
+      limits.maxLatencyMs,
     ),
-    ttlMs: boundedInteger(form.ttlMs, "TTL", 0, 60_000),
+    ttlMs: boundedInteger(form.ttlMs, "TTL", 0, limits.maxTtlMs),
     initialOriginValue: form.initialOriginValue,
-    operations: parseOperations(form.operations),
+    operations: parseOperations(form.operations, limits),
     cacheAvailable: form.cacheAvailable,
     originAvailable: form.originAvailable,
   };
@@ -130,7 +144,7 @@ export function CacheAsidePlayground({
     setRunning(true);
     setResult(null);
     try {
-      const input = buildInput(form, sourceInput);
+      const input = buildInput(form, sourceInput, descriptor.limits);
       const data = await api.runCacheAside(input);
       setResult(data);
     } catch (cause: unknown) {
@@ -201,20 +215,20 @@ export function CacheAsidePlayground({
           {field("Cache lookup (ms)", "cacheLookupLatencyMs", {
             type: "number",
             min: 0,
-            max: 10000,
+            max: descriptor.limits.maxLatencyMs,
           })}
           {field("Origin read (ms)", "originReadLatencyMs", {
             type: "number",
             min: 0,
-            max: 10000,
+            max: descriptor.limits.maxLatencyMs,
           })}
           {field("TTL (ms)", "ttlMs", {
             type: "number",
             min: 0,
-            max: 60000,
+            max: descriptor.limits.maxTtlMs,
           })}
           {field("Initial origin value", "initialOriginValue", {
-            maxLength: 256,
+            maxLength: descriptor.limits.maxValueLength,
           })}
         </div>
 
