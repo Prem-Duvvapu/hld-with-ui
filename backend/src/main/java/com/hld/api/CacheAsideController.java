@@ -3,6 +3,7 @@ package com.hld.api;
 import com.hld.cache.CacheAsideDescriptor;
 import com.hld.cache.CacheAsideDescriptor.CacheAsidePreset;
 import com.hld.cache.CacheAsideInput;
+import com.hld.cache.CacheAsideLimits;
 import com.hld.cache.CacheAsideResult;
 import com.hld.cache.CacheAsideSimulator;
 import com.hld.cache.CacheOperation;
@@ -36,6 +37,7 @@ public class CacheAsideController {
                 CacheAsideSimulator.MODEL_VERSION,
                 "A deterministic model of cache-aside reads, misses, fills, TTL expiry, "
                         + "stale data, and origin/cache availability.",
+                CacheAsideLimits.CURRENT,
                 List.of(
                         new CacheAsidePreset("baseline", "Baseline: hit, miss, and stale read",
                                 "Why did the GET at 70 ms return v1 after the origin update?",

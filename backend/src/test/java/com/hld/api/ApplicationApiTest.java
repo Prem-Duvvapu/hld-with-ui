@@ -170,6 +170,39 @@ class ApplicationApiTest {
     }
 
     @Test
+    void publishesTheCacheLimitsItEnforces() throws Exception {
+        mvc.perform(get("/api/v1/simulations/cache-aside"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.limits.maxLatencyMs").value(10_000))
+                .andExpect(jsonPath("$.limits.maxTtlMs").value(60_000))
+                .andExpect(jsonPath("$.limits.maxOperations").value(100))
+                .andExpect(jsonPath("$.limits.maxOperationTimeMs").value(60_000))
+                .andExpect(jsonPath("$.limits.maxKeyLength").value(64))
+                .andExpect(jsonPath("$.limits.maxValueLength").value(256));
+
+        String atLimit = cacheRun(60_000, "k".repeat(64));
+        mvc.perform(post("/api/v1/simulations/cache-aside/runs")
+                        .contentType(MediaType.APPLICATION_JSON).content(atLimit))
+                .andExpect(status().isOk());
+        for (String beyond : new String[] {cacheRun(60_001, "k"), cacheRun(100, "k".repeat(65))}) {
+            mvc.perform(post("/api/v1/simulations/cache-aside/runs")
+                            .contentType(MediaType.APPLICATION_JSON).content(beyond))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("invalid_input"));
+        }
+    }
+
+    private static String cacheRun(long ttlMs, String key) {
+        return """
+                {"schemaVersion": "1.0", "modelVersion": "1.0.1",
+                 "cacheLookupLatencyMs": 2, "originReadLatencyMs": 20, "ttlMs": %d,
+                 "initialOriginValue": "v1",
+                 "operations": [{"kind": "GET", "key": "%s", "timeMs": 0}],
+                 "cacheAvailable": true, "originAvailable": true, "seed": 7}
+                """.formatted(ttlMs, key);
+    }
+
+    @Test
     void rejectsMalformedCacheSchedulesAndRetiredModelVersions() throws Exception {
         String template = """
                 {"schemaVersion":"1.0","modelVersion":"1.0.1","cacheLookupLatencyMs":2,

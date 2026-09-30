@@ -170,36 +170,43 @@ public class CacheAsideSimulator {
                 || !MODEL_VERSION.equals(input.modelVersion())) {
             throw new IllegalArgumentException("Unsupported cache schemaVersion or modelVersion; use " + MODEL_VERSION);
         }
-        if (input.cacheLookupLatencyMs() < 0 || input.cacheLookupLatencyMs() > 10_000
-                || input.originReadLatencyMs() < 0 || input.originReadLatencyMs() > 10_000
-                || input.ttlMs() < 0 || input.ttlMs() > 60_000) {
-            throw new IllegalArgumentException("Latencies must be 0–10000 ms and TTL 0–60000 ms.");
+        CacheAsideLimits limits = CacheAsideLimits.CURRENT;
+        if (input.cacheLookupLatencyMs() < 0 || input.cacheLookupLatencyMs() > limits.maxLatencyMs()
+                || input.originReadLatencyMs() < 0 || input.originReadLatencyMs() > limits.maxLatencyMs()
+                || input.ttlMs() < 0 || input.ttlMs() > limits.maxTtlMs()) {
+            throw new IllegalArgumentException("Latencies must be 0–" + limits.maxLatencyMs()
+                    + " ms and TTL 0–" + limits.maxTtlMs() + " ms.");
         }
-        if (input.initialOriginValue() == null || input.initialOriginValue().length() > 256) {
-            throw new IllegalArgumentException("initialOriginValue must contain at most 256 characters.");
+        if (input.initialOriginValue() == null || input.initialOriginValue().length() > limits.maxValueLength()) {
+            throw new IllegalArgumentException("initialOriginValue must contain at most "
+                    + limits.maxValueLength() + " characters.");
         }
-        if (input.operations() == null || input.operations().isEmpty() || input.operations().size() > 100) {
-            throw new IllegalArgumentException("operations must contain 1–100 entries.");
+        if (input.operations() == null || input.operations().isEmpty()
+                || input.operations().size() > limits.maxOperations()) {
+            throw new IllegalArgumentException("operations must contain 1–" + limits.maxOperations() + " entries.");
         }
         for (CacheOperation op : input.operations()) {
             if (op == null) throw new IllegalArgumentException("operations cannot contain null entries.");
             if (!CacheOperation.GET.equals(op.kind()) && !CacheOperation.UPDATE.equals(op.kind())) {
                 throw new IllegalArgumentException("Unknown operation kind: " + op.kind());
             }
-            if (op.key() == null || op.key().isBlank() || op.key().length() > 64) {
-                throw new IllegalArgumentException("Operation key must contain 1–64 non-blank characters.");
+            if (op.key() == null || op.key().isBlank() || op.key().length() > limits.maxKeyLength()) {
+                throw new IllegalArgumentException("Operation key must contain 1–" + limits.maxKeyLength()
+                        + " non-blank characters.");
             }
             if (CacheOperation.UPDATE.equals(op.kind()) && (op.value() == null || op.value().isBlank())) {
                 throw new IllegalArgumentException("UPDATE operations must have a non-empty value.");
             }
-            if (op.value() != null && op.value().length() > 256) {
-                throw new IllegalArgumentException("Operation value cannot exceed 256 characters.");
+            if (op.value() != null && op.value().length() > limits.maxValueLength()) {
+                throw new IllegalArgumentException("Operation value cannot exceed " + limits.maxValueLength()
+                        + " characters.");
             }
             if (CacheOperation.GET.equals(op.kind()) && op.value() != null) {
                 throw new IllegalArgumentException("GET operations cannot have a value.");
             }
-            if (op.timeMs() < 0 || op.timeMs() > 60_000) {
-                throw new IllegalArgumentException("Operation time must be 0–60000 ms.");
+            if (op.timeMs() < 0 || op.timeMs() > limits.maxOperationTimeMs()) {
+                throw new IllegalArgumentException("Operation time must be 0–" + limits.maxOperationTimeMs()
+                        + " ms.");
             }
         }
     }

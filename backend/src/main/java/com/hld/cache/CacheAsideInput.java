@@ -21,15 +21,16 @@ public record CacheAsideInput(
         @JsonProperty(required = true)
         @NotNull @Pattern(regexp = "1\\.0\\.1") String modelVersion,
         @JsonProperty(required = true)
-        @Min(0) @Max(10_000) long cacheLookupLatencyMs,
+        @Min(0) @Max(CacheAsideLimits.MAX_LATENCY_MS) long cacheLookupLatencyMs,
         @JsonProperty(required = true)
-        @Min(0) @Max(10_000) long originReadLatencyMs,
+        @Min(0) @Max(CacheAsideLimits.MAX_LATENCY_MS) long originReadLatencyMs,
         @JsonProperty(required = true)
-        @Min(0) @Max(60_000) long ttlMs,
+        @Min(0) @Max(CacheAsideLimits.MAX_TTL_MS) long ttlMs,
         @JsonProperty(required = true)
-        @NotNull @Size(max = 256) String initialOriginValue,
+        @NotNull @Size(max = CacheAsideLimits.MAX_VALUE_LENGTH) String initialOriginValue,
         @JsonProperty(required = true)
-        @NotNull @Size(min = 1, max = 100) List<@Valid @NotNull CacheOperation> operations,
+        @NotNull @Size(min = 1, max = CacheAsideLimits.MAX_OPERATIONS)
+        List<@Valid @NotNull CacheOperation> operations,
         @JsonProperty(required = true)
         boolean cacheAvailable,
         @JsonProperty(required = true)
