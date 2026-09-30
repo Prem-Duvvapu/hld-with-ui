@@ -633,6 +633,38 @@ export interface components {
       cacheBypasses: number;
       failedGets: number;
     };
+    CacheEntryState: {
+      value: string;
+      /**
+       * Format: int64
+       * @description Origin version the entry was filled from.
+       */
+      version: number;
+      /** Format: int64 */
+      filledAtMs: number;
+      /**
+       * Format: int64
+       * @description A lookup at or after this time misses.
+       */
+      expiresAtMs: number;
+    };
+    OriginValueState: {
+      value: string;
+      /** Format: int64 */
+      version: number;
+    };
+    /** @description State before the first event. The cache starts empty; availability is constant for the run. */
+    CacheAsideInitialState: {
+      cacheAvailable: boolean;
+      originAvailable: boolean;
+      origin: {
+        key: string;
+        value: string;
+        /** Format: int64 */
+        version: number;
+      }[];
+    };
+    /** @description A trace event with the state of its key immediately after the event. Applying each event's key state over initialState reconstructs the full cache and origin state; never parse message. */
     CacheAsideEvent: {
       sequence: number;
       /** Format: int64 */
@@ -652,6 +684,14 @@ export interface components {
       /** @enum {string} */
       nodeId: "cache" | "origin";
       message: string;
+      /** @description 1-based position of the operation in the submitted input. */
+      operation: number;
+      /** @description The cache key the event applies to. */
+      key: string;
+      /** @description The key's cache entry after this event; absent when the cache holds no entry. */
+      cacheEntry?: components["schemas"]["CacheEntryState"];
+      /** @description The key's committed origin value after this event; absent when the origin has no such key. */
+      originValue?: components["schemas"]["OriginValueState"];
     };
     CacheAsideResult: {
       /** @constant */
@@ -674,6 +714,7 @@ export interface components {
       /** Format: int64 */
       lastVirtualTimeMs: number;
       assumptions: string[];
+      initialState: components["schemas"]["CacheAsideInitialState"];
       events: components["schemas"]["CacheAsideEvent"][];
       outcomes: components["schemas"]["CacheGetOutcome"][];
       metrics: components["schemas"]["CacheAsideMetrics"];

@@ -66,6 +66,11 @@ public final class SimulationContext {
         return emitter.emit(event);
     }
 
+    /** Emits an event whose serialized form carries {@code extraBytes} of model-specific state. */
+    public boolean emit(SimulationEvent event, long extraBytes) {
+        return emitter.emit(event, extraBytes);
+    }
+
     /**
      * Returns {@code true} if the given virtual time exceeds the budget.
      */

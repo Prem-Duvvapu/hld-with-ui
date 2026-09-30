@@ -36,6 +36,15 @@ public final class EventEmitter {
      * event caused one to be reached.
      */
     public boolean emit(SimulationEvent event) {
+        return emit(event, 0);
+    }
+
+    /**
+     * Like {@link #emit(SimulationEvent)}, but also charges {@code extraBytes}
+     * for model-specific state serialized with the event, so the trace budget
+     * covers the whole event payload.
+     */
+    public boolean emit(SimulationEvent event, long extraBytes) {
         if (truncationReason != null) return false;
 
         if (events.size() >= maxEvents) {
@@ -43,7 +52,7 @@ public final class EventEmitter {
             return false;
         }
 
-        long eventBytes = estimateBytes(event);
+        long eventBytes = estimateBytes(event) + extraBytes;
         if (estimatedBytes + eventBytes > maxTraceBytes) {
             truncationReason = "trace_size_limit";
             return false;
@@ -93,7 +102,8 @@ public final class EventEmitter {
         return size;
     }
 
-    private static long stringLength(String value) {
+    /** Conservative serialized size of a string field value, including quotes and escapes. */
+    public static long stringLength(String value) {
         return value == null ? 4 : 6L * value.length() + 2; // Worst case: one JSON Unicode escape per UTF-16 code unit.
     }
 }
