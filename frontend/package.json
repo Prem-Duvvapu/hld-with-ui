@@ -16,7 +16,8 @@
     "contracts:validate": "node scripts/validate-content.mjs",
     "contracts:check": "npm run contracts:generate && git diff --exit-code -- src/api/generated.ts && npm run contracts:validate",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "react": "19.3.0",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.63.0",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.3",
     "@types/react": "19.3.0",

@@ -14,7 +14,7 @@ Status: the foundation and four published modules (`request-flow`, `capacity-est
 | Backend | Java 17 bytecode, Spring Boot 4, Maven Wrapper; CI on Java 21 | Works with the owner's local Java 17 and remains tested on the newer CI LTS |
 | Execution | Plain Java domain modules and deterministic discrete-event engine | Testable without Spring or external infrastructure |
 | Contracts | OpenAPI 3.1 for HTTP/events; JSON Schema 2020-12 for authored data | Shared validation and generated TypeScript types; see [decision 0002](decisions/0002-contracts-generate-frontend-types.md) |
-| Tests | JUnit, Spring API tests; Vitest and React Testing Library; Playwright browser flows (**planned**, HLD-03) | Verify model semantics, integration, and actual learning journeys |
+| Tests | JUnit, Spring API tests; Vitest and React Testing Library; Playwright browser journeys against the packaged backend and production build (`npm run e2e`; mocked-failure cases still planned) | Verify model semantics, integration, and actual learning journeys |
 | Delivery | One frontend build and one backend image; optional Docker Compose | Simple local and hosted deployment |
 
 React's documentation describes Vite-based setups and their routing/data-fetching responsibilities. Spring Boot 4 supports the selected Java 17 baseline. See [official sources](RESOURCES.md#implementation-references) and [decision 0001](decisions/0001-java-runtime-baseline.md). Dependencies are pinned in the Maven build and npm lockfile.
@@ -41,6 +41,7 @@ Current layout:
 
 ```text
 frontend/
+  e2e/                    Playwright browser journeys (`*.e2e.ts`)
   src/app/                routing and application shell
   src/pages/              one lazy route page per published module, home, not-found
   src/components/         ModuleShell, async states, shared controls
@@ -61,7 +62,7 @@ scripts/                  planning-document validation
 docs/                     plans, decisions, work items, templates, evidence
 ```
 
-**Planned** additions, created only when their work item needs them: `content/case-studies/<id>/` for workshops (HLD-09), a progress/storage feature (HLD-08), and a browser-test harness (HLD-03). Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
+**Planned** additions, created only when their work item needs them: `content/case-studies/<id>/` for workshops (HLD-09), a progress/storage feature (HLD-08). Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
 
 Backend model packages are organized by capability, not one enormous controller or service per topic. Each model has its own typed event schema with a closed `kind` vocabulary. A shared model interface and renderer registry are **planned** only if a concrete second consumer needs them (see [SIMULATION_SPEC.md](SIMULATION_SPEC.md#3-proposed-java-interface)).
 
