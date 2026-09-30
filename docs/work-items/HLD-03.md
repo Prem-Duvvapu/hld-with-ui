@@ -37,7 +37,8 @@ Each module journey checks a Java-derived value, changes one meaningful input, a
 - [x] No fixed sleep substitutes for readiness.
 - [x] Slice 2: cache cold-burst and virtual-time-limited runs against Java; mocked load failure with retry, pending run, and failed run; 320/768/1440 × light/dark across every tab of every module; keyboard focus indicator and manual activation.
 - [x] Slice 3: `scripts/start-smoke-test.sh` runs the real launcher (Maven Wrapper + Vite dev server), checks proxied health, a deep link, and the topic list, then Ctrl+C cleanup and an occupied frontend port; runs in the CI `browser` job.
-- [ ] Remaining: mocked unsupported-version response (the frontend has no runtime version check yet, so there is no behavior to assert; belongs with HLD-04), and manual 200% zoom / screen-reader journeys.
+- [x] Unsupported cache model/schema versions and unknown event kinds now show a recoverable compatibility error; browser regressions exercise run retry and descriptor-load retry.
+- [ ] Remaining: manual 200% zoom / screen-reader journeys.
 
 ## Verification evidence
 
@@ -52,4 +53,4 @@ Each module journey checks a Java-derived value, changes one meaningful input, a
 
 ## Handoff
 
-The next task is the rest of HLD-03: mocked failure states, the launcher smoke, the full viewport/theme/focus matrix, and the manual journeys. HLD-04 (structured cache state) needs this harness and HLD-01, so it can start in parallel once the owner chooses.
+The automated browser, failure-state, viewport/theme/focus, and launcher checks are implemented. Manual 200% zoom and screen-reader journeys remain. HLD-04 now supplies structured cache state and compatibility checks; HLD-05 is the next implementation item.

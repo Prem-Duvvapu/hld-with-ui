@@ -58,4 +58,6 @@ Error messages keep their previous wording; only their numbers now come from the
 
 ## Handoff
 
-HLD-04 still lacks response-schema validation of real HTTP results and a frontend runtime check for unsupported versions. HLD-05 (cache diagram and playback) can now render state from `initialState` and each event's key state without parsing narration.
+The review follow-up adds OpenAPI validation of real HTTP descriptor/results (all presets, missing keys, Unicode/multiple keys, and virtual-time-limited runs). The frontend rejects unsupported cache model/schema versions, preset versions, unknown event kinds, and missing initial state with a recoverable error. This is a scoped compatibility gate, not full runtime JSON Schema validation. Browser tests cover rejection and successful retry. HLD-05 (cache diagram and playback) is next; it can render `initialState` and each event's key state without parsing narration.
+
+Verification results for this follow-up are recorded in its pull request. Manual zoom and screen-reader review remain separate release gates.
