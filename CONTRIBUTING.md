@@ -42,6 +42,12 @@ Browser journeys run the packaged Java backend and the production frontend build
 (cd frontend && npx playwright install chromium && npm run e2e)
 ```
 
+`scripts/start-smoke-test.sh` exercises the real launcher: it waits for Java health through the frontend proxy, opens a module route, sends Ctrl+C, and checks that every launched process and both ports are released; then it occupies the frontend port with an unrelated process and checks that the launcher fails clearly, stops its backend, and leaves that process alone. It uses ports 18180 and 15173 (`SMOKE_BACKEND_PORT`, `SMOKE_FRONTEND_PORT`) and needs installed frontend dependencies and `python3`:
+
+```bash
+bash scripts/start-smoke-test.sh
+```
+
 The root launcher is for Linux/WSL and accepts `BACKEND_PORT` and `FRONTEND_PORT`. It starts only this repository's two services and stops both when interrupted. Run it after installing frontend dependencies with `npm ci --prefix frontend`.
 
 ## Contribution boundaries

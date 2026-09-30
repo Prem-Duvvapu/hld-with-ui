@@ -36,7 +36,8 @@ Each module journey checks a Java-derived value, changes one meaningful input, a
 - [x] Covers tab-state preservation, browser history, unsupported views, and unknown routes.
 - [x] No fixed sleep substitutes for readiness.
 - [x] Slice 2: cache cold-burst and virtual-time-limited runs against Java; mocked load failure with retry, pending run, and failed run; 320/768/1440 × light/dark across every tab of every module; keyboard focus indicator and manual activation.
-- [ ] Remaining: mocked unsupported-version response (the frontend has no runtime version check yet, so there is no behavior to assert), the fresh-checkout launcher smoke with occupied ports, and manual 200% zoom / screen-reader journeys.
+- [x] Slice 3: `scripts/start-smoke-test.sh` runs the real launcher (Maven Wrapper + Vite dev server), checks proxied health, a deep link, and the topic list, then Ctrl+C cleanup and an occupied frontend port; runs in the CI `browser` job.
+- [ ] Remaining: mocked unsupported-version response (the frontend has no runtime version check yet, so there is no behavior to assert; belongs with HLD-04), and manual 200% zoom / screen-reader journeys.
 
 ## Verification evidence
 
@@ -45,6 +46,8 @@ Each module journey checks a Java-derived value, changes one meaningful input, a
 | `npm run e2e` locally (WSL, Node 20.19, Java 17) | 14/14 pass | 4 module journeys, 2 navigation journeys, 8 overflow checks (4 modules × light/dark, 320px, reduced motion) |
 | Same suite before the CSS fix | 5 failed | 4 overflow checks (request flow 164px, rate limiter 99px, both themes) and one locator bug in the test, fixed |
 | Frontend gate and CI `browser` job (slice 1, PR #25) | pass | CI `Browser journeys` 1m18s on its first run |
+| Slice 3: `bash scripts/start-smoke-test.sh` locally | pass | Ctrl+C: exit 130, all 6 descendant processes stopped, ports 18180/15173 released. Occupied frontend port: exit 1, port reported, backend stopped, unrelated listener still running |
+| Slice 3 mutation: `start.sh` cleanup changed to not kill its children | smoke fails as intended | "process … still running after 30s"; leaked processes were then stopped by process group |
 | Slice 2: `npm run e2e` locally | 35/35 pass | New `failure-states.e2e.ts` (cold burst 5 misses / 5 origin reads at 22–26 ms; limited run `virtual_time_limit`, 1 incomplete GET, stops at 59992 ms; mocked 503 load + retry; mocked pending then 500 run), keyboard focus test, and the 24-case layout matrix visiting every tab |
 
 ## Handoff
