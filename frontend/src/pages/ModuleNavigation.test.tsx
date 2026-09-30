@@ -101,6 +101,11 @@ const result: CacheAsideResult = {
   lastVirtualTimeMs: 22,
   incompleteGets: 0,
   assumptions: ["Every run starts cold."],
+  initialState: {
+    cacheAvailable: true,
+    originAvailable: true,
+    origin: [{ key: "k", value: "v1", version: 1 }],
+  },
   events: [
     {
       sequence: 1,
@@ -109,6 +114,8 @@ const result: CacheAsideResult = {
       requestId: "Operation 1",
       nodeId: "cache",
       message: "Cache miss (no entry).",
+      operation: 1,
+      key: "k",
     },
   ],
   outcomes: [

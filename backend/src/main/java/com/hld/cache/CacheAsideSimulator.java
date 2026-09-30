@@ -1,7 +1,11 @@
 package com.hld.cache;
 
+import com.hld.cache.CacheAsideTraceEvent.CacheEntryState;
+import com.hld.cache.CacheAsideTraceEvent.OriginValueState;
 import com.hld.simulation.SimulationEvent;
 import com.hld.simulation.engine.BudgetExceededException;
+import com.hld.simulation.engine.EventEmitter;
+import java.util.ArrayList;
 import com.hld.simulation.engine.SimulationBudget;
 import com.hld.simulation.engine.SimulationContext;
 import java.util.Comparator;
@@ -46,6 +50,8 @@ public class CacheAsideSimulator {
         private final Map<String, VersionedValue> origin = new HashMap<>();
         private final Map<String, CacheEntry> cache = new HashMap<>();
         private final Map<Integer, CacheGetOutcome> outcomes = new TreeMap<>();
+        private final List<CacheAsideTraceEvent> trace = new ArrayList<>();
+        private final CacheAsideInitialState initialState;
         private long order;
         private long now;
         private int hits;
@@ -59,6 +65,8 @@ public class CacheAsideSimulator {
             this.input = input;
             context = new SimulationContext(budget, input.seed(), input.seed() + 1);
             origin.put("k", new VersionedValue(input.initialOriginValue(), 1));
+            initialState = new CacheAsideInitialState(input.cacheAvailable(), input.originAvailable(),
+                    List.of(new CacheAsideInitialState.OriginKey("k", input.initialOriginValue(), 1)));
             for (int i = 0; i < input.operations().size(); i++) {
                 int id = i;
                 CacheOperation op = input.operations().get(i);
@@ -82,7 +90,7 @@ public class CacheAsideSimulator {
             } catch (BudgetExceededException e) {
                 reason = e.truncationReason();
             }
-            List<SimulationEvent> events = List.copyOf(context.emitter().events());
+            List<CacheAsideTraceEvent> events = List.copyOf(trace);
             long lastTime = events.isEmpty() ? 0 : events.get(events.size() - 1).timeMs();
             int totalGets = (int) input.operations().stream()
                     .filter(op -> CacheOperation.GET.equals(op.kind())).count();
@@ -91,20 +99,21 @@ public class CacheAsideSimulator {
                     lastTime, bypasses, errors);
             return new CacheAsideResult(CacheAsideInput.CURRENT_SCHEMA_VERSION, "cache-aside", MODEL_VERSION,
                     input.seed(), reason == null ? "completed" : "limited", reason, lastTime,
-                    totalGets - outcomes.size(), ASSUMPTIONS, events, List.copyOf(outcomes.values()), metrics);
+                    totalGets - outcomes.size(), ASSUMPTIONS, initialState, events,
+                    List.copyOf(outcomes.values()), metrics);
         }
 
         private void arrive(int id, CacheOperation op) throws BudgetExceededException {
             if (CacheOperation.UPDATE.equals(op.kind())) {
                 if (!input.originAvailable()) {
-                    emit(id, "origin.error", "origin", "Origin unavailable; UPDATE did not commit.");
+                    emit(id, op, "origin.error", "origin", "Origin unavailable; UPDATE did not commit.");
                     return;
                 }
-                emit(id, "origin.update", "origin", "Origin updated to '" + op.value() + "'.");
                 VersionedValue previous = origin.get(op.key());
                 origin.put(op.key(), new VersionedValue(op.value(), previous == null ? 1 : previous.version() + 1));
+                emit(id, op, "origin.update", "origin", "Origin updated to '" + op.value() + "'.");
             } else if (!input.cacheAvailable()) {
-                emit(id, "cache.bypass", "cache", "Cache unavailable; bypassing to origin.");
+                emit(id, op, "cache.bypass", "cache", "Cache unavailable; bypassing to origin.");
                 bypasses++;
                 readOrigin(id, op, CacheGetOutcome.BYPASS);
             } else {
@@ -117,13 +126,13 @@ public class CacheAsideSimulator {
             if (entry != null && now < entry.expiresAt()) {
                 VersionedValue current = origin.get(op.key());
                 boolean stale = current != null && entry.value().version() != current.version();
-                emit(id, "cache.hit", "cache", "Cache returns '" + entry.value().value()
+                emit(id, op, "cache.hit", "cache", "Cache returns '" + entry.value().value()
                         + "'" + (stale ? " (stale origin version)." : "."));
                 hits++;
                 if (stale) staleReads++;
                 finish(id, op, entry.value().value(), CacheGetOutcome.HIT, stale);
             } else {
-                emit(id, "cache.miss", "cache", entry == null ? "Cache miss (no entry)." : "Cache miss (expired).");
+                emit(id, op, "cache.miss", "cache", entry == null ? "Cache miss (no entry)." : "Cache miss (expired).");
                 misses++;
                 readOrigin(id, op, CacheGetOutcome.MISS);
             }
@@ -131,21 +140,21 @@ public class CacheAsideSimulator {
 
         private void readOrigin(int id, CacheOperation op, String result) throws BudgetExceededException {
             if (!input.originAvailable()) {
-                emit(id, "cache.error", "origin", "Origin unavailable; GET failed.");
+                emit(id, op, "cache.error", "origin", "Origin unavailable; GET failed.");
                 errors++;
                 finish(id, op, null, CacheGetOutcome.ERROR, false);
                 return;
             }
             schedule(now + input.originReadLatencyMs(), () -> {
                 VersionedValue value = origin.get(op.key());
-                emit(id, "origin.read", "origin", value == null ? "Origin key not found."
+                emit(id, op, "origin.read", "origin", value == null ? "Origin key not found."
                         : "Origin returns '" + value.value() + "'.");
                 originReads++;
                 if (input.cacheAvailable() && value != null) {
                     long expiry = now + input.ttlMs();
-                    emit(id, "cache.fill", "cache", "Cache filled with '" + value.value()
+                    cache.put(op.key(), new CacheEntry(value, now, expiry));
+                    emit(id, op, "cache.fill", "cache", "Cache filled with '" + value.value()
                             + "'; expires at " + expiry + " ms.");
-                    cache.put(op.key(), new CacheEntry(value, expiry));
                 }
                 finish(id, op, value == null ? null : value.value(), result, false);
             });
@@ -155,11 +164,29 @@ public class CacheAsideSimulator {
             outcomes.put(id, new CacheGetOutcome(op.key(), value, result, stale, op.timeMs(), now, now - op.timeMs()));
         }
 
-        private void emit(int id, String kind, String node, String message) throws BudgetExceededException {
-            if (!context.emit(new SimulationEvent(context.emitter().size() + 1, now, kind,
-                    "Operation " + (id + 1), node, message))) {
+        private void emit(int id, CacheOperation op, String kind, String node, String message)
+                throws BudgetExceededException {
+            SimulationEvent event = new SimulationEvent(context.emitter().size() + 1, now, kind,
+                    "Operation " + (id + 1), node, message);
+            CacheEntry entry = cache.get(op.key());
+            VersionedValue committed = origin.get(op.key());
+            CacheEntryState cacheEntry = entry == null ? null : new CacheEntryState(
+                    entry.value().value(), entry.value().version(), entry.filledAt(), entry.expiresAt());
+            OriginValueState originValue = committed == null ? null
+                    : new OriginValueState(committed.value(), committed.version());
+            if (!context.emit(event, stateBytes(op.key(), cacheEntry, originValue))) {
                 throw new BudgetExceededException(context.truncationReason(), "Trace budget reached");
             }
+            trace.add(new CacheAsideTraceEvent(event.sequence(), event.timeMs(), event.kind(), event.requestId(),
+                    event.nodeId(), event.message(), id + 1, op.key(), cacheEntry, originValue));
+        }
+
+        /** Conservative serialized size of the key state carried by one event. */
+        private static long stateBytes(String key, CacheEntryState cacheEntry, OriginValueState originValue) {
+            long bytes = 40 + EventEmitter.stringLength(key); // operation and key fields
+            if (cacheEntry != null) bytes += 110 + EventEmitter.stringLength(cacheEntry.value());
+            if (originValue != null) bytes += 50 + EventEmitter.stringLength(originValue.value());
+            return bytes;
         }
 
         private void schedule(long time, Work work) { pending.add(new Action(time, order++, work)); }
@@ -216,5 +243,5 @@ public class CacheAsideSimulator {
 
     private record Action(long time, long order, Work work) {}
     private record VersionedValue(String value, long version) {}
-    private record CacheEntry(VersionedValue value, long expiresAt) {}
+    private record CacheEntry(VersionedValue value, long filledAt, long expiresAt) {}
 }

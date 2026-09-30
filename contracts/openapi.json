@@ -1862,6 +1862,83 @@
           }
         }
       },
+      "CacheEntryState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["value", "version", "filledAtMs", "expiresAtMs"],
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "description": "Origin version the entry was filled from."
+          },
+          "filledAtMs": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "expiresAtMs": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0,
+            "description": "A lookup at or after this time misses."
+          }
+        }
+      },
+      "OriginValueState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["value", "version"],
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          }
+        }
+      },
+      "CacheAsideInitialState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cacheAvailable", "originAvailable", "origin"],
+        "description": "State before the first event. The cache starts empty; availability is constant for the run.",
+        "properties": {
+          "cacheAvailable": {
+            "type": "boolean"
+          },
+          "originAvailable": {
+            "type": "boolean"
+          },
+          "origin": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["key", "value", "version"],
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "integer",
+                  "format": "int64",
+                  "minimum": 1
+                }
+              }
+            }
+          }
+        }
+      },
       "CacheAsideEvent": {
         "type": "object",
         "additionalProperties": false,
@@ -1871,7 +1948,9 @@
           "kind",
           "requestId",
           "nodeId",
-          "message"
+          "message",
+          "operation",
+          "key"
         ],
         "properties": {
           "sequence": {
@@ -1906,8 +1985,26 @@
           },
           "message": {
             "type": "string"
+          },
+          "operation": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "1-based position of the operation in the submitted input."
+          },
+          "key": {
+            "type": "string",
+            "description": "The cache key the event applies to."
+          },
+          "cacheEntry": {
+            "$ref": "#/components/schemas/CacheEntryState",
+            "description": "The key's cache entry after this event; absent when the cache holds no entry."
+          },
+          "originValue": {
+            "$ref": "#/components/schemas/OriginValueState",
+            "description": "The key's committed origin value after this event; absent when the origin has no such key."
           }
-        }
+        },
+        "description": "A trace event with the state of its key immediately after the event. Applying each event's key state over initialState reconstructs the full cache and origin state; never parse message."
       },
       "CacheAsideResult": {
         "type": "object",
@@ -1920,6 +2017,7 @@
           "status",
           "lastVirtualTimeMs",
           "assumptions",
+          "initialState",
           "events",
           "outcomes",
           "metrics",
@@ -1965,6 +2063,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "initialState": {
+            "$ref": "#/components/schemas/CacheAsideInitialState"
           },
           "events": {
             "type": "array",

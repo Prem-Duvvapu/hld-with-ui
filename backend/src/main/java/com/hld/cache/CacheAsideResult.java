@@ -1,6 +1,5 @@
 package com.hld.cache;
 
-import com.hld.simulation.SimulationEvent;
 import java.util.List;
 
 /**
@@ -19,7 +18,8 @@ public record CacheAsideResult(
         long lastVirtualTimeMs,
         int incompleteGets,
         List<String> assumptions,
-        List<SimulationEvent> events,
+        CacheAsideInitialState initialState,
+        List<CacheAsideTraceEvent> events,
         List<CacheGetOutcome> outcomes,
         CacheAsideMetrics metrics) {
 }

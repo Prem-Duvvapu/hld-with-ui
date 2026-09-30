@@ -47,6 +47,15 @@ Error messages keep their previous wording; only their numbers now come from the
 | Cache playground and page tests | 25/25 pass | New test with a descriptor declaring `maxTtlMs` 500 and `maxOperations` 2: TTL 501 and three operations are rejected with those numbers, and no request is sent |
 | Full frontend gate and CI | see PR | Recorded in the pull request |
 
+## Slice B — structured event state
+
+[Decision 0006](../decisions/0006-cache-event-key-state.md): each cache event carries `operation`, `key`, and the key's post-event `cacheEntry`/`originValue`; results carry `initialState`; the extra state is charged to the trace byte budget. Contract additive; `schemaVersion` 1.0 and `modelVersion` 1.0.1 unchanged, with a test showing the largest valid trace still completes.
+
+| Check actually run | Result | Artifact or reproduction |
+| --- | --- | --- |
+| `./mvnw -B verify` | pass | Four new `CacheAsideSimulatorTest` cases (baseline state at 22/40/72/142 ms, cold burst never shows an entry before the fill, deterministic typed trace with hit state matching outcomes, largest valid trace within budget); existing timing, version, and budget tests unchanged |
+| Frontend typecheck and 43/43 Vitest | pass | Fixtures updated to the new required fields; typecheck now rejects fixtures that omit them |
+
 ## Handoff
 
-The next HLD-04 slice is structured per-event cache/origin state: define the snapshot the visual needs, add it to the typed event contract with byte accounting, and version it. The cache playback work (HLD-05) depends on that slice.
+HLD-04 still lacks response-schema validation of real HTTP results and a frontend runtime check for unsupported versions. HLD-05 (cache diagram and playback) can now render state from `initialState` and each event's key state without parsing narration.

@@ -57,7 +57,7 @@ The context supplies virtual scheduler, seeded randomness, bounded event emissio
 | `nodeId` | The node, cache, or origin the event applies to |
 | `message` | English narration for display only. Never parse it to reconstruct state |
 
-Implemented results contain versions, seed, `status`, assumptions, events, per-request outcomes, and metrics; `limited` results add `truncationReason`, `lastVirtualTimeMs`, and incomplete counts. They do **not** yet contain initial or final state snapshots.
+Implemented results contain versions, seed, `status`, assumptions, events, per-request outcomes, and metrics; `limited` results add `truncationReason`, `lastVirtualTimeMs`, and incomplete counts. `cache-aside` additionally returns `initialState`, and each of its events carries `operation`, `key`, and that key's post-event `cacheEntry`/`originValue`; applying them in order reconstructs the full state at any event ([decision 0006](decisions/0006-cache-event-key-state.md)). Request flow and the rate limiter do not carry state snapshots yet.
 
 **Proposed target envelope** for structured playback (not implemented; see HLD-04 in [the implementation plan](IMPLEMENTATION_PLAN.md#6-detailed-first-release-work)):
 

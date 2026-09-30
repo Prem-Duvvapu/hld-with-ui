@@ -76,6 +76,11 @@ const baselineResult: CacheAsideResult = {
   lastVirtualTimeMs: 142,
   incompleteGets: 0,
   assumptions: ["TTL is measured from the fill time."],
+  initialState: {
+    cacheAvailable: true,
+    originAvailable: true,
+    origin: [{ key: "k", value: "v1", version: 1 }],
+  },
   events: (
     [
       [2, "cache.miss", "cache", "Cache miss (no entry)."],
@@ -93,14 +98,20 @@ const baselineResult: CacheAsideResult = {
         "Cache filled with 'v2'; expires at 242 ms.",
       ],
     ] as const
-  ).map(([timeMs, kind, nodeId, message], sequence): CacheAsideEvent => ({
-    sequence: sequence + 1,
-    timeMs,
-    kind,
-    requestId: "k",
-    nodeId,
-    message,
-  })),
+  ).map(([timeMs, kind, nodeId, message], index): CacheAsideEvent => {
+    // Operations 1–5 in input order, as the Java trace numbers them.
+    const operation = [1, 1, 1, 2, 3, 4, 5, 5, 5][index]!;
+    return {
+      sequence: index + 1,
+      timeMs,
+      kind,
+      requestId: `Operation ${operation}`,
+      nodeId,
+      message,
+      operation,
+      key: "k",
+    };
+  }),
   outcomes: [
     [0, 22, "v1", "MISS", false],
     [30, 32, "v1", "HIT", false],
@@ -323,8 +334,10 @@ describe("Cache-aside playground", () => {
           sequence: 1,
           timeMs: 2,
           kind: "cache.error",
-          requestId: "k",
+          requestId: "Operation 1",
           nodeId: "origin",
+          operation: 1,
+          key: "k",
           message: "Origin unavailable; GET fails on miss.",
         },
       ],

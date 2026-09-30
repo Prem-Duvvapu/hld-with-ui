@@ -3,7 +3,8 @@ package com.hld.cache;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.hld.simulation.SimulationEvent;
+import java.util.HashMap;
+import java.util.Map;
 import com.hld.simulation.engine.SimulationBudget;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -113,7 +114,7 @@ class CacheAsideSimulatorTest {
         assertThat(result.outcomes()).extracting(CacheGetOutcome::responseTimeMs)
                 .containsExactly(22L, 23L, 24L);
         assertThat(result.metrics().originReads()).isEqualTo(3);
-        assertThat(result.events()).extracting(SimulationEvent::timeMs).isSorted();
+        assertThat(result.events()).extracting(CacheAsideTraceEvent::timeMs).isSorted();
     }
 
     // ── Cache unavailable ──
@@ -137,7 +138,7 @@ class CacheAsideSimulatorTest {
         assertThat(result.metrics().originReads()).isEqualTo(2);
 
         // Verify bypass events were emitted
-        List<SimulationEvent> bypasses = result.events().stream()
+        List<CacheAsideTraceEvent> bypasses = result.events().stream()
                 .filter(e -> "cache.bypass".equals(e.kind()))
                 .toList();
         assertThat(bypasses).hasSize(2);
@@ -163,7 +164,7 @@ class CacheAsideSimulatorTest {
         assertThat(result.outcomes().get(1).returnedValue()).isNull();
         assertThat(result.metrics().originReads()).isZero();
 
-        List<SimulationEvent> errors = result.events().stream()
+        List<CacheAsideTraceEvent> errors = result.events().stream()
                 .filter(e -> "cache.error".equals(e.kind()))
                 .toList();
         assertThat(errors).hasSize(2);
@@ -291,7 +292,7 @@ class CacheAsideSimulatorTest {
                         new CacheOperation("GET", "k", null, 30),
                         new CacheOperation("UPDATE", "k", "v2", 10)), 7));
         assertThat(result.outcomes()).extracting(CacheGetOutcome::returnedValue).containsExactly("v2", "v2");
-        assertThat(result.events()).extracting(SimulationEvent::timeMs).isSorted();
+        assertThat(result.events()).extracting(CacheAsideTraceEvent::timeMs).isSorted();
     }
 
     @Test
@@ -319,7 +320,7 @@ class CacheAsideSimulatorTest {
         CacheAsideResult result = simulator.run(CacheAsideInput.withAvailability(2, 20, 100, "v1",
                 List.of(new CacheOperation("UPDATE", "k", "v2", 0),
                         new CacheOperation("GET", "k", null, 1)), false, false, 7));
-        assertThat(result.events()).extracting(SimulationEvent::kind)
+        assertThat(result.events()).extracting(CacheAsideTraceEvent::kind)
                 .containsExactly("origin.error", "cache.bypass", "cache.error");
         assertThat(result.metrics().cacheMisses()).isZero();
         assertThat(result.metrics().cacheBypasses()).isEqualTo(1);
@@ -364,6 +365,122 @@ class CacheAsideSimulatorTest {
         CacheAsideResult result = simulator.run(input);
         assertThat(result.outcomes()).extracting(CacheGetOutcome::hitOrMiss).containsExactly("MISS", "MISS");
         assertThat(result).isEqualTo(simulator.run(input));
-        assertThat(result.events()).extracting(SimulationEvent::sequence).containsExactly(1, 2, 3, 4, 5, 6);
+        assertThat(result.events()).extracting(CacheAsideTraceEvent::sequence).containsExactly(1, 2, 3, 4, 5, 6);
+    }
+    // ── Structured event state (HLD-04) ──
+
+    /** Full state at one event, rebuilt only from typed Java output. */
+    private record State(Map<String, CacheAsideTraceEvent.CacheEntryState> cache,
+                         Map<String, CacheAsideTraceEvent.OriginValueState> origin) {
+    }
+
+    private static State stateAt(CacheAsideResult result, int eventIndex) {
+        Map<String, CacheAsideTraceEvent.CacheEntryState> cache = new HashMap<>();
+        Map<String, CacheAsideTraceEvent.OriginValueState> origin = new HashMap<>();
+        for (CacheAsideInitialState.OriginKey key : result.initialState().origin()) {
+            origin.put(key.key(), new CacheAsideTraceEvent.OriginValueState(key.value(), key.version()));
+        }
+        for (int i = 0; i <= eventIndex; i++) {
+            CacheAsideTraceEvent event = result.events().get(i);
+            if (event.cacheEntry() == null) cache.remove(event.key());
+            else cache.put(event.key(), event.cacheEntry());
+            if (event.originValue() == null) origin.remove(event.key());
+            else origin.put(event.key(), event.originValue());
+        }
+        return new State(cache, origin);
+    }
+
+    @Test
+    void baselineEventsCarryTheStateTheLessonExplains() {
+        CacheAsideResult result = simulator.run(CacheAsideInput.create(2, 20, 100, "v1",
+                List.of(
+                        new CacheOperation("GET", "k", null, 0),
+                        new CacheOperation("GET", "k", null, 30),
+                        new CacheOperation("UPDATE", "k", "v2", 40),
+                        new CacheOperation("GET", "k", null, 70),
+                        new CacheOperation("GET", "k", null, 120)),
+                7));
+
+        assertThat(result.initialState().cacheAvailable()).isTrue();
+        assertThat(result.initialState().origin())
+                .containsExactly(new CacheAsideInitialState.OriginKey("k", "v1", 1));
+        assertThat(result.events()).extracting(CacheAsideTraceEvent::key).containsOnly("k");
+        assertThat(result.events()).extracting(CacheAsideTraceEvent::operation)
+                .containsExactly(1, 1, 1, 2, 3, 4, 5, 5, 5);
+
+        // The first fill at 22 ms stores v1 (version 1) until 122 ms.
+        int firstFill = indexOf(result, "cache.fill", 22);
+        assertThat(stateAt(result, firstFill).cache().get("k"))
+                .isEqualTo(new CacheAsideTraceEvent.CacheEntryState("v1", 1, 22, 122));
+        // After the update at 40 ms the origin holds v2 while the cache still holds v1.
+        State afterUpdate = stateAt(result, indexOf(result, "origin.update", 40));
+        assertThat(afterUpdate.origin().get("k")).isEqualTo(new CacheAsideTraceEvent.OriginValueState("v2", 2));
+        assertThat(afterUpdate.cache().get("k").version()).isEqualTo(1);
+        // The hit at 72 ms serves the cached version 1 while origin is at version 2: stale.
+        State atStaleHit = stateAt(result, indexOf(result, "cache.hit", 72));
+        assertThat(atStaleHit.cache().get("k").version()).isLessThan(atStaleHit.origin().get("k").version());
+        // The expiry miss at 122 ms is followed by a refill with v2 until 242 ms.
+        assertThat(stateAt(result, indexOf(result, "cache.fill", 142)).cache().get("k"))
+                .isEqualTo(new CacheAsideTraceEvent.CacheEntryState("v2", 2, 142, 242));
+    }
+
+    @Test
+    void coldBurstShowsNoCacheEntryBeforeTheFirstFill() {
+        CacheAsideResult result = simulator.run(CacheAsideInput.create(2, 20, 100, "v1",
+                List.of(0L, 1L, 2L, 3L, 4L).stream()
+                        .map(time -> new CacheOperation("GET", "k", null, time)).toList(),
+                7));
+
+        int firstFill = indexOf(result, "cache.fill", 22);
+        for (int i = 0; i < firstFill; i++) {
+            assertThat(stateAt(result, i).cache()).as("state at event %d", i).isEmpty();
+        }
+        assertThat(result.events().stream().filter(e -> e.kind().equals("cache.miss")))
+                .allMatch(e -> e.cacheEntry() == null);
+    }
+
+    @Test
+    void structuredTraceIsDeterministicAndHitStateMatchesOutcomes() {
+        CacheAsideInput input = CacheAsideInput.create(2, 20, 100, "v1",
+                List.of(new CacheOperation("GET", "k", null, 0), new CacheOperation("GET", "k", null, 30),
+                        new CacheOperation("UPDATE", "k", "v2", 40), new CacheOperation("GET", "k", null, 70)),
+                7);
+        CacheAsideResult first = simulator.run(input);
+        assertThat(simulator.run(input).events()).isEqualTo(first.events());
+        assertThat(simulator.run(input).initialState()).isEqualTo(first.initialState());
+
+        List<CacheAsideTraceEvent> hits = first.events().stream()
+                .filter(e -> e.kind().equals("cache.hit")).toList();
+        assertThat(hits).hasSize(2);
+        for (CacheAsideTraceEvent hit : hits) {
+            CacheGetOutcome outcome = first.outcomes().get(hit.operation() == 2 ? 1 : 2);
+            assertThat(hit.cacheEntry().value()).isEqualTo(outcome.returnedValue());
+            assertThat(hit.cacheEntry().version() != hit.originValue().version()).isEqualTo(outcome.stale());
+        }
+    }
+
+    @Test
+    void largestValidTraceStaysWithinTheDefaultByteBudget() {
+        // Worst case for trace size: every GET misses, reads origin, and fills
+        // with a maximum-length value, so each carries the largest key state.
+        String value = "v".repeat(CacheAsideLimits.MAX_VALUE_LENGTH);
+        List<CacheOperation> gets = new java.util.ArrayList<>();
+        for (int i = 0; i < CacheAsideLimits.MAX_OPERATIONS; i++) {
+            gets.add(new CacheOperation("GET", "k", null, i * 100L));
+        }
+        CacheAsideResult result = simulator.run(CacheAsideInput.create(1, 20, 0, value, gets, 7));
+
+        assertThat(result.status()).isEqualTo("completed");
+        assertThat(result.events()).hasSize(3 * CacheAsideLimits.MAX_OPERATIONS);
+        assertThat(result.events()).filteredOn(e -> e.kind().equals("cache.fill"))
+                .allMatch(e -> e.cacheEntry().value().equals(value));
+    }
+
+    private static int indexOf(CacheAsideResult result, String kind, long timeMs) {
+        for (int i = 0; i < result.events().size(); i++) {
+            CacheAsideTraceEvent event = result.events().get(i);
+            if (event.kind().equals(kind) && event.timeMs() == timeMs) return i;
+        }
+        throw new AssertionError("No " + kind + " event at " + timeMs + " ms");
     }
 }
