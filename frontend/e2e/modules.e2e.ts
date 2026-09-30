@@ -104,6 +104,33 @@ test.describe("module navigation", () => {
     expect(runs).toHaveLength(1);
   });
 
+  test("keyboard: arrows move focus with a visible indicator, Enter selects", async ({
+    page,
+  }) => {
+    await page.goto("/topics/request-flow");
+    const playground = page.getByRole("tab", { name: /Playground/ });
+    const study = page.getByRole("tab", { name: /Study/ });
+    await playground.focus();
+    await page.keyboard.press("ArrowRight");
+
+    await expect(study).toBeFocused();
+    await expect(study).toHaveAttribute("aria-selected", "false");
+    expect(await study.evaluate((el) => el.matches(":focus-visible"))).toBe(
+      true,
+    );
+    const outline = await study.evaluate(
+      (el) => getComputedStyle(el).outlineStyle,
+    );
+    expect(outline).not.toBe("none");
+
+    await page.keyboard.press("Enter");
+    await expect(study).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("tabpanel")).toHaveAttribute(
+      "aria-labelledby",
+      (await study.getAttribute("id"))!,
+    );
+  });
+
   test("normalizes an unsupported view and shows a not-found page for unknown routes", async ({
     page,
   }) => {
@@ -121,48 +148,62 @@ test.describe("module navigation", () => {
   });
 });
 
-for (const colorScheme of ["light", "dark"] as const) {
-  test.describe(`320px ${colorScheme} layout`, () => {
-    test.use({
-      viewport: { width: 320, height: 800 },
-      colorScheme,
-      reducedMotion: "reduce",
-    });
-
-    for (const [path, run, resultLabel] of [
-      ["/topics/request-flow", /Run experiment/, "Run metrics"],
-      [
-        "/topics/distributed-rate-limiter",
-        /Run request burst/,
-        "Rate limiter metrics",
-      ],
-      ["/topics/cache-aside", /Run simulation/, "Cache GET outcomes"],
-      ["/topics/capacity-estimation", /Calculate estimate/, "Target peak"],
-    ] as const) {
-      test(`${path} has no page overflow after a run`, async ({ page }) => {
-        await page.goto(path);
-        await page.getByRole("button", { name: run }).click();
-        // Measure only once the Java result is on screen.
-        await expect(
-          page
-            .getByLabel(resultLabel)
-            .or(page.getByText(resultLabel, { exact: true }))
-            .first(),
-        ).toBeVisible();
-        await expect(page.locator("[role=alert]")).toHaveCount(0);
-        await expect
-          .poll(() =>
-            page.evaluate(() => {
-              const root = document.documentElement;
-              return root.scrollWidth - root.clientWidth;
-            }),
-          )
-          .toBeLessThanOrEqual(0);
-        await expect(page.locator("html")).toHaveAttribute(
-          "data-theme",
-          colorScheme,
-        );
-      });
-    }
+const pageOverflow = (page: Page) =>
+  page.evaluate(() => {
+    const root = document.documentElement;
+    return root.scrollWidth - root.clientWidth;
   });
+
+for (const width of [320, 768, 1440]) {
+  for (const colorScheme of ["light", "dark"] as const) {
+    test.describe(`${width}px ${colorScheme} layout`, () => {
+      test.use({
+        viewport: { width, height: 800 },
+        colorScheme,
+        reducedMotion: "reduce",
+      });
+
+      for (const [path, run, resultLabel] of [
+        ["/topics/request-flow", /Run experiment/, "Run metrics"],
+        [
+          "/topics/distributed-rate-limiter",
+          /Run request burst/,
+          "Rate limiter metrics",
+        ],
+        ["/topics/cache-aside", /Run simulation/, "Cache GET outcomes"],
+        ["/topics/capacity-estimation", /Calculate estimate/, "Target peak"],
+      ] as const) {
+        test(`${path} has no page overflow on any tab after a run`, async ({
+          page,
+        }) => {
+          await page.goto(path);
+          await expect(page.locator("html")).toHaveAttribute(
+            "data-theme",
+            colorScheme,
+          );
+          await page.getByRole("button", { name: run }).click();
+          // Measure only once the Java result is on screen.
+          await expect(
+            page
+              .getByLabel(resultLabel)
+              .or(page.getByText(resultLabel, { exact: true }))
+              .first(),
+          ).toBeVisible();
+          await expect(page.locator("[role=alert]")).toHaveCount(0);
+
+          const tabs = page.getByRole("tab");
+          for (let index = 0; index < (await tabs.count()); index++) {
+            const tab = tabs.nth(index);
+            await tab.click();
+            await expect(tab).toHaveAttribute("aria-selected", "true");
+            await expect
+              .poll(() => pageOverflow(page), {
+                message: `${await tab.innerText()} overflows`,
+              })
+              .toBeLessThanOrEqual(0);
+          }
+        });
+      }
+    });
+  }
 }
