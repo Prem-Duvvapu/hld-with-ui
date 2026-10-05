@@ -2,6 +2,8 @@
 
 Prepared 2026-10-05 for Opus 5.5 or another coding agent. Baseline: `add46a4` (PR #30). This is a plan, not evidence that the work below has shipped.
 
+**Progress since the baseline (2026-10-05):** HLD-05 cache playback (#32), HLD-06A guided checkpoints (#34), HLD-06B cache architecture/sequence and lesson (#35), and HLD-07A request-flow failure teaching are merged; see their work items in `docs/work-items/`. **Resume at HLD-07B (capacity estimation)**, then HLD-07C (rate limiter). Manual zoom, screen-reader, and newcomer teach-back gates remain open for every module.
+
 ## 1. Objective and scope
 
 Deliver an excellent first learning path:

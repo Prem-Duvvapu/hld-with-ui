@@ -7,7 +7,8 @@ const parts = [
   {
     number: "02",
     title: "Load balancer",
-    detail: "Selects a healthy node with the configured routing policy.",
+    detail:
+      "Selects a node that is up, using the configured routing policy. In this model it learns of a failure instantly; real health checks take several check intervals.",
   },
   {
     number: "03",

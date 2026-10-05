@@ -16,5 +16,15 @@
     "sourceType": "engineering-article",
     "supports": "Overload behavior and early rejection tradeoffs",
     "reviewedAt": "2026-09-22"
+  },
+  {
+    "id": "aws-alb-health-checks",
+    "title": "Health checks for Application Load Balancer target groups",
+    "organization": "Amazon Web Services",
+    "url": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html",
+    "sourceType": "documentation",
+    "relevantSections": "Health check settings",
+    "supports": "Load balancers route only to healthy targets; a target is taken out of service after consecutive failed checks at a configured interval (defaults: 30 seconds, 2 failures)",
+    "reviewedAt": "2026-10-05"
   }
 ]

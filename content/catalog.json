@@ -20,9 +20,13 @@
     "resourcesPath": "topics/request-flow/resources.json",
     "simulationIds": ["request-flow"],
     "estimatorIds": [],
-    "contentVersion": "1.0.0",
-    "reviewedAt": "2026-09-22",
-    "sourceIds": ["google-sre-overload", "aws-load-shedding"]
+    "contentVersion": "1.1.0",
+    "reviewedAt": "2026-10-05",
+    "sourceIds": [
+      "google-sre-overload",
+      "aws-load-shedding",
+      "aws-alb-health-checks"
+    ]
   },
   {
     "id": "capacity-estimation",
