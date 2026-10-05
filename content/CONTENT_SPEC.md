@@ -12,7 +12,10 @@ One topic normally owns:
 content/topics/<topic-id>/lesson.md
 content/topics/<topic-id>/questions.json
 content/topics/<topic-id>/resources.json
+content/topics/<topic-id>/checkpoints.json   # only with the guided capability
 ```
+
+Guided checkpoints (`contracts/checkpoints.schema.json`) follow predict → reveal → explain → choose. Each one names a Java preset and a target event by operation, event kind, and occurrence, never by array index or narration. A Java test runs every preset and checks that the target exists and that the numbers in the explanation match the trace.
 
 Case studies use `content/case-studies/<case-id>/`. Add its metadata to the canonical `content/catalog.json` once that file exists. Simulation presets and model fixtures live with the contracts/models, not as duplicate executable logic embedded in prose.
 

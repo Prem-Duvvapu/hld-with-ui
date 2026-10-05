@@ -37,7 +37,10 @@ public class CatalogService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No published topic has id " + id + "."));
         String lesson = readText("content/" + entry.lessonPath());
         List<Question> questions = readJson("content/" + entry.questionsPath(), new TypeReference<>() {});
-        return new TopicDetail(entry, lesson, questions);
+        List<GuidedCheckpoint> checkpoints = entry.checkpointsPath() == null
+                ? List.of()
+                : readJson("content/" + entry.checkpointsPath(), new TypeReference<>() {});
+        return new TopicDetail(entry, lesson, questions, checkpoints);
     }
 
     private void validateCatalog(List<CatalogEntry> entries) {

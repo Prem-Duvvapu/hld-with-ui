@@ -1,0 +1,250 @@
+[
+  {
+    "id": "cold-miss-fill",
+    "title": "Cold miss, then fill",
+    "simulationId": "cache-aside",
+    "presetId": "baseline",
+    "target": { "operation": 1, "kind": "cache.fill", "occurrence": 1 },
+    "prompt": "The cache starts empty. A GET for k arrives at 0 ms. A cache lookup takes 2 ms, an origin read takes 20 ms, and the TTL is 100 ms. When does the cache first hold k, and how long does this GET take?",
+    "lookFor": "Step back one event. The origin read and the fill both happen at 22 ms, but they are separate events, and the cache entry appears only at the fill.",
+    "explanation": "The lookup at 2 ms finds no entry, so the application reads the origin itself. The origin returns v1 at 22 ms, and only then does the application write v1 into the cache, fresh until 22 + 100 = 122 ms. The GET pays both latencies: 22 ms. The cache never fetched anything by itself: in cache-aside, the application does the filling.",
+    "tradeoff": {
+      "prompt": "Every first read of a key pays the lookup plus the origin read. A key will be hot right after a deploy. What reduces that first-read penalty?",
+      "options": [
+        {
+          "id": "warm",
+          "label": "Load (warm) the key into the cache before traffic arrives",
+          "feedback": "Warming moves the origin read off the user's path. The cost: you must know which keys will be hot, and warmed entries still expire by TTL."
+        },
+        {
+          "id": "lower-ttl",
+          "label": "Lower the TTL",
+          "feedback": "TTL controls how long an entry stays usable, not whether the first read misses. A shorter TTL only adds misses."
+        },
+        {
+          "id": "faster-lookup",
+          "label": "Make the cache lookup faster",
+          "feedback": "The 2 ms lookup is small. The 20 ms origin read dominates a miss, so a faster lookup barely changes the cold read."
+        }
+      ],
+      "recommendedOptionId": "warm"
+    }
+  },
+  {
+    "id": "warm-hit",
+    "title": "Warm hit",
+    "simulationId": "cache-aside",
+    "presetId": "baseline",
+    "target": { "operation": 2, "kind": "cache.hit", "occurrence": 1 },
+    "prompt": "A second GET for k arrives at 30 ms. Where does its value come from, how long does it take, and does the origin do any work?",
+    "lookFor": "Compare the entry's expiry (122 ms) with the time of this event (32 ms). The origin's value does not change.",
+    "explanation": "At 32 ms the entry filled at 22 ms is still fresh (it expires at 122 ms), so the lookup hits and returns v1 in 2 ms. The origin does no work. That is the point of the cache: repeated reads within the TTL cost one lookup instead of an origin read.",
+    "tradeoff": {
+      "prompt": "Doubling the TTL to 200 ms would turn more later reads into hits. What do you give up?",
+      "options": [
+        {
+          "id": "freshness",
+          "label": "A longer window in which a hit can return an old value",
+          "feedback": "Under this model, nothing but expiry removes a cached copy, so the TTL bounds how long an old value can be served after the origin changes."
+        },
+        {
+          "id": "nothing",
+          "label": "Nothing; a longer TTL is always better",
+          "feedback": "The hit ratio improves, but the time a hit can return old data grows with it. The stale-hit checkpoint shows that cost."
+        },
+        {
+          "id": "slower-hits",
+          "label": "Hits become slower",
+          "feedback": "A hit costs only the lookup (2 ms here), whatever the TTL."
+        }
+      ],
+      "recommendedOptionId": "freshness"
+    }
+  },
+  {
+    "id": "update-keeps-cache",
+    "title": "Write goes to the origin only",
+    "simulationId": "cache-aside",
+    "presetId": "baseline",
+    "target": { "operation": 3, "kind": "origin.update", "occurrence": 1 },
+    "prompt": "At 40 ms an UPDATE writes v2 for k. What does the cache hold for k immediately after the write?",
+    "lookFor": "In the state table, compare the cached version with the origin's version.",
+    "explanation": "The write commits to the origin, which moves to v2 (version 2). This model neither updates nor invalidates the cache on writes, so the cache still holds v1 (version 1) until 122 ms. Cache and origin now disagree, and nothing in the read path notices until the entry expires.",
+    "tradeoff": {
+      "prompt": "Product requires that users see their own update on their next read. What is the smallest change to this design?",
+      "options": [
+        {
+          "id": "invalidate",
+          "label": "Delete the cache entry after the origin write commits",
+          "feedback": "The next read misses and refills from the origin. Remaining risk: a read that began before the write can still fill the old value after the delete, so systems often keep a TTL as a backstop. This model does not implement invalidation."
+        },
+        {
+          "id": "tiny-ttl",
+          "label": "Cut the TTL to 1 ms",
+          "feedback": "Almost every read becomes an origin read, which removes most of the cache's benefit, and a short window remains."
+        },
+        {
+          "id": "more-memory",
+          "label": "Give the cache more memory",
+          "feedback": "Capacity does not affect freshness. Here the old entry is present and still fresh, and that is the problem."
+        }
+      ],
+      "recommendedOptionId": "invalidate"
+    }
+  },
+  {
+    "id": "stale-hit",
+    "title": "Stale hit",
+    "simulationId": "cache-aside",
+    "presetId": "baseline",
+    "target": { "operation": 4, "kind": "cache.hit", "occurrence": 1 },
+    "prompt": "A GET arrives at 70 ms, after the origin moved to v2. Does it return v1 or v2, and why?",
+    "lookFor": "In the state table, the cache entry is still fresh (it expires at 122 ms) but holds version 1 while the origin holds version 2.",
+    "explanation": "The lookup at 72 ms is before the 122 ms expiry, so it hits and returns v1, while the origin holds version 2: a stale read. Java marks it stale by comparing versions as an outside observer; a real application usually cannot tell without asking the origin. In this run, the cache serves the old value from the write at 40 ms until expiry at 122 ms: an 82 ms stale window.",
+    "tradeoff": {
+      "prompt": "A new requirement: reads may be at most 10 ms stale after a write. Which approach meets it best?",
+      "options": [
+        {
+          "id": "invalidate",
+          "label": "Delete (invalidate) the entry on every write",
+          "feedback": "This removes the old copy right after the write, apart from races with reads already in flight. The cost: every write must also reach the cache, and you need a policy for writes during a cache outage."
+        },
+        {
+          "id": "ttl-10",
+          "label": "Set the TTL to 10 ms",
+          "feedback": "This also meets the bound, but nearly every read then goes to the origin. It is reasonable only if the origin can carry that load."
+        },
+        {
+          "id": "keep",
+          "label": "Keep the 100 ms TTL; stale reads are rare",
+          "feedback": "This trace shows an 82 ms stale window, far above 10 ms. A rare violation still violates a bound."
+        }
+      ],
+      "recommendedOptionId": "invalidate"
+    }
+  },
+  {
+    "id": "expiry-miss",
+    "title": "Miss at the expiry boundary",
+    "simulationId": "cache-aside",
+    "presetId": "baseline",
+    "target": { "operation": 5, "kind": "cache.miss", "occurrence": 1 },
+    "prompt": "A GET arrives at 120 ms, so its lookup happens at 122 ms, exactly when the entry expires. Hit or miss?",
+    "lookFor": "The entry is still in the state table, but it is marked expired.",
+    "explanation": "The expiry time is the first moment a lookup misses, so a lookup at 122 ms misses. The old entry is still stored; it just can no longer be used. The application reads the origin, gets v2 at 142 ms, and overwrites the entry, which stays fresh until 242 ms. This GET takes 22 ms again.",
+    "tradeoff": {
+      "prompt": "This key is read constantly, and every expiry adds a 22 ms read for someone. What smooths that?",
+      "options": [
+        {
+          "id": "refresh-ahead",
+          "label": "Refresh the entry shortly before it expires",
+          "feedback": "Refresh-ahead keeps reads of hot keys fast. The cost: extra origin reads for keys that may not be read again. This model does not implement it."
+        },
+        {
+          "id": "long-ttl",
+          "label": "Use a much longer TTL",
+          "feedback": "This causes fewer expiries, but a longer stale window after each write (see the stale-hit checkpoint)."
+        },
+        {
+          "id": "ignore",
+          "label": "Nothing; expiry misses cost nothing extra",
+          "feedback": "The trace shows an expiry miss costs a full origin read: 22 ms instead of 2 ms."
+        }
+      ],
+      "recommendedOptionId": "refresh-ahead"
+    }
+  },
+  {
+    "id": "cold-burst",
+    "title": "Five misses, five origin reads",
+    "simulationId": "cache-aside",
+    "presetId": "cold-burst",
+    "target": { "operation": 5, "kind": "origin.read", "occurrence": 1 },
+    "prompt": "Five GETs for the same key arrive at 0, 1, 2, 3, and 4 ms on an empty cache. How many origin reads happen?",
+    "lookFor": "Step back to event 5: every lookup (2 to 6 ms) finishes before the first fill at 22 ms.",
+    "explanation": "All five lookups finish between 2 and 6 ms, before the first fill at 22 ms, so all five miss. This model does not coalesce concurrent misses, so each miss reads the origin: five origin reads at 22, 23, 24, 25, and 26 ms, and each fill overwrites the same entry. With 1,000 concurrent requests the origin would receive 1,000 reads. This is a cache stampede, also called a thundering herd.",
+    "tradeoff": {
+      "prompt": "A hot key expires under heavy traffic. What stops the origin from receiving one read per waiting request?",
+      "options": [
+        {
+          "id": "coalesce",
+          "label": "Coalesce misses: one request reads the origin and the others wait for its result",
+          "feedback": "This gives one origin read per key per refill. The cost: waiting requests share the first request's latency and failure, and you need per-key coordination. This model does not implement it, so the playground cannot demonstrate it."
+        },
+        {
+          "id": "lower-ttl",
+          "label": "Lower the TTL",
+          "feedback": "More expiries mean more bursts, not fewer."
+        },
+        {
+          "id": "more-replicas",
+          "label": "Add origin replicas",
+          "feedback": "This raises origin capacity, but each burst still multiplies into N reads. It treats the symptom, not the cause."
+        }
+      ],
+      "recommendedOptionId": "coalesce"
+    }
+  },
+  {
+    "id": "cache-bypass",
+    "title": "Cache down: every read goes to the origin",
+    "simulationId": "cache-aside",
+    "presetId": "cache-unavailable",
+    "target": { "operation": 3, "kind": "origin.read", "occurrence": 1 },
+    "prompt": "The cache is unavailable for the whole run. GETs arrive at 0, 30, and 60 ms. What does each GET cost, and how many origin reads happen?",
+    "lookFor": "The cache stays unavailable and never gains an entry. Each operation is a bypass followed by an origin read.",
+    "explanation": "With the cache down, each GET skips the lookup and reads the origin directly: 20 ms each, three origin reads for three GETs, and nothing is cached. Bypasses are counted separately from hits and misses. The application still works, but the origin now carries the full read load.",
+    "tradeoff": {
+      "prompt": "Normally the cache absorbs most reads. What must be true for a cache outage not to become an origin outage?",
+      "options": [
+        {
+          "id": "capacity",
+          "label": "The origin can serve the full read load, or the excess is shed",
+          "feedback": "Plan origin capacity, rate limits, or load shedding for the cache-off case, and alert on cache availability separately from origin saturation."
+        },
+        {
+          "id": "retry-cache",
+          "label": "Retry the cache until it comes back",
+          "feedback": "Retries add latency and load during the outage. They do not reduce origin demand."
+        },
+        {
+          "id": "fail-reads",
+          "label": "Fail every read while the cache is down",
+          "feedback": "Possible as a deliberate policy, but it turns a performance problem into an outage even though the origin is healthy."
+        }
+      ],
+      "recommendedOptionId": "capacity"
+    }
+  },
+  {
+    "id": "origin-failure",
+    "title": "Origin down on a cold cache",
+    "simulationId": "cache-aside",
+    "presetId": "origin-unavailable",
+    "target": { "operation": 1, "kind": "cache.error", "occurrence": 1 },
+    "prompt": "The cache is healthy, the origin is down, and the run starts with an empty cache. What does the GET at 0 ms return?",
+    "lookFor": "The lookup misses at 2 ms, and the failure follows at the same time. No entry ever appears.",
+    "explanation": "The cache is empty, so the lookup misses at 2 ms and the application needs the origin, which is unavailable, so the GET fails with ERROR. The second GET fails the same way. Every run starts cold, so this preset cannot show what a warm cache would do during an origin outage: hits do not need the origin, but there are none here.",
+    "tradeoff": {
+      "prompt": "During an origin outage you would rather serve slightly old data than errors. Which policy does that?",
+      "options": [
+        {
+          "id": "stale-if-error",
+          "label": "Serve the last cached copy when the origin read fails, even if it has expired",
+          "feedback": "This trades freshness for availability during failures. The cost: you must keep expired entries and decide how old a served copy may be. This model does not implement it."
+        },
+        {
+          "id": "long-ttl",
+          "label": "Raise every TTL permanently",
+          "feedback": "This extends staleness all the time, not just during outages."
+        },
+        {
+          "id": "retry-now",
+          "label": "Retry the origin immediately",
+          "feedback": "Immediate retries add load to a failing origin. Retries help only with backoff and a limit."
+        }
+      ],
+      "recommendedOptionId": "stale-if-error"
+    }
+  }
+]

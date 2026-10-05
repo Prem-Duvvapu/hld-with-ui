@@ -17,6 +17,7 @@ public record CatalogEntry(
         String lessonPath,
         String questionsPath,
         String resourcesPath,
+        String checkpointsPath,
         List<String> simulationIds,
         List<String> estimatorIds,
         String contentVersion,

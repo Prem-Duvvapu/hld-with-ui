@@ -7,6 +7,7 @@ export type Capability = CatalogEntry["capabilities"][number];
 export type QuestionOption = components["schemas"]["QuestionOption"];
 export type Question = components["schemas"]["Question"];
 export type TopicDetail = components["schemas"]["TopicDetail"];
+export type GuidedCheckpoint = components["schemas"]["GuidedCheckpoint"];
 export type RequestFlowInput = components["schemas"]["RequestFlowInput"];
 export type RoutingPolicy = RequestFlowInput["policy"];
 export type SimulationPreset = components["schemas"]["SimulationPreset"];

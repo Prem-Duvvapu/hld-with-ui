@@ -30,6 +30,21 @@ function validator(name: string) {
 }
 const descriptorValid = validator("CacheAsideDescriptor");
 const resultValid = validator("CacheAsideResult");
+const topicValid = validator("TopicDetail");
+
+test("real topic HTTP responses, including guided checkpoints, satisfy OpenAPI", async ({
+  request,
+}) => {
+  for (const id of ["cache-aside", "request-flow"]) {
+    const response = await request.get(`/api/v1/topics/${id}`);
+    expect(response.status()).toBe(200);
+    const topic = await response.json();
+    expect(topicValid(topic), JSON.stringify(topicValid.errors)).toBe(true);
+    expect(topic.checkpoints.length > 0).toBe(
+      topic.topic.capabilities.includes("guided"),
+    );
+  }
+});
 
 test("real cache HTTP descriptor and completed/limited results satisfy OpenAPI", async ({
   request,
