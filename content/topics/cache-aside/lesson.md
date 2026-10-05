@@ -76,6 +76,8 @@ Four GETs produce two hits and two misses → 50% hit ratio, two origin reads, a
 4. **Origin unavailable** — Disable the origin and observe failed misses. Each run starts with an empty cache, so this preset cannot demonstrate serving prewarmed hits during an outage.
 5. **TTL experiments** — Change the TTL to see how it affects stale duration and origin load.
 
+After a run, step through the trace: the diagram and state table show what the cache and origin hold at each event. The **Guided** tab walks through eight checkpoints (predict, run, inspect the event, explain, choose a tradeoff). **Architecture** and **Request sequence** summarize the same baseline without running anything.
+
 ## Failures and tradeoffs
 
 ### Stale data window
@@ -92,7 +94,19 @@ Every GET becomes a direct origin read. The application still works but at highe
 
 ### Origin unavailable
 
-Cache hits continue to work. Cache misses fail. If TTLs expire during an outage, previously cached entries also start failing. A stale-while-error policy could extend TTLs, trading freshness for availability.
+Cache hits continue to work. Cache misses fail. If TTLs expire during an outage, previously cached entries also start failing. A stale-if-error policy serves the last cached copy when the origin fails, trading freshness for availability ([RFC 5861](https://www.rfc-editor.org/rfc/rfc5861) defines this for HTTP caches).
+
+### Alternatives this model does not implement
+
+Each fixes one failure above and adds a cost. The playground cannot demonstrate them.
+
+| Alternative | Fixes | Cost or new failure |
+| --- | --- | --- |
+| **Invalidate on write**: delete the entry after the origin write commits | Stale window after writes | A read that started before the write can refill the old value after the delete, so keep a TTL as a backstop |
+| **Write-through**: update the cache on every write | Stale window | Every write pays two writes; rarely read data fills the cache |
+| **Seeding (warming)**: load known hot keys before traffic | Cold misses after deploys | You must predict the hot keys; warmed entries still expire |
+| **Refresh-ahead**: reload a key shortly before it expires while serving the current copy | Expiry misses on hot keys | Extra origin reads for keys nobody reads again |
+| **Request coalescing**: one miss reads the origin; concurrent misses for the same key wait for it | Cold-burst origin load | Waiting requests share one read's latency and failure; needs per-key coordination |
 
 ## In a real project
 
@@ -104,6 +118,21 @@ Cache hits continue to work. Cache misses fail. If TTLs expire during an outage,
 
 ## Interview practice
 
+**Two-minute answer scaffold.** Use it for “Design caching for this read-heavy endpoint.”
+
+1. *Assumptions*: read-to-write ratio, how stale a read may be, and the origin's capacity without the cache.
+2. *Simple design*: the application reads the cache first, reads the origin on a miss, and fills the cache with a TTL.
+3. *Trace a read and a write*: a hit costs one lookup; a miss costs a lookup plus an origin read; a write goes to the origin, so a cached copy can be stale until it expires.
+4. *Bottleneck*: a hot key that expires, or a cache outage, sends many reads to the origin at once.
+5. *Tradeoff*: choose the TTL from the freshness requirement; add invalidation if writes must be visible sooner, and coalescing if bursts threaten the origin.
+
+**Changed-condition follow-ups.**
+
+- *Hot key*: “One key gets 1,000 reads per second and expires.” Every request whose lookup happens before the first refill misses. With requests every 1 ms, a 2 ms lookup, and a 30 ms origin read, 30 requests read the origin before the refill is visible. Coalescing would make that one read.
+- *Freshness*: “Users must see a price change within 5 seconds, and the TTL is 10 minutes.” TTL alone cannot meet this unless it drops to 5 seconds, which multiplies origin reads. Invalidate on write meets it while keeping a longer TTL as a backstop.
+
+**Practice questions.**
+
 1. *"Walk me through a cache-aside read for a key that was recently updated at the origin."* — Describe the lookup, the stale hit, the TTL check, and when the fresh value appears.
 2. *"What happens during a cold start with 1,000 concurrent requests for the same key?"* — Explain the thundering herd, the origin load, and what coalescing or singleflight would change.
 3. *"Your cache cluster is down. What is your mitigation strategy?"* — Discuss origin load, circuit breaking, graceful degradation, and monitoring.
@@ -112,8 +141,17 @@ Cache hits continue to work. Cache misses fail. If TTLs expire during an outage,
 
 Explain to a teammate: "Under cache-aside, an origin update does not clear the cache. Here is exactly when the old value stops being served, why, and what we monitor to detect the problem."
 
+A good explanation: “The origin moved to version 2 at 40 ms, but the cache still held version 1, fresh until 122 ms. Any hit before 122 ms returns the old value; the first lookup at or after 122 ms misses and refills from the origin. I would watch stale-read signals and origin read rate together before changing the TTL or adding invalidation.”
+
+**A tempting wrong explanation.** “The read at 70 ms returned v1 because the update had not finished yet.” The trace disproves it: the origin update event at 40 ms already shows version 2 committed. The read returned v1 because it was a cache hit on a fresh entry, and nothing removes that entry before its expiry.
+
+**Self-check.** Did your explanation name the problem, the mechanism (hit, miss, fill, TTL), the assumption (no invalidation), a number from the trace, a tradeoff, and a follow-up?
+
 ## Further reading
 
 - [Caching Strategies — AWS ElastiCache](https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/Strategies.html)
-- [Caching Best Practices — Azure Architecture](https://learn.microsoft.com/en-us/azure/architecture/best-practices/caching)
-- [Design of a Modern Cache — ACM (Caffeine)](https://dl.acm.org/doi/10.1145/3230543.3230553)
+- [Caching Guidance — Azure Architecture Center](https://learn.microsoft.com/en-us/azure/architecture/best-practices/caching): cache-aside, seeding, invalidate on write, and falling back to the data store when the cache is unavailable
+- [RFC 5861: HTTP Cache-Control Extensions for Stale Content](https://www.rfc-editor.org/rfc/rfc5861): `stale-if-error` and `stale-while-revalidate`
+- [Go `singleflight`](https://pkg.go.dev/golang.org/x/sync/singleflight): duplicate call suppression, one way to coalesce misses
+- [Caffeine: Refresh](https://github.com/ben-manes/caffeine/wiki/Refresh): refresh-ahead that keeps serving the old value while reloading
+- [TinyLFU: A Highly Efficient Cache Admission Policy (ACM TOS, 2017)](https://doi.org/10.1145/3149371): admission and eviction, beyond this module's scope

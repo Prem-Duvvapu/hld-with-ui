@@ -45,5 +45,44 @@
       "Identifies tradeoffs of the proposed mitigation."
     ],
     "modelAnswer": "Cache hits continue to work normally — the cached value is returned at cache lookup latency. Cache misses fail because the origin cannot respond. If the TTL expires during the outage, previously cached entries also start failing. A mitigation could extend the TTL of existing entries during outage (stale-while-error), but this trades correctness for availability. I would add a circuit breaker to avoid overwhelming a recovering origin, monitor the miss-failure rate, and make the stale-serving policy an explicit configuration."
+  },
+  {
+    "id": "cache-aside-hot-key-expiry",
+    "topicId": "cache-aside",
+    "level": "intermediate",
+    "kind": "calculation",
+    "prompt": "A hot key expires at 1,000 ms. Requests for it arrive every 1 ms from 1,000 ms onward. A cache lookup takes 2 ms and an origin read takes 30 ms. Under this model (no coalescing), how many requests read the origin before the refill becomes visible?",
+    "options": [
+      { "id": "a", "label": "1" },
+      { "id": "b", "label": "2" },
+      { "id": "c", "label": "30" },
+      { "id": "d", "label": "Every request until the TTL is raised" }
+    ],
+    "correctOptionId": "c",
+    "explanation": "The first request misses at 1,002 ms and its origin read fills the cache at 1,032 ms. Every request whose lookup happens before 1,032 ms also misses: arrivals at 1,000 through 1,029 ms, which is 30 origin reads. The request arriving at 1,030 ms looks up at 1,032 ms, after the fill, and hits. You can reproduce this in the playground with GET k @0, TTL 968, origin read 30, and GETs at 1,000 to 1,040.",
+    "followUp": "With request coalescing, how many origin reads would this burst cause, and what happens to the 29 waiting requests if that one read fails?",
+    "sourceIds": [
+      "go-singleflight"
+    ]
+  },
+  {
+    "id": "cache-aside-freshness-requirement",
+    "topicId": "cache-aside",
+    "level": "intermediate",
+    "kind": "design-decision",
+    "prompt": "Product prices are cached with cache-aside and a 10-minute TTL. A new requirement says shoppers must see a price change within 5 seconds. Prices change rarely but are read constantly. What do you change, and what does it cost?",
+    "explanation": "Under this model, a cached price stays until its TTL expires, so a 10-minute TTL allows up to 10 minutes of stale prices. Lowering the TTL to 5 seconds meets the bound but turns most reads into origin reads. Invalidating the entry when a price write commits meets it while keeping a longer TTL as a backstop, at the cost of writes reaching the cache and a race where an in-flight read refills the old price.",
+    "rubric": [
+      "States that a TTL alone bounds staleness only by its own length",
+      "Compares a 5-second TTL (more origin load) with invalidate on write",
+      "Names the invalidation race or the cache-outage case and a backstop such as a TTL",
+      "Mentions what to measure: stale reads, origin read rate"
+    ],
+    "modelAnswer": "Keep cache-aside reads, delete the price entry after each price write commits, and keep a TTL of a few minutes as a backstop for missed deletes. A 5-second TTL would also meet the requirement but sends most reads to the origin, which I would only accept if the origin has that capacity. I would monitor stale-read rate and origin reads after the change.",
+    "followUp": "The delete fails because the cache is briefly unavailable during a price write. What bounds the staleness now, and how would you detect it?",
+    "sourceIds": [
+      "azure-caching-best-practices",
+      "aws-caching-strategies"
+    ]
   }
 ]

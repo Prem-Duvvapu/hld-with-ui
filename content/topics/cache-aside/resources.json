@@ -5,25 +5,58 @@
     "organization": "AWS",
     "url": "https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/Strategies.html",
     "sourceType": "documentation",
-    "supports": "Lazy loading pattern, write-through comparison, and TTL guidance",
-    "reviewedAt": "2026-09-28"
+    "relevantSections": "Lazy loading; Write-through; Adding TTL",
+    "supports": "Lazy loading reads the cache, then the database on a miss, then writes the cache; the miss penalty; stale data without write updates; TTL bounds staleness; a replaced empty node increases latency and database queries",
+    "reviewedAt": "2026-10-05"
   },
   {
     "id": "azure-caching-best-practices",
-    "title": "Caching Best Practices",
-    "organization": "Microsoft Azure",
+    "title": "Caching Guidance",
+    "organization": "Microsoft Azure Architecture Center",
     "url": "https://learn.microsoft.com/en-us/azure/architecture/best-practices/caching",
     "sourceType": "documentation",
-    "supports": "Cache-aside pattern, consistency, expiration, and eviction strategies",
-    "reviewedAt": "2026-09-28"
+    "relevantSections": "Determine how to cache data effectively; Invalidate on write; Manage data expiration; Handle cache unavailability; Caching and eventual consistency",
+    "supports": "Seeding a cache; invalidate on write and its read race; too short or too long expiry; falling back to the data store when the cache is unavailable, which can swamp it",
+    "reviewedAt": "2026-10-05"
   },
   {
-    "id": "caffeine-cache-design",
-    "title": "Design of a Modern Cache",
-    "organization": "ACM",
-    "url": "https://dl.acm.org/doi/10.1145/3230543.3230553",
+    "id": "rfc-5861-stale-content",
+    "title": "RFC 5861: HTTP Cache-Control Extensions for Stale Content",
+    "organization": "IETF (M. Nottingham)",
+    "url": "https://www.rfc-editor.org/rfc/rfc5861",
+    "sourceType": "standard",
+    "relevantSections": "Section 4: The stale-if-error Cache-Control Extension",
+    "supports": "When an error is encountered, a cached stale response may be used to satisfy the request (stale-if-error)",
+    "reviewedAt": "2026-10-05"
+  },
+  {
+    "id": "go-singleflight",
+    "title": "Package singleflight",
+    "organization": "The Go Authors",
+    "url": "https://pkg.go.dev/golang.org/x/sync/singleflight",
+    "sourceType": "documentation",
+    "relevantSections": "Group.Do",
+    "supports": "Only one execution is in flight per key; duplicate callers wait for the original and receive the same result (request coalescing)",
+    "reviewedAt": "2026-10-05"
+  },
+  {
+    "id": "caffeine-refresh",
+    "title": "Caffeine: Refresh",
+    "organization": "Caffeine (Ben Manes)",
+    "url": "https://github.com/ben-manes/caffeine/wiki/Refresh",
+    "sourceType": "documentation",
+    "relevantSections": "refreshAfterWrite",
+    "supports": "Refresh keeps returning the old value while the key reloads asynchronously, unlike expiration, which makes readers wait (refresh-ahead)",
+    "reviewedAt": "2026-10-05"
+  },
+  {
+    "id": "tinylfu-admission-policy",
+    "title": "TinyLFU: A Highly Efficient Cache Admission Policy",
+    "organization": "ACM Transactions on Storage 13(4), 2017 (Einziger, Friedman, Manes)",
+    "url": "https://doi.org/10.1145/3149371",
     "sourceType": "paper",
-    "supports": "Eviction algorithms, hit-rate optimization, and concurrency in cache implementations",
-    "reviewedAt": "2026-09-28"
+    "supports": "Frequency-based admission and eviction for caches under skewed access; further reading beyond this module, which models no eviction",
+    "reviewedAt": "2026-10-05",
+    "accessStatus": "paywalled"
   }
 ]

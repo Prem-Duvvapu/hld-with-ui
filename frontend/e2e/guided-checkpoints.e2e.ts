@@ -69,4 +69,20 @@ test.describe("guided cache checkpoints against Java", () => {
       "A miss.",
     );
   });
+
+  test("architecture and sequence views open from direct links", async ({
+    page,
+  }) => {
+    await page.goto("/topics/cache-aside?view=architecture");
+    await expect(
+      page.getByRole("heading", {
+        name: "The application owns the cache logic",
+      }),
+    ).toBeVisible();
+    await expect(page).toHaveTitle("Architecture · Cache-Aside | HLD with UI");
+    await page.goto("/topics/cache-aside?view=sequence");
+    await expect(
+      page.getByRole("heading", { name: "One key, four moments" }),
+    ).toBeVisible();
+  });
 });

@@ -6,13 +6,20 @@ import { ModuleShell, type ModuleTab } from "../components/ModuleShell";
 import { PracticeView } from "../features/learning/PracticeView";
 import { StudyView } from "../features/learning/StudyView";
 import { CacheAsidePlayground } from "../features/cache-aside/CacheAsidePlayground";
+import {
+  CacheArchitectureView,
+  CacheSequenceView,
+} from "../features/cache-aside/CacheConceptViews";
 import { GuidedCheckpoints } from "../features/cache-aside/GuidedCheckpoints";
 
-type View = "playground" | "guided" | "study" | "practice";
+type View =
+  "playground" | "guided" | "study" | "architecture" | "sequence" | "practice";
 const allTabs: ReadonlyArray<ModuleTab<View>> = [
   { id: "playground", label: "Playground" },
   { id: "guided", label: "Guided" },
   { id: "study", label: "Study" },
+  { id: "architecture", label: "Architecture" },
+  { id: "sequence", label: "Request sequence" },
   { id: "practice", label: "Practice" },
 ];
 
@@ -81,6 +88,8 @@ export function CacheAsidePage() {
         guidance="Run each preset after reading the worked example. Explain the stale read and cold burst using the event trace."
       />
     ),
+    architecture: <CacheArchitectureView />,
+    sequence: <CacheSequenceView />,
     practice: (
       <PracticeView
         questions={data.topic.questions}
