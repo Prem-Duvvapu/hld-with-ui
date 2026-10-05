@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./CacheAsidePlayground.css";
 import { api } from "../../api/client";
+import { CachePlayback } from "./CachePlayback";
 import type {
   CacheAsideDescriptor,
   CacheAsideLimits,
@@ -125,7 +126,13 @@ export function CacheAsidePlayground({
     toForm(descriptor.presets[0]!.input),
   );
   const [sourceInput, setSourceInput] = useState(descriptor.presets[0]!.input);
-  const [result, setResult] = useState<CacheAsideResult | null>(null);
+  // A result is kept with the exact input that produced it, so playback
+  // labels never describe edited-but-unrun inputs.
+  const [run, setRun] = useState<{
+    id: number;
+    input: CacheAsideInput;
+    result: CacheAsideResult;
+  } | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
   const [activePreset, setActivePreset] = useState(
@@ -134,22 +141,22 @@ export function CacheAsidePlayground({
 
   function updateForm(patch: Partial<FormState>) {
     setForm((previous) => ({ ...previous, ...patch }));
-    setResult(null);
+    setRun(null);
     setError("");
     setActivePreset("");
   }
 
-  async function run() {
+  async function runSimulation() {
     setError("");
     setRunning(true);
-    setResult(null);
+    setRun(null);
     try {
       const input = buildInput(form, sourceInput, descriptor.limits);
-      const data = await api.runCacheAside(input);
-      setResult(data);
+      const result = await api.runCacheAside(input);
+      setRun((previous) => ({ id: (previous?.id ?? 0) + 1, input, result }));
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : "Run failed.");
-      setResult(null);
+      setRun(null);
     } finally {
       setRunning(false);
     }
@@ -161,7 +168,7 @@ export function CacheAsidePlayground({
       setSourceInput(preset.input);
       setForm(toForm(preset.input));
       setActivePreset(id);
-      setResult(null);
+      setRun(null);
       setError("");
     }
   }
@@ -276,7 +283,7 @@ export function CacheAsidePlayground({
 
         <button
           className="button primary"
-          onClick={run}
+          onClick={runSimulation}
           disabled={running}
           id="run-cache-aside"
         >
@@ -290,8 +297,9 @@ export function CacheAsidePlayground({
         )}
       </div>
 
-      {result ? (
-        <CacheAsideResults result={result} />
+      {run ? (
+        // Keyed by run so playback position and timers reset for each result.
+        <CacheAsideResults key={run.id} result={run.result} input={run.input} />
       ) : (
         <section className="cache-empty" aria-live="polite">
           <h2>
@@ -307,7 +315,13 @@ export function CacheAsidePlayground({
   );
 }
 
-function CacheAsideResults({ result }: { result: CacheAsideResult }) {
+function CacheAsideResults({
+  result,
+  input,
+}: {
+  result: CacheAsideResult;
+  input: CacheAsideInput;
+}) {
   const { metrics, outcomes, assumptions } = result;
   return (
     <div className="playground-results">
@@ -318,29 +332,41 @@ function CacheAsideResults({ result }: { result: CacheAsideResult }) {
           metrics cover only observed events.
         </p>
       )}
-      <div className="metrics-bar">
-        <Metric label="Total GETs" value={metrics.totalGets} />
-        <Metric label="Cache Hits" value={metrics.cacheHits} />
-        <Metric label="Cache Misses" value={metrics.cacheMisses} />
-        <Metric label="Stale Reads" value={metrics.staleReads} />
-        <Metric label="Cache Bypasses" value={metrics.cacheBypasses} />
-        <Metric label="Failed GETs" value={metrics.failedGets} />
-        <Metric label="Origin Reads" value={metrics.originReads} />
-        <Metric
-          label="Hit Ratio"
-          value={
-            metrics.cacheHits + metrics.cacheMisses === 0
-              ? "—"
-              : `${(metrics.hitRatio * 100).toFixed(1)}%`
-          }
-        />
-      </div>
+      <CachePlayback result={result} input={input} />
 
-      <p>
-        Hit ratio = hits / (hits + misses). Bypasses are excluded; failed misses
-        are included. Observation: 0–{metrics.observationWindowMs} ms. Initially
-        only key k exists.
-      </p>
+      <section className="result-section" aria-labelledby="cache-final-metrics">
+        <h3 id="cache-final-metrics">
+          {result.status === "limited"
+            ? "Final run metrics (partial)"
+            : "Final run metrics"}
+        </h3>
+        <p className="cache-state-caption">
+          Totals for the whole run, not the selected event.
+        </p>
+        <div className="metrics-bar">
+          <Metric label="Total GETs" value={metrics.totalGets} />
+          <Metric label="Cache Hits" value={metrics.cacheHits} />
+          <Metric label="Cache Misses" value={metrics.cacheMisses} />
+          <Metric label="Stale Reads" value={metrics.staleReads} />
+          <Metric label="Cache Bypasses" value={metrics.cacheBypasses} />
+          <Metric label="Failed GETs" value={metrics.failedGets} />
+          <Metric label="Origin Reads" value={metrics.originReads} />
+          <Metric
+            label="Hit Ratio"
+            value={
+              metrics.cacheHits + metrics.cacheMisses === 0
+                ? "—"
+                : `${(metrics.hitRatio * 100).toFixed(1)}%`
+            }
+          />
+        </div>
+
+        <p>
+          Hit ratio = hits / (hits + misses). Bypasses are excluded; failed
+          misses are included. Observation: 0–{metrics.observationWindowMs} ms.
+          Initially only key k exists.
+        </p>
+      </section>
       <section className="result-section">
         <h3>GET Outcomes</h3>
         <div
@@ -365,39 +391,6 @@ function CacheAsideResults({ result }: { result: CacheAsideResult }) {
             <tbody>
               {outcomes.map((outcome, index) => (
                 <OutcomeRow key={index} outcome={outcome} index={index} />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="result-section">
-        <h3>Event Trace</h3>
-        <div
-          className="table-wrap"
-          tabIndex={0}
-          role="region"
-          aria-label="Scrollable event trace"
-        >
-          <table className="data-table" aria-label="Simulation event trace">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Time (ms)</th>
-                <th>Kind</th>
-                <th>Message</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.events.map((event) => (
-                <tr key={event.sequence}>
-                  <td>{event.sequence}</td>
-                  <td>{event.timeMs}</td>
-                  <td>
-                    <code>{event.kind}</code>
-                  </td>
-                  <td>{event.message}</td>
-                </tr>
               ))}
             </tbody>
           </table>
