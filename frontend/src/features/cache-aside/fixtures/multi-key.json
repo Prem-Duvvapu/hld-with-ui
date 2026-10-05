@@ -1,0 +1,274 @@
+{
+  "input": {
+    "schemaVersion": "1.0",
+    "modelVersion": "1.0.1",
+    "cacheLookupLatencyMs": 2,
+    "originReadLatencyMs": 20,
+    "ttlMs": 100,
+    "initialOriginValue": "v1",
+    "operations": [
+      {
+        "kind": "GET",
+        "key": "a",
+        "value": null,
+        "timeMs": 0
+      },
+      {
+        "kind": "GET",
+        "key": "k",
+        "value": null,
+        "timeMs": 1
+      },
+      {
+        "kind": "UPDATE",
+        "key": "a",
+        "value": "a1",
+        "timeMs": 5
+      },
+      {
+        "kind": "GET",
+        "key": "a",
+        "value": null,
+        "timeMs": 30
+      },
+      {
+        "kind": "GET",
+        "key": "k",
+        "value": null,
+        "timeMs": 31
+      }
+    ],
+    "cacheAvailable": true,
+    "originAvailable": true,
+    "seed": 7
+  },
+  "result": {
+    "schemaVersion": "1.0",
+    "simulationId": "cache-aside",
+    "modelVersion": "1.0.1",
+    "seed": 7,
+    "status": "completed",
+    "lastVirtualTimeMs": 33,
+    "incompleteGets": 0,
+    "assumptions": [
+      "Initially only key k exists; unknown keys return not found and are not cached.",
+      "Cache lookup and origin read latencies are fixed constants.",
+      "Origin values are sampled when the origin read completes; fills are instantaneous.",
+      "TTL starts at fill time; a lookup at or after expiry misses. TTL zero never hits.",
+      "UPDATE commits instantly if origin is available and does not invalidate the cache.",
+      "Concurrent misses independently read origin; there is no coalescing.",
+      "Events use time then insertion order; input arrivals are scheduled first in input order.",
+      "Staleness compares committed origin versions at lookup completion (observer view).",
+      "Hit ratio is hits / (hits + misses); bypasses are excluded, failed misses are included.",
+      "Counts describe emitted events; incomplete GETs include requests not yet observed."
+    ],
+    "initialState": {
+      "cacheAvailable": true,
+      "originAvailable": true,
+      "origin": [
+        {
+          "key": "k",
+          "value": "v1",
+          "version": 1
+        }
+      ]
+    },
+    "events": [
+      {
+        "sequence": 1,
+        "timeMs": 2,
+        "kind": "cache.miss",
+        "requestId": "Operation 1",
+        "nodeId": "cache",
+        "message": "Cache miss (no entry).",
+        "operation": 1,
+        "key": "a"
+      },
+      {
+        "sequence": 2,
+        "timeMs": 3,
+        "kind": "cache.miss",
+        "requestId": "Operation 2",
+        "nodeId": "cache",
+        "message": "Cache miss (no entry).",
+        "operation": 2,
+        "key": "k",
+        "originValue": {
+          "value": "v1",
+          "version": 1
+        }
+      },
+      {
+        "sequence": 3,
+        "timeMs": 5,
+        "kind": "origin.update",
+        "requestId": "Operation 3",
+        "nodeId": "origin",
+        "message": "Origin updated to 'a1'.",
+        "operation": 3,
+        "key": "a",
+        "originValue": {
+          "value": "a1",
+          "version": 1
+        }
+      },
+      {
+        "sequence": 4,
+        "timeMs": 22,
+        "kind": "origin.read",
+        "requestId": "Operation 1",
+        "nodeId": "origin",
+        "message": "Origin returns 'a1'.",
+        "operation": 1,
+        "key": "a",
+        "originValue": {
+          "value": "a1",
+          "version": 1
+        }
+      },
+      {
+        "sequence": 5,
+        "timeMs": 22,
+        "kind": "cache.fill",
+        "requestId": "Operation 1",
+        "nodeId": "cache",
+        "message": "Cache filled with 'a1'; expires at 122 ms.",
+        "operation": 1,
+        "key": "a",
+        "cacheEntry": {
+          "value": "a1",
+          "version": 1,
+          "filledAtMs": 22,
+          "expiresAtMs": 122
+        },
+        "originValue": {
+          "value": "a1",
+          "version": 1
+        }
+      },
+      {
+        "sequence": 6,
+        "timeMs": 23,
+        "kind": "origin.read",
+        "requestId": "Operation 2",
+        "nodeId": "origin",
+        "message": "Origin returns 'v1'.",
+        "operation": 2,
+        "key": "k",
+        "originValue": {
+          "value": "v1",
+          "version": 1
+        }
+      },
+      {
+        "sequence": 7,
+        "timeMs": 23,
+        "kind": "cache.fill",
+        "requestId": "Operation 2",
+        "nodeId": "cache",
+        "message": "Cache filled with 'v1'; expires at 123 ms.",
+        "operation": 2,
+        "key": "k",
+        "cacheEntry": {
+          "value": "v1",
+          "version": 1,
+          "filledAtMs": 23,
+          "expiresAtMs": 123
+        },
+        "originValue": {
+          "value": "v1",
+          "version": 1
+        }
+      },
+      {
+        "sequence": 8,
+        "timeMs": 32,
+        "kind": "cache.hit",
+        "requestId": "Operation 4",
+        "nodeId": "cache",
+        "message": "Cache returns 'a1'.",
+        "operation": 4,
+        "key": "a",
+        "cacheEntry": {
+          "value": "a1",
+          "version": 1,
+          "filledAtMs": 22,
+          "expiresAtMs": 122
+        },
+        "originValue": {
+          "value": "a1",
+          "version": 1
+        }
+      },
+      {
+        "sequence": 9,
+        "timeMs": 33,
+        "kind": "cache.hit",
+        "requestId": "Operation 5",
+        "nodeId": "cache",
+        "message": "Cache returns 'v1'.",
+        "operation": 5,
+        "key": "k",
+        "cacheEntry": {
+          "value": "v1",
+          "version": 1,
+          "filledAtMs": 23,
+          "expiresAtMs": 123
+        },
+        "originValue": {
+          "value": "v1",
+          "version": 1
+        }
+      }
+    ],
+    "outcomes": [
+      {
+        "key": "a",
+        "returnedValue": "a1",
+        "hitOrMiss": "MISS",
+        "stale": false,
+        "requestTimeMs": 0,
+        "responseTimeMs": 22,
+        "latencyMs": 22
+      },
+      {
+        "key": "k",
+        "returnedValue": "v1",
+        "hitOrMiss": "MISS",
+        "stale": false,
+        "requestTimeMs": 1,
+        "responseTimeMs": 23,
+        "latencyMs": 22
+      },
+      {
+        "key": "a",
+        "returnedValue": "a1",
+        "hitOrMiss": "HIT",
+        "stale": false,
+        "requestTimeMs": 30,
+        "responseTimeMs": 32,
+        "latencyMs": 2
+      },
+      {
+        "key": "k",
+        "returnedValue": "v1",
+        "hitOrMiss": "HIT",
+        "stale": false,
+        "requestTimeMs": 31,
+        "responseTimeMs": 33,
+        "latencyMs": 2
+      }
+    ],
+    "metrics": {
+      "totalGets": 4,
+      "cacheHits": 2,
+      "cacheMisses": 2,
+      "staleReads": 0,
+      "originReads": 2,
+      "hitRatio": 0.5,
+      "observationWindowMs": 33,
+      "cacheBypasses": 0,
+      "failedGets": 0
+    }
+  }
+}

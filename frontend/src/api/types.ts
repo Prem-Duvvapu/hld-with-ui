@@ -41,3 +41,5 @@ export type CacheAsideDescriptor =
   components["schemas"]["CacheAsideDescriptor"];
 export type CacheAsideEvent = components["schemas"]["CacheAsideEvent"];
 export type CacheAsideLimits = components["schemas"]["CacheAsideLimits"];
+export type CacheEntryState = components["schemas"]["CacheEntryState"];
+export type OriginValueState = components["schemas"]["OriginValueState"];
