@@ -6,10 +6,12 @@ import { ModuleShell, type ModuleTab } from "../components/ModuleShell";
 import { PracticeView } from "../features/learning/PracticeView";
 import { StudyView } from "../features/learning/StudyView";
 import { CacheAsidePlayground } from "../features/cache-aside/CacheAsidePlayground";
+import { GuidedCheckpoints } from "../features/cache-aside/GuidedCheckpoints";
 
-type View = "playground" | "study" | "practice";
-const tabs: ReadonlyArray<ModuleTab<View>> = [
+type View = "playground" | "guided" | "study" | "practice";
+const allTabs: ReadonlyArray<ModuleTab<View>> = [
   { id: "playground", label: "Playground" },
+  { id: "guided", label: "Guided" },
   { id: "study", label: "Study" },
   { id: "practice", label: "Practice" },
 ];
@@ -58,8 +60,20 @@ export function CacheAsidePage() {
       </div>
     );
 
+  // The Guided tab exists only when the catalog advertises it and content
+  // delivers checkpoints, so a missing capability stays visibly absent.
+  const guided =
+    data.topic.topic.capabilities.includes("guided") &&
+    data.topic.checkpoints.length > 0;
+  const tabs = allTabs.filter((tab) => tab.id !== "guided" || guided);
   const panels: Record<View, ReactNode> = {
     playground: <CacheAsidePlayground descriptor={data.descriptor} />,
+    guided: guided && (
+      <GuidedCheckpoints
+        checkpoints={data.topic.checkpoints}
+        descriptor={data.descriptor}
+      />
+    ),
     study: (
       <StudyView
         markdown={data.topic.lessonMarkdown}

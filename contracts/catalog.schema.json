@@ -60,13 +60,15 @@
               "simulation",
               "estimator",
               "case-study",
-              "practice"
+              "practice",
+              "guided"
             ]
           }
         },
         "lessonPath": { "$ref": "#/$defs/contentPath" },
         "questionsPath": { "$ref": "#/$defs/contentPath" },
         "resourcesPath": { "$ref": "#/$defs/contentPath" },
+        "checkpointsPath": { "$ref": "#/$defs/contentPath" },
         "simulationIds": {
           "type": "array",
           "uniqueItems": true,
@@ -132,6 +134,18 @@
             "required": ["estimatorIds"],
             "properties": { "estimatorIds": { "type": "array", "minItems": 1 } }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "capabilities": {
+                "type": "array",
+                "contains": { "const": "guided" }
+              }
+            }
+          },
+          "then": { "required": ["checkpointsPath", "simulationIds"] },
+          "else": { "not": { "required": ["checkpointsPath"] } }
         }
       ]
     },

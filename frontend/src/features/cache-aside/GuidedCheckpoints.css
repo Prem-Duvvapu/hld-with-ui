@@ -1,0 +1,153 @@
+.guided {
+  display: grid;
+  grid-template-columns: minmax(200px, 0.6fr) minmax(0, 2fr);
+  gap: 24px;
+  align-items: start;
+  padding-block: 24px;
+}
+.guided-steps ol {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.guided-steps button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+.guided-steps button > span:first-child {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  font: 0.75rem var(--mono);
+}
+.guided-steps button[aria-current="step"] {
+  border-color: var(--green);
+  color: var(--green);
+  font-weight: 600;
+}
+.guided-card {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.guided-card > h2 {
+  margin: 4px 0 8px;
+  font-size: 1.3rem;
+}
+.guided-step {
+  min-width: 0;
+  margin: 0;
+  padding: 18px 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+}
+.guided-step h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+/* A floated legend lays out like a normal heading inside the fieldset. */
+.guided-tradeoff legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+}
+.guided-tradeoff legend + p {
+  clear: both;
+}
+.guided-prediction {
+  display: grid;
+  gap: 6px;
+  margin-block: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.guided-prediction textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 400;
+  resize: vertical;
+}
+.guided-option {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  margin-block: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.guided-option input {
+  margin-top: 4px;
+  accent-color: var(--green);
+}
+.guided-option:has(input:checked) {
+  border-color: var(--green);
+}
+.guided-feedback {
+  margin-top: 12px;
+  padding: 12px;
+  border-left: 3px solid var(--green);
+  background: var(--surface-2);
+  font-size: 0.9rem;
+}
+.guided-feedback p {
+  margin: 6px 0 0;
+}
+.guided .error-text {
+  color: var(--red);
+}
+.guided-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 24px;
+}
+@media (max-width: 900px) {
+  .guided {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .guided-steps ol {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .guided-steps li {
+    flex: none;
+  }
+  .guided-steps button {
+    width: auto;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 480px) {
+  .guided-card {
+    padding: 16px;
+  }
+}

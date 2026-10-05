@@ -97,10 +97,11 @@
       "Explain why an origin update does not invalidate a cached entry under cache-aside.",
       "Identify stale reads, cold-start bursts, and the effect of cache or origin unavailability."
     ],
-    "capabilities": ["study", "simulation", "practice"],
+    "capabilities": ["study", "simulation", "guided", "practice"],
     "lessonPath": "topics/cache-aside/lesson.md",
     "questionsPath": "topics/cache-aside/questions.json",
     "resourcesPath": "topics/cache-aside/resources.json",
+    "checkpointsPath": "topics/cache-aside/checkpoints.json",
     "simulationIds": ["cache-aside"],
     "estimatorIds": [],
     "contentVersion": "1.0.0",

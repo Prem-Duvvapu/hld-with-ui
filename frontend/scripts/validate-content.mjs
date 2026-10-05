@@ -137,6 +137,21 @@ function descriptorIds(pathPrefix) {
 const knownSimulationIds = descriptorIds("/api/v1/simulations/");
 const knownEstimatorIds = descriptorIds("/api/v1/estimators/");
 const questionIds = [];
+const checkpointIds = [];
+
+// Event kinds a simulation can emit, read from its run-result contract.
+function eventKinds(simulationId) {
+  const ref = (schema) => schema?.$ref?.split("/").at(-1);
+  const result =
+    openapi.paths?.[`/api/v1/simulations/${simulationId}/runs`]?.post
+      ?.responses?.["200"]?.content?.["application/json"]?.schema;
+  const event = ref(
+    openapi.components.schemas[ref(result)]?.properties?.events?.items,
+  );
+  return new Set(
+    openapi.components.schemas[event]?.properties?.kind?.enum ?? [],
+  );
+}
 
 const requiredHeadings = [
   "Learning outcomes",
@@ -172,6 +187,40 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
     for (const id of entry.estimatorIds ?? []) {
       if (!knownEstimatorIds.has(id))
         errors.push(`${entry.id}: estimator ${id} is absent from OpenAPI`);
+    }
+  }
+
+  if (entry.capabilities.includes("guided")) {
+    const checkpointsPath = contentFile(entry.checkpointsPath, entry.id);
+    const checkpoints = existsSync(checkpointsPath)
+      ? JSON.parse(readFileSync(checkpointsPath, "utf8"))
+      : [];
+    validateSchema(
+      "contracts/checkpoints.schema.json",
+      checkpoints,
+      `${entry.id} checkpoints`,
+    );
+    // Presets and trace resolution are checked by Java tests, which run them.
+    for (const checkpoint of checkpoints) {
+      checkpointIds.push(`${entry.id}/${checkpoint.id}`);
+      if (!(entry.simulationIds ?? []).includes(checkpoint.simulationId))
+        errors.push(
+          `${checkpoint.id}: simulation ${checkpoint.simulationId} is not one of ${entry.id}'s simulations`,
+        );
+      else if (
+        !eventKinds(checkpoint.simulationId).has(checkpoint.target?.kind)
+      )
+        errors.push(
+          `${checkpoint.id}: ${checkpoint.simulationId} never emits ${checkpoint.target?.kind}`,
+        );
+      const optionIds = (checkpoint.tradeoff?.options ?? []).map(
+        (option) => option.id,
+      );
+      unique(optionIds, checkpoint.id);
+      if (!optionIds.includes(checkpoint.tradeoff?.recommendedOptionId))
+        errors.push(
+          `${checkpoint.id}: recommendedOptionId does not match an option`,
+        );
     }
   }
 
@@ -237,12 +286,13 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
 }
 
 unique(questionIds, "questions");
+unique(checkpointIds, "checkpoints");
 
 if (errors.length) {
   errors.forEach((error) => process.stderr.write(`${error}\n`));
   process.exitCode = 1;
 } else {
   process.stdout.write(
-    `Validated ${catalog.length} catalog entry, ${questionIds.length} questions, 2 API examples, prerequisite DAG, capabilities, and content files.\n`,
+    `Validated ${catalog.length} catalog entry, ${questionIds.length} questions, ${checkpointIds.length} checkpoints, 2 API examples, prerequisite DAG, capabilities, and content files.\n`,
   );
 }

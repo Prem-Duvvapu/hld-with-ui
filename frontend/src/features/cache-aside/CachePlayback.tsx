@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
+// Diagram and table rules are shared with the playground stylesheet.
+import "./CacheAsidePlayground.css";
 import type {
   CacheAsideEvent,
   CacheAsideInput,
@@ -66,13 +68,24 @@ export function operationLabel(input: CacheAsideInput, operation: number) {
 export function CachePlayback({
   result,
   input,
+  initialPosition = INITIAL_POSITION,
+  showTrace = true,
+  title = "Step through the trace",
 }: {
   result: CacheAsideResult;
   input: CacheAsideInput;
+  /** Where the cursor starts, for example a guided checkpoint's event. */
+  initialPosition?: number;
+  showTrace?: boolean;
+  title?: string;
 }) {
+  // Playground and guided panels can both be mounted, so ids must be unique.
+  const titleId = useId();
   const events = useMemo(() => orderedEvents(result.events), [result.events]);
   const lastPosition = events.length - 1;
-  const [position, setPosition] = useState(INITIAL_POSITION);
+  const [position, setPosition] = useState(() =>
+    Math.max(INITIAL_POSITION, Math.min(initialPosition, lastPosition)),
+  );
   const [playing, setPlaying] = useState(false);
   const [intervalMs, setIntervalMs] = useState<number>(600);
   const [operationFilter, setOperationFilter] = useState<number | null>(null);
@@ -129,8 +142,8 @@ export function CachePlayback({
   const focus = snapshot.keys.find((state) => state.key === focusKey);
 
   return (
-    <section className="cache-playback" aria-labelledby="cache-playback-title">
-      <h3 id="cache-playback-title">Step through the trace</h3>
+    <section className="cache-playback" aria-labelledby={titleId}>
+      <h3 id={titleId}>{title}</h3>
       <CacheDiagram
         snapshot={snapshot}
         event={event}
@@ -213,85 +226,87 @@ export function CachePlayback({
 
       <StateTable snapshot={snapshot} label={positionText} />
 
-      <section className="result-section">
-        <div className="cache-trace-heading">
-          <h3>Event Trace</h3>
-          <label className="cache-filter">
-            <span>Show events for</span>
-            <select
-              value={operationFilter ?? ""}
-              onChange={(e) =>
-                setOperationFilter(
-                  e.target.value === "" ? null : Number(e.target.value),
-                )
-              }
-            >
-              <option value="">All operations</option>
-              {operations.map((operation) => (
-                <option key={operation} value={operation}>
-                  {`Operation ${operation}: ${operationLabel(input, operation)}`}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        {operationFilter !== null && (
-          <p className="cache-filter-note">
-            Showing only operation {operationFilter}. The diagram and state
-            still include every earlier event from all operations.
-          </p>
-        )}
-        <div
-          className="table-wrap"
-          tabIndex={0}
-          role="region"
-          aria-label="Scrollable event trace"
-        >
-          <table className="data-table" aria-label="Simulation event trace">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Time (ms)</th>
-                <th>Op</th>
-                <th>Key</th>
-                <th>Kind</th>
-                <th>Message</th>
-              </tr>
-            </thead>
-            <tbody>
-              {shownEvents.map((traceEvent) => {
-                const index = events.indexOf(traceEvent);
-                const selected = index === position;
-                return (
-                  <tr
-                    key={traceEvent.sequence}
-                    className={selected ? "selected" : undefined}
-                  >
-                    <td>
-                      <button
-                        className="trace-event-link"
-                        type="button"
-                        aria-label={`View event ${traceEvent.sequence}`}
-                        aria-current={selected ? "step" : undefined}
-                        onClick={() => seek(index)}
-                      >
-                        {traceEvent.sequence}
-                      </button>
-                    </td>
-                    <td>{traceEvent.timeMs}</td>
-                    <td>{traceEvent.operation}</td>
-                    <td>{traceEvent.key}</td>
-                    <td>
-                      <code>{traceEvent.kind}</code>
-                    </td>
-                    <td>{traceEvent.message}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {showTrace && (
+        <section className="result-section">
+          <div className="cache-trace-heading">
+            <h3>Event Trace</h3>
+            <label className="cache-filter">
+              <span>Show events for</span>
+              <select
+                value={operationFilter ?? ""}
+                onChange={(e) =>
+                  setOperationFilter(
+                    e.target.value === "" ? null : Number(e.target.value),
+                  )
+                }
+              >
+                <option value="">All operations</option>
+                {operations.map((operation) => (
+                  <option key={operation} value={operation}>
+                    {`Operation ${operation}: ${operationLabel(input, operation)}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {operationFilter !== null && (
+            <p className="cache-filter-note">
+              Showing only operation {operationFilter}. The diagram and state
+              still include every earlier event from all operations.
+            </p>
+          )}
+          <div
+            className="table-wrap"
+            tabIndex={0}
+            role="region"
+            aria-label="Scrollable event trace"
+          >
+            <table className="data-table" aria-label="Simulation event trace">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Time (ms)</th>
+                  <th>Op</th>
+                  <th>Key</th>
+                  <th>Kind</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shownEvents.map((traceEvent) => {
+                  const index = events.indexOf(traceEvent);
+                  const selected = index === position;
+                  return (
+                    <tr
+                      key={traceEvent.sequence}
+                      className={selected ? "selected" : undefined}
+                    >
+                      <td>
+                        <button
+                          className="trace-event-link"
+                          type="button"
+                          aria-label={`View event ${traceEvent.sequence}`}
+                          aria-current={selected ? "step" : undefined}
+                          onClick={() => seek(index)}
+                        >
+                          {traceEvent.sequence}
+                        </button>
+                      </td>
+                      <td>{traceEvent.timeMs}</td>
+                      <td>{traceEvent.operation}</td>
+                      <td>{traceEvent.key}</td>
+                      <td>
+                        <code>{traceEvent.kind}</code>
+                      </td>
+                      <td>{traceEvent.message}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </section>
   );
 }

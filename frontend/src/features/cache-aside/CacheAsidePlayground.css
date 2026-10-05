@@ -97,25 +97,25 @@
   font-size: 0.8rem;
   color: var(--muted);
 }
-.cache-playground .result-section {
+:is(.cache-playground, .guided) .result-section {
   margin-top: 24px;
 }
-.cache-playground .table-wrap {
+:is(.cache-playground, .guided) .table-wrap {
   max-width: 100%;
   overflow-x: auto;
 }
-.cache-playground .table-wrap:focus-visible {
+:is(.cache-playground, .guided) .table-wrap:focus-visible {
   outline: 3px solid var(--orange);
   outline-offset: 3px;
 }
-.cache-playground table {
+:is(.cache-playground, .guided) table {
   font-size: 0.8rem;
 }
-.cache-playground th {
+:is(.cache-playground, .guided) th {
   font: 600 0.75rem var(--sans);
   white-space: nowrap;
 }
-.cache-playground td {
+:is(.cache-playground, .guided) td {
   max-width: 360px;
   overflow-wrap: anywhere;
 }
@@ -128,7 +128,7 @@
 .cache-playground .badge-hit {
   color: var(--green);
 }
-.cache-playground .stale-row {
+:is(.cache-playground, .guided) .stale-row {
   background: color-mix(in srgb, var(--orange) 10%, var(--surface));
 }
 .cache-playground .error-text {
@@ -293,10 +293,10 @@
   background: var(--paper);
   color: var(--ink);
 }
-.cache-playground td code {
+:is(.cache-playground, .guided) td code {
   white-space: nowrap;
 }
-.cache-playground tbody tr.selected {
+:is(.cache-playground, .guided) tbody tr.selected {
   background: color-mix(in srgb, var(--green) 12%, transparent);
 }
 @media (max-width: 900px) {

@@ -90,6 +90,7 @@ const topic: TopicDetail = {
       modelAnswer: "A miss cannot be filled.",
     },
   ],
+  checkpoints: [],
 };
 
 const result: CacheAsideResult = {

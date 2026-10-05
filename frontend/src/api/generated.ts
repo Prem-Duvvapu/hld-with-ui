@@ -213,11 +213,18 @@ export interface components {
       prerequisites: string[];
       outcomes: string[];
       capabilities: (
-        "study" | "simulation" | "estimator" | "case-study" | "practice"
+        | "study"
+        | "simulation"
+        | "estimator"
+        | "case-study"
+        | "practice"
+        | "guided"
       )[];
       lessonPath: string;
       questionsPath: string;
       resourcesPath: string;
+      /** @description Present only with the guided capability. */
+      checkpointsPath?: string;
       simulationIds: string[];
       estimatorIds: string[];
       contentVersion: string;
@@ -255,6 +262,32 @@ export interface components {
       topic: components["schemas"]["CatalogEntry"];
       lessonMarkdown: string;
       questions: components["schemas"]["Question"][];
+      /** @description Guided simulation checkpoints; empty unless the topic has the guided capability. */
+      checkpoints: components["schemas"]["GuidedCheckpoint"][];
+    };
+    /** @description One predict -> reveal -> explain -> choose step. target names one event in the preset's Java trace by operation, kind, and occurrence. */
+    GuidedCheckpoint: {
+      id: string;
+      title: string;
+      simulationId: string;
+      presetId: string;
+      target: {
+        operation: number;
+        kind: string;
+        occurrence: number;
+      };
+      prompt: string;
+      lookFor: string;
+      explanation: string;
+      tradeoff: {
+        prompt: string;
+        options: {
+          id: string;
+          label: string;
+          feedback: string;
+        }[];
+        recommendedOptionId: string;
+      };
     };
     RequestFlowInput: {
       /** @constant */

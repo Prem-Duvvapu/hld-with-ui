@@ -56,7 +56,7 @@ backend/
   src/test/               model, engine, and API tests
 content/
   catalog.json            canonical publication metadata
-  topics/<id>/            lesson.md, questions.json, resources.json
+  topics/<id>/            lesson.md, questions.json, resources.json, checkpoints.json (guided)
 contracts/                OpenAPI, JSON Schemas, API examples
 scripts/                  planning-document validation
 docs/                     plans, decisions, work items, templates, evidence

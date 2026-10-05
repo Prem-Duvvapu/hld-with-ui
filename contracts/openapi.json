@@ -465,7 +465,8 @@
                 "simulation",
                 "estimator",
                 "case-study",
-                "practice"
+                "practice",
+                "guided"
               ]
             }
           },
@@ -477,6 +478,10 @@
           },
           "resourcesPath": {
             "type": "string"
+          },
+          "checkpointsPath": {
+            "type": "string",
+            "description": "Present only with the guided capability."
           },
           "simulationIds": {
             "type": "array",
@@ -584,7 +589,7 @@
       "TopicDetail": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["topic", "lessonMarkdown", "questions"],
+        "required": ["topic", "lessonMarkdown", "questions", "checkpoints"],
         "properties": {
           "topic": {
             "$ref": "#/components/schemas/CatalogEntry"
@@ -597,8 +602,119 @@
             "items": {
               "$ref": "#/components/schemas/Question"
             }
+          },
+          "checkpoints": {
+            "type": "array",
+            "description": "Guided simulation checkpoints; empty unless the topic has the guided capability.",
+            "items": {
+              "$ref": "#/components/schemas/GuidedCheckpoint"
+            }
           }
         }
+      },
+      "GuidedCheckpoint": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "simulationId",
+          "presetId",
+          "target",
+          "prompt",
+          "lookFor",
+          "explanation",
+          "tradeoff"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 60
+          },
+          "simulationId": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "presetId": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "target": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["operation", "kind", "occurrence"],
+            "properties": {
+              "operation": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "kind": {
+                "type": "string",
+                "pattern": "^[a-z]+\\.[a-z]+$"
+              },
+              "occurrence": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 20
+          },
+          "lookFor": {
+            "type": "string",
+            "minLength": 20
+          },
+          "explanation": {
+            "type": "string",
+            "minLength": 40
+          },
+          "tradeoff": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["prompt", "options", "recommendedOptionId"],
+            "properties": {
+              "prompt": {
+                "type": "string",
+                "minLength": 20
+              },
+              "options": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 4,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["id", "label", "feedback"],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "minLength": 3
+                    },
+                    "feedback": {
+                      "type": "string",
+                      "minLength": 20
+                    }
+                  }
+                }
+              },
+              "recommendedOptionId": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "description": "One predict -> reveal -> explain -> choose step. target names one event in the preset's Java trace by operation, kind, and occurrence."
       },
       "RequestFlowInput": {
         "type": "object",
