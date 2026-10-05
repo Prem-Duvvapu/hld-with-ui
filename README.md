@@ -1,5 +1,10 @@
 # HLD with UI
 
+Part of the [Learning Hub](https://learning-hub-with-ui.vercel.app/).
+The shared **Learning network** navigation offers Learning Home and same-tab
+links between DSA, LLD, HLD, and CS fundamentals on every route. These remain
+independent apps: themes, backend state, and progress are not synchronized.
+
 Learn high-level system design by reading, experimenting, diagnosing failures, and defending design decisions. Built for day-to-day engineering and system design interviews.
 
 The idea is simple: **see a system work, change one condition, explain what happened, then choose a design.** Each module will help you answer both “How does this work?” and “How would I explain it to my team or in an interview?”

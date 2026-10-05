@@ -3,6 +3,7 @@ import { Link, Route, Routes } from "react-router-dom";
 import { HomePage } from "../pages/HomePage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { ThemeToggle } from "../components/ThemeToggle";
+import LearningNetworkNav from "../components/LearningNetworkNav";
 import { LoadingState } from "../components/AsyncState";
 
 const RequestFlowPage = lazy(() =>
@@ -32,6 +33,7 @@ export function App() {
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
+      <LearningNetworkNav />
       <header className="site-header">
         <Link className="brand" to="/" aria-label="HLD with UI home">
           <span className="brand-mark" aria-hidden="true">

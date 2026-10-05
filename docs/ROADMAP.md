@@ -105,6 +105,15 @@ For documentation-only work, check internal links, IDs/dependencies, numbers, an
 
 ## Handoff and maintenance
 
+### Learning network navigation
+
+Cross-project navigation is implemented in `LearningNetworkNav`, mounted in
+the app shell without changing module routes or simulation contracts. Native
+same-tab links connect the Learning Hub and all four independent apps; the
+current subject is marked accessibly. The component test pins destination and
+navigation contracts. This bounded navigation task does not complete or change
+the HLD module roadmap or its outstanding manual release gates.
+
 - Each contribution updates one work item with changed artifacts, checks, limitations, and next dependency.
 - Maintain catalog-derived completion counts after implementation. Planned scope is not shipped coverage.
 - Record recurring or consequential failures in a concise `docs/INCIDENTS.md` once the first occurs: symptom, cause, fix, regression evidence.
