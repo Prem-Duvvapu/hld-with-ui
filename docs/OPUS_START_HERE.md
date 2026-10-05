@@ -1,63 +1,93 @@
-# Opus implementation handoff
+# Opus 5.5 implementation handoff
 
-Use the prompt below in the repository. The plan is agent-independent; it does not depend on model-specific tools or hidden conversation history.
+Updated 2026-10-05 against `add46a4` / PR #30. Copy the prompt below into Opus while it has access to this repository. It uses repository files rather than hidden chat history.
 
 ## Copy-and-paste prompt
 
 ```text
-You are implementing HLD with UI: a React/TypeScript frontend and Java backend
-for understanding system design through experiments and clear explanations.
+Implement the next stage of hld-with-ui: a React/TypeScript frontend and
+Java/Spring Boot backend for learning system design through interactive evidence.
 
-Read AGENTS.md and CONTRIBUTING.md, then docs/IMPLEMENTATION_PLAN.md.
-Follow its document-reading order and verify the current repository state.
-The plan's baseline is commit 6df9ffa; inspect changes since then before acting.
+Repository: /mnt/c/users/hp/onedrive/desktop/hld-with-ui
 
-The owner considers lld-with-ui the primary product reference and wants excellent
-UI/UX, strong frontend/backend code quality, and simple explanations that transfer
-to everyday engineering and SDE-2 interviews. Preserve the current visual identity.
+Read AGENTS.md and CONTRIBUTING.md first, then:
+1. docs/NEXT_IMPLEMENTATION_PLAN.md — current assignment and step-by-step order.
+2. docs/IMPLEMENTATION_PLAN.md — detailed tasks, fixtures, and dependencies.
+3. docs/ROADMAP.md — authoritative status and release gates.
+Read the other architecture, simulation, content, learning, and quality documents
+required by AGENTS.md before touching the relevant area.
 
-Begin with HLD-01. Complete one bounded task per contribution, then identify the
-next dependency-ready task. If a task is already complete, show the evidence and
-move to the next one within the owner's requested scope. Do not implement the
-entire plan in one branch or PR.
+The verified baseline is add46a4 (PR #30). Fetch and inspect current GitHub and
+local changes before acting. Treat the code and current evidence as authoritative.
+Preserve unrelated work and any uncommitted documentation handoff. Do not redo
+completed work merely because an older section describes it as a future task.
 
-For each task:
-1. Inspect git status and preserve unrelated work.
-2. Read the relevant code, contracts, lessons, and tests.
-3. Create a fresh branch from current main and a work item with acceptance criteria.
-4. Implement a usable vertical slice. Java owns simulated behavior and metrics;
-   React renders authoritative typed state and controls playback.
-5. Keep contracts, generated types, catalog capabilities, content, and model
-   versions aligned. Never parse narration strings to reconstruct model state.
-6. Run relevant checks and record actual results. For UI work verify the real
-   primary flow, mobile layouts, both themes, keyboard/focus, reduced motion,
-   and loading/error/empty/limited states.
-7. Update roadmap evidence and affected documentation. An unavailable manual
-   check remains unverified; do not mark its release gate complete.
-8. Follow the repository's branch/PR/CI/squash-merge workflow and the owner's
-   current publishing authorization. Wait for required checks before merging.
-9. Finish with what changed, the learning outcome, checks, limitations, PR/commit,
-   and the exact next task. Stop when the owner's requested scope is complete.
+My priorities are excellent UI/UX, strong frontend AND backend code quality,
+and simple explanations I can repeat to teammates or in SDE-2 interviews.
+lld-with-ui is the primary product reference. Preserve HLD's current visual
+identity and build complete learning experiences.
 
-Important baseline facts:
-- Four modules are published: request-flow, capacity-estimation,
-  distributed-rate-limiter, and cache-aside.
-- Cache v1.0.1 and request-flow v1.1.1 include recent causality/failure fixes.
-- Cache still needs structured playback state, guided simulation, architecture,
-  and sequence views.
-- URL shortener, durable progress, and search are not implemented yet.
-- First-release order is request flow -> capacity -> cache -> URL shortener.
-- Read docs/SIMULATION_REVIEW.md before touching the corrected simulations.
+Scope: execute HLD-05 through HLD-11 in the current plan, one bounded contribution
+at a time. Start with cache visual playback (HLD-05). Do not start HLD-12 or later.
+HLD-01/02, the automated HLD-03 harness, and the HLD-04 structured-state/contract
+slices already exist. Manual accessibility and other unevidenced release gates
+remain open. Verify rather than assume their completion.
 
-Use plain language. Finish complete learning experiences rather than adding
-shallow topic lists, unsupported tabs, or animations with invented outcomes.
+First contribution:
+- Build cache state reconstruction from initialState and each event's typed
+  post-event key state, respecting sequence order even at equal timestamps.
+- Add a cache/origin diagram, text equivalent, initial-state position,
+  play/pause, step backward/forward, reset, seek, speed, and event inspection.
+- Keep every visual synchronized to the selected event. Filtering an operation
+  must not discard other operations' effects on shared state.
+- Never parse narration, infer earlier state from final outcomes, recompute Java
+  metrics, or submit a backend run just to move the playback cursor.
+- Verify the plan's 2/22/40/72/122/142 ms fixtures, cold burst, multiple keys,
+  backward seek, empty/limited traces, and tab-state/hidden-playback behavior.
+
+Then follow the plan: guided cache learning and diagrams; existing-module review;
+durable local answers with safe import/export; the URL shortener workshop;
+search/bookmarks/resume; and first-release verification.
+
+For every task:
+1. Inspect relevant code/contracts/tests and write bounded acceptance criteria
+   using docs/templates/WORK_ITEM.md.
+2. Create a fresh branch from updated main. Implement one usable vertical slice.
+3. Keep Java behavior, OpenAPI, generated types, catalog capabilities, content,
+   and model versions aligned. Preserve determinism, bounds, and request isolation.
+4. Use the learning loop: understand -> predict -> experiment -> observe ->
+   explain -> apply. Include a small example and an interview teach-back.
+5. Verify real flows, meaningful input changes, failure states, both themes,
+   320/768/1440 widths, keyboard/focus, reduced motion, and textual diagrams.
+6. Run applicable documented local checks. Report only checks actually executed.
+   Do not claim manual zoom/screen-reader or live deployment checks passed when
+   unavailable. Record the exact remaining gate and continue independent work.
+7. Update work-item evidence, roadmap, and affected documentation.
+8. I authorize committing, pushing, opening focused PRs to main, and squash
+   merging after required CI passes. Delete merged feature branches and update
+   local main. Do not bypass checks or combine the entire plan into one PR.
+9. Report what changed, learning outcome, checks, limitations, PR/commit, and the
+   next task. Continue within this scope without asking about routine choices.
+
+Do not add new services, authentication, paid dependencies, cloud resources,
+an AI tutor, or manual deployments. Keep planned capabilities visibly unavailable.
+Do not redesign the app or expand simulator semantics without a concrete need.
+If a necessary user decision genuinely blocks progress, explain it precisely;
+otherwise use the documented defaults and proceed.
+
+Start by reporting the verified baseline and your HLD-05 acceptance checklist,
+then implement it. Stop when the first-release scope is complete, or when no
+remaining in-scope work can proceed without a specific unresolved dependency.
+Do not report the release complete while a required gate remains unverified.
 ```
 
-## Files to use
+## Plan and evidence
 
-- [Detailed implementation plan](IMPLEMENTATION_PLAN.md): tasks, dependencies, fixtures, quality gates, and future cases.
-- [Roadmap](ROADMAP.md): authoritative status and release gates.
-- [Work-item template](templates/WORK_ITEM.md): per-contribution scope and evidence.
-- [Latest simulation review](SIMULATION_REVIEW.md): regression history and remaining verification.
+- [Current execution plan](NEXT_IMPLEMENTATION_PLAN.md): starting point, PR sequence, cache fixtures, first-release acceptance, and checks.
+- [Detailed implementation plan](IMPLEMENTATION_PLAN.md): original task definitions and longer-term expansion.
+- [Roadmap](ROADMAP.md): authoritative status; partial work stays in progress.
+- [Work-item template](templates/WORK_ITEM.md): scope and evidence per contribution.
+- [Cache state decision](decisions/0006-cache-event-key-state.md): how to reconstruct state correctly.
+- [Simulation review](SIMULATION_REVIEW.md): causality/failure regressions to preserve.
 
-The task numbering in the implementation plan is separate from curriculum IDs. Check the live repository before trusting any historical status or test count.
+Pasting the prompt authorizes the implementation and Git workflow described in it. Preparing this handoff does not itself start that implementation or deploy the application.
