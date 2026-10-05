@@ -45,5 +45,21 @@
       "Explains one tradeoff rather than claiming one routing policy always wins."
     ],
     "modelAnswer": "A load balancer chooses where work goes, but it does not create processing capacity. If arrivals exceed the selected node's available workers, requests queue and latency rises even when handler time is unchanged. I would state the workload and worker assumptions, compare queue time and service time, and decide whether routing, capacity, queue limits, or load shedding addresses the observed bottleneck."
+  },
+  {
+    "id": "request-flow-node-failure",
+    "topicId": "request-flow",
+    "level": "intermediate",
+    "kind": "prediction",
+    "prompt": "Six requests arrive at 0 ms on two one-worker nodes (100 ms each, round robin). Node B fails at 50 ms with in-flight behavior FAIL. How many requests complete, and when do node B's requests end?",
+    "options": [
+      { "id": "a", "label": "All six complete; node B's finish after it recovers" },
+      { "id": "b", "label": "Three complete; node B's three fail at 50 ms" },
+      { "id": "c", "label": "Five complete; only the running request on B fails" },
+      { "id": "d", "label": "Node A takes over B's queued requests, so six complete" }
+    ],
+    "correctOptionId": "b",
+    "explanation": "Round robin sent requests 2, 4, and 6 to node B. FAIL drops both running and queued work, so request 2 (running) and requests 4 and 6 (queued) fail at 50 ms. Node A still completes 1, 3, and 5 at 100, 200, and 300 ms. Already-assigned work is not moved to another node, and this model has no retries; only new arrivals avoid the failed node.",
+    "followUp": "With COMPLETE instead of FAIL, all six finish as in the baseline. Which real mechanism does each behavior resemble, and which one needs a retry policy?"
   }
 ]

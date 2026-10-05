@@ -57,8 +57,8 @@ export function SequenceView() {
           queue time <i>+</i> service time
         </strong>
         <small>
-          Network and balancer overhead are intentionally excluded in model
-          v1.0.0.
+          Network and balancer overhead are excluded from this model, and a
+          failed node is detected instantly, without health-check delay.
         </small>
       </div>
     </div>

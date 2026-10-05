@@ -26,10 +26,10 @@ class ApplicationApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value("request-flow"))
                 .andExpect(jsonPath("$[0].simulationIds[0]").value("request-flow"))
-                .andExpect(jsonPath("$[0].sourceIds.length()").value(2));
+                .andExpect(jsonPath("$[0].sourceIds.length()").value(3));
         mvc.perform(get("/api/v1/topics/request-flow"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.questions.length()").value(3))
+                .andExpect(jsonPath("$.questions.length()").value(4))
                 .andExpect(jsonPath("$.questions[0].topicId").value("request-flow"))
                 .andExpect(jsonPath("$.questions[2].options").doesNotExist());
         mvc.perform(get("/api/v1/simulations/request-flow"))

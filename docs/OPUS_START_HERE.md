@@ -1,6 +1,6 @@
 # Opus 5.5 implementation handoff
 
-Updated 2026-10-05 against `add46a4` / PR #30. Copy the prompt below into Opus while it has access to this repository. It uses repository files rather than hidden chat history.
+Updated 2026-10-05 against `add46a4` / PR #30. Since then HLD-05, HLD-06A/B, and HLD-07A have merged; when using the prompt below, resume at HLD-07B as recorded in [the execution plan](NEXT_IMPLEMENTATION_PLAN.md) and [roadmap](ROADMAP.md). Copy the prompt below into Opus while it has access to this repository. It uses repository files rather than hidden chat history.
 
 ## Copy-and-paste prompt
 

@@ -27,6 +27,19 @@ test.describe("published modules run their Java model", () => {
     await expect(metrics).toContainText("MEAN LATENCY100.0ms");
   });
 
+  test("request flow: node B fails at 50 ms and drops its three requests", async ({
+    page,
+  }) => {
+    await page.goto("/topics/request-flow");
+    await page.getByRole("button", { name: "Node failure mid-run" }).click();
+    await page.getByRole("button", { name: /Run experiment/ }).click();
+    const metrics = page.getByLabel("Run metrics");
+    // FAIL drops node B's running request 2 and queued 4 and 6 at 50 ms.
+    await expect(metrics).toContainText("COMPLETED3requests");
+    await expect(metrics).toContainText("FAILED3requests");
+    await expect(metrics).toContainText("THROUGHPUT10.0req / sec");
+  });
+
   test("rate limiter: shared window rejects the overflow, a higher limit admits more", async ({
     page,
   }) => {
@@ -129,6 +142,24 @@ test.describe("module navigation", () => {
       "aria-labelledby",
       (await study.getAttribute("id"))!,
     );
+  });
+
+  test("keyboard: request-flow trace slider and step buttons move playback", async ({
+    page,
+  }) => {
+    await page.goto("/topics/request-flow");
+    await page.getByRole("button", { name: /Run experiment/ }).click();
+    const slider = page.getByLabel("Trace position");
+    await expect(slider).toHaveAttribute("aria-valuetext", /^Event 1 of /);
+    await slider.focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(slider).toHaveAttribute("aria-valuetext", /^Event 2 of /);
+    await page.getByRole("button", { name: "Next event" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(slider).toHaveAttribute("aria-valuetext", /^Event 3 of /);
+    await page.getByRole("button", { name: "Reset trace" }).focus();
+    await page.keyboard.press("Space");
+    await expect(slider).toHaveAttribute("aria-valuetext", /^Event 1 of /);
   });
 
   test("normalizes an unsupported view and shows a not-found page for unknown routes", async ({

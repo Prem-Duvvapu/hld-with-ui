@@ -107,7 +107,7 @@ The estimator uses decimal units and intentionally does not recommend instance c
 
 The model uses one identity, one-token requests, round-robin routing, and zero counter-network latency. These bounds keep the algorithm and state-placement decisions hand-checkable.
 
-**Cache-Aside** traces hits, misses, TTL expiry, stale origin versions, concurrent cold misses, and cache/origin outages. Corrected model v1.0.1 uses a stable virtual event queue and bounded traces. Bypasses and failed GETs are explicit; limited runs identify incomplete requests. Only key `k` initially exists; UPDATE can create other keys. Guided playback and architecture/sequence tabs remain unfinished.
+**Cache-Aside** traces hits, misses, TTL expiry, stale origin versions, concurrent cold misses, and cache/origin outages. Corrected model v1.0.1 uses a stable virtual event queue and bounded traces. Bypasses and failed GETs are explicit; limited runs identify incomplete requests. Only key `k` initially exists; UPDATE can create other keys. After a run you can step through the trace on a Cache ← Application → Origin diagram, with a state table and an event inspector. The **Guided** tab walks through eight predict → reveal → explain → tradeoff checkpoints, each verified against the Java trace by a test. **Architecture** and **Request sequence** tabs summarize the baseline. Manual zoom and screen-reader review remain open release gates.
 
 ## References
 
