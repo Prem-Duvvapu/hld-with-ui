@@ -4,6 +4,12 @@ Prepared for implementation by Opus 5.5 or another coding agent.
 
 **Baseline:** `6df9ffa` / PR #20, inspected on 2026-09-29. **Status:** proposed implementation work, not completed features. This document adds execution detail to the existing roadmap; it does not replace its release gates.
 
+## Current starting point — 2026-10-05
+
+The original baseline below is historical. Current inspected `main` is `add46a4` (PR #30). Use [NEXT_IMPLEMENTATION_PLAN.md](NEXT_IMPLEMENTATION_PLAN.md) for the current execution checklist and [OPUS_START_HERE.md](OPUS_START_HERE.md) for the updated prompt.
+
+HLD-01/02, the automated HLD-03 browser/launcher work, and HLD-04's descriptor limits, structured cache state, HTTP contract checks, and compatibility handling are implemented. Manual accessibility and any detailed acceptance requirement without evidence remain open. **Start implementation at HLD-05, not HLD-01.** The section 2 table describes the older baseline; current status belongs to ROADMAP and the work-item evidence. The task definitions below remain useful, but completed tasks should not be repeated.
+
 ## 1. Start here
 
 Read [OPUS_START_HERE.md](OPUS_START_HERE.md) for the copy-and-paste agent prompt. Then work through this plan in dependency order, one focused contribution at a time.
