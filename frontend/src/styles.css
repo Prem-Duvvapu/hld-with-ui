@@ -1264,6 +1264,9 @@ th {
 .sequence-columns {
   grid-template-columns: repeat(3, 1fr);
 }
+.sequence-columns.two-up {
+  grid-template-columns: repeat(2, 1fr);
+}
 .sequence-columns ol {
   padding-left: 18px;
   color: var(--muted);
@@ -1275,7 +1278,8 @@ th {
 }
 @media (max-width: 640px) {
   .comparison-grid,
-  .sequence-columns {
+  .sequence-columns,
+  .sequence-columns.two-up {
     grid-template-columns: 1fr;
   }
   .rate-architecture {
@@ -1515,6 +1519,15 @@ th {
 .equation strong {
   font-size: 26px;
   margin: 7px;
+}
+.equation strong b {
+  font-weight: inherit;
+  white-space: nowrap;
+}
+@media (max-width: 480px) {
+  .equation strong b {
+    white-space: normal;
+  }
 }
 .equation strong i {
   color: var(--orange);

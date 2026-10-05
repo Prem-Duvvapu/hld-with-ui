@@ -104,12 +104,15 @@
     "checkpointsPath": "topics/cache-aside/checkpoints.json",
     "simulationIds": ["cache-aside"],
     "estimatorIds": [],
-    "contentVersion": "1.0.0",
-    "reviewedAt": "2026-09-28",
+    "contentVersion": "1.1.0",
+    "reviewedAt": "2026-10-05",
     "sourceIds": [
       "aws-caching-strategies",
       "azure-caching-best-practices",
-      "caffeine-cache-design"
+      "rfc-5861-stale-content",
+      "go-singleflight",
+      "caffeine-refresh",
+      "tinylfu-admission-policy"
     ]
   }
 ]
