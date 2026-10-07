@@ -105,6 +105,14 @@ For documentation-only work, check internal links, IDs/dependencies, numbers, an
 
 ## Handoff and maintenance
 
+### Visitor analytics
+
+The deployed frontend mounts Vercel Web Analytics once at the application root
+for production builds. Query strings and fragments are removed before page
+locations are sent; no learner answers or simulation inputs are configured for
+collection. The README records dashboard enablement and deployment verification.
+This maintenance contribution does not change module completion or release gates.
+
 ### Learning network navigation
 
 Cross-project navigation is implemented in `LearningNetworkNav`, mounted in
