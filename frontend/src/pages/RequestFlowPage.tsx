@@ -62,7 +62,13 @@ export function RequestFlowPage() {
     study: <StudyView markdown={data.topic.lessonMarkdown} />,
     architecture: <ArchitectureView />,
     sequence: <SequenceView />,
-    practice: <PracticeView questions={data.topic.questions} />,
+    practice: (
+      <PracticeView
+        questions={data.topic.questions}
+        topicId={data.topic.topic.id}
+        contentVersion={data.topic.topic.contentVersion}
+      />
+    ),
   };
   return (
     <ModuleShell

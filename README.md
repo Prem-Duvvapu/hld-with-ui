@@ -126,6 +126,20 @@ The model uses one identity, one-token requests, round-robin routing, and zero c
 
 **Cache-Aside** traces hits, misses, TTL expiry, stale origin versions, concurrent cold misses, and cache/origin outages. Corrected model v1.0.1 uses a stable virtual event queue and bounded traces. Bypasses and failed GETs are explicit; limited runs identify incomplete requests. Only key `k` initially exists; UPDATE can create other keys. After a run you can step through the trace on a Cache ← Application → Origin diagram, with a state table and an event inspector. The **Guided** tab walks through eight predict → reveal → explain → tradeoff checkpoints, each verified against the Java trace by a test. **Architecture** and **Request sequence** tabs summarize the baseline. Manual zoom and screen-reader review remain open release gates.
 
+## Saved practice answers
+
+The **Practice** tab saves your choices, written explanations, and reference-view
+state automatically on this browser. They survive reloads and route changes;
+answers are not sent to the backend or analytics. **Download answers** saves a
+JSON backup. Import, reset, and saving Guided predictions are planned next.
+
+If browser storage fails, the app keeps new answers in the current session and
+asks you to download them before leaving or reloading. Unreadable or unsupported
+saved data is kept untouched, with **Download previous data** when available.
+Answers from older content remain visible with a review notice; they do not
+automatically count as reviewed for the updated lesson. No completion or mastery
+is inferred. Playground inputs and simulation results are not saved on reload.
+
 ## References
 
 **[lld-with-ui](https://github.com/Prem-Duvvapu/lld-with-ui) is the primary product reference**, as selected by the project owner: hands-on modules, guided simulations, diagrams, and design details in a consistent shell. [dsa-with-ui](https://github.com/Prem-Duvvapu/dsa-with-ui) and [cs-fundamentals-with-ui](https://github.com/Prem-Duvvapu/cs-fundamentals-with-ui) provide supporting practices. The user-provided [system design resource collection](https://github.com/ashishps1/awesome-system-design-resources) is a discovery index; lessons will include primary sources and original explanations.

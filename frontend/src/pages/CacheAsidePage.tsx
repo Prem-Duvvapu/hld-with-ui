@@ -93,6 +93,8 @@ export function CacheAsidePage() {
     practice: (
       <PracticeView
         questions={data.topic.questions}
+        topicId={data.topic.topic.id}
+        contentVersion={data.topic.topic.contentVersion}
         title="Explain cache behavior under failure"
         description="Identify stale reads, calculate cold-start origin load, and design a mitigation for origin unavailability."
       />
