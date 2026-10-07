@@ -40,11 +40,18 @@ See [decision 0008](../decisions/0008-local-practice-answers.md). Browser storag
 | Targeted storage + Practice Vitest suites | Passed: 24 tests | `npm test -- src/features/learning/PracticeView.test.tsx src/features/learning/practiceStorage.test.ts` |
 | Full frontend gate | Passed: 126 tests; contracts/type/lint/format/build | `npm run contracts:check`, `typecheck`, `lint`, `format:check`, `test`, `build` |
 | Java verify, local Java 17 baseline | Passed: 96 tests, jar packaged | `./mvnw -B verify`; `/tmp/hld-08a-java-verify.log` |
-| Plan/launcher syntax/whitespace | Passed: 43 docs, 143 links, 59 curriculum IDs, four catalog identities | `node scripts/validate-plan.mjs`, `bash -n start.sh`, `git diff --check` |
+| Plan/launcher syntax/whitespace | Passed: 43 docs, 147 links, 59 curriculum IDs, four catalog identities | `node scripts/validate-plan.mjs`, `bash -n start.sh`, `git diff --check` |
 | New real-browser persistence cases | Passed: 12/12 | `npm run e2e -- saved-practice.e2e.ts`, isolated 18380/14373 ports |
 | Full local browser suite | 69/70 first run; remaining capacity case passed isolated | Existing screenshot positioning assertion saw scrollY 84 instead of 0 under concurrent load; isolated rerun passed its screenshot, formula/history, and stale-input checks. No app or test changes made for this transient failure. Full CI result will be linked in the PR. |
-| 320px light/dark reduced motion and keyboard | Passed: both visual flows | Saved-practice browser checks; storage actions/cards readable, visible focus and no overflow. Artifacts recorded in PR. |
+| 320px and 1440px light/dark reduced motion and keyboard | Passed: both visual cases at both widths | Saved-practice browser checks; storage actions/cards readable, visible focus and no overflow. |
 | Manual 200% zoom, screen reader, newcomer teach-back | Not performed | These remain release gates; automated checks are not substitutes. |
+
+### UI screenshots
+
+- [Mobile light](assets/hld-08a/saved-practice-mobile-light.png)
+- [Mobile dark](assets/hld-08a/saved-practice-mobile-dark.png)
+- [Desktop light](assets/hld-08a/saved-practice-desktop-light.png)
+- [Desktop dark](assets/hld-08a/saved-practice-desktop-dark.png)
 
 ## Handoff
 

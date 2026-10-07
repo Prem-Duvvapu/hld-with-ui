@@ -347,6 +347,18 @@ for (const theme of ["light", "dark"] as const) {
       path: `test-results/saved-practice-mobile-${theme}.png`,
       fullPage: true,
     });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      )
+      .toBe(true);
+    await page.screenshot({
+      path: `test-results/saved-practice-desktop-${theme}.png`,
+      fullPage: true,
+    });
     await page.reload();
     await expect(field).toHaveValue(
       "I can explain the queue and defend a bounded waiting policy.",
