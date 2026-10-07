@@ -47,6 +47,33 @@ class CapacityEstimatorTest {
                 .hasMessage("schemaVersion must be 1.0");
     }
 
+    @Test
+    void readShareChangesStorageWithoutChangingTotalTrafficOrBandwidth() {
+        CapacityEstimateResult base = estimator.calculate(input(5, 90));
+        CapacityEstimateResult moreReads = estimator.calculate(input(5, 99));
+
+        assertThat(moreReads.metrics().dailyWrites()).isEqualTo(100_000);
+        assertThat(moreReads.metrics().rawStorageGigabytes()).isEqualTo(36.5);
+        assertThat(moreReads.metrics().replicatedStorageGigabytes()).isEqualTo(109.5);
+        assertThat(moreReads.metrics().peakRequestsPerSecond()).isEqualTo(base.metrics().peakRequestsPerSecond());
+        assertThat(moreReads.metrics().peakResponseMegabitsPerSecond()).isEqualTo(base.metrics().peakResponseMegabitsPerSecond());
+    }
+
+    @Test
+    void latencyChangesMeanInflightWorkAndHeadroomChangesOnlyTheTargetRate() {
+        CapacityEstimateResult base = estimator.calculate(input(5, 90));
+        CapacityEstimateResult slower = estimator.calculate(new CapacityEstimateInput(
+                "1.0", 1_000_000, 10, 5, 90, 1, 2, 365, 3, 400, 60));
+
+        assertThat(slower.metrics().meanConcurrentRequests()).isEqualTo(base.metrics().meanConcurrentRequests() * 2);
+        assertThat(slower.metrics().replicatedStorageGigabytes()).isEqualTo(base.metrics().replicatedStorageGigabytes());
+        assertThat(slower.metrics().peakResponseMegabitsPerSecond()).isEqualTo(base.metrics().peakResponseMegabitsPerSecond());
+        assertThat(slower.metrics().peakRequestsWithHeadroom()).isCloseTo(925.9259, within(0.0001));
+        assertThat(slower.sensitivity().get(2).peakRequestsPerSecond()).isCloseTo(694.4444, within(0.0001));
+        assertThat(slower.sensitivity().get(2).meanConcurrentRequests())
+                .isEqualTo(slower.metrics().meanConcurrentRequests() * 1.2);
+    }
+
     private CapacityEstimateInput input(double peakFactor, double readPercentage) {
         return new CapacityEstimateInput(
                 "1.0", 1_000_000, 10, peakFactor, readPercentage, 1, 2, 365, 3, 200, 30);

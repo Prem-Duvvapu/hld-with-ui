@@ -49,12 +49,13 @@
     "resourcesPath": "topics/capacity-estimation/resources.json",
     "simulationIds": [],
     "estimatorIds": ["capacity-estimation"],
-    "contentVersion": "1.0.0",
-    "reviewedAt": "2026-09-22",
+    "contentVersion": "1.1.0",
+    "reviewedAt": "2026-10-07",
     "sourceIds": [
       "little-law",
       "google-sre-load-balancing",
-      "aws-performance-efficiency"
+      "aws-performance-efficiency",
+      "google-sre-datacenter-load"
     ]
   },
   {

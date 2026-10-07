@@ -43,15 +43,15 @@ public class CapacityEstimator {
                         "The modeled busy-period rate before extra headroom."),
                 step("write-volume", "Daily writes", "daily requests × write fraction", dailyWrites, "writes/day",
                         "Assumes every write creates one new record."),
-                step("raw-storage", "Raw retained data", "daily writes × record size × retention", rawStorageGb, "GB",
+                step("raw-storage", "Raw retained data", "writes/day × kB/write × days ÷ 1,000,000", rawStorageGb, "GB",
                         "Decimal GB of raw records before replication and overhead."),
                 step("replicated-storage", "Replicated raw data", "raw retained data × copies", replicatedStorageGb, "GB",
                         "Raw record copies only; indexes, logs, backups, and headroom are excluded."),
-                step("peak-bandwidth", "Peak response bandwidth", "peak rate × response size × 8", peakResponseMbps, "Mb/s",
+                step("peak-bandwidth", "Peak response bandwidth", "requests/s × kB/response × 8 ÷ 1,000", peakResponseMbps, "Mb/s",
                         "Response payload only; protocol overhead, requests, media, and CDN effects are excluded."),
-                step("concurrency", "Mean in-flight requests", "peak rate × mean latency in seconds", concurrency, "requests",
-                        "A steady-workload average, not a worker-pool or burst-capacity guarantee."),
-                step("headroom", "Peak rate with headroom", "peak rate × (1 + headroom %)", peakWithHeadroom, "requests/s",
+                step("concurrency", "Mean in-flight requests", "requests/s × mean latency ms ÷ 1,000", concurrency, "requests",
+                        "Uses mean total time in the system, including queues; a steady-workload average, not a worker or burst guarantee."),
+                step("headroom", "Peak rate with headroom", "peak rate × (1 + headroom percentage ÷ 100)", peakWithHeadroom, "requests/s",
                         "A planning target derived from the selected margin, not measured capacity."));
 
         List<SensitivityPoint> sensitivity = List.of(

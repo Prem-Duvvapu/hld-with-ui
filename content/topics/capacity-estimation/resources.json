@@ -6,9 +6,9 @@
     "organization": "INFORMS",
     "url": "https://pubsonline.informs.org/doi/10.1287/opre.9.3.383",
     "sourceType": "paper",
-    "relevantSections": "The theorem and stated steady-state conditions",
-    "supports": "The relationship used to estimate mean concurrent work from arrival rate and mean time in the system.",
-    "reviewedAt": "2026-09-22",
+    "relevantSections": "Public abstract: finite means and stationary-process conditions",
+    "supports": "A relationship between average number in the system, arrival rate, and mean total time, under the stated theorem conditions; it does not give a worker count or burst bound.",
+    "reviewedAt": "2026-10-07",
     "accessStatus": "available"
   },
   {
@@ -18,19 +18,30 @@
     "url": "https://sre.google/sre-book/load-balancing-frontend/",
     "sourceType": "book-chapter",
     "relevantSections": "Load balancing using DNS and at the virtual IP address",
-    "supports": "Why demand, resource capacity, traffic distribution, and overload behavior must be considered together.",
-    "reviewedAt": "2026-09-22",
+    "supports": "Frontend routing considers traffic, datacenter capacity, and infrastructure health together; it does not derive server counts from request rates alone.",
+    "reviewedAt": "2026-10-07",
     "accessStatus": "available"
   },
   {
     "id": "aws-performance-efficiency",
-    "title": "Performance Efficiency Pillar",
+    "title": "PERF05-BP04 Load test your workload",
     "organization": "Amazon Web Services",
-    "url": "https://docs.aws.amazon.com/wellarchitected/latest/performance-efficiency-pillar/welcome.html",
+    "url": "https://docs.aws.amazon.com/wellarchitected/latest/framework/perf_process_culture_load_test.html",
     "sourceType": "documentation",
-    "relevantSections": "Design principles and performance review",
-    "supports": "Using data, experimentation, and review cycles when making performance and capacity decisions.",
-    "reviewedAt": "2026-09-22",
+    "relevantSections": "Implementation guidance and steps",
+    "supports": "Testing the entire workload under realistic conditions, with defined objectives, monitored metrics, and expected and larger loads.",
+    "reviewedAt": "2026-10-07",
+    "accessStatus": "available"
+  },
+  {
+    "id": "google-sre-datacenter-load",
+    "title": "Load Balancing in the Datacenter",
+    "organization": "Google",
+    "url": "https://sre.google/sre-book/load-balancing-datacenter/",
+    "sourceType": "book-chapter",
+    "relevantSections": "Least-Loaded Round Robin: limitations of active-request counts",
+    "supports": "Active request counts can include time waiting on dependencies and need not be proportional to CPU capacity.",
+    "reviewedAt": "2026-10-07",
     "accessStatus": "available"
   }
 ]

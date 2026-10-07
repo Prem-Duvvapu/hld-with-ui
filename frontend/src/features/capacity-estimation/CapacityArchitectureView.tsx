@@ -2,7 +2,12 @@ const stages = [
   ["01", "Usage", "People × actions", "Start from product behavior."],
   ["02", "Traffic", "Average × peak", "Expose the busy period."],
   ["03", "Data", "Writes × bytes × days", "Retain new records."],
-  ["04", "Runtime", "Rate × latency", "Estimate work in flight."],
+  [
+    "04",
+    "Runtime",
+    "Rate × latency",
+    "Use mean total latency, including queues.",
+  ],
 ];
 export function CapacityArchitectureView() {
   return (
@@ -65,7 +70,8 @@ export function CapacityArchitectureView() {
           seconds and multiplying by a peak factor gives peak rate. Write share,
           record bytes, retention, and copies give retained data. Response bytes
           give bandwidth. Rate multiplied by mean latency gives mean
-          concurrency.
+          concurrency, using total time in the system including queueing. The
+          result is an average, not a worker count.
         </p>
       </div>
     </div>

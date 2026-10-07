@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { api, ApiClientError } from "../../api/client";
 import type {
   CapacityEstimateResult,
@@ -80,6 +80,8 @@ const result: CapacityEstimateResult = {
   warnings: ["Not a benchmark."],
 };
 
+afterEach(() => vi.restoreAllMocks());
+
 describe("CapacityCalculator", () => {
   it("sends changed assumptions to Java and explains the returned result", async () => {
     const calculate = vi
@@ -138,7 +140,80 @@ describe("CapacityCalculator", () => {
 
     const preset = screen.getByRole("button", { name: "Interview baseline" });
     await waitFor(() => expect(preset).toBeDisabled());
+    expect(screen.getByLabelText("Peak factor")).toBeDisabled();
+    expect(
+      screen.getByRole("heading", { name: "Calculating your estimate…" }),
+    ).toBeVisible();
     respond(result);
     await waitFor(() => expect(preset).toBeEnabled());
+  });
+  it.each(["Read share", "Planning headroom"])(
+    "preserves an empty %s instead of converting it to a valid zero",
+    async (label) => {
+      const calculate = vi
+        .spyOn(api, "calculateCapacity")
+        .mockResolvedValue(result);
+      render(<CapacityCalculator descriptor={descriptor} />);
+      const control = screen.getByLabelText(label);
+      fireEvent.change(control, { target: { value: "" } });
+      expect(control).toHaveValue(null);
+      const form = screen
+        .getByRole("button", { name: /Calculate estimate/ })
+        .closest("form")!;
+      fireEvent.submit(form);
+      expect(calculate).not.toHaveBeenCalled();
+      expect(control).toHaveAttribute("aria-invalid", "true");
+      expect(control).toHaveAccessibleDescription(/Enter a number/);
+      expect(control).toHaveFocus();
+      fireEvent.change(control, { target: { value: "0" } });
+      expect(control).not.toHaveAttribute("aria-invalid");
+      fireEvent.submit(form);
+      await waitFor(() => expect(calculate).toHaveBeenCalledOnce());
+      expect(calculate.mock.calls[0]![0]).toEqual({
+        ...input,
+        [label === "Read share" ? "readPercentage" : "headroomPercentage"]: 0,
+      });
+    },
+  );
+
+  it.each([
+    ["Daily active users", "1.5", "Enter a whole number."],
+    ["Read share", "101", "Enter a value from 0 to 100."],
+    ["Peak factor", "0", "Enter a value from 1 to 1,000."],
+  ])("rejects invalid %s before contacting Java", (label, value, message) => {
+    const calculate = vi.spyOn(api, "calculateCapacity");
+    render(<CapacityCalculator descriptor={descriptor} />);
+    fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    fireEvent.submit(
+      screen
+        .getByRole("button", { name: /Calculate estimate/ })
+        .closest("form")!,
+    );
+    expect(calculate).not.toHaveBeenCalled();
+    expect(screen.getByLabelText(label)).toHaveAccessibleDescription(
+      new RegExp(message.replaceAll(".", "\\.")),
+    );
+  });
+
+  it("accepts server-supported decimal precision and keeps the previous result tied to its submission", async () => {
+    const calculate = vi
+      .spyOn(api, "calculateCapacity")
+      .mockResolvedValue(result);
+    render(<CapacityCalculator descriptor={descriptor} />);
+    const submit = screen.getByRole("button", { name: /Calculate estimate/ });
+    fireEvent.change(screen.getByLabelText("Mean latency"), {
+      target: { value: "200.15" },
+    });
+    fireEvent.submit(submit.closest("form")!);
+    await screen.findByText("1,095");
+    expect(calculate).toHaveBeenCalledWith({ ...input, meanLatencyMs: 200.15 });
+    fireEvent.change(screen.getByLabelText("Peak factor"), {
+      target: { value: "" },
+    });
+    expect(screen.getByText(/These results still use/)).toBeVisible();
+    expect(screen.getByText("→ × 5")).toBeVisible();
+    fireEvent.submit(submit.closest("form")!);
+    expect(calculate).toHaveBeenCalledOnce();
+    expect(screen.getByText("1,095")).toBeVisible();
   });
 });
