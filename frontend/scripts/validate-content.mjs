@@ -169,6 +169,9 @@ const requiredHeadings = [
 ];
 
 for (const entry of catalog.filter((item) => item.status !== "planned")) {
+  const activityIds = [];
+  if (entry.id.length > 100 || entry.contentVersion.length > 32)
+    errors.push(`${entry.id}: identity/version exceeds local answer bounds`);
   const lessonPath = contentFile(entry.lessonPath, entry.id);
   const questionsPath = contentFile(entry.questionsPath, entry.id);
   const resourcesPath = contentFile(entry.resourcesPath, entry.id);
@@ -203,6 +206,10 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
     // Presets and trace resolution are checked by Java tests, which run them.
     for (const checkpoint of checkpoints) {
       checkpointIds.push(`${entry.id}/${checkpoint.id}`);
+      activityIds.push(
+        `${checkpoint.id}-prediction`,
+        `${checkpoint.id}-tradeoff`,
+      );
       if (!(entry.simulationIds ?? []).includes(checkpoint.simulationId))
         errors.push(
           `${checkpoint.id}: simulation ${checkpoint.simulationId} is not one of ${entry.id}'s simulations`,
@@ -267,6 +274,7 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
     `${entry.id} questions`,
   );
   for (const question of questions) {
+    activityIds.push(question.id);
     questionIds.push(question.id);
     if (question.topicId !== entry.id)
       errors.push(`${question.id}: topicId must be ${entry.id}`);
@@ -283,6 +291,11 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
         errors.push(`${question.id}: unknown source ${sourceId}`);
     }
   }
+  unique(activityIds, `${entry.id} saved activities`);
+  if (activityIds.some((id) => id.length > 100))
+    errors.push(
+      `${entry.id}: saved activity IDs must be at most 100 characters`,
+    );
 }
 
 unique(questionIds, "questions");

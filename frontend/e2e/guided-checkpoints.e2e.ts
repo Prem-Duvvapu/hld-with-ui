@@ -31,7 +31,7 @@ test.describe("guided cache checkpoints against Java", () => {
     ).toHaveValue("At 22 ms, after the origin read; the GET takes 22 ms.");
 
     await page.getByLabel("Lower the TTL").check();
-    await expect(page.getByRole("status")).toContainText(
+    await expect(page.locator(".guided-feedback")).toContainText(
       "Recommended: Load (warm) the key into the cache before traffic arrives.",
     );
 

@@ -78,6 +78,8 @@ export function CacheAsidePage() {
     guided: guided && (
       <GuidedCheckpoints
         checkpoints={data.topic.checkpoints}
+        topicId={data.topic.topic.id}
+        contentVersion={data.topic.topic.contentVersion}
         descriptor={data.descriptor}
       />
     ),
@@ -95,6 +97,7 @@ export function CacheAsidePage() {
         questions={data.topic.questions}
         topicId={data.topic.topic.id}
         contentVersion={data.topic.topic.contentVersion}
+        topicTitle={data.topic.topic.title}
         title="Explain cache behavior under failure"
         description="Identify stale reads, calculate cold-start origin load, and design a mitigation for origin unavailability."
       />

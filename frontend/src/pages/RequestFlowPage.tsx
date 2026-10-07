@@ -67,6 +67,7 @@ export function RequestFlowPage() {
         questions={data.topic.questions}
         topicId={data.topic.topic.id}
         contentVersion={data.topic.topic.contentVersion}
+        topicTitle={data.topic.topic.title}
       />
     ),
   };

@@ -82,6 +82,7 @@ export function CapacityEstimationPage() {
         questions={data.topic.questions}
         topicId={data.topic.topic.id}
         contentVersion={data.topic.topic.contentVersion}
+        topicTitle={data.topic.topic.title}
         title="Explain the estimate under interview pressure"
         description="Predict and calculate before revealing feedback. Finish by separating a steady-state estimate from burst behavior."
       />

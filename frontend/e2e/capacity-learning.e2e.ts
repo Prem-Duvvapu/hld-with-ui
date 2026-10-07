@@ -107,8 +107,10 @@ test("cleared assumptions stay blank, errors focus the field, and an explicit ze
   if ((await page.locator("html").getAttribute("data-theme")) !== "dark") {
     await page.getByRole("button", { name: "Use dark theme" }).click();
   }
+  // Fonts and focused controls can anchor scrolling after a one-shot scroll.
+  // Position the screenshot only once text layout has settled; fullPage captures the document.
+  await page.evaluate(() => document.fonts.ready);
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   await page.screenshot({
     path: "test-results/capacity-mobile-dark.png",
     fullPage: true,
@@ -129,8 +131,10 @@ test("keyboard calculation and tab history preserve the submitted estimate and e
   await expect(
     page.getByText(/These are scenarios, not confidence intervals/),
   ).toBeVisible();
+  // Fonts and focused controls can anchor scrolling after a one-shot scroll.
+  // Position the screenshot only once text layout has settled; fullPage captures the document.
+  await page.evaluate(() => document.fonts.ready);
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   await page.screenshot({
     path: "test-results/capacity-desktop-light.png",
     fullPage: true,

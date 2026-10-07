@@ -3,23 +3,10 @@ import type { Question } from "../../api/types";
 import {
   getPracticeStore,
   MAX_ANSWER_LENGTH,
-  serializeAnswers,
   type PracticeAnswer,
 } from "./practiceStorage";
 import "./PracticeView.css";
-
-function download(text: string, filename: string) {
-  const url = URL.createObjectURL(
-    new Blob([text], { type: "application/json" }),
-  );
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
-}
+import { AnswerStorageControls } from "./AnswerStorageControls";
 
 type AnswerProps = {
   saved?: PracticeAnswer;
@@ -192,12 +179,14 @@ export function PracticeView({
   questions,
   topicId,
   contentVersion,
+  topicTitle,
   title = "Turn the model into interview language",
   description = "Answer before revealing the explanation. The final prompt asks you to make the reasoning clear without relying on the visual.",
 }: {
   questions: Question[];
   topicId: string;
   contentVersion: string;
+  topicTitle?: string;
   title?: string;
   description?: string;
 }) {
@@ -225,52 +214,7 @@ export function PracticeView({
         <h2>{title}</h2>
         <p>{description}</p>
       </div>
-      <section
-        className={`practice-save-bar ${snapshot.issue ? "practice-save-warning" : ""}`}
-        aria-label="Practice answer storage"
-      >
-        <div>
-          <p className="practice-save-title" role="status">
-            {snapshot.issue
-              ? "Answers are kept for this session only"
-              : "Saved on this browser"}
-          </p>
-          <p>
-            {snapshot.issue
-              ? `${snapshot.issue} Download your answers before leaving or reloading. Previous saved data has not been replaced.`
-              : "Your choices and explanations save automatically. They stay on this browser and are not sent to the server. Saving an answer does not mark a module complete."}
-          </p>
-        </div>
-        <div className="practice-save-actions">
-          <button
-            className="button secondary"
-            type="button"
-            disabled={snapshot.answers.length === 0}
-            onClick={() =>
-              download(
-                serializeAnswers(snapshot.answers),
-                "hld-practice-answers.json",
-              )
-            }
-          >
-            Download answers
-          </button>
-          {snapshot.previousData !== null && (
-            <button
-              className="button secondary"
-              type="button"
-              onClick={() =>
-                download(
-                  snapshot.previousData!,
-                  "hld-practice-previous-data.json",
-                )
-              }
-            >
-              Download previous data
-            </button>
-          )}
-        </div>
-      </section>
+      <AnswerStorageControls topicId={topicId} topicTitle={topicTitle} />
       <div className="question-list">
         {questions.map((question, index) =>
           question.options ? (
