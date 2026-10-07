@@ -66,6 +66,67 @@ class RateLimiterSimulatorTest {
         assertThat(simulator.run(input)).isEqualTo(simulator.run(input));
     }
 
+
+    @Test
+    void alignedWindowBoundaryPermitsTwoSeparateAllowances() {
+        RateLimiterResult result = simulator.run(input(
+                RateLimitAlgorithm.FIXED_WINDOW, CounterScope.SHARED, 3, 5,
+                true, BackendFailurePolicy.FAIL_CLOSED,
+                List.of(999L, 999L, 999L, 999L, 999L, 1_000L, 1_000L, 1_000L, 1_000L, 1_000L)));
+
+        assertThat(result.metrics().allowed()).isEqualTo(10);
+        assertThat(result.metrics().rejected()).isZero();
+        assertThat(result.metrics().maximumAggregateAllowance()).isEqualTo(5);
+        assertThat(result.outcomes().get(5).remaining()).isEqualTo(4);
+    }
+
+    @Test
+    void fractionalTokensAndSlowerRefillChangeRetryDelay() {
+        RateLimiterInput fastInput = input(
+                RateLimitAlgorithm.TOKEN_BUCKET, CounterScope.SHARED, 3, 2,
+                true, BackendFailurePolicy.FAIL_CLOSED, List.of(0L, 0L, 0L, 250L, 500L));
+        RateLimiterResult fast = simulator.run(fastInput);
+        assertThat(fast.outcomes()).extracting(RateLimitOutcome::decision)
+                .containsExactly("ALLOWED", "ALLOWED", "REJECTED", "REJECTED", "ALLOWED");
+        assertThat(fast.outcomes().get(2).retryAfterMs()).isEqualTo(500);
+        assertThat(fast.outcomes().get(3).retryAfterMs()).isEqualTo(250);
+        assertThat(fast.metrics().allowed()).isEqualTo(3);
+        assertThat(fast.metrics().maximumAggregateAllowance()).isEqualTo(2);
+
+        RateLimiterInput slowInput = new RateLimiterInput(
+                "1.0", "1.0.0", RateLimitAlgorithm.TOKEN_BUCKET, CounterScope.SHARED,
+                3, 2, 1_000, 1, true, BackendFailurePolicy.FAIL_CLOSED,
+                List.of(0L, 0L, 0L, 500L), 42);
+        RateLimiterResult slow = simulator.run(slowInput);
+        assertThat(slow.outcomes()).extracting(RateLimitOutcome::decision)
+                .containsExactly("ALLOWED", "ALLOWED", "REJECTED", "REJECTED");
+        assertThat(slow.outcomes().get(2).retryAfterMs()).isEqualTo(1_000);
+        assertThat(slow.outcomes().get(3).retryAfterMs()).isEqualTo(500);
+    }
+
+    @Test
+    void outageBypassesAreDistinctFromAllowancesAndLocalStateIgnoresSharedOutage() {
+        List<Long> arrivals = List.of(0L, 0L, 0L, 0L, 0L, 0L);
+        RateLimiterResult open = simulator.run(input(
+                RateLimitAlgorithm.TOKEN_BUCKET, CounterScope.SHARED, 3, 5,
+                false, BackendFailurePolicy.FAIL_OPEN, arrivals));
+        RateLimiterResult closed = simulator.run(input(
+                RateLimitAlgorithm.TOKEN_BUCKET, CounterScope.SHARED, 3, 5,
+                false, BackendFailurePolicy.FAIL_CLOSED, arrivals));
+        RateLimiterResult local = simulator.run(input(
+                RateLimitAlgorithm.TOKEN_BUCKET, CounterScope.LOCAL_PER_NODE, 3, 5,
+                false, BackendFailurePolicy.FAIL_CLOSED, arrivals));
+
+        assertThat(open.metrics().allowed()).isZero();
+        assertThat(open.metrics().bypassed()).isEqualTo(6);
+        assertThat(open.metrics().maximumAggregateAllowance()).isEqualTo(5);
+        assertThat(open.outcomes()).allSatisfy(outcome -> assertThat(outcome.retryAfterMs()).isNull());
+        assertThat(closed.metrics().rejected()).isEqualTo(6);
+        assertThat(closed.outcomes()).allSatisfy(outcome -> assertThat(outcome.retryAfterMs()).isNull());
+        assertThat(local.metrics().allowed()).isEqualTo(6);
+        assertThat(local.metrics().bypassed()).isZero();
+    }
+
     private RateLimiterInput input(
             RateLimitAlgorithm algorithm,
             CounterScope scope,

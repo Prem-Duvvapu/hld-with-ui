@@ -6,13 +6,25 @@
     "kind": "calculation",
     "prompt": "Three nodes each enforce a local limit of five requests per window. What maximum aggregate allowance can they provide?",
     "options": [
-      { "id": "a", "label": "5" },
-      { "id": "b", "label": "8" },
-      { "id": "c", "label": "15" },
-      { "id": "d", "label": "Unlimited" }
+      {
+        "id": "a",
+        "label": "5"
+      },
+      {
+        "id": "b",
+        "label": "8"
+      },
+      {
+        "id": "c",
+        "label": "15"
+      },
+      {
+        "id": "d",
+        "label": "Unlimited"
+      }
     ],
     "correctOptionId": "c",
-    "explanation": "Each independent node can allow five requests, so three local counters can collectively allow fifteen during the same window.",
+    "explanation": "Each independent node can allow five requests, so three local counters can collectively allow fifteen during the same window. This is potential allowance in one aligned window, not measured accepted traffic over an arbitrary run.",
     "followUp": "How could allocated per-node quotas reduce overshoot, and what utilization tradeoff would that introduce?"
   },
   {
@@ -26,9 +38,11 @@
       "Explains that fail-open preserves availability but bypasses enforcement.",
       "Explains that fail-closed protects the boundary but rejects legitimate work.",
       "Names a fallback, operational signal, or recovery action.",
-      "Allows different policies for the two operations with clear reasoning."
+      "Allows different policies for the two operations with clear reasoning.",
+      "Distinguishes quota exhaustion from counter unavailability and does not invent a recovery delay."
     ],
-    "modelAnswer": "I would normally fail closed for repeated login attempts because bypassing enforcement weakens an account-protection boundary, while providing a carefully bounded recovery path. For low-risk catalog reads I may fail open if the origin has separate overload protection, because availability has higher value and the request has little abuse impact. I would count bypassed decisions, counter errors, rejections, and downstream saturation, and make both choices explicit configuration rather than accidental timeout behavior."
+    "modelAnswer": "I would normally fail closed for repeated login attempts because bypassing enforcement weakens an account-protection boundary, while providing a carefully bounded recovery path. For low-risk catalog reads I may fail open if the origin has separate overload protection, because availability has higher value and the request has little abuse impact. I would count bypassed decisions, counter errors, rejections, and downstream saturation, and make both choices explicit configuration rather than accidental timeout behavior. A counter outage does not prove quota exhaustion; I would define a dependency-failure response separately from HTTP 429 and avoid inventing a retry delay.",
+    "sourceIds": ["rfc-6585-429"]
   },
   {
     "id": "distributed-rate-limiter-algorithm",
@@ -37,12 +51,18 @@
     "kind": "diagnosis",
     "prompt": "A client sends five requests just before a fixed-window boundary and five immediately after it. Why can all ten pass quickly?",
     "options": [
-      { "id": "a", "label": "The counter is necessarily inconsistent" },
+      {
+        "id": "a",
+        "label": "The counter is necessarily inconsistent"
+      },
       {
         "id": "b",
         "label": "Each group belongs to a different aligned window"
       },
-      { "id": "c", "label": "Retries do not consume limits" },
+      {
+        "id": "c",
+        "label": "Retries do not consume limits"
+      },
       {
         "id": "d",
         "label": "Fixed windows automatically borrow future capacity"
@@ -51,7 +71,7 @@
     "correctOptionId": "b",
     "explanation": "The first five consume the old window and the next five consume the new one, producing a boundary burst while each window remains within its limit.",
     "followUp": "Which token-bucket capacity and refill choices would express the burst you actually want to permit?",
-    "sourceIds": ["google-rate-limiting"]
+    "sourceIds": ["redis-incr-rate-limiter"]
   },
   {
     "id": "distributed-rate-limiter-interview",
@@ -67,5 +87,91 @@
       "Names metrics, rollout strategy, and a credible alternative."
     ],
     "modelAnswer": "I would enforce near the API boundary after authenticating the tenant. A token bucket keyed by tenant and route gives a bounded burst and sustained refill. Application nodes call one atomic consume operation in a partitioned counter store, returning remaining allowance and a retry delay. The main costs are backend latency, availability, and hot-tenant keys. For lower-risk traffic I could allocate regional or per-node quotas, accepting measured overshoot for lower latency. I would define fail-open or fail-closed per operation, bound key retention, roll out in observe-only mode, and monitor allowed, rejected, bypassed, decision latency, backend errors, and protected-resource saturation."
+  },
+  {
+    "id": "distributed-rate-limiter-refill-delay",
+    "topicId": "distributed-rate-limiter",
+    "level": "intermediate",
+    "kind": "calculation",
+    "prompt": "A shared token bucket starts with capacity 2 and refills at 2 tokens/s. Arrivals are 0, 0, 0, 250, 500 ms. What happens to the requests at 250 and 500 ms?",
+    "options": [
+      {
+        "id": "a",
+        "label": "Both pass because capacity resets every 250 ms."
+      },
+      {
+        "id": "b",
+        "label": "250 ms rejects with 250 ms retry delay; 500 ms passes."
+      },
+      {
+        "id": "c",
+        "label": "Both reject because only two requests can ever pass."
+      },
+      {
+        "id": "d",
+        "label": "250 ms passes; 500 ms rejects."
+      }
+    ],
+    "correctOptionId": "b",
+    "explanation": "The first two requests spend both tokens. At 250 ms only 0.5 token has refilled, so the request rejects and needs another 250 ms for a full token. At 500 ms the next half-token completes one unit and that request passes. Final totals are 3 allowed and 2 rejected; rejected requests do not consume tokens.",
+    "followUp": "With refill reduced to 1 token/s, both later requests reject; the 500 ms request still needs another 500 ms. Capacity and refill are different controls.",
+    "sourceIds": ["aws-api-gateway-throttling"]
+  },
+  {
+    "id": "distributed-rate-limiter-retry-units",
+    "topicId": "distributed-rate-limiter",
+    "level": "intermediate",
+    "kind": "diagnosis",
+    "prompt": "The model reports retryAfterMs = 500 after quota exhaustion. Which integer HTTP Retry-After value avoids asking the client to retry sooner than that delay?",
+    "options": [
+      {
+        "id": "a",
+        "label": "Retry-After: 500"
+      },
+      {
+        "id": "b",
+        "label": "Retry-After: 0.5"
+      },
+      {
+        "id": "c",
+        "label": "Retry-After: 1"
+      },
+      {
+        "id": "d",
+        "label": "Retry-After must always be omitted."
+      }
+    ],
+    "correctOptionId": "c",
+    "explanation": "HTTP Retry-After permits an HTTP date or a nonnegative integer number of seconds. A 500 ms delay rounds up to 1 second when using that form. 500 would mean 500 seconds; 0.5 is not an integer. The teaching API does not itself send this header, and the delay does not reserve allowance.",
+    "followUp": "What if the counter is unavailable rather than exhausted? The model supplies no retry delay; do not invent a recovery time.",
+    "sourceIds": ["rfc-6585-429", "rfc-9110-retry-after"]
+  },
+  {
+    "id": "distributed-rate-limiter-observed-overshoot",
+    "topicId": "distributed-rate-limiter",
+    "level": "beginner",
+    "kind": "calculation",
+    "prompt": "The Local counter overshoot preset sends 12 simultaneous requests to 3 independent nodes, each limited to 5. Which values describe observed accepted requests, possible allowance, and excess above intended global 5?",
+    "options": [
+      {
+        "id": "a",
+        "label": "12 observed, 15 possible, 7 excess."
+      },
+      {
+        "id": "b",
+        "label": "15 observed, 12 possible, 10 excess."
+      },
+      {
+        "id": "c",
+        "label": "5 observed, 5 possible, 0 excess."
+      },
+      {
+        "id": "d",
+        "label": "12 observed, 15 possible, 15 excess."
+      }
+    ],
+    "correctOptionId": "a",
+    "explanation": "Round-robin assigns four requests to each node, so all twelve pass. Each node could accept five, making the configured one-window potential fifteen. Observed excess relative to the intended global five is twelve minus five, or seven.",
+    "followUp": "What happens with shared state and the same twelve arrivals? Five pass and seven reject."
   }
 ]
