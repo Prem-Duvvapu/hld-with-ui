@@ -62,7 +62,7 @@ scripts/                  planning-document validation
 docs/                     plans, decisions, work items, templates, evidence
 ```
 
-**Planned** additions, created only when their work item needs them: `content/case-studies/<id>/` for workshops (HLD-09), a progress/storage feature (HLD-08). Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
+**Planned** additions, created only when their work item needs them: `content/case-studies/<id>/` for workshops (HLD-09), progress/import features (HLD-08B); Practice answer storage is implemented in `features/learning/practiceStorage.ts`. Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
 
 Backend model packages are organized by capability, not one enormous controller or service per topic. Each model has its own typed event schema with a closed `kind` vocabulary. A shared model interface and renderer registry are **planned** only if a concrete second consumer needs them (see [SIMULATION_SPEC.md](SIMULATION_SPEC.md#3-proposed-java-interface)).
 
@@ -100,7 +100,7 @@ Do not retain runs on the server initially. Playback and backwards seek are loca
 
 - Content belongs in Git; simulation state is request-local and discarded after response.
 - **Module tabs (implemented).** `ModuleShell` mounts a tab's panel on its first visit and keeps it mounted but hidden afterwards, so draft inputs, submitted runs, results, playback position, and practice answers survive tab changes without re-fetching or re-running. Anything that runs on its own reads `usePanelActive()` and pauses while hidden; request-flow playback pauses and waits for the learner to resume. Selecting a tab adds a history entry, so Back and Forward move between views; the default view has no `?view=` parameter, and an unsupported value is replaced by the default without a history entry. Presets stay disabled while a run is pending, so an older response cannot replace a newly selected preset.
-- **Refresh and leaving a module (current behavior).** Learner state lives only in component memory. Reloading the page or navigating to another route discards it, and the module starts from its first preset. Durable, versioned storage is HLD-08.
+- **Refresh and leaving a module.** Shared Practice choices, explanations, and reference-view state are saved through a versioned local adapter (HLD-08A; [decision 0008](decisions/0008-local-practice-answers.md)). Old content-version answers stay visible and require a fresh comparison. Corrupt/unsupported data is preserved; storage failures keep new work in session memory with downloads and a clear warning. Playground inputs/runs/playback and Guided predictions still reset after reload or leaving the route. Import/reset and remaining consumers are HLD-08B.
 - Small preferences/progress use localStorage through a versioned adapter. Large experiment exports are downloaded, not silently stored without limits.
 - Store topic IDs, activity states, bookmarks, local answers, and content versions. Avoid marking a topic mastered because the page was opened or scrolled.
 - Export/import includes `schemaVersion`; validate size and shape, preview conflicts, and preserve existing completion by default. User-authored answer conflicts need an explicit choice.
