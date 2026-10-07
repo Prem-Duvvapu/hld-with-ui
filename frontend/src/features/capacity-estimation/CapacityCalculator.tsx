@@ -12,11 +12,12 @@ const fields: Array<{
   unit: string;
   min: number;
   max: number;
-  step?: number;
+  integer?: boolean;
   group: "Traffic" | "Data" | "Reliability";
 }> = [
   {
     key: "dailyActiveUsers",
+    integer: true,
     label: "Daily active users",
     unit: "users/day",
     min: 1,
@@ -29,7 +30,6 @@ const fields: Array<{
     unit: "requests/day",
     min: 0.01,
     max: 100_000,
-    step: 0.01,
     group: "Traffic",
   },
   {
@@ -38,7 +38,6 @@ const fields: Array<{
     unit: "× average",
     min: 1,
     max: 1_000,
-    step: 0.1,
     group: "Traffic",
   },
   {
@@ -47,7 +46,6 @@ const fields: Array<{
     unit: "%",
     min: 0,
     max: 100,
-    step: 0.1,
     group: "Traffic",
   },
   {
@@ -56,7 +54,6 @@ const fields: Array<{
     unit: "kB/write",
     min: 0.001,
     max: 1_000_000,
-    step: 0.001,
     group: "Data",
   },
   {
@@ -65,11 +62,11 @@ const fields: Array<{
     unit: "kB/response",
     min: 0.001,
     max: 1_000_000,
-    step: 0.001,
     group: "Data",
   },
   {
     key: "retentionDays",
+    integer: true,
     label: "Retention",
     unit: "days",
     min: 1,
@@ -78,6 +75,7 @@ const fields: Array<{
   },
   {
     key: "replicationFactor",
+    integer: true,
     label: "Data copies",
     unit: "copies",
     min: 1,
@@ -90,7 +88,6 @@ const fields: Array<{
     unit: "ms",
     min: 0.1,
     max: 600_000,
-    step: 0.1,
     group: "Reliability",
   },
   {
@@ -99,10 +96,18 @@ const fields: Array<{
     unit: "%",
     min: 0,
     max: 300,
-    step: 1,
     group: "Reliability",
   },
 ];
+
+type InputKey = (typeof fields)[number]["key"];
+type Draft = Record<InputKey, string>;
+
+function toDraft(input: CapacityEstimateInput): Draft {
+  return Object.fromEntries(
+    fields.map(({ key }) => [key, String(input[key])]),
+  ) as Draft;
+}
 
 const metricCards: Array<{
   key: keyof CapacityEstimateResult["metrics"];
@@ -130,8 +135,8 @@ export function CapacityCalculator({
 }: {
   descriptor: CapacityEstimatorDescriptor;
 }) {
-  const [input, setInput] = useState<CapacityEstimateInput>(
-    descriptor.defaultInput,
+  const [draft, setDraft] = useState<Draft>(() =>
+    toDraft(descriptor.defaultInput),
   );
   const [result, setResult] = useState<CapacityEstimateResult | null>(null);
   const [calculatedInput, setCalculatedInput] =
@@ -144,7 +149,7 @@ export function CapacityCalculator({
   function choosePreset(index: number) {
     const preset = descriptor.presets[index];
     if (!preset) return;
-    setInput(preset.input);
+    setDraft(toDraft(preset.input));
     setPrompt(preset.question);
     setResult(null);
     setCalculatedInput(null);
@@ -152,9 +157,34 @@ export function CapacityCalculator({
     setFieldErrors({});
   }
 
-  async function calculate(event: FormEvent) {
+  async function calculate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const requestInput = input;
+    if (busy) return;
+    const requestInput = { ...descriptor.defaultInput };
+    const errors: Record<string, string> = {};
+    for (const field of fields) {
+      const text = draft[field.key].trim();
+      const value = Number(text);
+      if (!text || !Number.isFinite(value)) {
+        errors[field.key] = "Enter a number.";
+      } else if (field.integer && !Number.isInteger(value)) {
+        errors[field.key] = "Enter a whole number.";
+      } else if (value < field.min || value > field.max) {
+        errors[field.key] =
+          `Enter a value from ${field.min.toLocaleString("en-US")} to ${field.max.toLocaleString("en-US")}.`;
+      }
+      requestInput[field.key] = value;
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setError("Check the highlighted assumptions before calculating.");
+      const firstInvalid = fields.find(({ key }) => errors[key]);
+      const control =
+        firstInvalid &&
+        event.currentTarget.elements.namedItem(firstInvalid.key);
+      if (control instanceof HTMLElement) control.focus();
+      return;
+    }
     setBusy(true);
     setError("");
     setFieldErrors({});
@@ -174,18 +204,21 @@ export function CapacityCalculator({
   }
 
   const inputsChanged = calculatedInput
-    ? JSON.stringify(input) !== JSON.stringify(calculatedInput)
+    ? fields.some(
+        ({ key }) =>
+          !draft[key].trim() || Number(draft[key]) !== calculatedInput[key],
+      )
     : false;
 
   return (
     <div className="capacity-workbench">
-      <form className="capacity-controls" onSubmit={calculate}>
+      <form className="capacity-controls" onSubmit={calculate} noValidate>
         <div className="panel-heading">
           <div>
             <p className="eyebrow">Assumptions</p>
             <h2>Shape the demand</h2>
           </div>
-          <span className="live-badge">v{descriptor.schemaVersion}</span>
+          <span className="live-badge">Schema v{descriptor.schemaVersion}</span>
         </div>
         <div className="preset-row" aria-label="Capacity scenarios">
           {descriptor.presets.map((preset, index) => (
@@ -204,7 +237,7 @@ export function CapacityCalculator({
           <p>{prompt}</p>
         </div>
         {(["Traffic", "Data", "Reliability"] as const).map((group) => (
-          <fieldset className="capacity-fieldset" key={group}>
+          <fieldset className="capacity-fieldset" key={group} disabled={busy}>
             <legend>{group}</legend>
             <div className="capacity-field-grid">
               {fields
@@ -221,16 +254,17 @@ export function CapacityCalculator({
                       aria-invalid={
                         Boolean(fieldErrors[field.key]) || undefined
                       }
+                      name={field.key}
                       type="number"
                       required
                       min={field.min}
                       max={field.max}
-                      step={field.step ?? 1}
-                      value={input[field.key]}
+                      step={field.integer ? 1 : "any"}
+                      value={draft[field.key]}
                       onChange={(event) => {
-                        setInput({
-                          ...input,
-                          [field.key]: Number(event.target.value),
+                        setDraft({
+                          ...draft,
+                          [field.key]: event.target.value,
                         });
                         setFieldErrors((current) => {
                           const next = { ...current };
@@ -276,17 +310,23 @@ export function CapacityCalculator({
               <span>RESOURCES</span>
             </div>
             <p className="eyebrow">Estimate with evidence</p>
-            <h2>Make a prediction, then reveal the chain.</h2>
+            <h2>
+              {busy
+                ? "Calculating your estimate…"
+                : "Make a prediction, then reveal the chain."}
+            </h2>
             <p>
-              The result will show the answer, each formula, a sensitivity
-              range, and what the model leaves out.
+              {busy
+                ? "Java is computing the estimate from your submitted assumptions."
+                : "The result will show the answer, each formula, a sensitivity range, and what the model leaves out."}
             </p>
           </div>
         ) : (
           <>
             <p className="sr-only" role="status">
-              Capacity estimate ready. Review the planning range and calculation
-              trail.
+              {busy
+                ? "Calculating a new estimate. The previous result remains visible."
+                : "Capacity estimate ready. Review the planning range and calculation trail."}
             </p>
             <div className="result-heading">
               <div>
@@ -320,7 +360,11 @@ export function CapacityCalculator({
                 </strong>
               </div>
               <i aria-hidden="true">
-                → × {format(calculatedInput?.peakFactor ?? input.peakFactor)}
+                → ×{" "}
+                {format(
+                  calculatedInput?.peakFactor ??
+                    descriptor.defaultInput.peakFactor,
+                )}
               </i>
               <div>
                 <span>Peak reads</span>
@@ -341,7 +385,11 @@ export function CapacityCalculator({
                   <p className="eyebrow">Sensitivity</p>
                   <h3>One estimate needs a range</h3>
                 </div>
-                <p>Traffic at 80%, 100%, and 120% of the stated assumptions.</p>
+                <p>
+                  Traffic at 80%, 100%, and 120% of the submitted estimate.
+                  Rates exclude planning headroom; payload size and latency stay
+                  fixed. These are scenarios, not confidence intervals.
+                </p>
               </div>
               {result.sensitivity.map((point) => (
                 <div className="sensitivity-row" key={point.id}>
