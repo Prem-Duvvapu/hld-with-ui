@@ -7,13 +7,15 @@ export function RateLimiterArchitecture() {
         <p>
           Identity and scope determine which requests compete for the same
           allowance. Counter placement determines how strict that allowance can
-          be across nodes.
+          be across nodes. The playground models one identity and one-unit
+          requests with zero counter latency; authentication and quota
+          allocation below are design responsibilities.
         </p>
       </header>
       <div
         className="rate-architecture"
         role="img"
-        aria-label="Client requests pass through authentication and a rate-limit decision before the protected service. Application nodes use either one shared atomic counter or explicitly allocated local counters."
+        aria-label="Client requests pass through authentication and a rate-limit decision before the protected service. Application nodes use either one shared atomic counter or independent local counters. Allocated quotas are a design alternative, not a modeled feature."
       >
         <article>
           <small>01 · CONTEXT</small>
@@ -65,7 +67,10 @@ export function RateLimiterArchitecture() {
           </li>
           <li>Build a bounded counter key from identity and policy scope.</li>
           <li>Apply one atomic algorithm decision.</li>
-          <li>Return HTTP 429 and retry guidance when rejected.</li>
+          <li>
+            For exhausted quota, return HTTP 429 with optional retry guidance. A
+            counter outage needs an explicit dependency-failure response.
+          </li>
           <li>
             Forward allowed work and observe both limiter health and
             protected-resource saturation.
@@ -106,7 +111,10 @@ export function RateLimiterSequence() {
             <li>Gateway authenticates the same tenant.</li>
             <li>Limiter observes no remaining allowance.</li>
             <li>Decision returns rejected and retry delay.</li>
-            <li>Gateway returns HTTP 429.</li>
+            <li>
+              Gateway returns HTTP 429; optional Retry-After uses an HTTP date
+              or integer seconds, while the model uses milliseconds.
+            </li>
             <li>Protected service receives no work.</li>
           </ol>
         </article>
@@ -118,7 +126,10 @@ export function RateLimiterSequence() {
             <li>Configured policy selects fail-open or fail-closed.</li>
             <li>System records bypass or rejection explicitly.</li>
             <li>Operators correlate counter errors with downstream load.</li>
-            <li>Recovery does not rewrite past decisions.</li>
+            <li>
+              Do not claim the caller exhausted quota or invent a recovery
+              delay. Availability is fixed per run in this model.
+            </li>
           </ol>
         </article>
       </div>

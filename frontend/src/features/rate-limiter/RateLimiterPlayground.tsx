@@ -311,6 +311,10 @@ export function RateLimiterPlayground({
           <div>
             <p className="eyebrow">Inspect the decision</p>
             <h2>Enforcement trace</h2>
+            <p>
+              One identity · one unit per request · atomic decisions · zero
+              counter-network latency. This is an illustrative model.
+            </p>
           </div>
           {result && (
             <span className="time-display">
@@ -355,6 +359,9 @@ function RateLimiterResultView({
   runForm: FormState;
 }) {
   const metrics = result.metrics;
+  const sharedUnavailable =
+    runForm.counterScope === "SHARED" && !runForm.counterBackendAvailable;
+  const fixedWindow = runForm.algorithm === "FIXED_WINDOW";
   return (
     <>
       <div
@@ -398,8 +405,16 @@ function RateLimiterResultView({
         <p>
           Configured limit {metrics.configuredLimit} × {metrics.counters}{" "}
           counter{metrics.counters === 1 ? "" : "s"} ={" "}
-          {metrics.maximumAggregateAllowance} maximum aggregate allowance in
-          this model.
+          {metrics.maximumAggregateAllowance}{" "}
+          {fixedWindow
+            ? "possible allowance per aligned window."
+            : "possible immediate burst when the buckets are full."}
+        </p>
+        <p>
+          {fixedWindow
+            ? "Later windows reset allowance, so this is not a total-run bound."
+            : "Refill permits later requests, so this is not a total-run bound."}{" "}
+          Bypassed requests are not bounded by this configured allowance.
         </p>
       </div>
       <div className="metric-grid" aria-label="Rate limiter metrics">
@@ -424,11 +439,21 @@ function RateLimiterResultView({
           <span>decision state</span>
         </article>
         <article>
-          <small>MAX ALLOWANCE</small>
+          <small>{fixedWindow ? "WINDOW ALLOWANCE" : "BURST CAPACITY"}</small>
           <strong>{metrics.maximumAggregateAllowance}</strong>
-          <span>per window/burst</span>
+          <span>{fixedWindow ? "per aligned window" : "before refill"}</span>
         </article>
       </div>
+      {sharedUnavailable && (
+        <div className="decision-callout warning">
+          <strong>Counter unavailable for this run</strong>
+          <p>
+            Bypasses were not checked against quota. Fail-closed rejections do
+            not prove quota exhaustion. Remaining allowance and recovery time
+            are unknown; no retry delay is supplied.
+          </p>
+        </div>
+      )}
       <details className="trace-details" open>
         <summary>Inspect every request decision</summary>
         <div className="table-scroll">
@@ -439,7 +464,7 @@ function RateLimiterResultView({
                 <th>Time</th>
                 <th>Node</th>
                 <th>Decision</th>
-                <th>Remaining</th>
+                <th>Remaining units</th>
                 <th>Retry after</th>
                 <th>Why</th>
               </tr>
@@ -457,7 +482,7 @@ function RateLimiterResultView({
                       {outcome.decision}
                     </span>
                   </td>
-                  <td>{outcome.remaining}</td>
+                  <td>{sharedUnavailable ? "Unknown" : outcome.remaining}</td>
                   <td>
                     {outcome.retryAfterMs == null
                       ? "—"
@@ -470,6 +495,11 @@ function RateLimiterResultView({
           </table>
         </div>
       </details>
+      <p className="model-note">
+        Remaining units are whole spendable units; a token bucket can retain a
+        fraction. Retry delays are model milliseconds, not HTTP header seconds,
+        and do not reserve future allowance.
+      </p>
       <details className="assumptions">
         <summary>Model assumptions and limits</summary>
         <ul>

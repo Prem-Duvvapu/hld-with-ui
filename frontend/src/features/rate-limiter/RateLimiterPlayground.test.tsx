@@ -142,6 +142,88 @@ describe("Rate limiter playground", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Inputs changed");
   });
 
+  it("labels token capacity as a burst rather than a total-run bound", async () => {
+    const bucketResult: RateLimiterResult = {
+      ...result,
+      outcomes: [0, 0, 500].map((timeMs, index) => ({
+        requestId: `Request ${index + 1}`,
+        nodeId: `Node ${String.fromCharCode(65 + index)}`,
+        timeMs,
+        decision: "ALLOWED",
+        remaining: index === 0 ? 1 : 0,
+        reason: "The shared bucket allowed it.",
+      })),
+      metrics: {
+        ...result.metrics,
+        total: 3,
+        allowed: 3,
+        rejected: 0,
+        configuredLimit: 2,
+        maximumAggregateAllowance: 2,
+      },
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: async () => bucketResult }),
+    );
+    render(<RateLimiterPlayground descriptor={descriptor} />);
+    fireEvent.change(screen.getByLabelText(/^Algorithm/), {
+      target: { value: "TOKEN_BUCKET" },
+    });
+    fireEvent.change(screen.getByLabelText("Limit / capacity"), {
+      target: { value: "2" },
+    });
+    fireEvent.change(screen.getByLabelText(/^Arrival times/), {
+      target: { value: "0, 0, 500" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Run request burst" }));
+    expect(
+      await screen.findByText(/possible immediate burst/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Refill permits later requests/),
+    ).toBeInTheDocument();
+    expect(screen.getByText("BURST CAPACITY")).toBeInTheDocument();
+  });
+
+  it("shows unknown quota during an outage instead of presenting the placeholder zero as exhausted", async () => {
+    const outageResult: RateLimiterResult = {
+      ...result,
+      outcomes: [
+        {
+          ...result.outcomes[0]!,
+          decision: "BYPASSED",
+          remaining: 0,
+          reason: "Counter unavailable.",
+        },
+      ],
+      metrics: {
+        ...result.metrics,
+        total: 1,
+        allowed: 0,
+        rejected: 0,
+        bypassed: 1,
+      },
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: async () => outageResult }),
+    );
+    render(<RateLimiterPlayground descriptor={descriptor} />);
+    fireEvent.click(screen.getByLabelText("Available"));
+    fireEvent.click(screen.getByRole("button", { name: "Run request burst" }));
+    expect(
+      await screen.findByText("Counter unavailable for this run"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "Unknown" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/do not prove quota exhaustion/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Bypassed requests are not bounded/),
+    ).toBeInTheDocument();
+  });
+
   it("rejects malformed arrival schedules before calling the API", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
