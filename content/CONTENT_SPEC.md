@@ -108,6 +108,12 @@ Finalize JSON Schemas in `P0-02`. Required conceptual fields:
 
 Future catalog generation may include all planned entries, but app navigation cannot present a planned module as usable. Required lesson files apply to draft/published entries; placeholder file paths are not allowed for planned entries.
 
+Practice question IDs and derived Guided IDs (`<checkpoint-id>-prediction` and
+`<checkpoint-id>-tradeoff`) share a per-topic answer namespace. The content
+validator rejects collisions; stable topic/activity IDs are bounded to 100
+characters for local answer storage. Preserve retired IDs through explicit
+migration rather than reusing them for a different exercise.
+
 ## 5. Questions and feedback
 
 Questions are structured separately for reuse in the lesson and practice mode. Each has a stable `id`, topic ID, level, kind, prompt, explanation, rubric, and optional source references. Kinds: recall, prediction, diagnosis, design-decision, and calculation. Closed-choice questions additionally declare options, correct option IDs, and distractor explanations.

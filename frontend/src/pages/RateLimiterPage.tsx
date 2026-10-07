@@ -83,6 +83,7 @@ export function RateLimiterPage() {
         questions={data.topic.questions}
         topicId={data.topic.topic.id}
         contentVersion={data.topic.topic.contentVersion}
+        topicTitle={data.topic.topic.title}
         title="Defend the enforcement boundary"
         description="Calculate overshoot, choose failure behavior, and give a two-minute distributed design."
       />

@@ -126,19 +126,31 @@ The model uses one identity, one-token requests, round-robin routing, and zero c
 
 **Cache-Aside** traces hits, misses, TTL expiry, stale origin versions, concurrent cold misses, and cache/origin outages. Corrected model v1.0.1 uses a stable virtual event queue and bounded traces. Bypasses and failed GETs are explicit; limited runs identify incomplete requests. Only key `k` initially exists; UPDATE can create other keys. After a run you can step through the trace on a Cache ← Application → Origin diagram, with a state table and an event inspector. The **Guided** tab walks through eight predict → reveal → explain → tradeoff checkpoints, each verified against the Java trace by a test. **Architecture** and **Request sequence** tabs summarize the baseline. Manual zoom and screen-reader review remain open release gates.
 
-## Saved practice answers
+## Saved learning answers
 
 The **Practice** tab saves your choices, written explanations, and reference-view
 state automatically on this browser. They survive reloads and route changes;
 answers are not sent to the backend or analytics. **Download answers** saves a
-JSON backup. Import, reset, and saving Guided predictions are planned next.
+JSON backup. **Import answers or reset this module** opens backup tools: choose
+a file, review conflicts, then apply. Existing nonempty answers stay unless you
+choose an imported alternative. A saved-module selector also lets you remove
+retired module answers from a full backup. Reset needs confirmation and affects only the
+current module's saved answers.
 
 If browser storage fails, the app keeps new answers in the current session and
 asks you to download them before leaving or reloading. Unreadable or unsupported
 saved data is kept untouched, with **Download previous data** when available.
 Answers from older content remain visible with a review notice; they do not
 automatically count as reviewed for the updated lesson. No completion or mastery
-is inferred. Playground inputs and simulation results are not saved on reload.
+is inferred.
+
+The cache **Guided** tab also saves predictions and tradeoff choices. After a
+reload, explicitly select **Run and reveal** to generate Java evidence again;
+playground inputs and simulation traces are not stored. **Try saving again** can
+recover session answers after storage access/quota returns. Import/reset errors
+preserve existing answers. Backups accept at most 200 records / 256 KiB, with
+4,000 characters per explanation. An edit exceeding the total answer limit is
+refused visibly; download a backup and reset a module to free space.
 
 ## References
 
