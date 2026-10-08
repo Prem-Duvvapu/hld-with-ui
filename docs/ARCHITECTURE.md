@@ -57,13 +57,13 @@ backend/
 content/
   catalog.json            canonical publication metadata
   topics/<id>/            lesson.md, questions.json, resources.json, checkpoints.json (guided)
-  case-studies/<id>/      workshop.json, resources.json (draft URL-shortener Requirements)
+  case-studies/<id>/      workshop.json, resources.json (draft URL-shortener Requirements, Estimates, and API)
 contracts/                OpenAPI, JSON Schemas, API examples
 scripts/                  planning-document validation
 docs/                     plans, decisions, work items, templates, evidence
 ```
 
-**Planned** additions, created only when their work item needs them: remaining workshop stages (HLD-09B/C), progress features (HLD-10); shared Practice/Guided answer storage and import/reset controls are implemented in `features/learning/`. Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
+**Planned** additions, created only when their work item needs them: seven remaining workshop stages and publication (HLD-09B/C), progress features (HLD-10); shared Practice/Guided answer storage and import/reset controls are implemented in `features/learning/`. Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
 
 Backend model packages are organized by capability, not one enormous controller or service per topic. Each model has its own typed event schema with a closed `kind` vocabulary. A shared model interface and renderer registry are **planned** only if a concrete second consumer needs them (see [SIMULATION_SPEC.md](SIMULATION_SPEC.md#3-proposed-java-interface)).
 
@@ -71,7 +71,7 @@ Backend model packages are organized by capability, not one enormous controller 
 
 `content/catalog.json` is the single source for topic identity, prerequisites, order, level, publication state, and available capabilities. Frontend routes and backend lookup derive from it. Startup/build fails on duplicate IDs or invalid references.
 
-Separate editorial status (`planned`, `draft`, `published`) from capabilities (`study`, `simulation`, `estimator`, `case-study`, `practice`). A published lesson may have no simulation; a declared simulation capability requires a registered, validated model. Public home navigation currently shows published topics. The one draft workshop is available only by explicit case URL; it is excluded from topic endpoints. Planned entries can appear only as clearly labeled roadmap information.
+Separate editorial status (`planned`, `draft`, `published`) from capabilities (`study`, `simulation`, `estimator`, `case-study`, `practice`). A published lesson may have no simulation; a declared simulation capability requires a registered, validated model. Public home navigation currently shows published topics. The draft workshop is available only by explicit case URL; it is excluded from topic endpoints. Planned entries can appear only as clearly labeled roadmap information.
 
 Workshops use `workshopPath` and `GET /api/v1/case-studies/{id}` with `{entry, workshop}`. Java loads a matching canonical case path at startup. Typed stages and related-experiment links are checked against the content and API contracts; incomplete cases fail the publication guard. See [decision 0010](decisions/0010-draft-workshop-content-and-answers.md).
 
@@ -79,7 +79,7 @@ Package validated lessons and metadata into the backend artifact during build; d
 
 ## 4. Initial API contract
 
-The topic endpoints serve all four published topics. Simulation endpoints are implemented for `request-flow`, `distributed-rate-limiter`, and `cache-aside`; estimator endpoints for `capacity-estimation`. Case-study delivery serves the draft URL-shortener Requirements resource by explicit ID; search and stats remain **planned**.
+The topic endpoints serve all four published topics. Simulation endpoints are implemented for `request-flow`, `distributed-rate-limiter`, and `cache-aside`; estimator endpoints for `capacity-estimation`. Case-study delivery serves the draft URL-shortener resource (Requirements, Estimates, and API) by explicit ID; search and stats remain **planned**.
 
 | Endpoint | Purpose and behavior |
 | --- | --- |
@@ -104,6 +104,7 @@ Do not retain runs on the server initially. Playback and backwards seek are loca
 - Content belongs in Git; simulation state is request-local and discarded after response.
 - **Module tabs (implemented).** `ModuleShell` mounts a tab's panel on its first visit and keeps it mounted but hidden afterwards, so draft inputs, submitted runs, results, playback position, and practice answers survive tab changes without re-fetching or re-running. Anything that runs on its own reads `usePanelActive()` and pauses while hidden; request-flow playback pauses and waits for the learner to resume. Selecting a tab adds a history entry, so Back and Forward move between views; the default view has no `?view=` parameter, and an unsupported value is replaced by the default without a history entry. Presets stay disabled while a run is pending, so an older response cannot replace a newly selected preset.
 - **Refresh and leaving a module.** Shared Practice choices, explanations, and reference-view state are saved through a versioned local adapter (HLD-08A; [decision 0008](decisions/0008-local-practice-answers.md)). Old content-version answers stay visible and require a fresh comparison. Corrupt/unsupported data is preserved; storage failures keep new work in session memory with downloads and a clear warning. Guided predictions/tradeoff choices now persist with derived checkpoint activity IDs; traces still require an explicit Java run after reload. HLD-08B adds validated import/conflict preview, named module reset, and save retry ([decision 0009](decisions/0009-answer-import-and-guided-state.md)). Invalid/stale imports and failed writes preserve existing answers. Playground inputs/runs/playback and the selected Guided checkpoint remain transient.
+- **Workshop navigation.** HLD-09B1 uses stable `?stage=` URLs for the ordered authored stages. Selecting a stage adds history; one stage is visible at a time. Stage selection is presentation state, not completion evidence. See [decision 0011](decisions/0011-workshop-stage-navigation.md).
 - **Workshop answers.** HLD-09A reuses the existing answer envelope for `<stage>-attempt`, `<stage>-revision`, and `<stage>-check-<criterion>` records. Original and revised reasoning remain distinct; a viewed reference or self-check does not imply completion. Older versions require fresh review. Shared backups/import/reset/recovery apply without a schema migration.
 - Small preferences/progress use localStorage through a versioned adapter. Large experiment exports are downloaded, not silently stored without limits.
 - Store topic IDs, activity states, bookmarks, local answers, and content versions. Avoid marking a topic mastered because the page was opened or scrolled.

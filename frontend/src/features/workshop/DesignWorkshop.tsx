@@ -1,6 +1,6 @@
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import ReactMarkdown from "react-markdown";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import type { Workshop, WorkshopStage } from "../../api/types";
 import { AnswerStorageControls } from "../learning/AnswerStorageControls";
 import {
@@ -77,9 +77,12 @@ function Stage({
     <article className="workshop-stage" aria-labelledby={`stage-${stage.id}`}>
       <div className="workshop-stage-heading">
         <p className="eyebrow">
-          Stage {String(index + 1).padStart(2, "0")} · Design decisions
+          Stage {String(index + 1).padStart(2, "0")} of{" "}
+          {String(workshop.stages.length).padStart(2, "0")} · Design decisions
         </p>
-        <h2 id={`stage-${stage.id}`}>{stage.title}</h2>
+        <h2 id={`stage-${stage.id}`} tabIndex={-1}>
+          {stage.title}
+        </h2>
         <p>Draft → compare → self-check → revise</p>
       </div>
       {older && (
@@ -95,7 +98,7 @@ function Stage({
           <ReactMarkdown>{stage.prompt}</ReactMarkdown>
         </div>
         <label className="workshop-answer">
-          <span>Your original requirements</span>
+          <span>Your original answer</span>
           <textarea
             rows={7}
             maxLength={MAX_ANSWER_LENGTH}
@@ -104,7 +107,7 @@ function Stage({
             onChange={(event) =>
               save("attempt", { kind: "text", text: event.target.value })
             }
-            placeholder="Describe the users, core actions, constraints, and the questions you would ask first…"
+            placeholder="Answer the stage prompt in your own words, with assumptions and reasoning…"
           />
         </label>
         <p className="workshop-hint">
@@ -116,9 +119,7 @@ function Stage({
         </p>
         {!reviewed && (
           <button className="button primary" type="button" onClick={reveal}>
-            {older
-              ? "Review the current reference"
-              : "Reveal reference requirements"}
+            {older ? "Review the current reference" : "Reveal reference answer"}
           </button>
         )}
         {reviewed && (
@@ -208,7 +209,7 @@ function Stage({
               explain one decision and what would make you change it.
             </p>
             <label className="workshop-answer">
-              <span>Your revised requirements</span>
+              <span>Your revised answer</span>
               <textarea
                 rows={7}
                 maxLength={MAX_ANSWER_LENGTH}
@@ -220,7 +221,7 @@ function Stage({
                     true,
                   )
                 }
-                placeholder="State the clarified scope, assumptions, and one justified tradeoff…"
+                placeholder="Improve your answer and explain one decision you would change under different assumptions…"
               />
             </label>
             <p className="workshop-hint">
@@ -233,7 +234,7 @@ function Stage({
       )}
       {stage.experimentLinks.length > 0 && (
         <aside className="workshop-transfer" aria-label="Related experiments">
-          <h3>Connect the requirements to a working model</h3>
+          <h3>Explore this decision in a working model</h3>
           <p>
             These modules open separately. Your notes are saved locally; no
             assumptions are transferred automatically.
@@ -261,6 +262,38 @@ export function DesignWorkshop({
   title: string;
   draft: boolean;
 }) {
+  const [params, setParams] = useSearchParams();
+  const requested = params.get("stage");
+  const requestedIndex = workshop.stages.findIndex(
+    (stage) => stage.id === requested,
+  );
+  const activeIndex = requestedIndex < 0 ? 0 : requestedIndex;
+  const active = workshop.stages[activeIndex]!;
+  const stagePanels = useRef<HTMLDivElement>(null);
+  const pendingFocus = useRef<string | null>(null);
+  // Router navigation may commit after an animation frame. Focus only after
+  // the selected panel becomes visible, and only for explicit stage actions.
+  useLayoutEffect(() => {
+    if (pendingFocus.current !== active.id) return;
+    pendingFocus.current = null;
+    stagePanels.current
+      ?.querySelector<HTMLHeadingElement>(`#stage-${active.id}`)
+      ?.focus();
+  }, [active.id, requested]);
+  function navigate(index: number) {
+    const stage = workshop.stages[index];
+    if (!stage) return;
+    if (index !== activeIndex || (requested !== null && requestedIndex < 0)) {
+      pendingFocus.current = stage.id;
+      const next = new URLSearchParams(params);
+      next.set("stage", stage.id);
+      setParams(next, { replace: index === activeIndex });
+    } else {
+      stagePanels.current
+        ?.querySelector<HTMLHeadingElement>(`#stage-${stage.id}`)
+        ?.focus();
+    }
+  }
   return (
     <div className="design-workshop">
       {draft && (
@@ -292,9 +325,60 @@ export function DesignWorkshop({
         topicTitle={title}
         label="Workshop answer storage"
       />
-      {workshop.stages.map((stage, index) => (
-        <Stage key={stage.id} stage={stage} workshop={workshop} index={index} />
-      ))}
+      <nav className="workshop-navigation" aria-label="Workshop stages">
+        <div className="workshop-navigation-heading">
+          <p className="eyebrow">Choose a design stage</p>
+          <p>Each stage keeps its own answer and self-checks.</p>
+        </div>
+        <ol>
+          {workshop.stages.map((stage, index) => (
+            <li key={stage.id}>
+              <button
+                type="button"
+                aria-current={index === activeIndex ? "step" : undefined}
+                onClick={() => navigate(index)}
+              >
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                {stage.title}
+              </button>
+            </li>
+          ))}
+        </ol>
+      </nav>
+      {requested !== null && requestedIndex < 0 && (
+        <p className="workshop-stage-notice" role="status">
+          The requested stage is unavailable. Showing {active.title}, the first
+          authored stage. Choose a stage above to continue.
+        </p>
+      )}
+      <div ref={stagePanels}>
+        {workshop.stages.map((stage, index) => (
+          <div key={stage.id} hidden={index !== activeIndex}>
+            <Stage stage={stage} workshop={workshop} index={index} />
+          </div>
+        ))}
+      </div>
+      <div className="workshop-stage-actions" aria-label="Stage navigation">
+        <button
+          type="button"
+          className="button"
+          disabled={activeIndex === 0}
+          onClick={() => navigate(activeIndex - 1)}
+        >
+          Previous stage
+        </button>
+        <p>
+          Stage {activeIndex + 1} of {workshop.stages.length} · {active.title}
+        </p>
+        <button
+          type="button"
+          className="button"
+          disabled={activeIndex === workshop.stages.length - 1}
+          onClick={() => navigate(activeIndex + 1)}
+        >
+          Next stage
+        </button>
+      </div>
     </div>
   );
 }

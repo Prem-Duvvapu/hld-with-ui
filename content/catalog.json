@@ -125,24 +125,31 @@
     "id": "url-shortener",
     "kind": "case-study",
     "title": "URL Shortener Design Workshop",
-    "summary": "Turn a vague short-link request into clear requirements, correctness rules, and explicit assumptions before choosing an architecture.",
+    "summary": "Define a short-link service's requirements, estimate its demand, and defend create/redirect contracts before choosing storage and architecture.",
     "category": "Case Studies",
     "level": "Intermediate",
     "order": 5,
     "status": "draft",
     "prerequisites": ["request-flow", "capacity-estimation", "cache-aside"],
     "outcomes": [
-      "Separate required product behavior from assumptions and non-goals.",
-      "Explain why expired links and ambiguous create retries need explicit policies.",
-      "Revise and defend a requirements brief in your own words."
+      "Separate required behavior from assumptions, non-goals and correctness constraints.",
+      "Calculate demand and data growth, then explain how changing one assumption affects the design.",
+      "Defend bounded create retries, redirect caching, expiry and error behavior."
     ],
     "capabilities": ["case-study"],
     "workshopPath": "case-studies/url-shortener/workshop.json",
     "resourcesPath": "case-studies/url-shortener/resources.json",
     "simulationIds": [],
     "estimatorIds": [],
-    "contentVersion": "1.0.0",
+    "contentVersion": "1.1.0",
     "reviewedAt": "2026-10-08",
-    "sourceIds": ["rfc-9110-http-semantics", "rfc-3986-uri-syntax"]
+    "sourceIds": [
+      "rfc-9110-http-semantics",
+      "rfc-3986-uri-syntax",
+      "rfc-9111-http-caching",
+      "little-law",
+      "aws-performance-efficiency",
+      "rfc-6585-429"
+    ]
   }
 ]

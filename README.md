@@ -9,7 +9,7 @@ Learn high-level system design by reading, experimenting, diagnosing failures, a
 
 The idea is simple: **see a system work, change one condition, explain what happened, then choose a design.** Each module will help you answer both “How does this work?” and “How would I explain it to my team or in an interview?”
 
-**Status: four working learning modules.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener Requirements stage is available by direct link; the remaining workshop stages and later roadmap modules remain planned.
+**Status: four working learning modules.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers Requirements, Estimates, and API stages by direct link; seven further stages and later roadmap modules remain planned.
 
 
 ## Visitor analytics
@@ -132,7 +132,11 @@ Open `/case-studies/url-shortener` on your local app, or [try the draft workshop
 
 The **Requirements** stage helps you describe create/redirect behavior, expiry and ownership correctness, workload/service objectives, abuse policy, and non-goals before drawing components. Write an original attempt, reveal one worked reference, self-check, then write a separate revision. Both answers stay visible and save on this browser using the same backup/import/reset controls as Practice. Reference reading remains available when saving is blocked.
 
-Only this first stage is implemented. Estimates, API/data design, architecture/flows, scaling, failures, operations, and interview defense remain planned. The workshop is a learning exercise and creates no short links. Full publication also needs the outstanding manual learning/accessibility reviews.
+The **Estimates** stage works through read/write demand, storage, bandwidth, and mean concurrency using the real Capacity Calculator. Change peak factor, read percentage, or record size and explain which outputs change. The **API** stage specifies create/redirect behavior, input validation, expiry, cache policy, errors, and a bounded retry contract. These are design decisions, not executable shortening endpoints.
+
+Use the stage navigation to focus on one decision at a time. Direct links such as `/case-studies/url-shortener?stage=estimates` and `?stage=api` survive refresh; Back/Forward and saved answers let you return to your reasoning. Content version 1.1.0 preserves older notes but asks for fresh reference review and self-checks.
+
+Data, baseline architecture, flows, evolution, failures, operations, and interview defense remain planned. The workshop is a learning exercise and creates no short links. Full publication also needs the outstanding manual learning/accessibility reviews. See [HLD-09B1](docs/work-items/HLD-09B1.md) for evidence and [the delivery incident](docs/INCIDENTS.md) for the hosted backend deployment issue.
 
 ## Saved learning answers
 

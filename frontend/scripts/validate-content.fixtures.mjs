@@ -61,7 +61,7 @@ function rejectChange(change, expected) {
 test("reject publication before the full design journey exists", () => {
   rejectChange((catalog) => {
     catalog.find((entry) => entry.id === "url-shortener").status = "published";
-  }, /published workshop missing stage estimates/);
+  }, /published workshop missing stage data/);
 });
 
 test("reject mismatched content version", () => {
@@ -105,4 +105,20 @@ test("reject cross-case resource paths", () => {
     catalog.find((entry) => entry.id === "url-shortener").workshopPath =
       "case-studies/another-case/workshop.json";
   }, /workshopPath must belong to this case study/);
+});
+
+test("reject an unresolved source in a later API stage", () => {
+  rejectChange((_, workshop) => {
+    workshop.stages
+      .find((stage) => stage.id === "api")
+      .sourceIds.push("missing-api-source");
+  }, /unknown source missing-api-source/);
+});
+
+test("reject estimates linked to a draft case instead of a working estimator", () => {
+  rejectChange((_, workshop) => {
+    workshop.stages.find(
+      (stage) => stage.id === "estimates",
+    ).experimentLinks[0].topicId = "url-shortener";
+  }, /unavailable experiment url-shortener/);
 });
