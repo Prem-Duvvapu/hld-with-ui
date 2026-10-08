@@ -97,7 +97,7 @@ Every case includes baseline → observed limitation → justified evolution. Al
 
 | ID | Main prerequisites | Required design challenge | Release |
 | --- | --- | --- | --- |
-| `url-shortener` | First three R1 concepts | Key generation and collision handling, redirects, read-heavy cache, hot links, expiry/abuse | R1 |
+| `url-shortener` | `request-flow`, `capacity-estimation`, `cache-aside` | Key generation and collision handling, redirects, read-heavy cache, hot links, expiry/abuse | R1 |
 | `notification-service` | `queues-delivery`, `idempotency`, `distributed-rate-limiter` | User preferences, provider failure, retry/DLQ, per-recipient fairness | R2 |
 | `rate-limiter-workshop` | `distributed-rate-limiter`, `scaling-state`, `replication` | Enforcement location, overshoot tolerance, hot identities, backend failure | R2 |
 | `chat-service` | `streams-pubsub`, `api-communication`, `replication` | Ordering scope, reconnect, offline delivery, receipts and presence | R2 |

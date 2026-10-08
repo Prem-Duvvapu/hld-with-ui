@@ -1,0 +1,24 @@
+[
+  {
+    "id": "rfc-9110-http-semantics",
+    "title": "RFC 9110: HTTP Semantics",
+    "organization": "IETF",
+    "url": "https://www.rfc-editor.org/rfc/rfc9110.html",
+    "sourceType": "standard",
+    "relevantSections": "15.4.3 (302), 15.5.5 (404), 15.5.11 (410)",
+    "supports": "Temporary redirect semantics and the distinction between an unavailable current representation and a resource likely to be permanently gone; expiry response remains a product policy.",
+    "reviewedAt": "2026-10-08",
+    "accessStatus": "available"
+  },
+  {
+    "id": "rfc-3986-uri-syntax",
+    "title": "RFC 3986: URI Generic Syntax",
+    "organization": "IETF",
+    "url": "https://www.rfc-editor.org/rfc/rfc3986.html",
+    "sourceType": "standard",
+    "relevantSections": "3 (syntax components), 7 (security considerations)",
+    "supports": "URI scheme and authority components and security considerations; the HTTP(S)-only validation policy is an explicit workshop design choice, not a safety guarantee.",
+    "reviewedAt": "2026-10-08",
+    "accessStatus": "available"
+  }
+]

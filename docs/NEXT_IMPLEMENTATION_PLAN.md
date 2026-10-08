@@ -2,7 +2,7 @@
 
 Prepared 2026-10-05 for Opus 5.5 or another coding agent. Baseline: `add46a4` (PR #30). This is a plan, not evidence that the work below has shipped.
 
-**Progress since the baseline (2026-10-05):** HLD-05 cache playback (#32), HLD-06A guided checkpoints (#34), HLD-06B cache architecture/sequence and lesson (#35), and HLD-07A request-flow failure teaching are merged; see their work items in `docs/work-items/`. HLD-07B capacity review and HLD-07C rate-limiter source/learning review are also implemented; see their work items. HLD-08A implements shared Practice answer persistence and recovery; see [its work item](work-items/HLD-08A.md). HLD-08B adds Guided answer persistence and validated import/reset/recovery; see [its work item](work-items/HLD-08B.md). **Resume at HLD-09A (one draft URL-shortener Requirements stage).** Manual zoom, screen-reader, and newcomer teach-back gates remain open for every module.
+**Progress since the baseline (2026-10-05):** HLD-05 cache playback (#32), HLD-06A guided checkpoints (#34), HLD-06B cache architecture/sequence and lesson (#35), and HLD-07A request-flow failure teaching are merged; see their work items in `docs/work-items/`. HLD-07B capacity review and HLD-07C rate-limiter source/learning review are also implemented; see their work items. HLD-08A implements shared Practice answer persistence and recovery; see [its work item](work-items/HLD-08A.md). HLD-08B adds Guided answer persistence and validated import/reset/recovery; see [its work item](work-items/HLD-08B.md). HLD-09A implements one draft URL-shortener Requirements stage with contract/API/route and saved answers; see [its work item](work-items/HLD-09A.md). **Resume at HLD-09B (bounded Estimates/API stages).** Manual zoom, screen-reader, and newcomer teach-back gates remain open for every module.
 
 ## 1. Objective and scope
 
@@ -144,7 +144,7 @@ Preserve the invariant: an active short code maps to one target and cannot silen
 
 ### Slice C — publish
 
-Verify every stage, save/resume, content/contract/capability agreement, deep links, source claims, mobile/theme/keyboard behavior, and import/export. Publish only after prerequisite release gates and all advertised stages pass. Record what a learner can now explain and the remaining model/design limitations.
+Verify every stage, save/resume, content/contract/capability agreement, deep links, source claims, mobile/theme/keyboard behavior, and import/export. Add published-case discovery from Java/the canonical catalog; the current topic endpoint intentionally excludes cases. Publish only after prerequisite release gates and all advertised stages pass. Record what a learner can now explain and the remaining model/design limitations.
 
 ## 9. HLD-10 and HLD-11: discovery and release
 

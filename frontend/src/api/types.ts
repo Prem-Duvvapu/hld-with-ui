@@ -3,6 +3,9 @@ import type { components } from "./generated";
 // Application names are aliases over the generated OpenAPI contract. Add a
 // schema to contracts/openapi.json before using a new API shape in the UI.
 export type CatalogEntry = components["schemas"]["CatalogEntry"];
+export type CaseStudyDetail = components["schemas"]["CaseStudyDetail"];
+export type Workshop = components["schemas"]["Workshop"];
+export type WorkshopStage = components["schemas"]["WorkshopStage"];
 export type Capability = CatalogEntry["capabilities"][number];
 export type QuestionOption = components["schemas"]["QuestionOption"];
 export type Question = components["schemas"]["Question"];

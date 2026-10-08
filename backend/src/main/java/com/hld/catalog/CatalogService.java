@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -16,23 +18,37 @@ import tools.jackson.databind.ObjectMapper;
 public class CatalogService {
     private final ObjectMapper mapper;
     private final List<CatalogEntry> topics;
+    private final Map<String, CaseStudyDetail> workshops;
 
     public CatalogService(ObjectMapper mapper) {
         this.mapper = mapper;
         this.topics = readJson("content/catalog.json", new TypeReference<>() {});
         validateCatalog(topics);
+        Map<String, CaseStudyDetail> loaded = new LinkedHashMap<>();
+        for (CatalogEntry entry : topics) {
+            if (!"case-study".equals(entry.kind()) || "planned".equals(entry.status())) continue;
+            String expectedPath = "case-studies/" + entry.id() + "/workshop.json";
+            if (!expectedPath.equals(entry.workshopPath())
+                    || !entry.capabilities().contains("case-study")) {
+                throw new IllegalStateException("Workshop resource path or capability is invalid");
+            }
+            Workshop workshop = readJson("content/" + expectedPath, new TypeReference<>() {});
+            WorkshopValidator.validate(entry, workshop, topics);
+            loaded.put(entry.id(), new CaseStudyDetail(entry, workshop));
+        }
+        this.workshops = Map.copyOf(loaded);
     }
 
     public List<CatalogEntry> publishedTopics() {
         return topics.stream()
-                .filter(topic -> "published".equals(topic.status()))
+                .filter(topic -> "topic".equals(topic.kind()) && "published".equals(topic.status()))
                 .sorted(Comparator.comparingInt(CatalogEntry::order))
                 .toList();
     }
 
     public TopicDetail topic(String id) {
         CatalogEntry entry = topics.stream()
-                .filter(topic -> topic.id().equals(id) && "published".equals(topic.status()))
+                .filter(topic -> topic.id().equals(id) && "topic".equals(topic.kind()) && "published".equals(topic.status()))
                 .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No published topic has id " + id + "."));
         String lesson = readText("content/" + entry.lessonPath());
@@ -43,13 +59,23 @@ public class CatalogService {
         return new TopicDetail(entry, lesson, questions, checkpoints);
     }
 
+    public CaseStudyDetail caseStudy(String id) {
+        CaseStudyDetail detail = workshops.get(id);
+        if (detail == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No available case study has id " + id + ".");
+        }
+        return detail;
+    }
+
     private void validateCatalog(List<CatalogEntry> entries) {
         long distinct = entries.stream().map(CatalogEntry::id).distinct().count();
         if (distinct != entries.size()) {
             throw new IllegalStateException("Catalog IDs must be unique");
         }
         entries.forEach(entry -> {
-            if (entry.id() == null || entry.id().isBlank() || entry.capabilities() == null) {
+            if (!WorkshopValidator.identifier(entry.id()) || entry.capabilities() == null
+                    || !("topic".equals(entry.kind()) || "case-study".equals(entry.kind()))
+                    || !("planned".equals(entry.status()) || "draft".equals(entry.status()) || "published".equals(entry.status()))) {
                 throw new IllegalStateException("Catalog entry is incomplete");
             }
         });

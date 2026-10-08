@@ -9,7 +9,7 @@ Learn high-level system design by reading, experimenting, diagnosing failures, a
 
 The idea is simple: **see a system work, change one condition, explain what happened, then choose a design.** Each module will help you answer both “How does this work?” and “How would I explain it to my team or in an interview?”
 
-**Status: four working learning modules.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. Later roadmap modules remain planned.
+**Status: four working learning modules.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener Requirements stage is available by direct link; the remaining workshop stages and later roadmap modules remain planned.
 
 
 ## Visitor analytics
@@ -126,6 +126,14 @@ The model uses one identity, one-token requests, round-robin routing, and zero c
 
 **Cache-Aside** traces hits, misses, TTL expiry, stale origin versions, concurrent cold misses, and cache/origin outages. Corrected model v1.0.1 uses a stable virtual event queue and bounded traces. Bypasses and failed GETs are explicit; limited runs identify incomplete requests. Only key `k` initially exists; UPDATE can create other keys. After a run you can step through the trace on a Cache ← Application → Origin diagram, with a state table and an event inspector. The **Guided** tab walks through eight predict → reveal → explain → tradeoff checkpoints, each verified against the Java trace by a test. **Architecture** and **Request sequence** tabs summarize the baseline. Manual zoom and screen-reader review remain open release gates.
 
+## Draft URL-shortener workshop
+
+Open `/case-studies/url-shortener` on your local app, or [try the draft workshop](https://hld-with-ui.vercel.app/case-studies/url-shortener) after the frontend and Java deployment includes this change. It is deliberately excluded from the home page's published modules.
+
+The **Requirements** stage helps you describe create/redirect behavior, expiry and ownership correctness, workload/service objectives, abuse policy, and non-goals before drawing components. Write an original attempt, reveal one worked reference, self-check, then write a separate revision. Both answers stay visible and save on this browser using the same backup/import/reset controls as Practice. Reference reading remains available when saving is blocked.
+
+Only this first stage is implemented. Estimates, API/data design, architecture/flows, scaling, failures, operations, and interview defense remain planned. The workshop is a learning exercise and creates no short links. Full publication also needs the outstanding manual learning/accessibility reviews.
+
 ## Saved learning answers
 
 The **Practice** tab saves your choices, written explanations, and reference-view
@@ -134,8 +142,8 @@ answers are not sent to the backend or analytics. **Download answers** saves a
 JSON backup. **Import answers or reset this module** opens backup tools: choose
 a file, review conflicts, then apply. Existing nonempty answers stay unless you
 choose an imported alternative. A saved-module selector also lets you remove
-retired module answers from a full backup. Reset needs confirmation and affects only the
-current module's saved answers.
+retired module answers from a full backup. Reset needs confirmation and affects
+only saved answers for the module named in the confirmation.
 
 If browser storage fails, the app keeps new answers in the current session and
 asks you to download them before leaving or reloading. Unreadable or unsupported

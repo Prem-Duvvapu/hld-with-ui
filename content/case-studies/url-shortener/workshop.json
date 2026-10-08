@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "url-shortener",
+  "contentVersion": "1.0.0",
+  "introduction": "Start with the promise, then choose the components. In this first workshop stage, turn \u201cbuild a short-link service\u201d into behavior you can test and assumptions you can explain. Later architecture and API stages are still being authored.",
+  "invariant": "An active short code resolves to exactly one destination and never silently changes ownership. Unknown or expired codes never redirect, including through a cache.",
+  "stages": [
+    {
+      "id": "requirements",
+      "title": "Requirements and scope",
+      "prompt": "You are asked to design a service that creates short links and redirects readers. Write a short requirements brief: required operations, expiry and ownership rules, expected traffic, one measurable reliability or latency objective, abuse behavior, and non-goals. Which behavior must remain correct when a cache or database fails? State questions you would ask before choosing components.",
+      "reference": "## Start with what the product must do\n\nA short link is a stable name for a destination. Before drawing servers, agree on what creating and opening that name must mean.\n\n### Required behavior\n\n- Create a short code for an absolute HTTP(S) destination. Reject unsupported schemes, missing hosts, and destinations that point back into our own redirect service. This is a product validation policy; URI syntax alone does not establish that a destination is safe.\n- Allow an optional expiry time. An active code identifies one destination. Creation must not silently replace someone else's code.\n- Resolve a known, active code and redirect the reader. Unknown and expired codes must never redirect. Choose and document whether expired codes return 404 or 410; do not reveal a deleted link's history if the privacy policy forbids it.\n- Keep destination ownership stable. Do not reuse expired codes in this introductory design: an old shared link could otherwise lead to a new owner's destination.\n- Define abuse controls for creation and opening links, and a takedown process. Automatic malicious-content scanning is outside this first scope. Creating a link does not require our server to fetch its destination.\n\n### Correctness questions to resolve\n\nAn expiry check uses the link's expiry timestamp, including on a cache hit. At exactly the expiry time the link is expired. Cache TTL alone cannot promise this invariant if entries outlive the link.\n\nA create request can time out after the server has stored a link. A retry must have a stated policy: a bounded client request key can return the original result, or the product can explicitly accept duplicate links. Do not assume a timeout proves nothing was created. Detailed retry and key-retention design belongs in the later API stage.\n\n### Assumptions to confirm with the interviewer or product owner\n\nFor this exercise, assume 1,000,000 daily users and 10 operations per user per day, of which 90% open links and 10% create them, with a peak factor of 5. These are illustrative assumptions, not measured demand. The Capacity module can calculate their effect.\n\nPropose a redirect latency objective of p95 under 200 ms and 99.9% successful valid redirects over a 30-day window. Define the measurement boundary as the service's redirect response, excluding the destination page's load. Decide how planned maintenance and deliberate abuse rejection affect the success denominator. These targets are discussion inputs, not guarantees proved by our estimator or simulator. Availability for cached reads may differ from new writes during a store outage.\n\n### Non-goals for the first design\n\nCustom aliases, editable destinations, detailed click analytics, user accounts, multi-region writes, and a production shortening endpoint are outside this stage. Adding revocation later changes freshness requirements: a long cache TTL cannot promise immediate takedown.\n\n### A tempting wrong answer\n\n\u201cAdd Redis, a queue, and many service instances\u201d names tools before agreeing what must remain correct. First define active-link ownership, expiry, expected operations, failure outcomes, and load. Introduce components only when an access pattern or bottleneck justifies them.\n\n### Explain it aloud\n\n**To a teammate:** \u201cWe create a stable code, and we redirect only while that code is active. Expiry must still be checked on cached reads. We need a retry policy for uncertain creates and explicit traffic and reliability assumptions before selecting infrastructure.\u201d\n\n**In an interview:** State create/resolve behavior, the ownership and expiry invariant, the read-heavy assumptions, measurable service objectives, and the first non-goals. Then ask which correctness or availability constraint is most important.\n\n**Changed condition:** If links can be revoked immediately, what guarantee must cache invalidation provide? If click analytics becomes required, should recording a click delay a redirect? Name the new constraint before changing the design.\n\n### Sources and scope\n\n[RFC 9110, sections 15.4.3, 15.5.5 and 15.5.11](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.4.3) defines temporary redirects and the distinction between 404 and 410. The expired-code response above is a chosen product policy. [RFC 3986, sections 3 and 7](https://www.rfc-editor.org/rfc/rfc3986.html#section-3) describes URI components and security considerations; accepting only HTTP(S) is our scoped design choice. Neither standard mandates this workshop's traffic, availability, ownership, or retry assumptions.",
+      "rubric": [
+        {
+          "id": "behavior",
+          "prompt": "I named create and resolve behavior, plus unknown and expired-link outcomes."
+        },
+        {
+          "id": "correctness",
+          "prompt": "I protected one-code/one-owner and expiry correctness, including cached reads and uncertain creates."
+        },
+        {
+          "id": "assumptions",
+          "prompt": "I stated traffic assumptions and a measurable objective with a clear observation boundary."
+        },
+        {
+          "id": "scope",
+          "prompt": "I stated abuse policy and non-goals, then named a condition that would change the design."
+        }
+      ],
+      "experimentLinks": [
+        {
+          "topicId": "capacity-estimation",
+          "label": "Estimate the stated workload",
+          "instruction": "Select the Interview baseline preset in Calculator. Compare peak factor 5 with 10; note which rates change and which daily totals stay fixed."
+        },
+        {
+          "topicId": "cache-aside",
+          "label": "Inspect expiry and stale data",
+          "instruction": "Run the baseline preset in Playground. Step to the origin update and the later stale hit. Explain why a short-link expiry requirement must be checked independently of cache freshness."
+        },
+        {
+          "topicId": "request-flow",
+          "label": "Test what a burst changes",
+          "instruction": "Select the Finite queue overload preset in Playground. Explain why a latency objective alone does not establish enough service capacity."
+        }
+      ],
+      "sourceIds": ["rfc-9110-http-semantics", "rfc-3986-uri-syntax"]
+    }
+  ]
+}
