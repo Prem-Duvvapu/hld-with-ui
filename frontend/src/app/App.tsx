@@ -26,6 +26,11 @@ const CacheAsidePage = lazy(() =>
     default: module.CacheAsidePage,
   })),
 );
+const WorkshopPage = lazy(() =>
+  import("../pages/WorkshopPage").then((module) => ({
+    default: module.WorkshopPage,
+  })),
+);
 
 export function App() {
   return (
@@ -69,6 +74,7 @@ export function App() {
               element={<RateLimiterPage />}
             />
             <Route path="/topics/cache-aside" element={<CacheAsidePage />} />
+            <Route path="/case-studies/:id" element={<WorkshopPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>

@@ -120,5 +120,29 @@
       "caffeine-refresh",
       "tinylfu-admission-policy"
     ]
+  },
+  {
+    "id": "url-shortener",
+    "kind": "case-study",
+    "title": "URL Shortener Design Workshop",
+    "summary": "Turn a vague short-link request into clear requirements, correctness rules, and explicit assumptions before choosing an architecture.",
+    "category": "Case Studies",
+    "level": "Intermediate",
+    "order": 5,
+    "status": "draft",
+    "prerequisites": ["request-flow", "capacity-estimation", "cache-aside"],
+    "outcomes": [
+      "Separate required product behavior from assumptions and non-goals.",
+      "Explain why expired links and ambiguous create retries need explicit policies.",
+      "Revise and defend a requirements brief in your own words."
+    ],
+    "capabilities": ["case-study"],
+    "workshopPath": "case-studies/url-shortener/workshop.json",
+    "resourcesPath": "case-studies/url-shortener/resources.json",
+    "simulationIds": [],
+    "estimatorIds": [],
+    "contentVersion": "1.0.0",
+    "reviewedAt": "2026-10-08",
+    "sourceIds": ["rfc-9110-http-semantics", "rfc-3986-uri-syntax"]
   }
 ]

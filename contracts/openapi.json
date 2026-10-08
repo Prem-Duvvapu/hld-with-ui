@@ -367,6 +367,47 @@
           }
         }
       }
+    },
+    "/api/v1/case-studies/{id}": {
+      "get": {
+        "operationId": "getCaseStudy",
+        "summary": "Read a draft or published design workshop by explicit ID",
+        "description": "Draft workshops are accessible by direct link, excluded from ordinary published discovery. This endpoint serves educational content; it creates no short links.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "maxLength": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Versioned workshop content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseStudyDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No authored case study with this ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -408,8 +449,6 @@
           "prerequisites",
           "outcomes",
           "capabilities",
-          "lessonPath",
-          "questionsPath",
           "resourcesPath",
           "simulationIds",
           "estimatorIds",
@@ -442,7 +481,7 @@
           },
           "status": {
             "type": "string",
-            "enum": ["published"]
+            "enum": ["draft", "published"]
           },
           "prerequisites": {
             "type": "array",
@@ -507,6 +546,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "workshopPath": {
+            "type": "string",
+            "description": "Present for authored case-study entries; absent for topics."
           }
         }
       },
@@ -2317,6 +2360,166 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "RubricCriterion": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "prompt"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "maxLength": 100
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        }
+      },
+      "ExperimentLink": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["topicId", "label", "instruction"],
+        "properties": {
+          "topicId": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "maxLength": 100
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "instruction": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        }
+      },
+      "WorkshopStage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "prompt",
+          "reference",
+          "rubric",
+          "experimentLinks",
+          "sourceIds"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "maxLength": 100
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "reference": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "rubric": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/RubricCriterion"
+            }
+          },
+          "experimentLinks": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 10,
+            "items": {
+              "$ref": "#/components/schemas/ExperimentLink"
+            }
+          },
+          "sourceIds": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "maxLength": 100
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "Workshop": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "id",
+          "contentVersion",
+          "introduction",
+          "invariant",
+          "stages"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "maxLength": 100
+          },
+          "contentVersion": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+            "maxLength": 32
+          },
+          "introduction": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "invariant": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "stages": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/WorkshopStage"
+            }
+          }
+        }
+      },
+      "CaseStudyDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["entry", "workshop"],
+        "properties": {
+          "entry": {
+            "$ref": "#/components/schemas/CatalogEntry"
+          },
+          "workshop": {
+            "$ref": "#/components/schemas/Workshop"
           }
         }
       }

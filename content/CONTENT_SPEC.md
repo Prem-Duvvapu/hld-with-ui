@@ -17,7 +17,9 @@ content/topics/<topic-id>/checkpoints.json   # only with the guided capability
 
 Guided checkpoints (`contracts/checkpoints.schema.json`) follow predict → reveal → explain → choose. Each one names a Java preset and a target event by operation, event kind, and occurrence, never by array index or narration. A Java test runs every preset and checks that the target exists and that the numbers in the explanation match the trace.
 
-Case studies use `content/case-studies/<case-id>/`. Add its metadata to the canonical `content/catalog.json` once that file exists. Simulation presets and model fixtures live with the contracts/models, not as duplicate executable logic embedded in prose.
+Case studies use `content/case-studies/<case-id>/workshop.json` and `resources.json`. A draft can contain one working stage; its full design journey remains unpublished. `contracts/workshop.schema.json` and OpenAPI define the typed resource. Each ordered stage contains `id`, `title`, `prompt`, `reference`, `rubric`, `experimentLinks`, and `sourceIds`; links name a published experiment topic and explicit input instructions. Case metadata uses `workshopPath`, not placeholder lesson/question paths.
+
+Add its metadata to the canonical `content/catalog.json`. Simulation presets and model fixtures live with the contracts/models, not as duplicate executable logic embedded in prose.
 
 Do not create placeholder lessons just to fill the curriculum. Register a planned item as planned; publish only after the relevant gates pass.
 
@@ -107,6 +109,8 @@ Finalize JSON Schemas in `P0-02`. Required conceptual fields:
 | `reviewedAt`, `sourceIds` | Review date and corresponding resource entries |
 
 Future catalog generation may include all planned entries, but app navigation cannot present a planned module as usable. Required lesson files apply to draft/published entries; placeholder file paths are not allowed for planned entries.
+
+Workshop activities derive as `<stage-id>-attempt`, `<stage-id>-revision`, and `<stage-id>-check-<criterion-id>`. Stage/rubric and all derived activity IDs must be unique and bounded. Only the original authored case resource supplies IDs; do not create a second hand-maintained frontend/backend topic catalog. The current first-release publication guard requires requirements, estimates, api, data, baseline, flows, evolution, failures, operations, and defense; passing it does not replace manual learning/source/accessibility review.
 
 Practice question IDs and derived Guided IDs (`<checkpoint-id>-prediction` and
 `<checkpoint-id>-tradeoff`) share a per-topic answer namespace. The content

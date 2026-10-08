@@ -43,7 +43,7 @@ Current layout:
 frontend/
   e2e/                    Playwright browser journeys (`*.e2e.ts`)
   src/app/                routing and application shell
-  src/pages/              one lazy route page per published module, home, not-found
+  src/pages/              lazy module/workshop routes, home, not-found
   src/components/         ModuleShell, async states, shared controls
   src/features/learning/  Study and Practice views shared by topics
   src/features/<module>/  request-flow, capacity-estimation, rate-limiter, cache-aside
@@ -57,12 +57,13 @@ backend/
 content/
   catalog.json            canonical publication metadata
   topics/<id>/            lesson.md, questions.json, resources.json, checkpoints.json (guided)
+  case-studies/<id>/      workshop.json, resources.json (draft URL-shortener Requirements)
 contracts/                OpenAPI, JSON Schemas, API examples
 scripts/                  planning-document validation
 docs/                     plans, decisions, work items, templates, evidence
 ```
 
-**Planned** additions, created only when their work item needs them: `content/case-studies/<id>/` for workshops (HLD-09), progress features (HLD-10); shared Practice/Guided answer storage and import/reset controls are implemented in `features/learning/`. Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
+**Planned** additions, created only when their work item needs them: remaining workshop stages (HLD-09B/C), progress features (HLD-10); shared Practice/Guided answer storage and import/reset controls are implemented in `features/learning/`. Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
 
 Backend model packages are organized by capability, not one enormous controller or service per topic. Each model has its own typed event schema with a closed `kind` vocabulary. A shared model interface and renderer registry are **planned** only if a concrete second consumer needs them (see [SIMULATION_SPEC.md](SIMULATION_SPEC.md#3-proposed-java-interface)).
 
@@ -70,13 +71,15 @@ Backend model packages are organized by capability, not one enormous controller 
 
 `content/catalog.json` is the single source for topic identity, prerequisites, order, level, publication state, and available capabilities. Frontend routes and backend lookup derive from it. Startup/build fails on duplicate IDs or invalid references.
 
-Separate editorial status (`planned`, `draft`, `published`) from capabilities (`study`, `simulation`, `estimator`, `case-study`, `practice`). A published lesson may have no simulation; a declared simulation capability requires a registered, validated model. Public navigation shows published entries; planned entries can appear only as clearly labeled roadmap information.
+Separate editorial status (`planned`, `draft`, `published`) from capabilities (`study`, `simulation`, `estimator`, `case-study`, `practice`). A published lesson may have no simulation; a declared simulation capability requires a registered, validated model. Public home navigation currently shows published topics. The one draft workshop is available only by explicit case URL; it is excluded from topic endpoints. Planned entries can appear only as clearly labeled roadmap information.
+
+Workshops use `workshopPath` and `GET /api/v1/case-studies/{id}` with `{entry, workshop}`. Java loads a matching canonical case path at startup. Typed stages and related-experiment links are checked against the content and API contracts; incomplete cases fail the publication guard. See [decision 0010](decisions/0010-draft-workshop-content-and-answers.md).
 
 Package validated lessons and metadata into the backend artifact during build; do not depend on the process working directory or fetch GitHub at runtime. The build must run from a clean checkout and Docker context with those resources included. Do not execute authored MDX or arbitrary HTML. Sanitize rendered content and SVGs; diagram generation must not permit script execution or uncontrolled file/network access.
 
 ## 4. Initial API contract
 
-The topic endpoints serve all four published topics. Simulation endpoints are implemented for `request-flow`, `distributed-rate-limiter`, and `cache-aside`; estimator endpoints for `capacity-estimation`. Search, case studies, and stats remain **planned**.
+The topic endpoints serve all four published topics. Simulation endpoints are implemented for `request-flow`, `distributed-rate-limiter`, and `cache-aside`; estimator endpoints for `capacity-estimation`. Case-study delivery serves the draft URL-shortener Requirements resource by explicit ID; search and stats remain **planned**.
 
 | Endpoint | Purpose and behavior |
 | --- | --- |
@@ -87,7 +90,7 @@ The topic endpoints serve all four published topics. Simulation endpoints are im
 | `GET /api/v1/estimators/{id}` | Read estimator defaults, presets, limits, and assumptions |
 | `POST /api/v1/estimators/{id}/calculations` | Return unit-aware calculations, intermediate values, assumptions, and sensitivity range |
 | `GET /api/v1/search?q=...` | Search published titles, body text, and glossary terms; bounded results |
-| `GET /api/v1/case-studies/{id}` | Guided case-study document and rubric |
+| `GET /api/v1/case-studies/{id}` | Implemented: authored draft/published case metadata and versioned stages/rubrics; unknown/planned/topic IDs return 404 |
 | `GET /api/v1/catalog/stats` | Generated counts by publication state and available capability |
 
 Unknown IDs and unknown routes return 404. Invalid parameters return 400 with field paths and readable explanations. Oversized-request (413) and overload (429/503) responses are **planned**; today, bounded input sizes are enforced by validation and return 400. Responses use one structured problem format including `code`, `message`, and `fieldErrors` when applicable. No stack traces in client errors.
@@ -101,6 +104,7 @@ Do not retain runs on the server initially. Playback and backwards seek are loca
 - Content belongs in Git; simulation state is request-local and discarded after response.
 - **Module tabs (implemented).** `ModuleShell` mounts a tab's panel on its first visit and keeps it mounted but hidden afterwards, so draft inputs, submitted runs, results, playback position, and practice answers survive tab changes without re-fetching or re-running. Anything that runs on its own reads `usePanelActive()` and pauses while hidden; request-flow playback pauses and waits for the learner to resume. Selecting a tab adds a history entry, so Back and Forward move between views; the default view has no `?view=` parameter, and an unsupported value is replaced by the default without a history entry. Presets stay disabled while a run is pending, so an older response cannot replace a newly selected preset.
 - **Refresh and leaving a module.** Shared Practice choices, explanations, and reference-view state are saved through a versioned local adapter (HLD-08A; [decision 0008](decisions/0008-local-practice-answers.md)). Old content-version answers stay visible and require a fresh comparison. Corrupt/unsupported data is preserved; storage failures keep new work in session memory with downloads and a clear warning. Guided predictions/tradeoff choices now persist with derived checkpoint activity IDs; traces still require an explicit Java run after reload. HLD-08B adds validated import/conflict preview, named module reset, and save retry ([decision 0009](decisions/0009-answer-import-and-guided-state.md)). Invalid/stale imports and failed writes preserve existing answers. Playground inputs/runs/playback and the selected Guided checkpoint remain transient.
+- **Workshop answers.** HLD-09A reuses the existing answer envelope for `<stage>-attempt`, `<stage>-revision`, and `<stage>-check-<criterion>` records. Original and revised reasoning remain distinct; a viewed reference or self-check does not imply completion. Older versions require fresh review. Shared backups/import/reset/recovery apply without a schema migration.
 - Small preferences/progress use localStorage through a versioned adapter. Large experiment exports are downloaded, not silently stored without limits.
 - Store topic IDs, activity states, bookmarks, local answers, and content versions. Avoid marking a topic mastered because the page was opened or scrolled.
 - Export/import includes `schemaVersion`; validate size and shape, preview conflicts, and preserve existing completion by default. User-authored answer conflicts need an explicit choice.

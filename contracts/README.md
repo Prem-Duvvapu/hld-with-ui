@@ -3,7 +3,7 @@
 This directory is the machine-readable boundary between authored content, the Java API, and the React application.
 
 - `openapi.json` defines current HTTP requests, responses, errors, simulation events, and model data.
-- `catalog.schema.json`, `questions.schema.json`, `resources.schema.json`, and `checkpoints.schema.json` define authored JSON.
+- `catalog.schema.json`, `questions.schema.json`, `resources.schema.json`, `checkpoints.schema.json`, and `workshop.schema.json` define authored JSON.
 - `examples/` contains valid inputs checked against the OpenAPI schemas.
 - `frontend/src/api/generated.ts` is generated. Do not edit it directly.
 
@@ -15,7 +15,7 @@ npm run contracts:validate
 npm run contracts:check
 ```
 
-`contracts:check` regenerates the committed TypeScript output and fails when it differs, then validates content shape and semantics. Semantic checks cover unique IDs, prerequisite references and cycles, content paths, lesson heading order, question ownership and answers, source references, capability-to-model references, and guided checkpoints (the `guided` capability requires `checkpointsPath`; each target's event kind must exist in its simulation's event contract). Java tests run each checkpoint's preset and resolve its target event.
+`contracts:check` regenerates the committed TypeScript output and fails when it differs, then validates content shape and semantics. Semantic checks cover unique IDs, prerequisite references and cycles, content paths, lesson heading order, question ownership and answers, source references, capability-to-model references, and guided checkpoints (the `guided` capability requires `checkpointsPath`; each target's event kind must exist in its simulation's event contract). Java tests run each checkpoint's preset and resolve its target event. Workshop checks validate stable stage/answer identities, versions, source references, published experiment links, and the full-journey publication guard. Eight isolated negative fixtures run as part of `contracts:validate`; Java separately validates packaged case resources at startup.
 
 ## Versioning
 

@@ -138,6 +138,19 @@ const knownSimulationIds = descriptorIds("/api/v1/simulations/");
 const knownEstimatorIds = descriptorIds("/api/v1/estimators/");
 const questionIds = [];
 const checkpointIds = [];
+const workshopIds = [];
+const publishedWorkshopStages = [
+  "requirements",
+  "estimates",
+  "api",
+  "data",
+  "baseline",
+  "flows",
+  "evolution",
+  "failures",
+  "operations",
+  "defense",
+];
 
 // Event kinds a simulation can emit, read from its run-result contract.
 function eventKinds(simulationId) {
@@ -168,7 +181,99 @@ const requiredHeadings = [
   "Further reading",
 ];
 
+function validateWorkshop(entry) {
+  if (entry.workshopPath !== `case-studies/${entry.id}/workshop.json`) {
+    errors.push(`${entry.id}: workshopPath must belong to this case study`);
+    return;
+  }
+  const path = contentFile(entry.workshopPath, entry.id);
+  const resourcePath = contentFile(entry.resourcesPath, entry.id);
+  if (!existsSync(path) || !existsSync(resourcePath)) return;
+  const workshop = JSON.parse(readFileSync(path, "utf8"));
+  validateSchema(
+    "contracts/workshop.schema.json",
+    workshop,
+    `${entry.id} workshop`,
+  );
+  const validate = ajv.compile(openApiSchema("Workshop"));
+  if (!validate(workshop))
+    for (const issue of validate.errors ?? [])
+      errors.push(
+        `${entry.id} API workshop${issue.instancePath || "/"} ${issue.message}`,
+      );
+  const resources = JSON.parse(readFileSync(resourcePath, "utf8"));
+  validateSchema(
+    "contracts/resources.schema.json",
+    resources,
+    `${entry.id} resources`,
+  );
+  unique(
+    resources.map((resource) => resource.id),
+    `${entry.id} resources`,
+  );
+  const sources = new Set(resources.map((resource) => resource.id));
+  for (const id of entry.sourceIds ?? [])
+    if (!sources.has(id))
+      errors.push(`${entry.id}: unknown catalog source ${id}`);
+  if (
+    workshop.id !== entry.id ||
+    workshop.contentVersion !== entry.contentVersion
+  )
+    errors.push(`${entry.id}: workshop identity/version differs from catalog`);
+  if (!entry.capabilities.includes("case-study"))
+    errors.push(`${entry.id}: workshop requires case-study capability`);
+  if (!openapi.paths["/api/v1/case-studies/{id}"]?.get)
+    errors.push(`${entry.id}: case-study API is absent from OpenAPI`);
+  const stageIds = (workshop.stages ?? []).map((stage) => stage.id);
+  unique(stageIds, `${entry.id} stages`);
+  if (entry.status === "published")
+    for (const id of publishedWorkshopStages)
+      if (!stageIds.includes(id))
+        errors.push(`${entry.id}: published workshop missing stage ${id}`);
+  const activities = [];
+  for (const stage of workshop.stages ?? []) {
+    workshopIds.push(`${entry.id}/${stage.id}`);
+    activities.push(`${stage.id}-attempt`, `${stage.id}-revision`);
+    unique(
+      (stage.rubric ?? []).map((criterion) => criterion.id),
+      `${entry.id}/${stage.id} rubric`,
+    );
+    for (const criterion of stage.rubric ?? [])
+      activities.push(`${stage.id}-check-${criterion.id}`);
+    for (const sourceId of stage.sourceIds ?? [])
+      if (!sources.has(sourceId) || !(entry.sourceIds ?? []).includes(sourceId))
+        errors.push(`${entry.id}/${stage.id}: unknown source ${sourceId}`);
+    for (const link of stage.experimentLinks ?? []) {
+      const related = entries.get(link.topicId);
+      if (
+        !related ||
+        related.kind !== "topic" ||
+        related.status !== "published" ||
+        !related.capabilities.some((capability) =>
+          ["simulation", "estimator"].includes(capability),
+        )
+      )
+        errors.push(
+          `${entry.id}/${stage.id}: unavailable experiment ${link.topicId}`,
+        );
+    }
+  }
+  unique(activities, `${entry.id} saved activities`);
+  if (
+    entry.id.length > 100 ||
+    entry.contentVersion.length > 32 ||
+    activities.some((id) => id.length > 100)
+  )
+    errors.push(
+      `${entry.id}: saved activity identity exceeds local answer bounds`,
+    );
+}
+
 for (const entry of catalog.filter((item) => item.status !== "planned")) {
+  if (entry.kind === "case-study") {
+    validateWorkshop(entry);
+    continue;
+  }
   const activityIds = [];
   if (entry.id.length > 100 || entry.contentVersion.length > 32)
     errors.push(`${entry.id}: identity/version exceeds local answer bounds`);
@@ -306,6 +411,6 @@ if (errors.length) {
   process.exitCode = 1;
 } else {
   process.stdout.write(
-    `Validated ${catalog.length} catalog entry, ${questionIds.length} questions, ${checkpointIds.length} checkpoints, 2 API examples, prerequisite DAG, capabilities, and content files.\n`,
+    `Validated ${catalog.length} catalog entry, ${questionIds.length} questions, ${checkpointIds.length} checkpoints, ${workshopIds.length} workshop stages, 2 API examples, prerequisite DAG, capabilities, and content files.\n`,
   );
 }

@@ -4,6 +4,7 @@ import {
 } from "./cacheCompatibility";
 import type {
   CatalogEntry,
+  CaseStudyDetail,
   CacheAsideDescriptor,
   CacheAsideInput,
   CacheAsideResult,
@@ -72,6 +73,8 @@ async function request<T>(
 export const api = {
   topics: () => request<CatalogEntry[]>("/api/v1/topics"),
   topic: (id: string) => request<TopicDetail>(`/api/v1/topics/${id}`),
+  caseStudy: (id: string) =>
+    request<CaseStudyDetail>(`/api/v1/case-studies/${encodeURIComponent(id)}`),
   descriptor: (id: string) =>
     request<SimulationDescriptor>(`/api/v1/simulations/${id}`),
   runRequestFlow: (input: RequestFlowInput) =>

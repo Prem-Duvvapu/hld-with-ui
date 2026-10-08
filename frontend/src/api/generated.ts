@@ -191,6 +191,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/case-studies/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Read a draft or published design workshop by explicit ID
+     * @description Draft workshops are accessible by direct link, excluded from ordinary published discovery. This endpoint serves educational content; it creates no short links.
+     */
+    get: operations["getCaseStudy"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -209,7 +229,7 @@ export interface components {
       level: string;
       order: number;
       /** @enum {string} */
-      status: "published";
+      status: "draft" | "published";
       prerequisites: string[];
       outcomes: string[];
       capabilities: (
@@ -220,8 +240,8 @@ export interface components {
         | "practice"
         | "guided"
       )[];
-      lessonPath: string;
-      questionsPath: string;
+      lessonPath?: string;
+      questionsPath?: string;
       resourcesPath: string;
       /** @description Present only with the guided capability. */
       checkpointsPath?: string;
@@ -231,6 +251,8 @@ export interface components {
       /** Format: date */
       reviewedAt: string;
       sourceIds: string[];
+      /** @description Present for authored case-study entries; absent for topics. */
+      workshopPath?: string;
     };
     QuestionOption: {
       id: string;
@@ -796,6 +818,37 @@ export interface components {
       presets: components["schemas"]["CacheAsidePreset"][];
       assumptions: string[];
     };
+    RubricCriterion: {
+      id: string;
+      prompt: string;
+    };
+    ExperimentLink: {
+      topicId: string;
+      label: string;
+      instruction: string;
+    };
+    WorkshopStage: {
+      id: string;
+      title: string;
+      prompt: string;
+      reference: string;
+      rubric: components["schemas"]["RubricCriterion"][];
+      experimentLinks: components["schemas"]["ExperimentLink"][];
+      sourceIds: string[];
+    };
+    Workshop: {
+      /** @constant */
+      schemaVersion: 1;
+      id: string;
+      contentVersion: string;
+      introduction: string;
+      invariant: string;
+      stages: components["schemas"]["WorkshopStage"][];
+    };
+    CaseStudyDetail: {
+      entry: components["schemas"]["CatalogEntry"];
+      workshop: components["schemas"]["Workshop"];
+    };
   };
   responses: never;
   parameters: {
@@ -1125,6 +1178,37 @@ export interface operations {
       };
       /** @description Structured error */
       400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  getCaseStudy: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Versioned workshop content */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CaseStudyDetail"];
+        };
+      };
+      /** @description No authored case study with this ID */
+      404: {
         headers: {
           [name: string]: unknown;
         };
