@@ -5,9 +5,9 @@
     "organization": "IETF",
     "url": "https://www.rfc-editor.org/rfc/rfc9110.html",
     "sourceType": "standard",
-    "relevantSections": "9.2.2 (idempotent methods), 10.2.2 (Location), 10.2.3 (Retry-After), 15.3.2 (201), 15.4.3 (302), 15.5.5 (404), 15.5.10 (409), 15.6.4 (503)",
+    "relevantSections": "9.2.2 (idempotent methods), 10.2.2 (Location), 10.2.3 (Retry-After), 15.3.2 (201), 15.4.3 (302), 15.5.5 (404), 15.5.10 (409), 15.5.11 (410), 15.6.4 (503)",
     "supports": "HTTP method, created-resource, Location, redirect and error semantics; the caller-key replay window, product limits and uniform expiry/takedown 404 policy are chosen workshop rules.",
-    "reviewedAt": "2026-10-08",
+    "reviewedAt": "2026-10-09",
     "accessStatus": "available"
   },
   {
@@ -18,7 +18,7 @@
     "sourceType": "standard",
     "relevantSections": "3 (syntax components), 7 (security considerations)",
     "supports": "URI scheme and authority components and security considerations; the HTTP(S)-only validation policy is an explicit workshop design choice, not a safety guarantee.",
-    "reviewedAt": "2026-10-08",
+    "reviewedAt": "2026-10-09",
     "accessStatus": "available"
   },
   {
@@ -29,19 +29,19 @@
     "sourceType": "standard",
     "relevantSections": "5.2.2.5 (response no-store)",
     "supports": "Conforming HTTP caches must not store or reuse a response carrying no-store; this does not synchronize an application cache or guarantee privacy against hostile clients.",
-    "reviewedAt": "2026-10-08",
+    "reviewedAt": "2026-10-09",
     "accessStatus": "available"
   },
   {
     "id": "little-law",
-    "title": "A Proof for the Queuing Formula: L = \u03bbW",
+    "title": "A Proof for the Queuing Formula: L = λW",
     "author": "John D. C. Little",
     "organization": "INFORMS",
     "url": "https://pubsonline.informs.org/doi/10.1287/opre.9.3.383",
     "sourceType": "paper",
     "relevantSections": "Public abstract: finite means and stationary-process conditions",
     "supports": "A relationship between average number in the system, arrival rate, and mean total time, under the stated theorem conditions; it does not give a worker count or burst bound.",
-    "reviewedAt": "2026-10-08",
+    "reviewedAt": "2026-10-09",
     "accessStatus": "available"
   },
   {
@@ -52,7 +52,7 @@
     "sourceType": "documentation",
     "relevantSections": "Implementation guidance and steps",
     "supports": "Testing the entire workload under realistic conditions, with defined objectives, monitored metrics, and expected and larger loads.",
-    "reviewedAt": "2026-10-08",
+    "reviewedAt": "2026-10-09",
     "accessStatus": "available"
   },
   {
@@ -63,7 +63,7 @@
     "sourceType": "standard",
     "relevantSections": "4 (429 Too Many Requests)",
     "supports": "429 denotes rate limiting and can carry Retry-After; caller identification, enforcement scope and limit values are separate design choices.",
-    "reviewedAt": "2026-10-08",
+    "reviewedAt": "2026-10-09",
     "accessStatus": "available"
   },
   {
@@ -72,7 +72,7 @@
     "organization": "PostgreSQL Global Development Group",
     "url": "https://www.postgresql.org/docs/16/ddl-constraints.html",
     "sourceType": "documentation",
-    "relevantSections": "5.4.3\u20135.4.5: unique constraints, primary keys, foreign keys",
+    "relevantSections": "5.4.3–5.4.5: unique constraints, primary keys, foreign keys",
     "supports": "Unique/compound keys, primary-key indexes and referential integrity; immutable ownership and permanent reservation retention are separate workshop rules.",
     "reviewedAt": "2026-10-09",
     "accessStatus": "available"
@@ -125,7 +125,7 @@
     "id": "aws-timeouts-retries-jitter",
     "title": "Timeouts, retries, and backoff with jitter",
     "organization": "Amazon Web Services",
-    "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
+    "url": "https://builder.aws.com/content/3EumjoZascWd1oZiEgL8ORlv3qE/timeouts-retries-and-backoff-with-jitter",
     "sourceType": "documentation",
     "relevantSections": "Failures Happen; Timeouts; Retries and backoff; Jitter",
     "supports": "Resource-bounded timeouts, uncertain side effects, retry multiplication and pacing; specific three-layer/three-attempt arithmetic and URL-shortener retry retention are workshop assumptions.",

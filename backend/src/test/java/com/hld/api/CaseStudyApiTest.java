@@ -28,7 +28,7 @@ class CaseStudyApiTest {
                 .andExpect(jsonPath("$.entry.capabilities[0]").value("case-study"))
                 .andExpect(jsonPath("$.workshop.schemaVersion").value(1))
                 .andExpect(jsonPath("$.workshop.id").value("url-shortener"))
-                .andExpect(jsonPath("$.workshop.contentVersion").value("1.4.0"))
+                .andExpect(jsonPath("$.workshop.contentVersion").value("1.5.0"))
                 .andExpect(jsonPath("$.workshop.stages.length()").value(10))
                 .andExpect(jsonPath("$.workshop.stages[0].id").value("requirements"))
                 .andExpect(jsonPath("$.workshop.stages[1].id").value("estimates"))

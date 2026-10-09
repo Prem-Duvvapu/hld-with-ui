@@ -96,7 +96,7 @@ test("workshop Java response validates its contract and the draft stays outside 
     "operations",
     "defense",
   ]);
-  expect(detail.workshop.contentVersion).toBe("1.4.0");
+  expect(detail.workshop.contentVersion).toBe("1.5.0");
   expect(detail.workshop.stages[0].id).toBe("requirements");
   expect((await request.get("/api/v1/topics/url-shortener")).status()).toBe(
     404,
@@ -536,3 +536,129 @@ for (const theme of ["light", "dark"] as const) {
     }
   });
 }
+
+test("all ten stages preserve distinct attempts, every self-check and revisions through backup, reset and import", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const expected = content.stages.flatMap(
+    (stage: { id: string; rubric: { id: string }[] }) => [
+      {
+        activityId: `${stage.id}-attempt`,
+        answer: {
+          kind: "text",
+          text: `Original ${stage.id}: state the promise and assumptions.`,
+        },
+      },
+      {
+        activityId: `${stage.id}-revision`,
+        answer: {
+          kind: "text",
+          text: `Revision ${stage.id}: defend the boundary and one alternative.`,
+        },
+      },
+      ...stage.rubric.map((criterion, index) => ({
+        activityId: `${stage.id}-check-${criterion.id}`,
+        answer: {
+          kind: "choice",
+          optionId: index % 2 === 0 ? "yes" : "revisit",
+        },
+      })),
+    ],
+  );
+  await page.goto(url);
+  for (const stage of content.stages) {
+    await page
+      .getByRole("navigation", { name: "Workshop stages", exact: true })
+      .getByRole("button", { name: new RegExp(stage.title) })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: stage.title, exact: true }),
+    ).toBeFocused();
+    await original(page).fill(
+      `Original ${stage.id}: state the promise and assumptions.`,
+    );
+    await reveal(page);
+    await revision(page).fill(
+      `Revision ${stage.id}: defend the boundary and one alternative.`,
+    );
+    for (const [index, criterion] of stage.rubric.entries()) {
+      await page
+        .getByRole("group", { name: criterion.prompt, exact: true })
+        .getByRole("radio", {
+          name: index % 2 === 0 ? "Covered in my answer" : "Needs a revision",
+          exact: true,
+        })
+        .check();
+    }
+  }
+  const download = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Download answers", exact: true })
+    .click();
+  const raw = readFileSync((await (await download).path())!, "utf8");
+  const backup = JSON.parse(raw);
+  expect(backup.answers).toHaveLength(expected.length);
+  expect(expected.length).toBe(64);
+  for (const record of expected)
+    expect(backup.answers).toContainEqual(
+      expect.objectContaining({
+        ...record,
+        topicId: "url-shortener",
+        contentVersion: content.contentVersion,
+        referenceViewed: true,
+      }),
+    );
+  await tools(page);
+  await page
+    .getByRole("button", { name: "Reset this module", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Delete module answers", exact: true })
+    .click();
+  await page.reload();
+  await expect(original(page)).toHaveValue("");
+  await tools(page);
+  await page.getByLabel("Answer backup file", { exact: true }).setInputFiles({
+    name: "broken.json",
+    mimeType: "application/json",
+    buffer: Buffer.from("{broken"),
+  });
+  await expect(page.getByRole("alert")).toContainText("could not be read");
+  await expect(original(page)).toHaveValue("");
+  await page.getByLabel("Answer backup file", { exact: true }).setInputFiles({
+    name: "all-stages.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(raw),
+  });
+  await expect(
+    page.getByRole("heading", { name: "Review imported answers", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Apply import", exact: true }).click();
+  await page.reload();
+  for (const stage of content.stages) {
+    await page
+      .getByRole("navigation", { name: "Workshop stages", exact: true })
+      .getByRole("button", { name: new RegExp(stage.title) })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: stage.title, exact: true }),
+    ).toBeFocused();
+    await expect(original(page)).toHaveValue(
+      `Original ${stage.id}: state the promise and assumptions.`,
+    );
+    await expect(original(page)).toHaveAttribute("readonly", "");
+    await expect(revision(page)).toHaveValue(
+      `Revision ${stage.id}: defend the boundary and one alternative.`,
+    );
+    for (const [index, criterion] of stage.rubric.entries())
+      await expect(
+        page
+          .getByRole("group", { name: criterion.prompt, exact: true })
+          .getByRole("radio", {
+            name: index % 2 === 0 ? "Covered in my answer" : "Needs a revision",
+            exact: true,
+          }),
+      ).toBeChecked();
+  }
+});
