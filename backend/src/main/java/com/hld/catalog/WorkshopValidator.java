@@ -34,6 +34,21 @@ final class WorkshopValidator {
             activity(activityIds, stage.id() + "-revision");
             stage.rubric().forEach(criterion -> activity(activityIds, stage.id() + "-check-" + criterion.id()));
             stage.rubric().forEach(criterion -> require(text(criterion.prompt(), 2_000), "Rubric prompt is invalid"));
+            unique(stage.walkthroughs(), 0, 4, Workshop.Walkthrough::id, "stage walkthroughs");
+            for (var diagram : stage.walkthroughs()) {
+                require(text(diagram.title(), 200) && text(diagram.summary(), 2_000), "Walkthrough text is invalid");
+                unique(diagram.nodes(), 1, 8, Workshop.DiagramNode::id, "walkthrough nodes");
+                unique(diagram.steps(), 1, 20, Workshop.DiagramStep::id, "walkthrough steps");
+                Set<String> nodeIds = new HashSet<>();
+                for (var node : diagram.nodes()) {
+                    require(text(node.title(), 200) && text(node.detail(), 2_000), "Node text is invalid");
+                    nodeIds.add(node.id());
+                }
+                for (var step : diagram.steps()) {
+                    require(text(step.title(), 200) && text(step.detail(), 2_000), "Step text is invalid");
+                    require(nodeIds.contains(step.from()) && nodeIds.contains(step.to()), "Walkthrough step has unknown node");
+                }
+            }
             unique(stage.sourceIds(), 1, 20, Function.identity(), "stage sources");
             require(sourceIds.containsAll(stage.sourceIds()), "Workshop source is missing from catalog");
             unique(stage.experimentLinks(), 0, 10, Workshop.ExperimentLink::topicId, "experiment links");

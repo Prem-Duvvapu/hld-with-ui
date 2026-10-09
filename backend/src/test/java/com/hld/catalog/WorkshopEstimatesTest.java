@@ -118,14 +118,14 @@ class WorkshopEstimatesTest {
     }
 
     @Test
-    void theseThreeAuthoredStagesCannotBePublishedAsACompleteWorkshop() {
+    void theseSixAuthoredStagesCannotBePublishedAsACompleteWorkshop() {
         CaseStudyDetail detail = catalog.caseStudy("url-shortener");
         CatalogEntry entry = detail.entry();
         CatalogEntry published = new CatalogEntry(entry.id(), entry.kind(), entry.title(), entry.summary(),
                 entry.category(), entry.level(), entry.order(), "published", entry.prerequisites(), entry.outcomes(),
                 entry.capabilities(), entry.lessonPath(), entry.questionsPath(), entry.resourcesPath(), entry.checkpointsPath(),
                 entry.workshopPath(), entry.simulationIds(), entry.estimatorIds(), entry.contentVersion(), entry.reviewedAt(), entry.sourceIds());
-        assertThat(detail.workshop().stages()).extracting(Workshop.WorkshopStage::id).containsExactly("requirements", "estimates", "api");
+        assertThat(detail.workshop().stages()).extracting(Workshop.WorkshopStage::id).containsExactly("requirements", "estimates", "api", "data", "baseline", "flows");
         assertThatThrownBy(() -> WorkshopValidator.validate(published, detail.workshop(), catalog.publishedTopics()))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("every design stage");
     }

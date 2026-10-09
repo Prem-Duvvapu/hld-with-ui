@@ -61,7 +61,7 @@ function rejectChange(change, expected) {
 test("reject publication before the full design journey exists", () => {
   rejectChange((catalog) => {
     catalog.find((entry) => entry.id === "url-shortener").status = "published";
-  }, /published workshop missing stage data/);
+  }, /published workshop missing stage evolution/);
 });
 
 test("reject mismatched content version", () => {
@@ -121,4 +121,46 @@ test("reject estimates linked to a draft case instead of a working estimator", (
       (stage) => stage.id === "estimates",
     ).experimentLinks[0].topicId = "url-shortener";
   }, /unavailable experiment url-shortener/);
+});
+
+function baselineDiagram(workshop) {
+  return workshop.stages.find((stage) => stage.id === "baseline")
+    .walkthroughs[0];
+}
+
+test("reject a walkthrough endpoint that does not name a participant", () => {
+  rejectChange((_, workshop) => {
+    baselineDiagram(workshop).steps[0].to = "missing-participant";
+  }, /unknown walkthrough node/);
+});
+
+test("reject duplicate walkthrough participants", () => {
+  rejectChange((_, workshop) => {
+    const diagram = baselineDiagram(workshop);
+    diagram.nodes.push(structuredClone(diagram.nodes[0]));
+  }, /nodes: duplicate client/);
+});
+
+test("reject duplicate walkthrough step identities", () => {
+  rejectChange((_, workshop) => {
+    const diagram = baselineDiagram(workshop);
+    diagram.steps.push(structuredClone(diagram.steps[0]));
+  }, /steps: duplicate request/);
+});
+
+test("reject executable-looking unsupported walkthrough fields", () => {
+  rejectChange((_, workshop) => {
+    baselineDiagram(workshop).steps[0].latencyMs = 10;
+  }, /additional properties/);
+});
+
+test("reject empty walkthroughs and excessive causal steps", () => {
+  for (const count of [0, 21])
+    rejectChange((_, workshop) => {
+      const diagram = baselineDiagram(workshop);
+      diagram.steps = Array.from({ length: count }, (_, i) => ({
+        ...diagram.steps[0],
+        id: `step-${i}`,
+      }));
+    }, /(?:fewer than 1|more than 20) items/);
 });

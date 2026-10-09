@@ -240,6 +240,22 @@ function validateWorkshop(entry) {
     );
     for (const criterion of stage.rubric ?? [])
       activities.push(`${stage.id}-check-${criterion.id}`);
+    unique(
+      (stage.walkthroughs ?? []).map((item) => item.id),
+      `${entry.id}/${stage.id} walkthroughs`,
+    );
+    for (const diagram of stage.walkthroughs ?? []) {
+      const prefix = `${entry.id}/${stage.id}/${diagram.id}`;
+      const nodes = (diagram.nodes ?? []).map((node) => node.id);
+      unique(nodes, `${prefix} nodes`);
+      unique(
+        (diagram.steps ?? []).map((step) => step.id),
+        `${prefix} steps`,
+      );
+      for (const step of diagram.steps ?? [])
+        if (!nodes.includes(step.from) || !nodes.includes(step.to))
+          errors.push(`${prefix}/${step.id}: unknown walkthrough node`);
+    }
     for (const sourceId of stage.sourceIds ?? [])
       if (!sources.has(sourceId) || !(entry.sourceIds ?? []).includes(sourceId))
         errors.push(`${entry.id}/${stage.id}: unknown source ${sourceId}`);

@@ -34,7 +34,7 @@
   },
   {
     "id": "little-law",
-    "title": "A Proof for the Queuing Formula: L = λW",
+    "title": "A Proof for the Queuing Formula: L = \u03bbW",
     "author": "John D. C. Little",
     "organization": "INFORMS",
     "url": "https://pubsonline.informs.org/doi/10.1287/opre.9.3.383",
@@ -64,6 +64,50 @@
     "relevantSections": "4 (429 Too Many Requests)",
     "supports": "429 denotes rate limiting and can carry Retry-After; caller identification, enforcement scope and limit values are separate design choices.",
     "reviewedAt": "2026-10-08",
+    "accessStatus": "available"
+  },
+  {
+    "id": "postgres-16-constraints",
+    "title": "PostgreSQL 16: Constraints",
+    "organization": "PostgreSQL Global Development Group",
+    "url": "https://www.postgresql.org/docs/16/ddl-constraints.html",
+    "sourceType": "documentation",
+    "relevantSections": "5.4.3\u20135.4.5: unique constraints, primary keys, foreign keys",
+    "supports": "Unique/compound keys, primary-key indexes and referential integrity; immutable ownership and permanent reservation retention are separate workshop rules.",
+    "reviewedAt": "2026-10-09",
+    "accessStatus": "available"
+  },
+  {
+    "id": "postgres-16-insert",
+    "title": "PostgreSQL 16: INSERT",
+    "organization": "PostgreSQL Global Development Group",
+    "url": "https://www.postgresql.org/docs/16/sql-insert.html",
+    "sourceType": "documentation",
+    "relevantSections": "ON CONFLICT clause and RETURNING",
+    "supports": "Targeted DO NOTHING conflict handling and returned inserted rows; does not itself make the whole create/replay operation atomic.",
+    "reviewedAt": "2026-10-09",
+    "accessStatus": "available"
+  },
+  {
+    "id": "postgres-16-transactions",
+    "title": "PostgreSQL 16: Transactions",
+    "organization": "PostgreSQL Global Development Group",
+    "url": "https://www.postgresql.org/docs/16/tutorial-transactions.html",
+    "sourceType": "documentation",
+    "relevantSections": "3.4: transaction block, COMMIT, ROLLBACK and visibility",
+    "supports": "All-or-nothing transaction boundaries; the three-record create design is an original illustrative application, not executed by this app.",
+    "reviewedAt": "2026-10-09",
+    "accessStatus": "available"
+  },
+  {
+    "id": "postgres-16-isolation",
+    "title": "PostgreSQL 16: Transaction Isolation",
+    "organization": "PostgreSQL Global Development Group",
+    "url": "https://www.postgresql.org/docs/16/transaction-iso.html",
+    "sourceType": "documentation",
+    "relevantSections": "13.2.1: Read Committed, concurrent conflict visibility and row locks",
+    "supports": "Statement snapshots, conflicting inserts and locked-row rechecks; product retry deadlines, takedown ordering and replay retention need application design.",
+    "reviewedAt": "2026-10-09",
     "accessStatus": "available"
   }
 ]

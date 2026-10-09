@@ -9,7 +9,7 @@ Learn high-level system design by reading, experimenting, diagnosing failures, a
 
 The idea is simple: **see a system work, change one condition, explain what happened, then choose a design.** Each module will help you answer both “How does this work?” and “How would I explain it to my team or in an interview?”
 
-**Status: four working learning modules.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers Requirements, Estimates, and API stages by direct link; seven further stages and later roadmap modules remain planned.
+**Status: four working learning modules.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers Requirements, Estimates, API, Data, Baseline, and Flows stages by direct link; four further stages and later roadmap modules remain planned.
 
 
 ## Visitor analytics
@@ -134,9 +134,11 @@ The **Requirements** stage helps you describe create/redirect behavior, expiry a
 
 The **Estimates** stage works through read/write demand, storage, bandwidth, and mean concurrency using the real Capacity Calculator. Change peak factor, read percentage, or record size and explain which outputs change. The **API** stage specifies create/redirect behavior, input validation, expiry, cache policy, errors, and a bounded retry contract. These are design decisions, not executable shortening endpoints.
 
-Use the stage navigation to focus on one decision at a time. Direct links such as `/case-studies/url-shortener?stage=estimates` and `?stage=api` survive refresh; Back/Forward and saved answers let you return to your reasoning. Content version 1.1.0 preserves older notes but asks for fresh reference review and self-checks.
+Use the stage navigation to focus on one decision at a time. Direct links such as `/case-studies/url-shortener?stage=estimates` and `?stage=api` survive refresh; Back/Forward and saved answers let you return to your reasoning. Content version 1.2.0 preserves older notes but asks for fresh reference review and self-checks.
 
-Data, baseline architecture, flows, evolution, failures, operations, and interview defense remain planned. The workshop is a learning exercise and creates no short links. Full publication also needs the outstanding manual learning/accessibility reviews. See [HLD-09B1](docs/work-items/HLD-09B1.md) for evidence and [the delivery incident](docs/INCIDENTS.md) for the hosted backend deployment issue.
+The **Data** stage explains ownership, unique code reservations and atomic create/replay records. **Baseline** shows the client, stateless service, primary store and separate destination request. **Flows** lets you inspect create, active redirect, lost-response replay and expiry equality one decision at a time, with participant diagrams and a complete text equivalent. These are illustrative design walkthroughs, not executed database operations.
+
+Evolution, failures, operations, and interview defense remain planned. The workshop is a learning exercise and creates no short links. Full publication also needs the outstanding manual learning/accessibility reviews. See [HLD-09B2](docs/work-items/HLD-09B2.md) for evidence and [the delivery incident](docs/INCIDENTS.md) for the hosted backend deployment issue.
 
 ## Saved learning answers
 

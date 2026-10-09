@@ -835,6 +835,7 @@ export interface components {
       rubric: components["schemas"]["RubricCriterion"][];
       experimentLinks: components["schemas"]["ExperimentLink"][];
       sourceIds: string[];
+      walkthroughs?: components["schemas"]["WorkshopWalkthrough"][];
     };
     Workshop: {
       /** @constant */
@@ -848,6 +849,25 @@ export interface components {
     CaseStudyDetail: {
       entry: components["schemas"]["CatalogEntry"];
       workshop: components["schemas"]["Workshop"];
+    };
+    WorkshopNode: {
+      id: string;
+      title: string;
+      detail: string;
+    };
+    WorkshopStep: {
+      id: string;
+      title: string;
+      from: string;
+      to: string;
+      detail: string;
+    };
+    WorkshopWalkthrough: {
+      id: string;
+      title: string;
+      summary: string;
+      nodes: components["schemas"]["WorkshopNode"][];
+      steps: components["schemas"]["WorkshopStep"][];
     };
   };
   responses: never;
