@@ -57,7 +57,7 @@ for (const theme of ["light", "dark"] as const) {
           element.scrollIntoView({ block: "start" }),
         );
         await page.screenshot({
-          path: `../docs/work-items/assets/hld-09b3/evolution-${width}-${theme}.png`,
+          path: `../frontend/test-results/hld-09b3-evolution-${width}-${theme}.png`,
         });
       }
     }
@@ -114,13 +114,13 @@ for (const theme of ["light", "dark"] as const) {
           element.scrollIntoView({ block: "start" }),
         );
         await page.screenshot({
-          path: `../docs/work-items/assets/hld-09b3/failures-${width}-${theme}.png`,
+          path: `../frontend/test-results/hld-09b3-failures-${width}-${theme}.png`,
         });
       }
     }
     await expect(
       page.getByRole("button", { name: "Next stage", exact: true }),
-    ).toBeDisabled();
+    ).toBeEnabled();
     await page
       .getByRole("button", { name: "Previous stage", exact: true })
       .click();

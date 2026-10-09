@@ -1,6 +1,6 @@
 # First release module blueprint
 
-Status: acceptance notes for `P1`–`P2`. `request-flow` and `capacity-estimation` have working slices; their remaining release checks are tracked in the roadmap. `cache-aside` has working learning/simulation slices; `url-shortener` has eight draft stages from Requirements through Failures (HLD-09B3), with its remaining stages and publication still pending. Their shipped schemas and precise behavior must agree with these teaching outcomes; material differences need a documented revision to the examples.
+Status: acceptance notes for `P1`–`P2`. `request-flow` and `capacity-estimation` have working slices; their remaining release checks are tracked in the roadmap. `cache-aside` has working learning/simulation slices; `url-shortener` has ten authored draft stages from Requirements through Defense (HLD-09B4), with technical/manual release checks and publication still pending. Their shipped schemas and precise behavior must agree with these teaching outcomes; material differences need a documented revision to the examples.
 
 ## 1. Cohesive learner journey
 
@@ -163,21 +163,21 @@ Treat create and redirect API sketches as **the system being designed**, separat
 
 The baseline uses stateless application instances and a store with a unique code index. On create, validate HTTP(S), generate a code, attempt an atomic unique insert, and retry a bounded number of collisions; exhausted attempts return an error. On redirect, look up by code, check expiry, and respond according to the stated redirect policy. Discuss random codes versus allocated sequences, and how unpredictability/guessability and coordination differ.
 
-The evolved read path may check a cache first. Cache keys include the code; entries include target plus expiry metadata. Cache TTL may not extend past link expiry. A cached entry is still checked against link expiry before redirect. On miss, read the store and fill the cache. If revocation becomes a requirement, revisit invalidation/staleness guarantees rather than claiming the initial TTL policy solves it.
+The current worked evolution caches immutable destination hints under a stated full-row/decoding bottleneck. Current primary existence/expiry/takedown remains mandatory: one metadata read on hit, one full mapping/eligibility read on miss. Total primary lookup QPS is unchanged. Bound cache lifetime to known link expiry; cache presence or TTL cannot authorize resolve. Cache-only outage availability is an alternative requiring an explicit different freshness/revocation policy, including stale fills and in-flight responses. See [decision 0013](decisions/0013-strict-workshop-cache-eligibility.md).
 
 Discuss hot links, negative caching of unknown codes with a short bounded TTL, rate limits for create/resolve abuse, URL scheme validation, redirect loop policy, and analytics as asynchronous optional work. No server-side fetch of arbitrary target URLs is necessary for create or redirect. Security discussion explains how redirect services can be abused without implying that every possible control is built in the workshop.
 
 ### Failure review
 
-- Cache outage raises direct store load; rate/admission control and capacity determine whether fallback is safe.
-- Store outage may allow cached active redirects for a bounded time but blocks new links and misses. Explain the chosen behavior and its correctness conditions.
+- Cache outage shifts strict-design reads to full rows rather than automatically raising lookup QPS; bound aggregate admission and primary byte/row work.
+- Primary outage in the chosen strict design returns 503 even with a warm destination hint, because current eligibility is unavailable. A bounded stale-serving alternative needs a different explicit promise and verification.
 - An expired link must stop redirecting even if a cache entry remains due to a wrong TTL policy; the exercise asks the learner to detect this design flaw.
 - A timed-out create can have committed. Discuss a client-supplied idempotency key or a lookup strategy, including retention/scope limits.
 - A popular link can be a hot key; test the demand assumptions and edge caching policy before adding partitions to everything.
 
 ### Assessment rubric
 
-Evaluate requirements, estimates, data/API correctness, read/write paths, cache expiry, failure behavior, security/abuse, operation, and clear tradeoff reasoning on the project-wide 0–3 descriptive scale. Accept a simpler design when its stated capacity and constraints justify it. Do not reward extra services or products merely for appearing more “distributed.”
+Evaluate requirements, estimates, data/API correctness, read/write paths, cache expiry, failure behavior, security/abuse, operation, and clear tradeoff reasoning using the project-wide descriptive levels when reviewing externally. The current UI records Covered/Needs revision self-checks without an automatic score. Accept a simpler design when its stated capacity and constraints justify it. Do not reward extra services or products merely for appearing more “distributed.”
 
 ## 6. Cross-module release checks
 
