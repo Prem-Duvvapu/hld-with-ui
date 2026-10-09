@@ -73,6 +73,7 @@ async function request<T>(
 export const api = {
   topics: () => request<CatalogEntry[]>("/api/v1/topics"),
   topic: (id: string) => request<TopicDetail>(`/api/v1/topics/${id}`),
+  caseStudies: () => request<CatalogEntry[]>("/api/v1/case-studies"),
   caseStudy: (id: string) =>
     request<CaseStudyDetail>(`/api/v1/case-studies/${encodeURIComponent(id)}`),
   descriptor: (id: string) =>

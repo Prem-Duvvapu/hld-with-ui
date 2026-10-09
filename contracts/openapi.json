@@ -408,6 +408,28 @@
           }
         }
       }
+    },
+    "/api/v1/case-studies": {
+      "get": {
+        "operationId": "listCaseStudies",
+        "summary": "List published case studies",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CatalogEntry"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "Published, startup-validated case-study metadata in catalog order, then ID. Draft and planned entries are omitted. Returns an empty array when none are published. Explicit draft detail routes remain available."
+      }
     }
   },
   "components": {

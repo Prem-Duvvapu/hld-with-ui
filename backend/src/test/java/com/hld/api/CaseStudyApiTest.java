@@ -64,6 +64,15 @@ class CaseStudyApiTest {
     }
 
     @Test
+    void draftDoesNotLeakThroughThePublishedCaseCollection() throws Exception {
+        mvc.perform(get("/api/v1/case-studies"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(0));
+        assertThat(catalog.publishedCaseStudies()).isEmpty();
+    }
+
+    @Test
     void rejectsUnknownTopicAndResourceLikeIdsWithStructuredNotFound() throws Exception {
         for (String id : new String[] {"unknown", "request-flow", "catalog.json", "workshop.json"}) {
             mvc.perform(get("/api/v1/case-studies/" + id))

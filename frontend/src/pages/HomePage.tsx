@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api, ApiClientError } from "../api/client";
 import type { CatalogEntry } from "../api/types";
 import { ErrorState, LoadingState } from "../components/AsyncState";
+import { WorkshopCatalog } from "../features/workshop/WorkshopCatalog";
 import { usePageTitle } from "../hooks/usePageTitle";
 
 export function HomePage() {
@@ -167,13 +168,14 @@ export function HomePage() {
               <div className="plus-glyph">+</div>
               <h3>More systems are coming</h3>
               <p>
-                Caching, data partitioning, messaging, and complete case studies
-                will build on this foundation.
+                Data partitioning, messaging, and complete case studies will
+                build on this foundation.
               </p>
             </article>
           </div>
         )}
       </section>
+      <WorkshopCatalog />
     </>
   );
 }

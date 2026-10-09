@@ -63,7 +63,7 @@ scripts/                  planning-document validation
 docs/                     plans, decisions, work items, templates, evidence
 ```
 
-**Planned** additions, created only when their work item needs them: workshop publication (HLD-09C), progress features (HLD-10); shared Practice/Guided answer storage and import/reset controls are implemented in `features/learning/`. Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
+**Planned** additions, created only when their work item needs them: workshop publication after release review (HLD-09C), progress features (HLD-10); shared Practice/Guided answer storage and import/reset controls are implemented in `features/learning/`. Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
 
 Backend model packages are organized by capability, not one enormous controller or service per topic. Each model has its own typed event schema with a closed `kind` vocabulary. A shared model interface and renderer registry are **planned** only if a concrete second consumer needs them (see [SIMULATION_SPEC.md](SIMULATION_SPEC.md#3-proposed-java-interface)).
 
@@ -71,7 +71,7 @@ Backend model packages are organized by capability, not one enormous controller 
 
 `content/catalog.json` is the single source for topic identity, prerequisites, order, level, publication state, and available capabilities. Frontend routes and backend lookup derive from it. Startup/build fails on duplicate IDs or invalid references.
 
-Separate editorial status (`planned`, `draft`, `published`) from capabilities (`study`, `simulation`, `estimator`, `case-study`, `practice`). A published lesson may have no simulation; a declared simulation capability requires a registered, validated model. Public home navigation currently shows published topics. The draft workshop is available only by explicit case URL; it is excluded from topic endpoints. Planned entries can appear only as clearly labeled roadmap information.
+Separate editorial status (`planned`, `draft`, `published`) from capabilities (`study`, `simulation`, `estimator`, `case-study`, `practice`). A published lesson may have no simulation; a declared simulation capability requires a registered, validated model. Public home navigation shows published topics and loads a separate published-case collection. Cases are sorted by canonical order, then ID; only startup-validated published case resources appear. An empty collection hides the workshop section, and its loading/error/retry state does not block foundation modules. The draft workshop is available only by explicit case URL; it is excluded from both discovery collections and topic endpoints. See [decision 0014](decisions/0014-published-case-discovery.md). Planned entries can appear only as clearly labeled roadmap information.
 
 Workshops use `workshopPath` and `GET /api/v1/case-studies/{id}` with `{entry, workshop}`. Java loads a matching canonical case path at startup. Typed stages and related-experiment links are checked against the content and API contracts; incomplete cases fail the publication guard. See [decision 0010](decisions/0010-draft-workshop-content-and-answers.md). Optional authored walkthroughs carry bounded participants and ordered steps in the same resource; Java validates endpoint references and React renders manual selection plus a full text equivalent, with no execution claims. See [decision 0012](decisions/0012-authored-workshop-walkthroughs.md).
 
@@ -90,6 +90,7 @@ The topic endpoints serve all four published topics. Simulation endpoints are im
 | `GET /api/v1/estimators/{id}` | Read estimator defaults, presets, limits, and assumptions |
 | `POST /api/v1/estimators/{id}/calculations` | Return unit-aware calculations, intermediate values, assumptions, and sensitivity range |
 | `GET /api/v1/search?q=...` | Search published titles, body text, and glossary terms; bounded results |
+| `GET /api/v1/case-studies` | Published validated case metadata, ordered by catalog order then ID; draft/planned entries omitted, empty array when none are published |
 | `GET /api/v1/case-studies/{id}` | Implemented: authored draft/published case metadata and versioned stages/rubrics; unknown/planned/topic IDs return 404 |
 | `GET /api/v1/catalog/stats` | Generated counts by publication state and available capability |
 
