@@ -115,9 +115,9 @@ Do not retain runs on the server initially. Playback and backwards seek are loca
 
 ## 6. Resource and security boundaries
 
-Only built-in model IDs execute. No user Java compilation, arbitrary URLs, remote request probes, or shell execution. Enforce request size, numeric bounds, node/request/event counts, concurrent-run limits, and response size on the server.
+Only built-in model IDs execute. No user Java compilation, arbitrary URLs, remote request probes, or shell execution. Required safeguards include request size, numeric bounds, node/request/event counts, concurrent-run limits, and response size. Current code validates bounded model inputs and per-run budgets; independent request-body/total-response byte ceilings and aggregate concurrent-run admission remain unimplemented.
 
-Implemented defaults: `request-flow` accepts at most 100 requests and 8 nodes; the rate limiter at most 500 requests; the shared runner allows 10,000 events, an estimated 2 MiB trace, 60 seconds of virtual time, and a 10-second wall-clock deadline checked cooperatively. The wall-clock deadline is an execution guard, not modeled behavior, so a run it stops is censored and not promised to replay identically. Tune using measurements and record changes; these are application safeguards, not learning claims.
+Implemented defaults: `request-flow` accepts at most 100 requests and 8 nodes; the rate limiter at most 500 requests; the shared runner allows 10,000 events, an estimated 2 MiB trace, 60 seconds of virtual time, and a 10-second wall-clock deadline checked cooperatively. The wall-clock deadline is an execution guard, not modeled behavior, so a run it stops is censored and not promised to replay identically. The byte budget covers the emitted events array and structured state, excluding the rest of the response. [HLD-04C](work-items/HLD-04C.md) verifies actual serialization and concurrent HTTP isolation; it does not establish admission control or a production capacity. Tune using measurements and record changes; these are application safeguards, not learning claims.
 
 Use same-origin API routing; configure allowed origins explicitly for any separate hosting. Log request IDs, model/version, duration, limit outcomes, and errors; avoid logging user notes or entire imported files. Hosted deployment must bound aggregate concurrent memory, not only each run.
 
