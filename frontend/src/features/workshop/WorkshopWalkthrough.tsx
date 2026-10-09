@@ -150,8 +150,9 @@ export function WorkshopWalkthrough({
         </svg>
       </div>
       <p className="workshop-hint">
-        Highlighted participants belong to the selected step. Full descriptions
-        and every step are available below.
+        Highlighted participants belong to the selected step. Scroll sideways to
+        see other participants when needed. Full descriptions and every step are
+        available below.
       </p>
       <div className="walkthrough-controls">
         <button

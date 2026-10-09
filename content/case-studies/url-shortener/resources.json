@@ -109,5 +109,27 @@
     "supports": "Statement snapshots, conflicting inserts and locked-row rechecks; product retry deadlines, takedown ordering and replay retention need application design.",
     "reviewedAt": "2026-10-09",
     "accessStatus": "available"
+  },
+  {
+    "id": "azure-cache-aside",
+    "title": "Cache-Aside pattern",
+    "organization": "Microsoft",
+    "url": "https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside",
+    "sourceType": "documentation",
+    "relevantSections": "Solution; Problems and considerations: lifetime, consistency and local caching; Workload design",
+    "supports": "Miss/fill mechanics, stale-data limitations and conditional fallback; the strict mapping/eligibility split and freshness contract are original workshop choices, not an Azure implementation.",
+    "reviewedAt": "2026-10-09",
+    "accessStatus": "available"
+  },
+  {
+    "id": "aws-timeouts-retries-jitter",
+    "title": "Timeouts, retries, and backoff with jitter",
+    "organization": "Amazon Web Services",
+    "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
+    "sourceType": "documentation",
+    "relevantSections": "Failures Happen; Timeouts; Retries and backoff; Jitter",
+    "supports": "Resource-bounded timeouts, uncertain side effects, retry multiplication and pacing; specific three-layer/three-attempt arithmetic and URL-shortener retry retention are workshop assumptions.",
+    "reviewedAt": "2026-10-09",
+    "accessStatus": "available"
   }
 ]

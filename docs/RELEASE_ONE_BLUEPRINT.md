@@ -1,6 +1,6 @@
 # First release module blueprint
 
-Status: acceptance notes for `P1`–`P2`. `request-flow` and `capacity-estimation` have working slices; their remaining release checks are tracked in the roadmap. `cache-aside` has working learning/simulation slices; `url-shortener` has six draft stages from Requirements through Flows (HLD-09B2), with its remaining stages and publication still pending. Their shipped schemas and precise behavior must agree with these teaching outcomes; material differences need a documented revision to the examples.
+Status: acceptance notes for `P1`–`P2`. `request-flow` and `capacity-estimation` have working slices; their remaining release checks are tracked in the roadmap. `cache-aside` has working learning/simulation slices; `url-shortener` has eight draft stages from Requirements through Failures (HLD-09B3), with its remaining stages and publication still pending. Their shipped schemas and precise behavior must agree with these teaching outcomes; material differences need a documented revision to the examples.
 
 ## 1. Cohesive learner journey
 

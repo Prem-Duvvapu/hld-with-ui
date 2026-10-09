@@ -90,7 +90,7 @@ for (const theme of ["light", "dark"] as const) {
           element.scrollIntoView({ block: "start" }),
         );
         await page.screenshot({
-          path: `../docs/work-items/assets/hld-09b2/flows-${width}-${theme}.png`,
+          path: `test-results/hld-09b2-flows-${width}-${theme}.png`,
         });
       }
     }
@@ -130,7 +130,7 @@ for (const theme of ["light", "dark"] as const) {
         element.scrollIntoView({ block: "start" }),
       );
       await page.screenshot({
-        path: `../docs/work-items/assets/hld-09b2/baseline-${width}-${theme}.png`,
+        path: `test-results/hld-09b2-baseline-${width}-${theme}.png`,
       });
     }
     await page.getByRole("button", { name: "Next stage", exact: true }).click();
@@ -147,7 +147,7 @@ for (const theme of ["light", "dark"] as const) {
     await expect(viewer.getByRole("status")).toContainText("Step 1 of 5");
     await expect(
       page.getByRole("button", { name: "Next stage", exact: true }),
-    ).toBeDisabled();
+    ).toBeEnabled();
     expect(posts).toEqual([]);
   });
 }

@@ -61,7 +61,7 @@ function rejectChange(change, expected) {
 test("reject publication before the full design journey exists", () => {
   rejectChange((catalog) => {
     catalog.find((entry) => entry.id === "url-shortener").status = "published";
-  }, /published workshop missing stage evolution/);
+  }, /published workshop missing stage operations/);
 });
 
 test("reject mismatched content version", () => {
