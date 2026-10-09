@@ -27,7 +27,19 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${frontendPort}`,
     trace: "retain-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "chromium",
+      testIgnore: "**/native-zoom.e2e.ts",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    // Native zoom needs a real browser window without device/viewport emulation.
+    {
+      name: "native-zoom",
+      testMatch: "**/native-zoom.e2e.ts",
+      use: { browserName: "chromium", viewport: null },
+    },
+  ],
   webServer: [
     {
       command: `java -jar ${jar}`,

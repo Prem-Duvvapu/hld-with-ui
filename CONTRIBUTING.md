@@ -35,6 +35,8 @@ bash -n start.sh
 (cd frontend && npm run contracts:check && npm run typecheck && npm run lint && npm run format:check && npm test && npm run build)
 ```
 
+The default browser command includes the ordinary `chromium` project and an isolated `native-zoom` project. Native zoom uses a minimal test-only extension in a temporary profile and the bundled Chromium channel; it requires the full pinned Chromium installation from the command below. `npm run e2e -- --project=native-zoom` runs only its actual 200% zoom checks. Evidence normally stays in test results; see [HLD-09C-A](docs/work-items/HLD-09C-A.md) for intentional screenshot refreshes.
+
 Browser journeys run the packaged Java backend and the production frontend build on isolated ports (18080 and 14173, overridable with `E2E_BACKEND_PORT` and `E2E_FRONTEND_PORT`) and stop both afterwards. They need the backend jar and Playwright's Chromium:
 
 ```bash
