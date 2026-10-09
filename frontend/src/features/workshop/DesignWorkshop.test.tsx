@@ -48,7 +48,7 @@ describe("Design workshop", () => {
     const first = view();
     expect(
       screen.getByRole("region", { name: "Draft workshop" }),
-    ).toHaveTextContent("3 authored stages");
+    ).toHaveTextContent("6 authored stages");
     expect(raw).toBeNull();
     fireEvent.change(
       screen.getByRole("textbox", { name: "Your original answer" }),
@@ -212,7 +212,7 @@ describe("Design workshop", () => {
       "aria-current",
       "step",
     );
-    expect(screen.getByRole("button", { name: "Next stage" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Next stage" })).toBeEnabled();
     expect(
       screen.getByRole("heading", {
         name: workshop.stages[2]!.title,

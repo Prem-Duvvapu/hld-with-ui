@@ -112,6 +112,8 @@ Future catalog generation may include all planned entries, but app navigation ca
 
 Workshop activities derive as `<stage-id>-attempt`, `<stage-id>-revision`, and `<stage-id>-check-<criterion-id>`. Stage/rubric and all derived activity IDs must be unique and bounded. Only the original authored case resource supplies IDs; do not create a second hand-maintained frontend/backend topic catalog. The current first-release publication guard requires requirements, estimates, api, data, baseline, flows, evolution, failures, operations, and defense; passing it does not replace manual learning/source/accessibility review.
 
+Optional stage `walkthroughs` describe illustrative paths, never executable outcomes. Each stage has 0–4 paths; each path has 1–8 `nodes` (`id`, `title`, `detail`) and 1–20 ordered `steps` (`id`, `title`, `from`, `to`, `detail`), plus `id`, `title`, `summary`. IDs are unique within the path/stage scope and endpoints resolve to nodes; self-edges describe internal decisions. Titles are bounded to 200 characters and details/summary to 2,000. Match OpenAPI/JSON Schema, omit unsupported fields such as timing/metrics, and present a complete text equivalent. Keep alternative success/failure paths separate. Missing walkthroughs are valid for prose-only stages; presentation selection does not imply a run or learning completion.
+
 Practice question IDs and derived Guided IDs (`<checkpoint-id>-prediction` and
 `<checkpoint-id>-tradeoff`) share a per-topic answer namespace. The content
 validator rejects collisions; stable topic/activity IDs are bounded to 100

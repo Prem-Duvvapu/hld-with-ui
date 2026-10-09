@@ -47,3 +47,5 @@ export type CacheAsideEvent = components["schemas"]["CacheAsideEvent"];
 export type CacheAsideLimits = components["schemas"]["CacheAsideLimits"];
 export type CacheEntryState = components["schemas"]["CacheEntryState"];
 export type OriginValueState = components["schemas"]["OriginValueState"];
+
+export type WorkshopWalkthrough = components["schemas"]["WorkshopWalkthrough"];

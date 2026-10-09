@@ -11,6 +11,10 @@
 - Hosted `/api/v1/topics` returned content version 1.0.0 for all four modules. The current canonical catalog contains 1.1.0 for those modules.
 - The Vercel frontend deployed PR #42 successfully. Frontend deployment status therefore does not establish backend freshness.
 
+### 2026-10-09 recheck
+
+Before HLD-09B2 delivery, both the Vercel-proxied topics and URL-shortener case requests timed out after 15 seconds each. This establishes neither backend freshness nor recovery; it does not prove the earlier artifact is still deployed. The incident remains open pending a deployed-commit/log check and successful version/case responses.
+
 ### Cause and required action
 
 The observed responses indicate an older backend artifact; its exact deployed commit and reason for missing deployment have not been verified. No authenticated Render deployment capability is configured in this environment. Deploy latest `main` for the existing Render service, inspect its deployed commit/logs, and verify the public API again. No credentials belong in this repository.

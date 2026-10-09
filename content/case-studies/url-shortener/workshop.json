@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
   "id": "url-shortener",
-  "contentVersion": "1.1.0",
-  "introduction": "Start with the promise, estimate its demand, then define the requests and responses. These three draft stages help you explain a short-link service before choosing its data model or architecture. The remaining design stages are still being authored; this app does not create or redirect real short links.",
+  "contentVersion": "1.2.0",
+  "introduction": "Start with the promise, estimate its demand, then define requests, records and flows. These six draft stages help you explain a short-link service, protect code ownership and recover a lost create response. Evolution, failures, operations and interview defense are still being authored. This app does not create or redirect real short links.",
   "invariant": "An active short code resolves to exactly one destination and never silently changes ownership. Unknown or expired codes never redirect, including through a cache.",
   "stages": [
     {
       "id": "requirements",
       "title": "Requirements and scope",
       "prompt": "You are asked to design a service that creates short links and redirects readers. Write a short requirements brief: required operations, expiry and ownership rules, expected traffic, one measurable reliability or latency objective, abuse behavior, and non-goals. Which behavior must remain correct when a cache or database fails? State questions you would ask before choosing components.",
-      "reference": "## Start with what the product must do\n\nA short link is a stable name for a destination. Before drawing servers, agree on what creating and opening that name must mean.\n\n### Required behavior\n\n- Create a short code for an absolute HTTP(S) destination. Reject unsupported schemes, missing hosts, and destinations that point back into our own redirect service. This is a product validation policy; URI syntax alone does not establish that a destination is safe.\n- Allow an optional expiry time. An active code identifies one destination. Creation must not silently replace someone else's code.\n- Resolve a known, active code and redirect the reader. Unknown and expired codes must never redirect. In this workshop, choose 404 for both unknown and expired codes so the response does not distinguish their history. The API stage makes this policy explicit.\n- Keep destination ownership stable. Do not reuse expired codes in this introductory design: an old shared link could otherwise lead to a new owner's destination.\n- Define abuse controls for creation and opening links, and a takedown process. Automatic malicious-content scanning is outside this first scope. Creating a link does not require our server to fetch its destination.\n\n### Correctness questions to resolve\n\nAn expiry check uses the link's expiry timestamp, including on a cache hit. At exactly the expiry time the link is expired. Cache TTL alone cannot promise this invariant if entries outlive the link.\n\nA create request can time out after the server has stored a link. A retry must have a stated policy: a bounded client request key can return the original result, or the product can explicitly accept duplicate links. Do not assume a timeout proves nothing was created. The API stage below defines a bounded retry window and its limits.\n\n### Assumptions to confirm with the interviewer or product owner\n\nFor this exercise, assume 1,000,000 daily users and 10 operations per user per day, of which 90% open links and 10% create them, with a peak factor of 5. These are illustrative assumptions, not measured demand. The Capacity module can calculate their effect.\n\nPropose a redirect latency objective of p95 under 200 ms and 99.9% successful valid redirects over a 30-day window. Define the measurement boundary as the service's redirect response, excluding the destination page's load. Decide how planned maintenance and deliberate abuse rejection affect the success denominator. These targets are discussion inputs, not guarantees proved by our estimator or simulator. Availability for cached reads may differ from new writes during a store outage.\n\n### Non-goals for the first design\n\nCustom aliases, editable destinations, detailed click analytics, user accounts, multi-region writes, and a production shortening endpoint are outside this stage. Adding revocation later changes freshness requirements: a long cache TTL cannot promise immediate takedown.\n\n### A tempting wrong answer\n\n“Add Redis, a queue, and many service instances” names tools before agreeing what must remain correct. First define active-link ownership, expiry, expected operations, failure outcomes, and load. Introduce components only when an access pattern or bottleneck justifies them.\n\n### Explain it aloud\n\n**To a teammate:** “We create a stable code, and we redirect only while that code is active. Expiry must still be checked on cached reads. We need a retry policy for uncertain creates and explicit traffic and reliability assumptions before selecting infrastructure.”\n\n**In an interview:** State create/resolve behavior, the ownership and expiry invariant, the read-heavy assumptions, measurable service objectives, and the first non-goals. Then ask which correctness or availability constraint is most important.\n\n**Changed condition:** If links can be revoked immediately, what guarantee must cache invalidation provide? If click analytics becomes required, should recording a click delay a redirect? Name the new constraint before changing the design.\n\n### Sources and scope\n\n[RFC 9110, sections 15.4.3, 15.5.5 and 15.5.11](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.4.3) defines temporary redirects and the distinction between 404 and 410. The expired-code response above is a chosen product policy. [RFC 3986, sections 3 and 7](https://www.rfc-editor.org/rfc/rfc3986.html#section-3) describes URI components and security considerations; accepting only HTTP(S) is our scoped design choice. Neither standard mandates this workshop's traffic, availability, ownership, or retry assumptions.",
+      "reference": "## Start with what the product must do\n\nA short link is a stable name for a destination. Before drawing servers, agree on what creating and opening that name must mean.\n\n### Required behavior\n\n- Create a short code for an absolute HTTP(S) destination. Reject unsupported schemes, missing hosts, and destinations that point back into our own redirect service. This is a product validation policy; URI syntax alone does not establish that a destination is safe.\n- Allow an optional expiry time. An active code identifies one destination. Creation must not silently replace someone else's code.\n- Resolve a known, active code and redirect the reader. Unknown and expired codes must never redirect. In this workshop, choose 404 for both unknown and expired codes so the response does not distinguish their history. The API stage makes this policy explicit.\n- Keep destination ownership stable. Do not reuse expired codes in this introductory design: an old shared link could otherwise lead to a new owner's destination.\n- Define abuse controls for creation and opening links, and a takedown process. Automatic malicious-content scanning is outside this first scope. Creating a link does not require our server to fetch its destination.\n\n### Correctness questions to resolve\n\nAn expiry check uses the link's expiry timestamp, including on a cache hit. At exactly the expiry time the link is expired. Cache TTL alone cannot promise this invariant if entries outlive the link.\n\nA create request can time out after the server has stored a link. A retry must have a stated policy: a bounded client request key can return the original result, or the product can explicitly accept duplicate links. Do not assume a timeout proves nothing was created. The API stage below defines a bounded retry window and its limits.\n\n### Assumptions to confirm with the interviewer or product owner\n\nFor this exercise, assume 1,000,000 daily users and 10 operations per user per day, of which 90% open links and 10% create them, with a peak factor of 5. These are illustrative assumptions, not measured demand. The Capacity module can calculate their effect.\n\nPropose a redirect latency objective of p95 under 200 ms and 99.9% successful valid redirects over a 30-day window. Define the measurement boundary as the service's redirect response, excluding the destination page's load. Decide how planned maintenance and deliberate abuse rejection affect the success denominator. These targets are discussion inputs, not guarantees proved by our estimator or simulator. Availability for cached reads may differ from new writes during a store outage.\n\n### Non-goals for the first design\n\nCustom aliases, editable destinations, detailed click analytics, user accounts, multi-region writes, and a production shortening endpoint are outside this stage. Adding revocation later changes freshness requirements: a long cache TTL cannot promise immediate takedown.\n\n### A tempting wrong answer\n\n\u201cAdd Redis, a queue, and many service instances\u201d names tools before agreeing what must remain correct. First define active-link ownership, expiry, expected operations, failure outcomes, and load. Introduce components only when an access pattern or bottleneck justifies them.\n\n### Explain it aloud\n\n**To a teammate:** \u201cWe create a stable code, and we redirect only while that code is active. Expiry must still be checked on cached reads. We need a retry policy for uncertain creates and explicit traffic and reliability assumptions before selecting infrastructure.\u201d\n\n**In an interview:** State create/resolve behavior, the ownership and expiry invariant, the read-heavy assumptions, measurable service objectives, and the first non-goals. Then ask which correctness or availability constraint is most important.\n\n**Changed condition:** If links can be revoked immediately, what guarantee must cache invalidation provide? If click analytics becomes required, should recording a click delay a redirect? Name the new constraint before changing the design.\n\n### Sources and scope\n\n[RFC 9110, sections 15.4.3, 15.5.5 and 15.5.11](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.4.3) defines temporary redirects and the distinction between 404 and 410. The expired-code response above is a chosen product policy. [RFC 3986, sections 3 and 7](https://www.rfc-editor.org/rfc/rfc3986.html#section-3) describes URI components and security considerations; accepting only HTTP(S) is our scoped design choice. Neither standard mandates this workshop's traffic, availability, ownership, or retry assumptions.",
       "rubric": [
         {
           "id": "behavior",
@@ -51,7 +51,7 @@
       "id": "estimates",
       "title": "Traffic and storage estimates",
       "prompt": "Using 1,000,000 daily users, 10 operations per user per day, 90% reads and peak factor 5, estimate average/peak demand and daily new links. With 1 kB per new record, 365 days and three copies, estimate raw/replicated data. State what the estimate omits. Predict separately what changes if peak factor becomes 10, reads become 99%, or record size becomes 5 kB. Explain why these numbers cannot select server counts or prove a latency objective.",
-      "reference": "## Count the work before choosing machines\n\nAn estimate turns product assumptions into quantities you can question. Use the Capacity module's **Interview baseline** preset; its Java calculator supplies the numbers below. They are illustrative assumptions, not measured traffic.\n\n### Write down the inputs\n\n- 1,000,000 daily users × 10 operations each; 90% open links and 10% create them.\n- Peak factor 5; every create adds one 1 kB record; retain 365 days of raw records with three copies.\n- For comparison with the existing calculator, assume a 2 kB average response, 200 ms mean total time and 30% planning headroom.\n- Decimal units: 1 kB = 1,000 bytes; 1 GB = 1,000,000,000 bytes. A redirect response may be much smaller than 2 kB. Measure the create/redirect response mix before using that generic payload assumption in a real design.\n\n### Carry the units through the arithmetic\n\n- Daily operations: 1,000,000 × 10 = **10,000,000 requests/day**.\n- Average demand: 10,000,000 ÷ 86,400 = **115.74 requests/s**.\n- Busy-period demand: 115.7407 × 5 = **578.70 requests/s**.\n- At that peak: 578.7037 × 0.9 = **520.83 reads/s**; × 0.1 = **57.87 writes/s**.\n- New links: 10,000,000 × 0.1 = **1,000,000 writes/day**.\n- New raw data: 1,000,000 × 1,000 bytes = **1 GB/day**. Retention: 1 × 365 = **365 GB raw**; three copies: 365 × 3 = **1,095 GB**.\n- Response payload: 10,000,000 × 2,000 bytes = **20 GB/day**. At peak: 578.7037 × 2,000 × 8 ÷ 1,000,000 = **9.26 Mb/s**.\n- Mean requests in the system: 578.7037/s × 0.2 s = **115.74 requests**, about 116. Time includes queueing and dependencies; this is not 116 CPU workers.\n- A selected 30% margin gives 578.7037 × 1.3 = **752.31 requests/s** as a planning target. It does not prove that a fleet can sustain that load.\n\nDisplayed values are rounded after calculation. The 200 ms mean is an independent illustrative input, not a deduction from the Requirements stage's p95 objective. A mean does not establish a percentile or a burst bound.\n\n### Change one assumption at a time\n\nReset **Interview baseline** before each change, then calculate again.\n\n1. **Peak factor 10:** peak becomes **1,157.41 requests/s**, including **1,041.67 reads/s** and **115.74 writes/s**; peak response payload becomes **18.52 Mb/s**. Daily requests, daily writes and **365 GB raw** stay fixed because only the traffic concentration changed.\n2. **Read percentage 99:** keep peak factor 5. Peak becomes **572.92 reads/s** and **5.79 writes/s**; creates fall to **100,000 writes/day**, so raw retained records fall to **36.5 GB**, or **109.5 GB** with three copies. Total request rate and response payload remain fixed under the unchanged response-size assumption. This depends on fewer creates, not simply on adding a cache.\n3. **Record size 5 kB:** restore 90% reads. Raw retained data becomes **1,825 GB**, or **5,475 GB** with three copies. Requests/s and **9.26 Mb/s** response payload stay fixed because record size and response size are separate inputs.\n\n### What this estimate cannot promise\n\nIndexes, logs, backups, metadata, compression and operational reserve are excluded. A permanent code-reservation registry may grow after link records expire because our design never reuses an old code. The 24-hour create-retry records in the API stage also consume storage. Include those separately; 365-day raw link retention is not the whole long-term footprint.\n\nUniform request rates hide hot links and bursts. A cache may reduce store reads but does not change how many readers arrive at the service. Neither this worksheet nor the Request Flow simulator measures production instance capacity. Benchmark the chosen design with realistic workloads and failure cases, then inspect queue time, store latency and saturation.\n\n### Correct a tempting wrong explanation\n\n“Only 57.87 writes/s means any database is enough” skips record size, indexes, durability, hot partitions and degraded operation. Estimate the access pattern, then measure whether the chosen store meets the stated latency and correctness constraints.\n\n**To a teammate:** “The baseline implies about 579 peak operations/s and 365 GB of raw records per year. Peak concentration changes rate, while the create fraction and record size change growth. We still need overhead, skew and failure measurements before choosing capacity.”\n\n**In an interview:** State the assumptions; derive daily, average and peak work; separate reads from new records; explain decimal units and exclusions; change one assumption and defend which output moves. If retries increase arrivals without creating new records, model request demand separately from unique writes.\n\n### Sources and scope\n\n[Little's original paper, public abstract](https://pubsonline.informs.org/doi/10.1287/opre.9.3.383) supports the average relationship under its stationarity and finite-mean conditions; it does not promise a worker count. [AWS load-testing guidance](https://docs.aws.amazon.com/wellarchitected/latest/framework/perf_process_culture_load_test.html) supports checking complete workloads against defined objectives. Our workload values and arithmetic are workshop assumptions verified against this app's Java estimator.\n",
+      "reference": "## Count the work before choosing machines\n\nAn estimate turns product assumptions into quantities you can question. Use the Capacity module's **Interview baseline** preset; its Java calculator supplies the numbers below. They are illustrative assumptions, not measured traffic.\n\n### Write down the inputs\n\n- 1,000,000 daily users \u00d7 10 operations each; 90% open links and 10% create them.\n- Peak factor 5; every create adds one 1 kB record; retain 365 days of raw records with three copies.\n- For comparison with the existing calculator, assume a 2 kB average response, 200 ms mean total time and 30% planning headroom.\n- Decimal units: 1 kB = 1,000 bytes; 1 GB = 1,000,000,000 bytes. A redirect response may be much smaller than 2 kB. Measure the create/redirect response mix before using that generic payload assumption in a real design.\n\n### Carry the units through the arithmetic\n\n- Daily operations: 1,000,000 \u00d7 10 = **10,000,000 requests/day**.\n- Average demand: 10,000,000 \u00f7 86,400 = **115.74 requests/s**.\n- Busy-period demand: 115.7407 \u00d7 5 = **578.70 requests/s**.\n- At that peak: 578.7037 \u00d7 0.9 = **520.83 reads/s**; \u00d7 0.1 = **57.87 writes/s**.\n- New links: 10,000,000 \u00d7 0.1 = **1,000,000 writes/day**.\n- New raw data: 1,000,000 \u00d7 1,000 bytes = **1 GB/day**. Retention: 1 \u00d7 365 = **365 GB raw**; three copies: 365 \u00d7 3 = **1,095 GB**.\n- Response payload: 10,000,000 \u00d7 2,000 bytes = **20 GB/day**. At peak: 578.7037 \u00d7 2,000 \u00d7 8 \u00f7 1,000,000 = **9.26 Mb/s**.\n- Mean requests in the system: 578.7037/s \u00d7 0.2 s = **115.74 requests**, about 116. Time includes queueing and dependencies; this is not 116 CPU workers.\n- A selected 30% margin gives 578.7037 \u00d7 1.3 = **752.31 requests/s** as a planning target. It does not prove that a fleet can sustain that load.\n\nDisplayed values are rounded after calculation. The 200 ms mean is an independent illustrative input, not a deduction from the Requirements stage's p95 objective. A mean does not establish a percentile or a burst bound.\n\n### Change one assumption at a time\n\nReset **Interview baseline** before each change, then calculate again.\n\n1. **Peak factor 10:** peak becomes **1,157.41 requests/s**, including **1,041.67 reads/s** and **115.74 writes/s**; peak response payload becomes **18.52 Mb/s**. Daily requests, daily writes and **365 GB raw** stay fixed because only the traffic concentration changed.\n2. **Read percentage 99:** keep peak factor 5. Peak becomes **572.92 reads/s** and **5.79 writes/s**; creates fall to **100,000 writes/day**, so raw retained records fall to **36.5 GB**, or **109.5 GB** with three copies. Total request rate and response payload remain fixed under the unchanged response-size assumption. This depends on fewer creates, not simply on adding a cache.\n3. **Record size 5 kB:** restore 90% reads. Raw retained data becomes **1,825 GB**, or **5,475 GB** with three copies. Requests/s and **9.26 Mb/s** response payload stay fixed because record size and response size are separate inputs.\n\n### What this estimate cannot promise\n\nIndexes, logs, backups, metadata, compression and operational reserve are excluded. A permanent code-reservation registry may grow after link records expire because our design never reuses an old code. The 24-hour create-retry records in the API stage also consume storage. Include those separately; 365-day raw link retention is not the whole long-term footprint.\n\nUniform request rates hide hot links and bursts. A cache may reduce store reads but does not change how many readers arrive at the service. Neither this worksheet nor the Request Flow simulator measures production instance capacity. Benchmark the chosen design with realistic workloads and failure cases, then inspect queue time, store latency and saturation.\n\n### Correct a tempting wrong explanation\n\n\u201cOnly 57.87 writes/s means any database is enough\u201d skips record size, indexes, durability, hot partitions and degraded operation. Estimate the access pattern, then measure whether the chosen store meets the stated latency and correctness constraints.\n\n**To a teammate:** \u201cThe baseline implies about 579 peak operations/s and 365 GB of raw records per year. Peak concentration changes rate, while the create fraction and record size change growth. We still need overhead, skew and failure measurements before choosing capacity.\u201d\n\n**In an interview:** State the assumptions; derive daily, average and peak work; separate reads from new records; explain decimal units and exclusions; change one assumption and defend which output moves. If retries increase arrivals without creating new records, model request demand separately from unique writes.\n\n### Sources and scope\n\n[Little's original paper, public abstract](https://pubsonline.informs.org/doi/10.1287/opre.9.3.383) supports the average relationship under its stationarity and finite-mean conditions; it does not promise a worker count. [AWS load-testing guidance](https://docs.aws.amazon.com/wellarchitected/latest/framework/perf_process_culture_load_test.html) supports checking complete workloads against defined objectives. Our workload values and arithmetic are workshop assumptions verified against this app's Java estimator.\n",
       "rubric": [
         {
           "id": "units",
@@ -88,7 +88,7 @@
       "id": "api",
       "title": "Create and redirect APIs",
       "prompt": "Specify conceptual POST /links and GET /{code} requests, successful responses and errors. Walk through a create timeout after commit, a same-key retry with changed input, and a read at exactly the link expiry. Explain redirect caching and how you avoid leaking whether a code used to exist. State the retry window, authorization and abuse assumptions. These are proposed contracts, not endpoints implemented by this learning app.",
-      "reference": "## Make each request's promise explicit\n\nA contract tells a caller what success, failure and an uncertain result mean. These examples describe the service we are designing. The learning app only serves workshop content and simulations; it implements no shortening endpoints.\n\n### Create one link\n\nUse **POST /links** with JSON fields `destination` and optional `expiresAt`. Require an `Idempotency-Key` for retry protection. The name and behavior of this header are our product contract, not a guarantee provided by HTTP.\n\n```http\nPOST /links\nContent-Type: application/json\nIdempotency-Key: create-7\n\n{\"destination\":\"https://example.com/guide\",\"expiresAt\":\"2026-11-01T00:00:00.000Z\"}\n```\n\nAfter durable creation, respond **201 Created**, `Location: https://s.example/aB7x`, and `Cache-Control: no-store`:\n\n```json\n{\"code\":\"aB7x\",\"shortUrl\":\"https://s.example/aB7x\",\"expiresAt\":\"2026-11-01T00:00:00.000Z\"}\n```\n\nOur illustrative limits are an 8 KiB request body, a destination up to 2,048 characters, a 1–64 character ASCII request key matching `[A-Za-z0-9_-]+` (no whitespace or control characters), and an optional UTC expiry after the current time and no more than 365 days ahead. Parse and validate the URL; accept only absolute HTTP(S) URLs with a host. Reject credentials in the URL, control characters and our own redirect-service origins to limit loops and header misuse. Do not fetch a destination during creation. A valid URL can still be malicious; validation is not a safety certificate.\n\nFor creation, assume an authorized API client credential supplies a stable caller namespace. Account management is outside this workshop. A public anonymous-create product would need a new caller/retry identity and abuse policy; an arbitrary caller-supplied namespace is not authorization. The public resolve operation needs no creator credential. Rate limits, quotas and a protected takedown workflow remain design requirements, not features implemented here.\n\n### A timeout does not tell you whether creation committed\n\nDefine a **24-hour replay window** from successful creation. Store the caller namespace, key, parsed create fields, resulting code and original response together with the link creation, atomically. Authenticate the caller, parse and bound the fields, then look up the retained caller/key and compare the accepted fields, including expiry. A retained identical replay returns its recorded result before applying new-create validation such as requiring a future expiry. Only a new create must pass that future-expiry check. Different JSON whitespace is not a different create. Concurrent requests for the same namespace/key must not produce two links.\n\n- **Same key, same create fields, within the window:** return the original 201 status, body and Location; do not create a second code. Replaying a response is not a new creation.\n- **Same key, different accepted fields, within the window:** return **409 Conflict** with `request_key_conflict`; leave the first link unchanged.\n- **The first request committed but its response was lost:** repeat the same key and fields within the window to obtain its recorded result. If the link has expired or been taken down since creation, the replay still describes the original creation; opening the code returns 404.\n- **The first attempt is still in progress:** coalesce or wait within a bounded request deadline; if that deadline expires, return 503 `create_in_progress` and a bounded Retry-After. Retry with the same key rather than racing a new one.\n- **The replay window has ended:** the key may be accepted as a new create. An old timeout is still ambiguous; a new key or expired key can produce a duplicate link. Longer deduplication needs a different retention/reconciliation contract.\n\nFor example, `create-7` commits at 10:00 but the caller times out. Repeating it at 10:01 returns `aB7x`. Changing its destination at 10:02 returns 409. At 10:00 the next day, the 24-hour window has ended and replay is no longer promised. The replay deadline belongs to the request record; it is separate from the short link's lifetime.\n\nThe implementation of atomic storage, durable retry records and concurrency control belongs in later Data and Flow stages. A separate best-effort cache of request keys would leave a crash window and cannot support the promise above.\n\n### Open one active code\n\nUse **GET /{code}**. First resolve the mapping and check expiry and takedown state, including when reading an application cache. At `now >= expiresAt`, do not redirect. For an active link, the chosen response is:\n\n```http\nHTTP/1.1 302 Found\nLocation: https://example.com/guide\nCache-Control: no-store\n```\n\nThe Location is the destination here; in the creation response it identifies the created short link. Send no success redirect when a mapping's current eligibility cannot be established.\n\nChoose `Cache-Control: no-store` for redirect and error responses so conforming HTTP caches do not reuse them instead of checking eligibility. **302 alone does not prevent caching.** This directive controls HTTP response caching; it does not invalidate our internal mapping cache or guarantee behavior by a hostile client. Immediate takedown still requires an authoritative eligibility check or a design that synchronizes revocation with cached copies. If that cannot be ensured during an outage, fail the read rather than claim immediate revocation.\n\n### Make errors useful without revealing history\n\nReturn a bounded JSON error with `code`, a clear `message` and a request ID; omit stack traces, destination credentials and sensitive link metadata.\n\n- **400:** malformed JSON, invalid destination, expiry outside the chosen limits or missing/invalid request key. A corrected request needs a new key if it changes a previously accepted create.\n- **401/403:** missing/invalid create credentials or a disallowed create operation, under the assumed caller policy.\n- **404:** unknown, expired or taken-down code, with the same outward response and no Location. This chosen privacy policy does not claim every implementation must use 404.\n- **409:** conflicting reuse of a retained create key; return enough information to explain the conflict without exposing another caller's result.\n- **429:** deliberate quota/rate rejection; define applicable limits and whether to include Retry-After. The exact enforcement policy belongs in the later abuse design.\n- **503:** unavailable dependencies or a pending-create deadline; use Retry-After only when a useful retry delay is known. A create timeout/503 must not imply that nothing was stored.\n\n### Change the requirement and revise the contract\n\nIf callers require replay for a week, retain request records for a week and budget their volume; link expiry and key expiry remain independent. If the product permits CDN redirect caching, define bounded freshness and takedown delay before changing no-store. A permanent cached redirect cannot satisfy immediate revocation merely because the database has been updated.\n\n**Wrong explanation:** “POST is safe to retry because the server chose a unique code.” A unique code prevents one kind of collision; it does not stop two retries from creating two different codes. Only the stated caller/key/payload retention and atomicity contract addresses that duplicate effect within its window.\n\n**To a teammate:** “Create returns one recorded result for a retained caller key. Resolve returns a temporary redirect only while the code is eligible, and HTTP responses are not stored. Internal cache freshness, revoked links and uncertain writes still need explicit failure handling.”\n\n**In an interview:** Show create and resolve success, then trace one lost response and one expired read. Explain key scope and lifetime, 409 on changed fields, 404 privacy and why HTTP no-store differs from application-cache correctness. Defend the response behavior before choosing storage.\n\n### Sources and product choices\n\n[RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.3.2) defines 201, Location, 302 and the relevant error meanings; sections 9.2.2, 10.2.2, 10.2.3 and 15 explain method/retry and status semantics. [RFC 9111 section 5.2.2.5](https://www.rfc-editor.org/rfc/rfc9111.html#section-5.2.2.5) defines the response no-store directive. [RFC 6585 section 4](https://datatracker.ietf.org/doc/html/rfc6585#section-4) defines 429 and optional Retry-After. [RFC 3986 sections 3 and 7](https://www.rfc-editor.org/rfc/rfc3986.html#section-3) cover URI components and security considerations. Our URL limits, 24-hour replay policy, credential assumption and expiry/privacy choices are explicitly chosen design rules; these standards do not implement them for us.\n",
+      "reference": "## Make each request's promise explicit\n\nA contract tells a caller what success, failure and an uncertain result mean. These examples describe the service we are designing. The learning app only serves workshop content and simulations; it implements no shortening endpoints.\n\n### Create one link\n\nUse **POST /links** with JSON fields `destination` and optional `expiresAt`. Require an `Idempotency-Key` for retry protection. The name and behavior of this header are our product contract, not a guarantee provided by HTTP.\n\n```http\nPOST /links\nContent-Type: application/json\nIdempotency-Key: create-7\n\n{\"destination\":\"https://example.com/guide\",\"expiresAt\":\"2026-11-01T00:00:00.000Z\"}\n```\n\nAfter durable creation, respond **201 Created**, `Location: https://s.example/aB7xQ2m9`, and `Cache-Control: no-store`:\n\n```json\n{\"code\":\"aB7xQ2m9\",\"shortUrl\":\"https://s.example/aB7xQ2m9\",\"expiresAt\":\"2026-11-01T00:00:00.000Z\"}\n```\n\nOur illustrative limits are an 8 KiB request body, a destination up to 2,048 characters, a 1\u201364 character ASCII request key matching `[A-Za-z0-9_-]+` (no whitespace or control characters), and an optional UTC expiry after the current time and no more than 365 days ahead. Parse and validate the URL; accept only absolute HTTP(S) URLs with a host. Reject credentials in the URL, control characters and our own redirect-service origins to limit loops and header misuse. Do not fetch a destination during creation. A valid URL can still be malicious; validation is not a safety certificate.\n\nFor creation, assume an authorized API client credential supplies a stable caller namespace. Account management is outside this workshop. A public anonymous-create product would need a new caller/retry identity and abuse policy; an arbitrary caller-supplied namespace is not authorization. The public resolve operation needs no creator credential. Rate limits, quotas and a protected takedown workflow remain design requirements, not features implemented here.\n\n### A timeout does not tell you whether creation committed\n\nDefine a **24-hour replay window** from successful creation. Store the caller namespace, key, parsed create fields, resulting code and original response together with the link creation, atomically. Authenticate the caller, parse and bound the fields, then look up the retained caller/key and compare the accepted fields, including expiry. A retained identical replay returns its recorded result before applying new-create validation such as requiring a future expiry. Only a new create must pass that future-expiry check. Different JSON whitespace is not a different create. Concurrent requests for the same namespace/key must not produce two links.\n\n- **Same key, same create fields, within the window:** return the original 201 status, body and Location; do not create a second code. Replaying a response is not a new creation.\n- **Same key, different accepted fields, within the window:** return **409 Conflict** with `request_key_conflict`; leave the first link unchanged.\n- **The first request committed but its response was lost:** repeat the same key and fields within the window to obtain its recorded result. If the link has expired or been taken down since creation, the replay still describes the original creation; opening the code returns 404.\n- **The first attempt is still in progress:** coalesce or wait within a bounded request deadline; if that deadline expires, return 503 `create_in_progress` and a bounded Retry-After. Retry with the same key rather than racing a new one.\n- **The replay window has ended:** the key may be accepted as a new create. An old timeout is still ambiguous; a new key or expired key can produce a duplicate link. Longer deduplication needs a different retention/reconciliation contract.\n\nFor example, `create-7` commits at 10:00 but the caller times out. Repeating it at 10:01 returns `aB7xQ2m9`. Changing its destination at 10:02 returns 409. At 10:00 the next day, the 24-hour window has ended and replay is no longer promised. The replay deadline belongs to the request record; it is separate from the short link's lifetime.\n\nThe implementation of atomic storage, durable retry records and concurrency control is explained in the Data and Flow stages. A separate best-effort cache of request keys would leave a crash window and cannot support the promise above.\n\n### Open one active code\n\nUse **GET /{code}**. First resolve the mapping and check expiry and takedown state, including when reading an application cache. At `now >= expiresAt`, do not redirect. For an active link, the chosen response is:\n\n```http\nHTTP/1.1 302 Found\nLocation: https://example.com/guide\nCache-Control: no-store\n```\n\nThe Location is the destination here; in the creation response it identifies the created short link. Send no success redirect when a mapping's current eligibility cannot be established.\n\nChoose `Cache-Control: no-store` for redirect and error responses so conforming HTTP caches do not reuse them instead of checking eligibility. **302 alone does not prevent caching.** This directive controls HTTP response caching; it does not invalidate our internal mapping cache or guarantee behavior by a hostile client. Immediate takedown still requires an authoritative eligibility check or a design that synchronizes revocation with cached copies. If that cannot be ensured during an outage, fail the read rather than claim immediate revocation.\n\n### Make errors useful without revealing history\n\nReturn a bounded JSON error with `code`, a clear `message` and a request ID; omit stack traces, destination credentials and sensitive link metadata.\n\n- **400:** malformed JSON, invalid destination, expiry outside the chosen limits or missing/invalid request key. A corrected request needs a new key if it changes a previously accepted create.\n- **401/403:** missing/invalid create credentials or a disallowed create operation, under the assumed caller policy.\n- **404:** unknown, expired or taken-down code, with the same outward response and no Location. This chosen privacy policy does not claim every implementation must use 404.\n- **409:** conflicting reuse of a retained create key; return enough information to explain the conflict without exposing another caller's result.\n- **429:** deliberate quota/rate rejection; define applicable limits and whether to include Retry-After. The exact enforcement policy belongs in the later abuse design.\n- **503:** unavailable dependencies or a pending-create deadline; use Retry-After only when a useful retry delay is known. A create timeout/503 must not imply that nothing was stored.\n\n### Change the requirement and revise the contract\n\nIf callers require replay for a week, retain request records for a week and budget their volume; link expiry and key expiry remain independent. If the product permits CDN redirect caching, define bounded freshness and takedown delay before changing no-store. A permanent cached redirect cannot satisfy immediate revocation merely because the database has been updated.\n\n**Wrong explanation:** \u201cPOST is safe to retry because the server chose a unique code.\u201d A unique code prevents one kind of collision; it does not stop two retries from creating two different codes. Only the stated caller/key/payload retention and atomicity contract addresses that duplicate effect within its window.\n\n**To a teammate:** \u201cCreate returns one recorded result for a retained caller key. Resolve returns a temporary redirect only while the code is eligible, and HTTP responses are not stored. Internal cache freshness, revoked links and uncertain writes still need explicit failure handling.\u201d\n\n**In an interview:** Show create and resolve success, then trace one lost response and one expired read. Explain key scope and lifetime, 409 on changed fields, 404 privacy and why HTTP no-store differs from application-cache correctness. Defend the response behavior before choosing storage.\n\n### Sources and product choices\n\n[RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.3.2) defines 201, Location, 302 and the relevant error meanings; sections 9.2.2, 10.2.2, 10.2.3 and 15 explain method/retry and status semantics. [RFC 9111 section 5.2.2.5](https://www.rfc-editor.org/rfc/rfc9111.html#section-5.2.2.5) defines the response no-store directive. [RFC 6585 section 4](https://datatracker.ietf.org/doc/html/rfc6585#section-4) defines 429 and optional Retry-After. [RFC 3986 sections 3 and 7](https://www.rfc-editor.org/rfc/rfc3986.html#section-3) cover URI components and security considerations. Our URL limits, 24-hour replay policy, credential assumption and expiry/privacy choices are explicitly chosen design rules; these standards do not implement them for us.\n",
       "rubric": [
         {
           "id": "success",
@@ -124,6 +124,411 @@
         "rfc-9111-http-caching",
         "rfc-3986-uri-syntax",
         "rfc-6585-429"
+      ]
+    },
+    {
+      "id": "data",
+      "title": "Data model and code ownership",
+      "prompt": "Choose records and indexes for code ownership, expiry, takedown and create retries. Show how two concurrent creates cannot reserve the same code or create two links for one retained caller/key. Explain what survives link cleanup, how collisions are bounded, and what commits atomically. Compare random codes with an allocated sequence. These are proposed records, not a database installed by this learning app.",
+      "reference": "## Store the promises, not just the destination\n\nThink of three ledgers: which codes have ever been assigned, what each link means, and which create result a caller may replay. Each protects a different promise.\n\n### Three records and their lookup keys\n\n**code_reservations** has `code` as its primary key and `reservedAt`. Keep this small reservation permanently after successful creation, even when link details are deleted. Never assign an old code to a new destination. Otherwise an old bookmark could open someone else's link.\n\n**links** has `code` as its primary key and a foreign key to its reservation. Store `destination`, `ownerNamespace`, `createdAt`, nullable `expiresAt`, and nullable `takenDownAt`. Destination and ownership are immutable after creation. Restricted write paths and database permissions must enforce that rule: a unique key alone does not forbid updating the destination. An authorized takedown changes eligibility, not ownership.\n\n**create_requests** has the composite primary key `(callerNamespace, requestKey)`. Store the accepted destination/expiry fields, original status/body/Location, resulting code and `replayDeadline`. Its code references the permanent reservation, not deletable link details. Keep the recorded result for 24 hours from successful creation even if the link expires earlier. Bound and protect this sensitive data; cleanup may remove it after the replay window, independently of link cleanup.\n\nA transaction may temporarily claim a request row before its result is filled in. That incomplete row must never commit: successful commit requires the reservation, link and complete replay result together. An implementation needs a controlled transaction/write path and appropriate constraints; this record sketch is not executable DDL or a complete database design.\n\n**Indexes:** a primary-key lookup by code supports resolve; the composite request key supports replay. Expiry indexes can help later cleanup but do not replace the eligibility check. The reservation SQL sketch is illustrative PostgreSQL 16, not a storage dependency of this app.\n\n### Generate a candidate; let the store decide uniqueness\n\nChoose eight case-sensitive base62 characters for new codes in this worked design. This is a product choice, not proof of collision-free generation or security. Draw with a suitable random generator in a real service; unique storage enforcement still decides ownership. A maximum of five candidate attempts bounds collision work, further bounded by the request deadline.\n\nConceptual PostgreSQL 16 reservation attempt, inside the create transaction:\n\n```sql\nINSERT INTO code_reservations (code, reserved_at)\nVALUES (:candidate, :created_at)\nON CONFLICT (code) DO NOTHING\nRETURNING code;\n```\n\nA returned row means this transaction reserved the candidate. No returned row means choose another candidate; never update the existing reservation or destination. Do not first check that a code is absent and then rely on that check: two callers can both observe absence. Do not catch a raw unique violation and continue an aborted transaction without a rollback/savepoint strategy. `DO NOTHING` is the chosen collision path here; `DO UPDATE` would be the wrong ownership operation.\n\nIf five candidates collide, roll back the whole uncommitted create and return an honest bounded failure, such as 503 `code_allocation_unavailable`. No incomplete retry result may remain committed. Database failure or an uncertain COMMIT is a different situation: the caller cannot infer rollback from a timeout and must retry/reconcile the same key.\n\n### Keep the create and replay decision atomic\n\nAfter authentication and bounded parsing, claim `(callerNamespace, requestKey)` with database concurrency control. A competing transaction must wait within its deadline or re-read the winning committed record. At PostgreSQL Read Committed, `ON CONFLICT DO NOTHING` can see a conflict whose row was not visible to that statement's snapshot; use a subsequent read/retry, not an assumed same-statement result.\n\nFor a retained record, compare accepted fields. Identical fields replay the recorded response; different fields return 409. Only a new create gets future-expiry validation. Serialize replacement of an expired request record and recheck its deadline while locked; cleanup must not race a current owner. At `now >= replayDeadline`, the old replay promise ends.\n\nFor a new request, reserve a candidate, insert immutable link details, fill the original response and deadline, then commit all three changes together. Send 201 only after successful durable commit. On confirmed rollback none of those new effects survives. On a lost commit acknowledgement the result is uncertain: use the retained key to discover whether it committed. A separate best-effort key cache leaves a crash gap between creation and recording its result.\n\n### Change one condition\n\nIf link lifetime is one hour but replay lasts 24 hours, deleting link details must not delete its retained create result or reservation. A replay may return the original 201 while opening the now-expired link returns 404; it never revives the link. If replay lasts a week, budget more request records. Permanent reservations also grow beyond the Estimates stage's 365-day raw-link calculation.\n\nAn allocated sequence avoids random candidate collisions but needs a reliable allocation strategy and can make enumeration easy. Hashing the destination introduces collision and deduplication decisions: two owners or expiries may legitimately need distinct links. Neither opaque codes nor sequences replace authorization for protected operations. Custom aliases are outside this baseline; adding them requires the same ownership constraint and an explicit conflict response.\n\n**Wrong explanation:** \u201cRandom codes are unique, so retrying POST is safe.\u201d Randomness does not enforce uniqueness; code uniqueness does not deduplicate a repeated create.\n\n**To a teammate:** \u201cThe permanent code ledger prevents reassignment. A transactional link plus request-result record prevents a retained-key retry from creating a second link.\u201d\n\n**In an interview:** Name the read keys, show the collision race, draw the commit boundary, then explain the independent link and replay lifetimes. Compare one alternative and say which requirement would justify it.\n\n### Sources and scope\n\n[PostgreSQL 16 constraints](https://www.postgresql.org/docs/16/ddl-constraints.html) describes primary, unique and foreign keys. [INSERT](https://www.postgresql.org/docs/16/sql-insert.html) describes targeted conflict handling. [Transactions](https://www.postgresql.org/docs/16/tutorial-transactions.html) explains atomic commit; [Read Committed isolation](https://www.postgresql.org/docs/16/transaction-iso.html#XACT-READ-COMMITTED) explains concurrent visibility and locking. These sources support storage mechanisms, not our eight-character, five-attempt or 24-hour product choices. The app does not execute these SQL operations.\n",
+      "rubric": [
+        {
+          "id": "records",
+          "prompt": "I separated permanent reservations, eligible link metadata and retained create results."
+        },
+        {
+          "id": "ownership",
+          "prompt": "I enforced unique code ownership and explained why immutability needs more than a unique index."
+        },
+        {
+          "id": "atomicity",
+          "prompt": "I put reservation, link and completed replay result in one commit and handled an uncertain acknowledgement."
+        },
+        {
+          "id": "concurrency",
+          "prompt": "I bounded collisions and serialized caller/key ownership, including expired-key replacement."
+        },
+        {
+          "id": "lifetime",
+          "prompt": "I kept link expiry, replay expiry and permanent non-reuse independent."
+        }
+      ],
+      "sourceIds": [
+        "postgres-16-constraints",
+        "postgres-16-insert",
+        "postgres-16-transactions",
+        "postgres-16-isolation"
+      ],
+      "experimentLinks": []
+    },
+    {
+      "id": "baseline",
+      "title": "Baseline architecture",
+      "prompt": "Draw the simplest architecture that can honor the API and data guarantees. Label protocols and durable ownership. Follow a reader from browser to destination and identify which hop lies outside redirect latency. Explain where retry state lives, what fails with the primary store, and what you would measure before adding cache or replicas.",
+      "reference": "## Start with a design you can explain end to end\n\nThe walkthrough is an authored architecture example. Selecting a step highlights a relationship; it does not send a create request, query a database or run a simulation.\n\n### Four participants, two request boundaries\n\nA **Client** reaches the **Link service** over HTTPS. TLS termination, routing and admission may be handled by an edge or deployment platform; they are a connection boundary here, not another proposed microservice. The stateless service uses a bounded connection pool and SQL transactions against the **Primary store**. A redirect sends Location back to the browser; the browser separately requests the **Destination** over HTTP(S). The service never fetches arbitrary targets.\n\nThe diagram's numbered steps and complete text transcript describe the same relationships. The primary owns reservations, link metadata and retained create results. Service memory can cache a connection or hold an in-flight request but is not the durable owner of retry state. Losing an instance must not erase a committed creation or replay result.\n\n### One store first, with explicit limits\n\nUse one logical transactional primary, illustrated with PostgreSQL 16 semantics, and the indexes from Data. Create commits the three records atomically. Resolve reads current metadata from the primary and checks eligibility. Cache, asynchronous analytics, queues, replicas and partitions are not required by this baseline. They are later choices driven by requirements and evidence.\n\nA primary outage blocks new creates and authoritative resolve checks; the chosen baseline returns unavailable rather than pretending the code is missing. A logical primary is not a high-availability guarantee. Backups, failover, replication durability and recovery procedures need later operational design. An asynchronous read replica can lag a just-created link or takedown; moving eligibility reads there would change the promise.\n\nDo not claim that roughly 579 peak operations/s proves one instance or this store is sufficient. Test the selected stack, pool, query plan and realistic skew. Measure queue time, store latency, connection saturation, error rate and the actual redirect latency boundary. A 302 from this service does not measure how long the destination page takes to load.\n\n### Preserve the correctness boundary\n\nA successful eligibility decision reads current metadata. A read authorized just before a concurrent takedown may finish after that takedown commits. \u201cImmediate takedown\u201d must define this ordering. If the product requires no in-flight redirect to finish after takedown acknowledgement, it needs additional coordination or fencing; a primary read by itself does not prove that stronger rule. Never promise it by drawing a fresh-looking database arrow.\n\n**Change the condition:** if read demand becomes the bottleneck, first inspect indexes and saturation, then consider more stateless instances or an application cache. A cache needs an explicit expiry/revocation policy; it is not safe merely because it speeds reads. If writes dominate, adding a read cache will not remove transactional create work.\n\n**Wrong explanation:** \u201cThree copies in Estimates means three databases provide availability.\u201d The estimate multiplies raw bytes; it does not specify replication lag, acknowledgement durability or failover behavior.\n\n**To a teammate:** \u201cThe service validates and decides; the primary owns the durable truth. A redirect hands the browser a destination rather than fetching that destination for it.\u201d\n\n**In an interview:** Draw four participants, label HTTPS and SQL, name the commit boundary and outage behavior, then give a measured trigger for adding a component. State the limits of a primary read during concurrent revocation.\n\n### Sources and scope\n\n[RFC 9110 redirect semantics](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.4.3) supports the Location response and separate follow-up request. [PostgreSQL 16 transactions](https://www.postgresql.org/docs/16/tutorial-transactions.html) and [isolation](https://www.postgresql.org/docs/16/transaction-iso.html) support the stated commit/read boundary. [AWS load testing guidance](https://docs.aws.amazon.com/wellarchitected/latest/framework/perf_process_culture_load_test.html) supports measuring realistic workloads. This proposed system is separate from HLD-with-UI's React frontend and Java teaching API; no shortening service or database is provisioned.\n",
+      "rubric": [
+        {
+          "id": "boundaries",
+          "prompt": "I distinguished browser-to-service HTTPS, service-to-store SQL and the separate destination request."
+        },
+        {
+          "id": "ownership",
+          "prompt": "I put durable retry/link/reservation state in the primary, not service memory."
+        },
+        {
+          "id": "capacity",
+          "prompt": "I named measurements instead of claiming the estimate proves instance capacity."
+        },
+        {
+          "id": "failure",
+          "prompt": "I explained primary outages, replica lag and the precise limits of concurrent takedown."
+        }
+      ],
+      "sourceIds": [
+        "rfc-9110-http-semantics",
+        "postgres-16-transactions",
+        "postgres-16-isolation",
+        "aws-performance-efficiency"
+      ],
+      "experimentLinks": [
+        {
+          "topicId": "request-flow",
+          "label": "Inspect queues before choosing instance counts",
+          "instruction": "Run Finite queue overload in Playground. Separate waiting time from processing time; the illustrative node capacity is not a benchmark of this architecture."
+        }
+      ],
+      "walkthroughs": [
+        {
+          "id": "baseline-path",
+          "title": "Follow one redirect",
+          "summary": "The simplest read path, before adding a cache. The numbered relationships are design examples, not measured network events.",
+          "nodes": [
+            {
+              "id": "client",
+              "title": "Client",
+              "detail": "Sends HTTPS requests. Retains the same create key and accepted fields when retrying an uncertain write."
+            },
+            {
+              "id": "service",
+              "title": "Link service",
+              "detail": "Owns validation, bounded work, code generation and eligibility checks; keeps no durable caller state in process memory."
+            },
+            {
+              "id": "store",
+              "title": "Primary store",
+              "detail": "Owns unique reservations, link metadata and durable create-request records in one transactional boundary."
+            },
+            {
+              "id": "destination",
+              "title": "Destination",
+              "detail": "Receives a separate browser request after a successful redirect. The link service does not fetch this URL."
+            }
+          ],
+          "steps": [
+            {
+              "id": "request",
+              "title": "HTTPS: open a code",
+              "from": "client",
+              "to": "service",
+              "detail": "The browser asks GET /aB7xQ2m9. Redirect latency for the link service starts at its defined request boundary."
+            },
+            {
+              "id": "lookup",
+              "title": "SQL: read the mapping",
+              "from": "service",
+              "to": "store",
+              "detail": "Read by the primary code index. The service checks expiry and takedown using the returned authoritative metadata."
+            },
+            {
+              "id": "redirect",
+              "title": "HTTP 302: return Location",
+              "from": "service",
+              "to": "client",
+              "detail": "For an eligible mapping, send the destination Location and Cache-Control: no-store. An unavailable eligibility check cannot produce a success redirect."
+            },
+            {
+              "id": "follow",
+              "title": "HTTP(S): load the destination",
+              "from": "client",
+              "to": "destination",
+              "detail": "The browser chooses to follow Location with a separate request. This destination latency is outside the link service redirect objective."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flows",
+      "title": "Create, redirect and retry flows",
+      "prompt": "Walk through a successful create and active redirect, then a lost response after commit and a read at exactly expiry. At each step name the owner, the decision and the outward result. Explain the separate paths for changed retry fields, exhausted collisions, pending creates and store failure. Distinguish a definite rollback from an uncertain acknowledgement.",
+      "reference": "## Explain what must happen before the next step\n\nChoose a walkthrough, predict the next decision, then select its step to inspect why it follows. These are authored causal examples, not Java simulation traces or measured executions. Every participant and step also appears in the complete text transcript.\n\n### Create: success means the whole result committed\n\nAuthenticate and parse bounded fields; serialize the caller/key lookup. A retained result is handled before future-expiry validation. For a new create, validate future expiry, reserve a unique candidate, write immutable link details and fill the replay response inside one transaction. Commit all three, then send 201. Candidate collisions use targeted no-insert handling and at most five attempts; exhaustion rolls back rather than overwriting another owner.\n\nA concurrent same-key caller may wait for the owner, within its request deadline, then inspect the committed result. Identical accepted fields replay; different fields return 409 `request_key_conflict`. If the deadline expires while ownership is unresolved, return 503 `create_in_progress` and retry the same key. Never send 201 for a merely claimed or pending record.\n\n### A lost response is not a lost creation\n\nSuppose create committed at 10:00 but its response was lost. At 10:01 the caller retries the same namespace/key/accepted fields. The durable request record supplies the original 201 body and Location, without a second reservation or link. If the link expired in between, replay still reports the old creation; resolve returns 404. Replaying does not revive it.\n\nAt `now >= replayDeadline`, the 24-hour promise ends. After serialized expired-record replacement, a newly accepted create may produce another link. A new key can also duplicate an earlier uncertain create. Longer protection requires a different retention/reconciliation contract, not a claim of unlimited exactly-once behavior.\n\nIf rollback is confirmed before commit, the new reservation, link and incomplete request row do not persist. If a commit acknowledgement is lost, do not report that nothing was stored. Retry/reconcile the same key; an unavailable response is not proof of rollback. Transaction retries and key contention must stay bounded by the request deadline.\n\n### Redirect: check eligibility before returning Location\n\nThe browser sends GET for one code. The service reads the primary mapping and checks `takenDownAt` plus expiry. If `expiresAt` is absent or `now < expiresAt`, and no takedown applies, return 302 Location with no-store. The browser may make a separate HTTP(S) destination request. The link service does not fetch it.\n\nAt `now >= expiresAt`, return 404 with no Location, even if cleanup has not deleted the row. Unknown and taken-down codes have that same outward response. A store outage is a separate 503 path: failure to read metadata is not evidence of absence or eligibility. With no cache in this baseline, there is no safe-success fallback.\n\nA current eligibility read orders the decision against stored state; a previously authorized redirect can still finish while takedown proceeds. A requirement forbidding any in-flight completion after takedown acknowledgement needs stronger coordination. HTTP no-store avoids reuse by conforming HTTP caches, but is not internal cache invalidation or control over a malicious client.\n\n### Keep failure paths separate\n\n- **Collision:** try another candidate, within five attempts and the deadline; never change an old mapping. Exhaustion produces bounded allocation failure.\n- **Changed retained key fields:** 409, leaving the original link and result untouched.\n- **Pending create deadline:** 503, with a useful bounded Retry-After if known; keep the same key on retry.\n- **Store unavailable:** 503, not 404. A write may be uncertain; no successful redirect when eligibility cannot be established.\n- **Unknown, expired or taken-down code:** uniform outward 404 with no-store and no Location.\n\nDo not join these mutually exclusive results into one successful sequence. Each walkthrough is one causal path; the prose identifies the other decisions.\n\n**Change the condition:** shorten the link lifetime to one hour but keep replay for 24 hours. A retry two hours later can correctly return the old creation while the code correctly refuses to redirect. Explain why checking future expiry before retained-key lookup would incorrectly reject a valid replay.\n\n**Wrong explanation:** \u201cA timeout means the client can create again with a new key.\u201d The first write may have committed. A new key loses the bounded deduplication promise and can create another link.\n\n**To a teammate:** \u201c201 follows the transaction; a timeout leaves the caller uncertain. Resolve checks eligibility each time and treats store failure as unavailable, not missing.\u201d\n\n**In an interview:** Trace normal create and redirect first. Then stop the create after commit, lose the response, and explain the same-key recovery. Finish with expiry equality and a store outage; say exactly which guarantees survive.\n\n### Sources and scope\n\n[PostgreSQL 16 transactions](https://www.postgresql.org/docs/16/tutorial-transactions.html), [INSERT](https://www.postgresql.org/docs/16/sql-insert.html) and [isolation](https://www.postgresql.org/docs/16/transaction-iso.html) support the commit, conflict and visibility discussion. [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html) supports status/Location semantics; [RFC 9111 no-store](https://www.rfc-editor.org/rfc/rfc9111.html#section-5.2.2.5) scopes HTTP caching. The retry window, equality rule, allocation bound and privacy behavior are chosen workshop policies; no actual shortening endpoints or SQL execution are added.\n",
+      "rubric": [
+        {
+          "id": "create",
+          "prompt": "I put durable atomic commit before 201 and kept collisions from changing ownership."
+        },
+        {
+          "id": "replay",
+          "prompt": "I traced lost response, same-key replay, changed-fields conflict and the bounded replay lifetime."
+        },
+        {
+          "id": "redirect",
+          "prompt": "I separated eligible 302, expiry equality 404 and dependency failure 503 without fetching targets."
+        },
+        {
+          "id": "ordering",
+          "prompt": "I distinguished confirmed rollback from uncertain commit and scoped concurrent takedown ordering."
+        }
+      ],
+      "sourceIds": [
+        "postgres-16-transactions",
+        "postgres-16-insert",
+        "postgres-16-isolation",
+        "rfc-9110-http-semantics",
+        "rfc-9111-http-caching"
+      ],
+      "experimentLinks": [
+        {
+          "topicId": "cache-aside",
+          "label": "Contrast these flows with a stale cache read",
+          "instruction": "Run baseline in Playground and step through the origin update and subsequent stale hit. Explain the extra eligibility guarantees before adding an internal cache to this architecture."
+        }
+      ],
+      "walkthroughs": [
+        {
+          "id": "create",
+          "title": "Create and commit",
+          "summary": "One successful new create. Each step is authored; it models ordering without pretending a database operation was executed.",
+          "nodes": [
+            {
+              "id": "client",
+              "title": "Client",
+              "detail": "Sends HTTPS requests. Retains the same create key and accepted fields when retrying an uncertain write."
+            },
+            {
+              "id": "service",
+              "title": "Link service",
+              "detail": "Owns validation, bounded work, code generation and eligibility checks; keeps no durable caller state in process memory."
+            },
+            {
+              "id": "store",
+              "title": "Primary store",
+              "detail": "Owns unique reservations, link metadata and durable create-request records in one transactional boundary."
+            }
+          ],
+          "steps": [
+            {
+              "id": "submit",
+              "title": "POST: same caller key and fields",
+              "from": "client",
+              "to": "service",
+              "detail": "Authenticate the stable caller namespace, parse bounded fields and retain the request key. Never trust an arbitrary namespace supplied by the caller."
+            },
+            {
+              "id": "claim",
+              "title": "SQL: claim the caller/key",
+              "from": "service",
+              "to": "store",
+              "detail": "Serialize ownership of the composite key. A retained identical result replays; changed fields conflict. Only a genuinely new create must pass future-expiry validation."
+            },
+            {
+              "id": "reserve",
+              "title": "SQL: reserve a unique code",
+              "from": "service",
+              "to": "store",
+              "detail": "Try a case-sensitive eight-character candidate with a unique insert. A collision does not alter the existing owner; try at most five candidates within the deadline."
+            },
+            {
+              "id": "commit",
+              "title": "COMMIT: publish all three records",
+              "from": "store",
+              "to": "store",
+              "detail": "The reservation, immutable link and completed replay response become durable together. No partial or pending result may commit."
+            },
+            {
+              "id": "created",
+              "title": "201: return the durable result",
+              "from": "service",
+              "to": "client",
+              "detail": "Only after confirmed commit, return the recorded code/body/Location with no-store. Losing this response does not undo the commit."
+            }
+          ]
+        },
+        {
+          "id": "resolve",
+          "title": "Resolve an active code",
+          "summary": "An authoritative read decides eligibility. The browser follows Location separately.",
+          "nodes": [
+            {
+              "id": "client",
+              "title": "Client",
+              "detail": "Sends HTTPS requests. Retains the same create key and accepted fields when retrying an uncertain write."
+            },
+            {
+              "id": "service",
+              "title": "Link service",
+              "detail": "Owns validation, bounded work, code generation and eligibility checks; keeps no durable caller state in process memory."
+            },
+            {
+              "id": "store",
+              "title": "Primary store",
+              "detail": "Owns unique reservations, link metadata and durable create-request records in one transactional boundary."
+            },
+            {
+              "id": "destination",
+              "title": "Destination",
+              "detail": "Receives a separate browser request after a successful redirect. The link service does not fetch this URL."
+            }
+          ],
+          "steps": [
+            {
+              "id": "get",
+              "title": "GET: request one code",
+              "from": "client",
+              "to": "service",
+              "detail": "Resolve is public under the assumed product policy; create authorization is a separate operation."
+            },
+            {
+              "id": "read",
+              "title": "SQL: read current metadata",
+              "from": "service",
+              "to": "store",
+              "detail": "Use the primary code index. An absent record is different from a dependency outage internally, even though expired/revoked/unknown have the same public 404."
+            },
+            {
+              "id": "check",
+              "title": "Decision: check expiry and takedown",
+              "from": "service",
+              "to": "service",
+              "detail": "A link is eligible only if not taken down and expiresAt is absent or now < expiresAt. Cleanup does not determine eligibility."
+            },
+            {
+              "id": "respond",
+              "title": "302: return the destination",
+              "from": "service",
+              "to": "client",
+              "detail": "Send Location and no-store only for an eligible mapping. Authorization is ordered at the check; stronger concurrent takedown completion needs coordination."
+            },
+            {
+              "id": "follow",
+              "title": "HTTP(S): follow Location",
+              "from": "client",
+              "to": "destination",
+              "detail": "The browser sends its own destination request; the link service never fetches arbitrary URLs."
+            }
+          ]
+        },
+        {
+          "id": "lost-response",
+          "title": "Recover a lost create response",
+          "summary": "A committed result survives response loss. Replay neither creates a second code nor revives an expired link.",
+          "nodes": [
+            {
+              "id": "client",
+              "title": "Client",
+              "detail": "Sends HTTPS requests. Retains the same create key and accepted fields when retrying an uncertain write."
+            },
+            {
+              "id": "service",
+              "title": "Link service",
+              "detail": "Owns validation, bounded work, code generation and eligibility checks; keeps no durable caller state in process memory."
+            },
+            {
+              "id": "store",
+              "title": "Primary store",
+              "detail": "Owns unique reservations, link metadata and durable create-request records in one transactional boundary."
+            }
+          ],
+          "steps": [
+            {
+              "id": "committed",
+              "title": "COMMIT: original create succeeds",
+              "from": "store",
+              "to": "store",
+              "detail": "The original reservation, link and replay record committed together. Its 24-hour replay deadline starts at successful creation."
+            },
+            {
+              "id": "lost",
+              "title": "Response lost: caller is uncertain",
+              "from": "service",
+              "to": "client",
+              "detail": "The caller times out without receiving the original 201. This does not establish rollback; it must keep the same key and fields."
+            },
+            {
+              "id": "retry",
+              "title": "POST: retry the same accepted fields",
+              "from": "client",
+              "to": "service",
+              "detail": "Authenticate and parse bounds, then consult the retained caller/key before new-create future-expiry validation. JSON whitespace alone is not a changed payload."
+            },
+            {
+              "id": "recover",
+              "title": "SQL: read the retained result",
+              "from": "service",
+              "to": "store",
+              "detail": "Within the window, identical accepted fields recover the original response. A different destination or expiry would take a separate 409 path, not this successful replay path."
+            },
+            {
+              "id": "replay",
+              "title": "201: replay, without a new link",
+              "from": "service",
+              "to": "client",
+              "detail": "Return the original status/body/Location. If the original link is now expired or taken down, opening it still returns 404. Replay never extends expiry or restores eligibility."
+            }
+          ]
+        },
+        {
+          "id": "expired",
+          "title": "Reject a read at expiry",
+          "summary": "The equality boundary is a rejection even when old link details still exist. This path is separate from active resolve.",
+          "nodes": [
+            {
+              "id": "client",
+              "title": "Client",
+              "detail": "Sends HTTPS requests. Retains the same create key and accepted fields when retrying an uncertain write."
+            },
+            {
+              "id": "service",
+              "title": "Link service",
+              "detail": "Owns validation, bounded work, code generation and eligibility checks; keeps no durable caller state in process memory."
+            },
+            {
+              "id": "store",
+              "title": "Primary store",
+              "detail": "Owns unique reservations, link metadata and durable create-request records in one transactional boundary."
+            }
+          ],
+          "steps": [
+            {
+              "id": "get",
+              "title": "GET: read at the expiry boundary",
+              "from": "client",
+              "to": "service",
+              "detail": "An old bookmark opens a code whose expiry is now reached."
+            },
+            {
+              "id": "metadata",
+              "title": "SQL: retrieve existing link metadata",
+              "from": "service",
+              "to": "store",
+              "detail": "The row still exists; delayed cleanup is permitted. The primary returns its expiresAt and takedown metadata."
+            },
+            {
+              "id": "equal",
+              "title": "Decision: now >= expiresAt",
+              "from": "service",
+              "to": "service",
+              "detail": "At equality the link is expired. Never infer eligibility merely from row presence or from an unexpired application-cache entry."
+            },
+            {
+              "id": "not-found",
+              "title": "404: no Location",
+              "from": "service",
+              "to": "client",
+              "detail": "Use the same outward no-store response as unknown or taken-down codes. No destination request is initiated by this redirect response."
+            }
+          ]
+        }
       ]
     }
   ]

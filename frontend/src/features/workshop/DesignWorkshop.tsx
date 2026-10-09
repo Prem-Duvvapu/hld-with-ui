@@ -8,6 +8,7 @@ import {
   MAX_ANSWER_LENGTH,
   type PracticeAnswer,
 } from "../learning/practiceStorage";
+import { WorkshopWalkthrough } from "./WorkshopWalkthrough";
 import "./DesignWorkshop.css";
 
 function Stage({
@@ -140,6 +141,9 @@ function Stage({
           >
             <p className="eyebrow">One reasonable answer</p>
             <h3 id={`reference-${stage.id}`}>2. Compare with the reference</h3>
+            {stage.walkthroughs && stage.walkthroughs.length > 0 && (
+              <WorkshopWalkthrough walkthroughs={stage.walkthroughs} />
+            )}
             <div className="prose">
               <ReactMarkdown>{stage.reference}</ReactMarkdown>
             </div>

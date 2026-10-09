@@ -1,6 +1,6 @@
 # First release module blueprint
 
-Status: acceptance notes for `P1`–`P2`. `request-flow` and `capacity-estimation` have working slices; their remaining release checks are tracked in the roadmap. `cache-aside` has working learning/simulation slices; `url-shortener` has one draft Requirements stage (HLD-09A), with its remaining stages and publication still pending. Their shipped schemas and precise behavior must agree with these teaching outcomes; material differences need a documented revision to the examples.
+Status: acceptance notes for `P1`–`P2`. `request-flow` and `capacity-estimation` have working slices; their remaining release checks are tracked in the roadmap. `cache-aside` has working learning/simulation slices; `url-shortener` has six draft stages from Requirements through Flows (HLD-09B2), with its remaining stages and publication still pending. Their shipped schemas and precise behavior must agree with these teaching outcomes; material differences need a documented revision to the examples.
 
 ## 1. Cohesive learner journey
 
@@ -151,6 +151,7 @@ Core invariant: an active short code resolves to exactly one target URL and neve
 | API | Conceptual create and redirect operations; response/error behavior | What happens if creation times out after committing? |
 | Data | Code→target/expiry schema, unique index, creation metadata | How are collisions or custom aliases resolved? |
 | Baseline | Client→edge→stateless service→indexed store | What is the write path and redirect path? |
+| Flows | Ordered create, redirect, lost-response replay and expiry rejection | Where is the commit/eligibility boundary? |
 | Evolution | Add cache and scale service instances only where demand warrants | Which lookups remain correct when cache is stale? |
 | Failures | Database/cache outage, hot link, expired link, malicious URL | Which outcomes are unavailable and what can be mitigated? |
 | Operations | Useful signals, alert, rollout and rollback plan | How will you tell a cache failure from a traffic spike? |

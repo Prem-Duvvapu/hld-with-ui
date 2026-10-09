@@ -1,0 +1,174 @@
+.workshop-walkthrough {
+  min-width: 0;
+  scroll-margin-top: 72px;
+  margin: 24px 0;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--green);
+  background: var(--paper);
+}
+.walkthrough-heading h4 {
+  margin: 8px 0;
+  font-size: 1.15rem;
+}
+.walkthrough-heading > p:last-child,
+.walkthrough-summary {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+  max-width: 80ch;
+}
+.workshop-walkthrough h5 {
+  font-size: 1rem;
+  margin: 20px 0 8px;
+}
+.walkthrough-picker {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 20px;
+}
+.walkthrough-picker select {
+  width: 100%;
+  min-width: 0;
+  max-width: 480px;
+  padding: 12px;
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.walkthrough-diagram-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.walkthrough-diagram-scroll svg {
+  display: block;
+  width: 100%;
+  color: var(--green);
+}
+.walkthrough-node rect {
+  fill: var(--paper);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.walkthrough-node text {
+  fill: var(--muted);
+  font: 600 14px var(--sans);
+}
+.walkthrough-node.active rect {
+  stroke: var(--green);
+}
+.walkthrough-node.active text {
+  fill: var(--ink);
+}
+.walkthrough-lifeline {
+  stroke: var(--line);
+  stroke-dasharray: 4 4;
+}
+.walkthrough-arrow {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+.walkthrough-number {
+  fill: var(--ink);
+  font: 700 13px var(--sans);
+}
+.walkthrough-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 20px 0;
+}
+.walkthrough-controls p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.walkthrough-inspector {
+  border-left: 3px solid var(--green);
+  padding: 16px;
+  background: var(--surface);
+}
+.walkthrough-inspector h5 {
+  margin-top: 8px;
+}
+.walkthrough-inspector > p:last-child {
+  font-size: 13px;
+  line-height: 1.8;
+  margin-bottom: 0;
+  max-width: 80ch;
+}
+.walkthrough-step-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0;
+  margin: 20px 0;
+}
+.walkthrough-step-list button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font: 600 12px/1.6 var(--sans);
+  text-align: left;
+  cursor: pointer;
+}
+.walkthrough-step-list button[aria-current="step"] {
+  border-color: var(--green);
+  box-shadow: inset 3px 0 var(--green);
+}
+.walkthrough-step-list button span {
+  color: var(--muted);
+}
+.walkthrough-transcript {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.walkthrough-transcript summary {
+  cursor: pointer;
+  min-height: 44px;
+  font-weight: 600;
+}
+.walkthrough-transcript dl > div {
+  margin: 16px 0;
+}
+.walkthrough-transcript dt {
+  font-weight: 700;
+}
+.walkthrough-transcript dd {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+.workshop-walkthrough :is(button, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 3px;
+}
+@media (max-width: 767px) {
+  .workshop-walkthrough {
+    padding: 14px;
+  }
+  .walkthrough-step-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .walkthrough-controls p {
+    width: 100%;
+    order: -1;
+    margin: 0;
+  }
+}

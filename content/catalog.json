@@ -125,7 +125,7 @@
     "id": "url-shortener",
     "kind": "case-study",
     "title": "URL Shortener Design Workshop",
-    "summary": "Define a short-link service's requirements, estimate its demand, and defend create/redirect contracts before choosing storage and architecture.",
+    "summary": "Design a short-link service from requirements and estimates to code ownership, atomic create retries and correct redirect flows.",
     "category": "Case Studies",
     "level": "Intermediate",
     "order": 5,
@@ -134,22 +134,28 @@
     "outcomes": [
       "Separate required behavior from assumptions, non-goals and correctness constraints.",
       "Calculate demand and data growth, then explain how changing one assumption affects the design.",
-      "Defend bounded create retries, redirect caching, expiry and error behavior."
+      "Defend bounded create retries, redirect caching, expiry and error behavior.",
+      "Explain permanent code reservations, immutable destinations and the atomic create/replay boundary.",
+      "Trace successful creation, active redirect, lost-response recovery and expiry rejection in an illustrative architecture."
     ],
     "capabilities": ["case-study"],
     "workshopPath": "case-studies/url-shortener/workshop.json",
     "resourcesPath": "case-studies/url-shortener/resources.json",
     "simulationIds": [],
     "estimatorIds": [],
-    "contentVersion": "1.1.0",
-    "reviewedAt": "2026-10-08",
+    "contentVersion": "1.2.0",
+    "reviewedAt": "2026-10-09",
     "sourceIds": [
       "rfc-9110-http-semantics",
       "rfc-3986-uri-syntax",
       "rfc-9111-http-caching",
       "little-law",
       "aws-performance-efficiency",
-      "rfc-6585-429"
+      "rfc-6585-429",
+      "postgres-16-constraints",
+      "postgres-16-insert",
+      "postgres-16-transactions",
+      "postgres-16-isolation"
     ]
   }
 ]

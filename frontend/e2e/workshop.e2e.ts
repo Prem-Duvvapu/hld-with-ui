@@ -84,8 +84,8 @@ test("workshop Java response validates its contract and the draft stays outside 
   });
   expect(
     detail.workshop.stages.map((stage: { id: string }) => stage.id),
-  ).toEqual(["requirements", "estimates", "api"]);
-  expect(detail.workshop.contentVersion).toBe("1.1.0");
+  ).toEqual(["requirements", "estimates", "api", "data", "baseline", "flows"]);
+  expect(detail.workshop.contentVersion).toBe("1.2.0");
   expect(detail.workshop.stages[0].id).toBe("requirements");
   expect((await request.get("/api/v1/topics/url-shortener")).status()).toBe(
     404,
@@ -100,7 +100,7 @@ test("workshop Java response validates its contract and the draft stays outside 
   await page.goto(url);
   await expect(
     page.getByRole("region", { name: "Draft workshop" }),
-  ).toContainText("3 authored stages");
+  ).toContainText("6 authored stages");
   await expect(page.getByRole("tab")).toHaveCount(1);
 });
 
@@ -330,7 +330,7 @@ test("stage deep links, keyboard navigation and browser history show one authore
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Next stage", exact: true }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   await original(page).fill(
     "A retry key must have an explicit scope and expiry.",
   );
@@ -518,7 +518,7 @@ for (const theme of ["light", "dark"] as const) {
             .getByRole("navigation", { name: "Workshop stages", exact: true })
             .scrollIntoViewIfNeeded();
           await page.screenshot({
-            path: `../docs/work-items/assets/hld-09b1/${stage.id}-${width}-${theme}.png`,
+            path: `test-results/workshop-${stage.id}-${width}-${theme}.png`,
           });
         }
       }

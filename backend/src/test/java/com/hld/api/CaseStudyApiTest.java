@@ -19,7 +19,7 @@ class CaseStudyApiTest {
     @Autowired CatalogService catalog;
 
     @Test
-    void deliversThreeDraftStagesWithoutClaimingPublicationOrExecution() throws Exception {
+    void deliversSixDraftStagesWithoutClaimingPublicationOrExecution() throws Exception {
         mvc.perform(get("/api/v1/case-studies/url-shortener"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.entry.id").value("url-shortener"))
@@ -28,11 +28,15 @@ class CaseStudyApiTest {
                 .andExpect(jsonPath("$.entry.capabilities[0]").value("case-study"))
                 .andExpect(jsonPath("$.workshop.schemaVersion").value(1))
                 .andExpect(jsonPath("$.workshop.id").value("url-shortener"))
-                .andExpect(jsonPath("$.workshop.contentVersion").value("1.1.0"))
-                .andExpect(jsonPath("$.workshop.stages.length()").value(3))
+                .andExpect(jsonPath("$.workshop.contentVersion").value("1.2.0"))
+                .andExpect(jsonPath("$.workshop.stages.length()").value(6))
                 .andExpect(jsonPath("$.workshop.stages[0].id").value("requirements"))
                 .andExpect(jsonPath("$.workshop.stages[1].id").value("estimates"))
                 .andExpect(jsonPath("$.workshop.stages[2].id").value("api"))
+                .andExpect(jsonPath("$.workshop.stages[3].id").value("data"))
+                .andExpect(jsonPath("$.workshop.stages[4].walkthroughs[0].id").value("baseline-path"))
+                .andExpect(jsonPath("$.workshop.stages[5].walkthroughs.length()").value(4))
+                .andExpect(jsonPath("$.workshop.stages[0].walkthroughs").isEmpty())
                 .andExpect(jsonPath("$.workshop.stages[0].rubric").isNotEmpty())
                 .andExpect(jsonPath("$.workshop.stages[0].experimentLinks").isNotEmpty());
         var detail = catalog.caseStudy("url-shortener");
