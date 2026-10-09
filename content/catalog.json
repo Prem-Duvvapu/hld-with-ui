@@ -125,7 +125,7 @@
     "id": "url-shortener",
     "kind": "case-study",
     "title": "URL Shortener Design Workshop",
-    "summary": "Design a short-link service from requirements and estimates to code ownership, atomic create retries and correct redirect flows.",
+    "summary": "Design a short-link service from requirements and estimates to code ownership, safe caching, retries and failure handling.",
     "category": "Case Studies",
     "level": "Intermediate",
     "order": 5,
@@ -136,14 +136,15 @@
       "Calculate demand and data growth, then explain how changing one assumption affects the design.",
       "Defend bounded create retries, redirect caching, expiry and error behavior.",
       "Explain permanent code reservations, immutable destinations and the atomic create/replay boundary.",
-      "Trace successful creation, active redirect, lost-response recovery and expiry rejection in an illustrative architecture."
+      "Trace successful creation, active redirect, lost-response recovery and expiry rejection in an illustrative architecture.",
+      "Defend cache/eligibility boundaries and diagnose overload, stale mappings and unavailable dependencies."
     ],
     "capabilities": ["case-study"],
     "workshopPath": "case-studies/url-shortener/workshop.json",
     "resourcesPath": "case-studies/url-shortener/resources.json",
     "simulationIds": [],
     "estimatorIds": [],
-    "contentVersion": "1.2.0",
+    "contentVersion": "1.3.0",
     "reviewedAt": "2026-10-09",
     "sourceIds": [
       "rfc-9110-http-semantics",
@@ -155,7 +156,9 @@
       "postgres-16-constraints",
       "postgres-16-insert",
       "postgres-16-transactions",
-      "postgres-16-isolation"
+      "postgres-16-isolation",
+      "azure-cache-aside",
+      "aws-timeouts-retries-jitter"
     ]
   }
 ]

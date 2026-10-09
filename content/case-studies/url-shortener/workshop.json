@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "url-shortener",
-  "contentVersion": "1.2.0",
-  "introduction": "Start with the promise, estimate its demand, then define requests, records and flows. These six draft stages help you explain a short-link service, protect code ownership and recover a lost create response. Evolution, failures, operations and interview defense are still being authored. This app does not create or redirect real short links.",
+  "contentVersion": "1.3.0",
+  "introduction": "Define the promise, estimate demand, then connect requests, records and flows. These eight draft stages help you protect code ownership, recover uncertain creates, justify caching and handle overload or unavailable dependencies. Operations and interview defense are still being authored. This app does not create or redirect real short links.",
   "invariant": "An active short code resolves to exactly one destination and never silently changes ownership. Unknown or expired codes never redirect, including through a cache.",
   "stages": [
     {
@@ -528,6 +528,466 @@
               "detail": "Use the same outward no-store response as unknown or taken-down codes. No destination request is initiated by this redirect response."
             }
           ]
+        }
+      ]
+    },
+    {
+      "id": "evolution",
+      "title": "Evolve caching and scale deliberately",
+      "prompt": "Name one observed or explicitly assumed bottleneck before adding a component. Draw a cache-hit and cache-miss redirect under the existing expiry/takedown contract. Estimate which primary work a mapping cache removes and which checks remain. Explain horizontal scaling, hot keys, cold bursts and a credible alternative if the product accepts delayed revocation. Do not claim a cache makes the primary unnecessary.",
+      "reference": "## Add a component only when it removes the measured work\n\nA cache answers \u201cHave I seen this destination?\u201d The current eligibility check answers \u201cMay this code redirect now?\u201d Those are different questions. Preserve ownership and the original API promise while deciding what to optimize.\n\n### A concrete candidate bottleneck, not a benchmark\n\nAssume profiling the chosen stack shows that repeated full destination-row transfers dominate read bytes or row decoding, while small indexed eligibility reads meet the redirect objective. This is a stated candidate condition, not a measurement made by this app. If it is false, keep the simpler baseline.\n\nUnder that condition, consider a bounded **mapping cache** plus additional stateless handlers. The cache holds code, immutable destination, representation version and optional known expiry. It never becomes the source of current takedown/existence state. The primary still owns the three durable ledgers and every create transaction; request keys must not move to a best-effort cache.\n\n### Strict cache hit and miss paths\n\nOn a cache hit, validate the representation and code, then read current existence, expiry and takedown metadata from the primary. An eligible code may use its cached immutable destination; an unknown/ineligible code returns 404, and a failed authoritative check returns 503. A cached destination cannot authorize success during that outage.\n\nOn a miss, fetch the full mapping plus eligibility in **one** primary read. Check eligibility, optionally fill the mapping cache, then return the destination. Bound cache lifetime and do not retain a mapping beyond its known link expiry; still enforce authoritative expiry at the decision. A cache-fill error should not turn a valid primary lookup into a fabricated rollback. Do not count a separate metadata query and full-row query as one operation.\n\nInvalid cache records take a bounded primary path and are removed where safe; they never change destination ownership. The service's controlled write path and permanent reservation guarantee make a stale immutable destination usable only after current eligibility succeeds. Negative caching is deferred: returning a cached \u201cunknown\u201d after a new creation would break fresh resolve behavior without an invalidation/ordering policy.\n\nHTTP `no-store` remains on redirects/errors. It controls conforming HTTP caches, not this internal cache. Reading primary metadata orders the eligibility decision; it still does not promise that a previously authorized in-flight response cannot finish after a concurrent takedown acknowledgement.\n\n### Check the arithmetic before claiming a load reduction\n\nThe Estimates baseline has **520.83 reads/s** at peak. Assume a **95% mapping-hit ratio**, purely for planning. That gives about **494.79 metadata-only reads/s** and **26.04 full-mapping reads/s** under the one-primary-read-per-resolve paths above. Total primary lookup demand remains **520.83 reads/s**. The cache may reduce transferred bytes or decoding work, but it has not removed primary read operations or created store-outage availability. Writes remain about 57.87/s before retry demand and operational overhead.\n\nIf the bottleneck is primary request rate rather than payload work, this candidate may add complexity without fixing it. Measure the full design, including cache latency, metadata queries, pool contention, cold starts and degraded operation. A hit-ratio assumption is not an observed production result; a hot key can still stress primary eligibility reads.\n\n### Scale handlers without multiplying the store problem\n\nKeep caller state durable so any handler can replay a committed create. Put an aggregate bound on connections and in-flight store work; adding instances with unchanged per-instance pools can overload the same primary. Use bounded queues/admission and request deadlines. Scaling handlers removes handler saturation only when the shared store and other dependencies can support the admitted work.\n\nFive concurrent cold misses for one key produce **five origin reads** in this app's **Cold burst: concurrent misses** preset. The basic model does not coalesce misses. A later single-flight design can share one mapping fetch, but its key scope, wait deadline, cleanup and per-instance/shared coordination must be defined. It does not remove the strict per-request eligibility requirement by itself. These model origin values are generic cache data, not mutable short-link destinations.\n\n### A credible alternative needs a changed promise\n\nIf the product explicitly accepts delayed takedown and bounded-stale reads, a cache may authorize redirects within a defined freshness window without checking the primary every time. That is a new API/requirements decision. Define the observation point, expiry clock assumptions, fill delays, outage behavior and maximum staleness before claiming a bound. TTL measured from a delayed fill can extend stale data beyond a deadline measured from the original read. Deleting a cache entry also does not prevent an older in-flight read from refilling it.\n\nFor stronger immediate revocation without per-read primary checks, a coordinated invalidation/fencing protocol must establish when cached copies are safe and fail closed when it cannot. This workshop does not implement that protocol. A long TTL or a healthy cache icon does not establish it.\n\n**Change the condition:** if primary QPS is the bottleneck, reject the mapping-only optimization as a QPS solution. Revisit the freshness requirement, storage access pattern or coordinated eligibility design with evidence. If handler CPU is the bottleneck, scale handlers while preserving the aggregate store bound.\n\n**Wrong explanation:** \u201c95% cache hits means the primary gets only 5% of redirects.\u201d In this strict design every redirect still needs one authoritative eligibility lookup; only the amount fetched changes.\n\n**To a teammate:** \u201cWe may cache immutable destinations to cut payload work. Eligibility stays authoritative, so the primary QPS and its outage boundary remain visible.\u201d\n\n**In an interview:** Name the bottleneck, trace hit/miss paths, budget metadata and full reads separately, then defend the freshness/availability tradeoff. Say what evidence would make you keep the baseline or choose a different policy.\n\n### Sources and scope\n\n[Microsoft's cache-aside pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside) explains miss/fill, bounded lifetime and consistency limitations. [PostgreSQL 16 isolation](https://www.postgresql.org/docs/16/transaction-iso.html) scopes authoritative statement reads. [AWS load testing guidance](https://docs.aws.amazon.com/wellarchitected/latest/framework/perf_process_culture_load_test.html) supports measuring realistic/degraded workloads. The split mapping/eligibility policy, 95% assumption and arithmetic are original design choices, checked in Java tests. The linked Java cache model is a bounded generic illustration, not this URL-shortener implementation.\n",
+      "rubric": [
+        {
+          "id": "bottleneck",
+          "prompt": "I named a candidate bottleneck and a measured trigger before adding cache or instances."
+        },
+        {
+          "id": "eligibility",
+          "prompt": "I distinguished cached immutable destination from authoritative current eligibility and retained no-store."
+        },
+        {
+          "id": "budget",
+          "prompt": "I counted metadata/full primary reads correctly and bounded aggregate handler connections."
+        },
+        {
+          "id": "alternative",
+          "prompt": "I explained why delayed revocation is a changed promise and why TTL/invalidation alone is insufficient."
+        }
+      ],
+      "sourceIds": [
+        "azure-cache-aside",
+        "postgres-16-isolation",
+        "aws-performance-efficiency",
+        "rfc-9111-http-caching"
+      ],
+      "walkthroughs": [
+        {
+          "id": "strict-hit",
+          "title": "Cache hit with authoritative eligibility",
+          "summary": "A cached destination removes a full mapping fetch, while the primary still decides whether this code may redirect.",
+          "nodes": [
+            {
+              "id": "client",
+              "title": "Client",
+              "detail": "Requests a public redirect or an authorized create. Retries uncertain creates with the same key and accepted fields within the replay window."
+            },
+            {
+              "id": "service",
+              "title": "Service instances",
+              "detail": "Stateless handlers enforce deadlines, validation, eligibility and bounded work. Aggregate database connections must fit the primary budget as instances scale."
+            },
+            {
+              "id": "cache",
+              "title": "Mapping cache",
+              "detail": "An optional bounded cache of immutable destination mappings. Cached expiry/takedown metadata never authorizes a redirect in the strict design."
+            },
+            {
+              "id": "store",
+              "title": "Primary store",
+              "detail": "Authoritative code ownership, expiry and takedown state; the create transaction and replay records remain here."
+            }
+          ],
+          "steps": [
+            {
+              "id": "get",
+              "title": "HTTPS: open a code",
+              "from": "client",
+              "to": "service",
+              "detail": "The handler begins a bounded request. Scale handlers only after measuring saturation; per-instance pools cannot grow without an aggregate primary limit."
+            },
+            {
+              "id": "hit",
+              "title": "Cache: retrieve the immutable destination",
+              "from": "service",
+              "to": "cache",
+              "detail": "A valid cached mapping matches this code and schema. It is a destination hint, not proof that expiry or takedown permits redirecting now."
+            },
+            {
+              "id": "eligibility",
+              "title": "SQL: read current eligibility",
+              "from": "service",
+              "to": "store",
+              "detail": "On a hit, fetch only required current existence/expiry/takedown metadata from the primary. Unknown or ineligible returns 404; an unavailable check returns 503."
+            },
+            {
+              "id": "check",
+              "title": "Decision: enforce the original contract",
+              "from": "service",
+              "to": "service",
+              "detail": "Check authoritative expiry and takedown. Never use an older cache eligibility flag; cached mapping lifetime is bounded but cannot substitute for this read."
+            },
+            {
+              "id": "redirect",
+              "title": "302: eligible mapping only",
+              "from": "service",
+              "to": "client",
+              "detail": "Return the cached immutable destination with no-store after eligibility succeeds. The browser follows separately; the service does not fetch the target."
+            }
+          ]
+        },
+        {
+          "id": "mapping-miss",
+          "title": "Cache miss and safe fill",
+          "summary": "A miss reads the full mapping and eligibility together. A failed optional fill does not undo an already committed creation.",
+          "nodes": [
+            {
+              "id": "client",
+              "title": "Client",
+              "detail": "Requests a public redirect or an authorized create. Retries uncertain creates with the same key and accepted fields within the replay window."
+            },
+            {
+              "id": "service",
+              "title": "Service instances",
+              "detail": "Stateless handlers enforce deadlines, validation, eligibility and bounded work. Aggregate database connections must fit the primary budget as instances scale."
+            },
+            {
+              "id": "cache",
+              "title": "Mapping cache",
+              "detail": "An optional bounded cache of immutable destination mappings. Cached expiry/takedown metadata never authorizes a redirect in the strict design."
+            },
+            {
+              "id": "store",
+              "title": "Primary store",
+              "detail": "Authoritative code ownership, expiry and takedown state; the create transaction and replay records remain here."
+            }
+          ],
+          "steps": [
+            {
+              "id": "get",
+              "title": "GET: resolve a code",
+              "from": "client",
+              "to": "service",
+              "detail": "Receive a public resolve request within a bounded deadline."
+            },
+            {
+              "id": "miss",
+              "title": "Cache: no usable mapping",
+              "from": "service",
+              "to": "cache",
+              "detail": "Treat a miss, expired entry or incompatible/malformed cache record as needing the primary. Never use a mismatched code or unsupported representation."
+            },
+            {
+              "id": "read",
+              "title": "SQL: fetch full authoritative metadata",
+              "from": "service",
+              "to": "store",
+              "detail": "On a miss read destination and current eligibility in one primary lookup. Do not issue a separate eligibility query then count only one database operation."
+            },
+            {
+              "id": "fill",
+              "title": "Cache: bounded optional fill",
+              "from": "service",
+              "to": "cache",
+              "detail": "Only eligible immutable mappings may be filled. Bound storage TTL and avoid caching beyond known link expiry. A failed fill leaves the primary result intact; old cached takedown state is still never trusted."
+            },
+            {
+              "id": "respond",
+              "title": "302: return the eligible destination",
+              "from": "service",
+              "to": "client",
+              "detail": "Return no-store under the eligibility decision. Unknown/ineligible would take a separate 404 path, and primary failure a separate 503 path."
+            }
+          ]
+        }
+      ],
+      "experimentLinks": [
+        {
+          "topicId": "cache-aside",
+          "label": "Inspect a cold burst before promising coalescing",
+          "instruction": "Select Cold burst: concurrent misses in Playground. Run and count five misses/five origin reads. This generic model does not coalesce or enforce short-link eligibility."
+        },
+        {
+          "topicId": "request-flow",
+          "label": "Test admitted work before scaling handlers",
+          "instruction": "Run Finite queue overload. Inspect waiting, rejection and completions; it is an illustrative worker/queue model, not measured capacity of this proposed store."
+        }
+      ]
+    },
+    {
+      "id": "failures",
+      "title": "Diagnose failures without breaking promises",
+      "prompt": "For a hot link, cache outage, primary outage, stale expired/revoked entry and create timeout, identify evidence, the safe outward result and a bounded recovery action. Trace why a healthy cache can still lead to 503. Explain how retries can amplify overload, where you would bound work, and what would change if delayed revocation became acceptable.",
+      "reference": "## Name what failed before choosing a fallback\n\nA component being up is not proof that the required decision can be made. Use the walkthroughs to connect a failing dependency to the correct response, then defend what work remains safe.\n\n### Exercise 1: one hot link overloads the read path\n\n**Predict:** a mapping cache has a high hit ratio, but most requests still need primary eligibility reads for one code. Can more service instances alone remove primary saturation?\n\n**Evidence to seek:** per-key/skew-safe samples, primary query latency and in-flight work, pool waiting, admitted/rejected rate and end-to-end redirect latency. Compare a burst with the average estimate. Do not log full destinations or caller keys as high-cardinality metric labels.\n\n**Working illustration:** Request Flow's **Finite queue overload** preset has six simultaneous arrivals, two workers and one waiting slot per node. Java completes **four requests** and rejects **two requests**. Extra arrivals do not create capacity. This is a worker/queue model, not a database hot-key benchmark or a retry simulator.\n\n**Safe action:** bound admitted work and waiting; shed work explicitly when the budget is exhausted. Separate deliberate quota rejection (429) from temporary service/dependency unavailability (503) according to the API policy. More instances can increase primary pressure if each adds another pool. A cache of destination bytes cannot remove the strict eligibility reads.\n\n### Exercise 2: the cache is unavailable\n\n**Predict:** cache lookups fail; can the service use the primary without violating ownership or eligibility?\n\n**Reference:** yes, for admitted requests within a bounded deadline, fetch the full mapping and current eligibility. Reject when fallback cannot be admitted or completed; do not let an optional cache retry consume the whole request budget. Under the strict evolved design total primary lookup count was already one per resolve, so cache outage raises full-row/byte work rather than automatically multiplying QPS by twenty. Generic cache-aside designs that normally skip the origin can experience a much larger origin-rate jump; state which design you mean.\n\nThe Java **Cache unavailable** preset has three GETs; all **three bypass** and make **three origin reads**, with no cache hits/misses. That is this model's explicit bypass policy, not evidence that every real store can absorb fallback. Run it, inspect the bypass events, then explain the different pressure in the strict design.\n\n### Exercise 3: the primary is unavailable but cache is healthy\n\nA cached destination has no current eligibility evidence. Return **503**, no-store, no Location; do not return 404 as if the code were absent, or 302 as if takedown could be checked. New creates also need the primary transaction. An uncertain write acknowledgement must retain its same caller/key retry story.\n\nThe Java **Origin unavailable** preset starts with an empty cache and two GETs. Both fail; it cannot demonstrate a previously warmed cache surviving a later outage because this model's availability flags are constant for the run. Do not invent that scenario. In the proposed URL shortener, even a warm immutable mapping would not authorize resolve while authoritative eligibility is unavailable.\n\n### Exercise 4: stale expiry or takedown metadata\n\nA long cache TTL can outlive the short link or retain a pre-takedown flag. Check authoritative state at the eligibility decision; `now >= expiresAt` rejects at equality. Unknown, expired and taken-down all return the same outward 404 without Location. Cleanup and cache eviction are not correctness clocks. A delayed invalidation or an older in-flight fill can leave old cache data; no-store on HTTP responses does not remove it.\n\nThe Java cache **Baseline: hit, miss, and stale read** returns generic `v1` at the 70 ms arrival even though the origin changed at 40 ms. Observe the stale hit and its version evidence. Those values are generic model data, not a short link silently changing destination ownership. The transfer question is why a cached eligibility field would be dangerous, not whether destinations should be edited.\n\nPreviously authorized in-flight redirects may finish during concurrent takedown. A product rule forbidding completion after takedown acknowledgement needs stronger coordination than this per-read check; do not claim the walkthrough establishes that protocol.\n\n### Exercise 5: create times out after commit\n\nUse the same caller/key/accepted fields inside the 24-hour replay window. The recorded result may return the original 201 while resolve later returns 404 after expiry/takedown; replay never revives the link. Changed retained fields conflict with 409; an exhausted replay window or new key can duplicate an uncertain creation.\n\nRetry only suitable transient failures, within attempt and total-time budgets, at one chosen layer. A useful Retry-After can inform pacing. Use bounded backoff/jitter to avoid synchronized retry bursts; do not retry invalid fields or a retained-key payload conflict unchanged. No delay/retry behavior is executed by this workshop or added to the Java cache/request-flow models.\n\n**Worked retry budget:** three layers each making three total attempts can demand **27 leaf attempts** for one logical request in a worst-case all-failure path. \u201cThree attempts\u201d includes the initial call. Capping retries at one layer avoids multiplicative amplification, but still needs a total deadline and idempotency for side effects. This arithmetic example is not an observed production load.\n\n### Change the requirement and re-evaluate\n\nIf delayed revocation is explicitly acceptable, some cached resolves might be served during a primary outage within a rigorously defined freshness/expiry bound. That changes the API promise and operational tests. If immediate eligibility is retained, availability must yield when the authoritative check cannot complete. Do not choose different guarantees silently during an incident.\n\n**Wrong explanation:** \u201cRetry every failure until a component returns success.\u201d It can multiply load, outlive the user's deadline and repeat side effects. Returning unavailable honestly can protect recovery and correctness.\n\n**To a teammate:** \u201cCache failure can use an admitted primary path. Primary failure cannot use old eligibility. For uncertain creates we preserve the same bounded retry identity rather than racing new writes.\u201d\n\n**In an interview:** Pick a failure, name the lost evidence, trace the status and recovery action, then discuss one condition that would permit a different fallback. Explain load amplification and invariant preservation, not just a list of resilient-sounding components.\n\n### Sources and scope\n\n[Microsoft cache-aside considerations](https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside) explains cache consistency/lifetime and fallback tradeoffs. [AWS timeouts, retries and jitter](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/) discusses resource deadlines, uncertain side effects and retry amplification. [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html) and [RFC 6585](https://datatracker.ietf.org/doc/html/rfc6585#section-4) scope 404/503/429 and Retry-After. Outward failure/privacy policies and the strict eligibility design remain workshop decisions; numerical transfer fixtures are executed by Java tests against actual presets.\n",
+      "rubric": [
+        {
+          "id": "overload",
+          "prompt": "I diagnosed a hot link with actual saturation/skew evidence and bounded aggregate admission."
+        },
+        {
+          "id": "fallback",
+          "prompt": "I separated safe admitted cache fallback from unavailable authoritative eligibility and distinguished bytes from lookup rate."
+        },
+        {
+          "id": "stale",
+          "prompt": "I rejected expired/revoked mappings and scoped the limits of concurrent takedown."
+        },
+        {
+          "id": "retry",
+          "prompt": "I preserved same-key uncertain-write recovery and bounded attempts, deadlines and retry amplification."
+        },
+        {
+          "id": "evidence",
+          "prompt": "I used actual model presets and stated their limits rather than inventing warm-cache outage or retry execution."
+        }
+      ],
+      "sourceIds": [
+        "azure-cache-aside",
+        "aws-timeouts-retries-jitter",
+        "rfc-9110-http-semantics",
+        "rfc-6585-429"
+      ],
+      "walkthroughs": [
+        {
+          "id": "cache-outage",
+          "title": "Cache outage with bounded primary fallback",
+          "summary": "Cache failure can take the full primary path only while deadlines and admission allow it.",
+          "nodes": [
+            {
+              "id": "client",
+              "title": "Client",
+              "detail": "Requests a public redirect or an authorized create. Retries uncertain creates with the same key and accepted fields within the replay window."
+            },
+            {
+              "id": "service",
+              "title": "Service instances",
+              "detail": "Stateless handlers enforce deadlines, validation, eligibility and bounded work. Aggregate database connections must fit the primary budget as instances scale."
+            },
+            {
+              "id": "cache",
+              "title": "Mapping cache",
+              "detail": "An optional bounded cache of immutable destination mappings. Cached expiry/takedown metadata never authorizes a redirect in the strict design."
+            },
+            {
+              "id": "store",
+              "title": "Primary store",
+              "detail": "Authoritative code ownership, expiry and takedown state; the create transaction and replay records remain here."
+            }
+          ],
+          "steps": [
+            {
+              "id": "get",
+              "title": "GET: receive a redirect request",
+              "from": "client",
+              "to": "service",
+              "detail": "Apply normal bounded admission and the end-to-end request deadline."
+            },
+            {
+              "id": "cache-down",
+              "title": "Cache: fail within the cache budget",
+              "from": "service",
+              "to": "cache",
+              "detail": "A failed/unavailable cache produces no mapping evidence. Do not retry indefinitely or hold the request past its deadline."
+            },
+            {
+              "id": "fallback",
+              "title": "SQL: admitted full mapping lookup",
+              "from": "service",
+              "to": "store",
+              "detail": "If the primary is available and capacity permits, read full mapping plus current eligibility. If admission cannot allow it, take a separate unavailable/rejection path."
+            },
+            {
+              "id": "decide",
+              "title": "Decision: verify eligibility",
+              "from": "service",
+              "to": "service",
+              "detail": "Apply current expiry/takedown checks; fallback does not weaken ownership or revive an expired link."
+            },
+            {
+              "id": "respond",
+              "title": "302: eligible admitted fallback",
+              "from": "service",
+              "to": "client",
+              "detail": "Return a no-store redirect only after the primary result succeeds. No cache-fill success is required for this admitted request."
+            }
+          ]
+        },
+        {
+          "id": "primary-outage",
+          "title": "Healthy cache, unavailable primary",
+          "summary": "A mapping hit cannot establish eligibility while the authoritative store is unavailable.",
+          "nodes": [
+            {
+              "id": "client",
+              "title": "Client",
+              "detail": "Requests a public redirect or an authorized create. Retries uncertain creates with the same key and accepted fields within the replay window."
+            },
+            {
+              "id": "service",
+              "title": "Service instances",
+              "detail": "Stateless handlers enforce deadlines, validation, eligibility and bounded work. Aggregate database connections must fit the primary budget as instances scale."
+            },
+            {
+              "id": "cache",
+              "title": "Mapping cache",
+              "detail": "An optional bounded cache of immutable destination mappings. Cached expiry/takedown metadata never authorizes a redirect in the strict design."
+            },
+            {
+              "id": "store",
+              "title": "Primary store",
+              "detail": "Authoritative code ownership, expiry and takedown state; the create transaction and replay records remain here."
+            }
+          ],
+          "steps": [
+            {
+              "id": "get",
+              "title": "GET: open a code",
+              "from": "client",
+              "to": "service",
+              "detail": "The caller requests resolve; create transactions would also be unavailable under this failure."
+            },
+            {
+              "id": "hit",
+              "title": "Cache: return an old destination hint",
+              "from": "service",
+              "to": "cache",
+              "detail": "The cached mapping is present, but current expiry/takedown/existence has not yet been verified."
+            },
+            {
+              "id": "unavailable",
+              "title": "SQL: eligibility read fails",
+              "from": "service",
+              "to": "store",
+              "detail": "The primary cannot answer within the dependency budget. An error is neither a missing-code result nor permission to redirect."
+            },
+            {
+              "id": "reject",
+              "title": "503: no Location",
+              "from": "service",
+              "to": "client",
+              "detail": "Return unavailable with no-store and no success redirect. Use Retry-After only if a useful delay is known. Do not misreport 404 or silently accept stale eligibility."
+            }
+          ]
+        },
+        {
+          "id": "stale-revoked",
+          "title": "Old cache entry after takedown",
+          "summary": "Current primary state rejects a revoked code even when its immutable destination remains cached.",
+          "nodes": [
+            {
+              "id": "client",
+              "title": "Client",
+              "detail": "Requests a public redirect or an authorized create. Retries uncertain creates with the same key and accepted fields within the replay window."
+            },
+            {
+              "id": "service",
+              "title": "Service instances",
+              "detail": "Stateless handlers enforce deadlines, validation, eligibility and bounded work. Aggregate database connections must fit the primary budget as instances scale."
+            },
+            {
+              "id": "cache",
+              "title": "Mapping cache",
+              "detail": "An optional bounded cache of immutable destination mappings. Cached expiry/takedown metadata never authorizes a redirect in the strict design."
+            },
+            {
+              "id": "store",
+              "title": "Primary store",
+              "detail": "Authoritative code ownership, expiry and takedown state; the create transaction and replay records remain here."
+            }
+          ],
+          "steps": [
+            {
+              "id": "get",
+              "title": "GET: revisit an old bookmark",
+              "from": "client",
+              "to": "service",
+              "detail": "A previously active code was taken down through the authorized control path."
+            },
+            {
+              "id": "hit",
+              "title": "Cache: old mapping remains present",
+              "from": "service",
+              "to": "cache",
+              "detail": "Cache TTL has not elapsed. Its prior eligibility metadata is stale; presence is not authorization."
+            },
+            {
+              "id": "revoked",
+              "title": "SQL: read current takenDownAt",
+              "from": "service",
+              "to": "store",
+              "detail": "The primary shows the takedown at the eligibility decision. An invalidation message may have been lost without changing this authoritative state."
+            },
+            {
+              "id": "not-found",
+              "title": "404: refuse the redirect",
+              "from": "service",
+              "to": "client",
+              "detail": "Return the same outward no-store response as unknown/expired codes, without Location. This does not cancel a response already authorized before the takedown."
+            }
+          ]
+        },
+        {
+          "id": "stale-expired",
+          "title": "Old cache entry at link expiry",
+          "summary": "Link expiry is not the same deadline as cache entry eviction.",
+          "nodes": [
+            {
+              "id": "client",
+              "title": "Client",
+              "detail": "Requests a public redirect or an authorized create. Retries uncertain creates with the same key and accepted fields within the replay window."
+            },
+            {
+              "id": "service",
+              "title": "Service instances",
+              "detail": "Stateless handlers enforce deadlines, validation, eligibility and bounded work. Aggregate database connections must fit the primary budget as instances scale."
+            },
+            {
+              "id": "cache",
+              "title": "Mapping cache",
+              "detail": "An optional bounded cache of immutable destination mappings. Cached expiry/takedown metadata never authorizes a redirect in the strict design."
+            },
+            {
+              "id": "store",
+              "title": "Primary store",
+              "detail": "Authoritative code ownership, expiry and takedown state; the create transaction and replay records remain here."
+            }
+          ],
+          "steps": [
+            {
+              "id": "get",
+              "title": "GET: request at link expiry",
+              "from": "client",
+              "to": "service",
+              "detail": "An old cached record still exists, perhaps because its lifetime was configured incorrectly."
+            },
+            {
+              "id": "hint",
+              "title": "Cache: do not trust cached eligibility",
+              "from": "service",
+              "to": "cache",
+              "detail": "An old destination cannot bypass the link lifetime. Treat a known expired record as unusable; current primary state still determines the uniform outward result."
+            },
+            {
+              "id": "expiry",
+              "title": "SQL: apply now >= expiresAt",
+              "from": "service",
+              "to": "store",
+              "detail": "At the eligibility decision the authoritative expiry is reached. Neither delayed row cleanup nor a longer cache TTL permits a redirect."
+            },
+            {
+              "id": "not-found",
+              "title": "404: no destination handoff",
+              "from": "service",
+              "to": "client",
+              "detail": "Return no-store and no Location. Never reassign the expired code or revive it through a replayed create response."
+            }
+          ]
+        }
+      ],
+      "experimentLinks": [
+        {
+          "topicId": "request-flow",
+          "label": "Trace a finite overload before proposing more retries",
+          "instruction": "Select Finite queue overload and run: inspect four completions/two rejections. Explain where bounded admission should protect the primary; retries are not modeled here."
+        },
+        {
+          "topicId": "cache-aside",
+          "label": "Compare bypass, failure and stale-hit evidence",
+          "instruction": "Run Cache unavailable, Origin unavailable and Baseline: hit, miss, and stale read separately. The origin-outage preset starts cold; availability is constant and short-link eligibility is not modeled."
+        },
+        {
+          "topicId": "distributed-rate-limiter",
+          "label": "Compare fail-open with fail-closed abuse control",
+          "instruction": "Run Counter backend outage with both policies. Explain why allowing a quota bypass does not authorize a redirect when link eligibility cannot be checked."
         }
       ]
     }
