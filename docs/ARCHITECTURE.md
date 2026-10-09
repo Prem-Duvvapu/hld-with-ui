@@ -69,7 +69,7 @@ Backend model packages are organized by capability, not one enormous controller 
 
 ## 3. Catalog and content
 
-`content/catalog.json` is the single source for topic identity, prerequisites, order, level, publication state, and available capabilities. Frontend routes and backend lookup derive from it. Startup/build fails on duplicate IDs or invalid references.
+`content/catalog.json` is the single source for topic identity, prerequisites, order, level, publication state, and available capabilities. Frontend routes and backend lookup derive from it. Startup/build fails on duplicate IDs, unknown/self/duplicate prerequisite IDs, cycles, and published entries requiring unfinished prerequisites. [HLD-09C-C](work-items/HLD-09C-C.md) closes the Java startup gap; frontend content validation also checks this graph. Other resource/capability/source checks remain governed by the build and workshop validators.
 
 Separate editorial status (`planned`, `draft`, `published`) from capabilities (`study`, `simulation`, `estimator`, `case-study`, `practice`). A published lesson may have no simulation; a declared simulation capability requires a registered, validated model. Public home navigation shows published topics and loads a separate published-case collection. Cases are sorted by canonical order, then ID; only startup-validated published case resources appear. An empty collection hides the workshop section, and its loading/error/retry state does not block foundation modules. The draft workshop is available only by explicit case URL; it is excluded from both discovery collections and topic endpoints. See [decision 0014](decisions/0014-published-case-discovery.md). Planned entries can appear only as clearly labeled roadmap information.
 
