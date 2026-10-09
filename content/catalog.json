@@ -145,7 +145,7 @@
     "resourcesPath": "case-studies/url-shortener/resources.json",
     "simulationIds": [],
     "estimatorIds": [],
-    "contentVersion": "1.4.0",
+    "contentVersion": "1.5.0",
     "reviewedAt": "2026-10-09",
     "sourceIds": [
       "rfc-9110-http-semantics",

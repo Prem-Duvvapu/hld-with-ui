@@ -5,7 +5,7 @@ import workshop from "../../content/case-studies/url-shortener/workshop.json" wi
 for (const theme of ["light", "dark"] as const) {
   test(`operations and defense are usable and saved in ${theme}`, async ({
     page,
-  }) => {
+  }, testInfo) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
     await page.setViewportSize({ width: 320, height: 900 });
     const posts: string[] = [];
@@ -77,7 +77,7 @@ for (const theme of ["light", "dark"] as const) {
           element.scrollIntoView({ block: "start" }),
         );
         await page.screenshot({
-          path: `../docs/work-items/assets/hld-09b4/operations-${width}-${theme}.png`,
+          path: testInfo.outputPath(`operations-${width}-${theme}.png`),
         });
       }
     }
@@ -121,7 +121,7 @@ for (const theme of ["light", "dark"] as const) {
           element.scrollIntoView({ block: "start" }),
         );
         await page.screenshot({
-          path: `../docs/work-items/assets/hld-09b4/defense-${width}-${theme}.png`,
+          path: testInfo.outputPath(`defense-${width}-${theme}.png`),
         });
       }
     }

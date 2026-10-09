@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -11,6 +12,16 @@ import {
   type Page,
   type Worker,
 } from "@playwright/test";
+
+const workshop = JSON.parse(
+  readFileSync(
+    new URL(
+      "../../content/case-studies/url-shortener/workshop.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+);
 
 // This API exists only inside the isolated test extension's worker.
 declare const chrome: {
@@ -49,7 +60,7 @@ for (const theme of ["light", "dark"] as const) {
   test(`native 200% browser zoom keeps all learning flows usable in ${theme}`, async ({
     baseURL,
   }, testInfo) => {
-    test.setTimeout(60_000);
+    test.setTimeout(120_000);
     const profile = await mkdtemp(join(tmpdir(), "hld-zoom-"));
     const extension = resolve(
       dirname(fileURLToPath(import.meta.url)),
@@ -184,6 +195,110 @@ for (const theme of ["light", "dark"] as const) {
             await expect(decision).toBeFocused();
             target = viewer.getByLabel("Selected decision", { exact: true });
             await expect(target).toContainText("503 with no Location");
+            for (const stage of workshop.stages) {
+              await page
+                .getByRole("navigation", {
+                  name: "Workshop stages",
+                  exact: true,
+                })
+                .getByRole("button", { name: new RegExp(stage.title) })
+                .click();
+              await expect(
+                page.getByRole("heading", { name: stage.title, exact: true }),
+              ).toBeFocused();
+              if ((await original.getAttribute("readonly")) === null) {
+                await original.fill(
+                  `Zoom review: explain ${stage.id} in my own words.`,
+                );
+                const reveal = page.getByRole("button", {
+                  name: "Reveal reference answer",
+                  exact: true,
+                });
+                await reveal.focus();
+                await page.keyboard.press("Enter");
+                await expect(
+                  page.getByRole("region", {
+                    name: "2. Compare with the reference",
+                    exact: true,
+                  }),
+                ).toBeFocused();
+              }
+              await page
+                .getByRole("textbox", {
+                  name: "Your revised answer",
+                  exact: true,
+                })
+                .fill(`Revised ${stage.id}: state the evidence and limits.`);
+              for (const path of stage.walkthroughs ?? []) {
+                const picker = page.getByRole("combobox", {
+                  name: "Choose a walkthrough",
+                  exact: true,
+                });
+                if (await picker.count()) await picker.selectOption(path.id);
+                const viewer = page.locator(".workshop-walkthrough:visible");
+                await expect(
+                  viewer.getByRole("heading", {
+                    name: path.title,
+                    exact: true,
+                  }),
+                ).toBeVisible();
+                const last = viewer
+                  .getByRole("list", { name: "Choose a decision", exact: true })
+                  .getByRole("button")
+                  .last();
+                await last.focus();
+                await page.keyboard.press("Enter");
+                await expect(last).toBeFocused();
+                await expect(
+                  viewer.getByLabel("Selected decision", { exact: true }),
+                ).toContainText(path.steps.at(-1).detail);
+                const transcript = viewer.locator(".walkthrough-transcript");
+                if ((await transcript.getAttribute("open")) === null)
+                  await transcript.locator("summary").click();
+                await expect(transcript).toContainText(path.steps[0].detail);
+              }
+              await expect
+                .poll(() =>
+                  page.evaluate(
+                    () => document.documentElement.scrollWidth <= innerWidth,
+                  ),
+                )
+                .toBe(true);
+              evidence.push({
+                stage: stage.id,
+                theme,
+                windowPixels: pixels,
+                zoom: 2,
+                cssWidth: await page.evaluate(() => innerWidth),
+              });
+            }
+            // Retain the original Operations screenshot target after the broader review.
+            await page
+              .getByRole("navigation", { name: "Workshop stages", exact: true })
+              .getByRole("button", {
+                name: new RegExp(
+                  workshop.stages.find(
+                    (stage: { id: string }) => stage.id === "operations",
+                  ).title,
+                ),
+              })
+              .click();
+            await expect(
+              page.getByRole("heading", {
+                name: workshop.stages.find(
+                  (stage: { id: string }) => stage.id === "operations",
+                ).title,
+                exact: true,
+              }),
+            ).toBeFocused();
+            await viewer
+              .getByRole("combobox", {
+                name: "Choose a walkthrough",
+                exact: true,
+              })
+              .selectOption("incident-response");
+            await decision.focus();
+            await page.keyboard.press("Enter");
           }
           await expect
             .poll(() =>

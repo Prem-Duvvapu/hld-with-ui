@@ -144,6 +144,8 @@ Preserve the invariant: an active short code maps to one target and cannot silen
 
 ### Slice C — publish
 
+[HLD-09C-D](work-items/HLD-09C-D.md) records technical stage/source review and all-stage answer/zoom coverage. The [publication review](URL_SHORTENER_PUBLICATION_REVIEW.md) names the remaining manual and prerequisite gates; catalog status stays draft until they pass.
+
 Verify every stage, save/resume, content/contract/capability agreement, deep links, source claims, mobile/theme/keyboard behavior, and import/export. Published-case discovery now comes from Java/the canonical catalog in HLD-09C-B; the topic endpoint intentionally excludes cases. Check discovery alongside the remaining publication gates. Publish only after prerequisite release gates and all advertised stages pass. Record what a learner can now explain and the remaining model/design limitations.
 
 ## 9. HLD-10 and HLD-11: discovery and release
