@@ -26,7 +26,7 @@ Prevent a learning module or workshop from advertising a broken prerequisite pat
 | Full Java verify | Passed: 142 tests, zero failures/errors/skips | Includes the additional published-case-to-draft-topic regression and actual packaged catalog/API checks; `/tmp/hld-prerequisites-java-verify.log` |
 | Contracts/generated drift | Passed: 18 fixtures | Three isolated graph mutations exercise existing frontend rejection; generated types unchanged |
 | Plan / whitespace / lint / format | Passed | 60 docs, 280 local links, 59 curriculum IDs, five catalog identities; clean diff and frontend lint/format |
-| Required CI | Pending | Full required checks must pass before squash merge |
+| Required CI | Passed before merge | [PR #50 CI](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/37978162891) passed 142 Java, 177 frontend and 99 browser tests plus launcher smoke; merged as `073d8cb` |
 
 ## Handoff and limits
 

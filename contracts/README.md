@@ -21,6 +21,10 @@ npm run contracts:check
 
 `GET /api/v1/case-studies` returns an array of `CatalogEntry` metadata for startup-validated, published workshops, sorted by catalog order then ID. Draft/planned cases are omitted; the current production catalog yields `[]`. Explicit authored draft detail routes stay available for review. This additive endpoint does not change workshop schemas, content/model versions, answer storage or the topic collection. See [the discovery decision](../docs/decisions/0014-published-case-discovery.md).
 
+## Published search
+
+`GET /api/v1/search` accepts one `q`, `level` and `capability` parameter each; unknown/repeated filters return 400. Blank queries return no results; nonblank queries use 2–100 UTF-16 code units with case/compatibility normalization and literal whitespace-separated terms. `SearchResponse` schema version 1 returns at most 20 `SearchHit` entries, total match count and plain excerpts of at most 222 Unicode code points. Optional stage ID/title are omitted for topics. All result routes derive from published catalog IDs. This additive contract does not change simulator versions or answer backups.
+
 ## Versioning
 
 The HTTP contract version is the OpenAPI `info.version`. Each simulation request records `schemaVersion` and `modelVersion`; incompatible values are rejected. Increase the model version when behavior changes enough to alter replay. Increase the schema version when the request or trace shape becomes incompatible. Preserve examples for every supported version.

@@ -231,6 +231,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/search": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Search published concepts and workshop stages
+     * @description Packaged public content only. Literal terms must all occur in title, summary or plain body text. Title matches precede summary then body; ties use catalog order and stable IDs, preserving workshop stage order. Draft/planned content and learner answers are excluded. Unknown/repeated filters return 400. Returns at most 20 results with the total match count.
+     */
+    get: operations["searchPublishedContent"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -889,6 +909,22 @@ export interface components {
       nodes: components["schemas"]["WorkshopNode"][];
       steps: components["schemas"]["WorkshopStep"][];
     };
+    SearchHit: {
+      entry: components["schemas"]["CatalogEntry"];
+      stageId?: string;
+      stageTitle?: string;
+      path: string;
+      excerpt: string;
+    };
+    SearchResponse: {
+      /** @constant */
+      schemaVersion: 1;
+      query: string;
+      results: components["schemas"]["SearchHit"][];
+      totalMatches: number;
+      /** @constant */
+      limit: 20;
+    };
   };
   responses: never;
   parameters: {
@@ -1274,6 +1310,49 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["CatalogEntry"][];
+        };
+      };
+    };
+  };
+  searchPublishedContent: {
+    parameters: {
+      query?: {
+        /** @description Blank returns no results; otherwise 2–100 UTF-16 code units. Searches all whitespace-separated terms as literal substrings, ignoring case and compatibility character forms. */
+        q?: string;
+        /** @description Optional catalog level. */
+        level?: "" | "Beginner" | "Intermediate" | "Advanced";
+        /** @description Optional declared learning activity. */
+        capability?:
+          | ""
+          | "study"
+          | "simulation"
+          | "estimator"
+          | "case-study"
+          | "practice"
+          | "guided";
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Bounded search results */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SearchResponse"];
+        };
+      };
+      /** @description Structured error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
         };
       };
     };
