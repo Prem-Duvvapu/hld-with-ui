@@ -4,9 +4,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -76,6 +78,9 @@ public class CatalogService {
     }
 
     private void validateCatalog(List<CatalogEntry> entries) {
+        if (entries == null || entries.stream().anyMatch(java.util.Objects::isNull)) {
+            throw new IllegalStateException("Catalog entries must be present");
+        }
         long distinct = entries.stream().map(CatalogEntry::id).distinct().count();
         if (distinct != entries.size()) {
             throw new IllegalStateException("Catalog IDs must be unique");
@@ -87,6 +92,45 @@ public class CatalogService {
                 throw new IllegalStateException("Catalog entry is incomplete");
             }
         });
+        Map<String, CatalogEntry> byId = new LinkedHashMap<>();
+        entries.forEach(entry -> byId.put(entry.id(), entry));
+        for (CatalogEntry entry : entries) {
+            if (entry.prerequisites() == null) {
+                throw new IllegalStateException(entry.id() + ": prerequisites must be an array");
+            }
+            Set<String> seen = new HashSet<>();
+            for (String id : entry.prerequisites()) {
+                if (!WorkshopValidator.identifier(id) || !seen.add(id)) {
+                    throw new IllegalStateException(entry.id() + ": invalid or duplicate prerequisite ID");
+                }
+                if (entry.id().equals(id)) {
+                    throw new IllegalStateException(entry.id() + ": cannot require itself");
+                }
+                CatalogEntry prerequisite = byId.get(id);
+                if (prerequisite == null) {
+                    throw new IllegalStateException(entry.id() + ": unknown prerequisite " + id);
+                }
+                if ("published".equals(entry.status()) && !"published".equals(prerequisite.status())) {
+                    throw new IllegalStateException(entry.id() + ": published entry requires unpublished " + id);
+                }
+            }
+        }
+        Set<String> visited = new HashSet<>();
+        Set<String> active = new HashSet<>();
+        for (String id : byId.keySet()) visitPrerequisites(id, byId, visited, active);
+    }
+
+    private static void visitPrerequisites(String id, Map<String, CatalogEntry> entries,
+            Set<String> visited, Set<String> active) {
+        if (active.contains(id)) {
+            throw new IllegalStateException(id + ": prerequisite cycle");
+        }
+        if (!visited.add(id)) return;
+        active.add(id);
+        for (String prerequisite : entries.get(id).prerequisites()) {
+            visitPrerequisites(prerequisite, entries, visited, active);
+        }
+        active.remove(id);
     }
 
     private <T> T readJson(String path, TypeReference<T> type) {

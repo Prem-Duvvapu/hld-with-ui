@@ -31,7 +31,7 @@ Let learners find an approved design workshop alongside foundation modules, usin
 | Browser discovery | Passed: four journeys | Real empty Java response validates against OpenAPI; six width/theme presentation combinations, reduced motion, keyboard card navigation and real draft detail; independent loading/503/keyboard retry then working foundation navigation |
 | Agent visual inspection | Passed for two representative captures | 320 light and 1440 dark: readable cards, visible focus, no page overflow. Not manual review of all views or a screen-reader journey |
 | Plan / whitespace / generated drift | Passed | 59 docs, 277 local links, 59 curriculum IDs and five catalog identities; clean diff; contracts regeneration matched the staged generated types |
-| Full required CI | Pending | Must pass before squash merge; local results above do not claim the full 99-browser suite ran locally |
+| Full required CI | Passed before merge | [PR #49 CI](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/37977329175) passed 135 Java, 177 frontend and 99 browser tests plus launcher smoke; merged as `15d8fa4`. Local results above do not claim the full browser suite ran locally |
 
 ## Presentation evidence
 

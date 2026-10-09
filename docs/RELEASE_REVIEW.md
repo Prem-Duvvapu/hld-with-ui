@@ -6,7 +6,7 @@ This file records verified evidence and remaining manual checks for the shared s
 
 ## Current technical evidence
 
-The sections below retain the September baseline. Current automated evidence includes 133 Java tests, 174 frontend tests and 95 browser journeys in merged PR #48. All ten authored URL-shortener stages remain draft; see [HLD-09B4](work-items/HLD-09B4.md). [HLD-04C](work-items/HLD-04C.md) verifies actual serialized trace scope and simultaneous HTTP isolation.
+The sections below retain the September baseline. Current automated evidence includes 135 Java tests, 177 frontend tests and 99 browser journeys in merged PR #49. All ten authored URL-shortener stages remain draft; see [HLD-09B4](work-items/HLD-09B4.md). [HLD-04C](work-items/HLD-04C.md) verifies actual serialized trace scope and simultaneous HTTP isolation.
 
 [HLD-09C-A](work-items/HLD-09C-A.md) adds native 200% Chromium zoom checks for the four published module result flows and workshop Operations: 720/320 CSS pixels, both themes, reduced motion, keyboard actions and cache error/recovery. Its native-pixel screenshots supplement assertions; the standard mobile tests remain separate. These are bounded automated/agent visual checks. Real screen-reader, newcomer teach-back and broader manual view/stage review remain open.
 

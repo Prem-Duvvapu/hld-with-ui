@@ -165,3 +165,24 @@ test("reject empty walkthroughs and excessive causal steps", () => {
       }));
     }, /(?:fewer than 1|more than 20) items/);
 });
+
+test("reject a dangling prerequisite before publishing a learning path", () => {
+  rejectChange((catalog) => {
+    catalog.find((entry) => entry.id === "capacity-estimation").prerequisites =
+      ["missing-foundation"];
+  }, /unknown prerequisite missing-foundation/);
+});
+
+test("reject published entries whose prerequisite is unfinished", () => {
+  rejectChange((catalog) => {
+    catalog.find((entry) => entry.id === "request-flow").status = "draft";
+  }, /published entry requires unpublished request-flow/);
+});
+
+test("reject an indirect prerequisite cycle", () => {
+  rejectChange((catalog) => {
+    catalog.find((entry) => entry.id === "request-flow").prerequisites = [
+      "capacity-estimation",
+    ];
+  }, /prerequisite cycle/);
+});
