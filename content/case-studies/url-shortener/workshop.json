@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "id": "url-shortener",
-  "contentVersion": "1.3.0",
-  "introduction": "Define the promise, estimate demand, then connect requests, records and flows. These eight draft stages help you protect code ownership, recover uncertain creates, justify caching and handle overload or unavailable dependencies. Operations and interview defense are still being authored. This app does not create or redirect real short links.",
+  "contentVersion": "1.4.0",
+  "introduction": "Work through ten authored design stages: define the promise, estimate demand, trace requests and durable state, justify evolution, diagnose failures, operate safely, and explain your choices. This draft is available by direct route while technical, accessibility and learning release checks remain open. This app does not create or redirect real short links.",
   "invariant": "An active short code resolves to exactly one destination and never silently changes ownership. Unknown or expired codes never redirect, including through a cache.",
   "stages": [
     {
@@ -988,6 +988,314 @@
           "topicId": "distributed-rate-limiter",
           "label": "Compare fail-open with fail-closed abuse control",
           "instruction": "Run Counter backend outage with both policies. Explain why allowing a quota bypass does not authorize a redirect when link eligibility cannot be checked."
+        }
+      ]
+    },
+    {
+      "id": "operations",
+      "title": "Operate, protect and roll back safely",
+      "prompt": "Define service signals and a clear availability/latency boundary. A rollout raises p95 redirect latency and cache decode errors: separate observation from hypothesis, choose a bounded mitigation and prove recovery. Explain how authorized takedown, abuse protection, redacted audit records and migration/rollback preserve ownership and replay promises.",
+      "reference": "## One sentence\n\nOperate the promise: know when users lose correct, timely responses, limit the damage, and make changes that can safely run beside the previous version.\n\n### Define what success means\n\n**Proposed SLO exercise, not a deployed measurement:** over a rolling 30 days, at least **99.9%** of well-formed public resolves reaching the service should return a contract-correct response within **200 ms** at the service boundary. The clock ends when this service sends the response; destination-site loading is excluded. The number and target require product agreement and load testing. Track create separately because it commits a transaction.\n\nAn eligible link requires 302 with the right Location; unknown/expired/taken-down requires the uniform 404 without Location. A wrong destination is a correctness failure even if HTTP status and latency look healthy. Dependency 503 or a missed deadline is a failed resolve. For this exercise overload rejection of a well-formed resolve also counts as failure. Deliberate abuse/quota exclusions need an explicit, reviewed denominator policy; do not exclude every rejected request to make the ratio look better. Track rejected traffic separately even when an agreed policy excludes it.\n\n**Tiny worked budget:** in 100,000 included resolves, 99.9% permits **100 failed resolves**. If 80 have already failed, **20 remain** in that observed population. This arithmetic is not a forecast or a dashboard. A rolling time window changes its denominator, and latency percentiles must be measured, not inferred from the mean concurrency estimate. A fast 503 can lower an overall latency average while availability worsens; separate outcome/latency views.\n\n### Four questions for the dashboard\n\n- **Traffic:** how many create/resolve attempts reach us, and how skewed are the requests? Use bounded, privacy-reviewed samples for hot-code investigation; raw codes/URLs/caller keys must not become unbounded metric labels.\n- **Latency:** service p50/p95/p99 by operation and outcome, including failures; split cache lookup, primary read/commit and connection-pool waiting. A high cache hit rate with rising primary wait suggests a different bottleneck.\n- **Errors:** 503/deadline, deliberate 429/admission rejection, replay conflicts, cache bypass/decode errors and unexpected eligibility outcomes. Separate expected 404 from missing mappings caused by a bad migration using controlled probes.\n- **Saturation:** in-flight requests, bounded queue use, aggregate connections, primary load/storage and reservation/replay growth. More handlers must share the primary budget.\n\nPage on sustained user impact or an imminent actionable capacity risk with a runbook; use lower-urgency investigation for a lone cache miss. Controlled create/resolve/expiry/takedown probes can catch wrong behavior that process health cannot. Use synthetic owned destinations and never follow arbitrary submitted URLs. No production telemetry or alert engine is implemented here.\n\n### Incident exercise: p95 rises after a rollout\n\n**Observed:** the candidate cohort has cache decode errors and increased full-mapping primary reads; redirect latency and pool waiting rise. Compare with the unchanged cohort and traffic mix before asserting a cause. A cache error alone does not prove why the primary is saturated.\n\n**Hypothesis:** a new cache representation or instance pool setting increased fallback work. **Mitigation:** halt the rollout, reduce admitted load to the primary budget and roll back compatible handlers or disable the optional cache. Disabling it preserves current eligibility but shifts to full rows; total lookup rate was already one per resolve. Retain 503 rather than authorizing redirects from stale state. Do not increase retry loops to hide the incident.\n\n**Verify:** correct 302/404/503 behavior, same-key create replay, current expiry/takedown, recovery of tail latency and pool waiting under comparable load, and absence of renewed errors. Record timeline, owner, affected version, evidence and next action. A rollback is an action; recovery needs evidence.\n\n### Protect the control path and users\n\nThis worked design assumes authenticated creators and separately authorized operators; the learning app adds neither authentication nor a real takedown API. Check permissions on each control action, scope create quotas to a trusted identity, and bound public request work. A short code is public and guessable; it is not a credential for changing a link or seeing private ownership data. A known code must never let a caller take over a reservation.\n\nAccept only bounded HTTP(S) destination syntax under the API-stage policy, use parameterized database operations, and redact destinations, query strings, caller retry keys and credentials from ordinary logs. HTTP(S) syntax alone does not make a destination safe: phishing/abuse reports need a moderation policy and a protected takedown path. Retain a bounded, access-controlled audit of actor, action, time, reason and outcome, with a documented retention policy. Untrusted log fields need safe encoding. No response body should disclose another caller's replay record.\n\nThe service never fetches the submitted destination. A future preview/scanner would introduce a separate outbound-fetch threat model, access restrictions and resource budgets; do not quietly add fetching to redirect handling. Uniform 404 reduces outward disclosure of expiry/takedown reasons but does not guarantee privacy against timing analysis or enumeration. Existing in-flight responses authorized before takedown may finish; an absolute post-acknowledgement cutoff needs stronger coordination.\n\n### Change safely: expand, switch, then retire\n\n1. Define compatibility first: permanent reservations survive; old and new handlers read/write accepted records; old retained replay results remain replayable for their promised 24 hours.\n2. Add an optional compatible field or a versioned cache namespace while preserving the old representation. A cache decode mismatch takes a bounded primary path, never a guessed destination.\n3. Canary a small cohort with explicit stop signals and aggregate primary admission. Probe create/replay/expiry/takedown and compare outcomes, tail latency and primary work. This diagram illustrates the decision; it does not deploy anything.\n4. Switch only after the evidence supports it. Keep the prior compatible handler/config available. If you disable cache or roll back, budget the larger full-row workload and keep eligibility authoritative.\n5. Retire old fields/readers only after old instances and consumers are gone, with recovery evidence. Reducing replay retention cannot truncate an already promised window. Never release permanent code reservations, even for expired/taken-down links.\n\n**Backup/restore question:** restoring an old snapshot can lose acknowledged mappings, reservations or replay results. Agree acceptable data loss (RPO) and recovery time (RTO), test restoration and reconcile durable state before accepting creates. If previously used codes cannot be reconstructed, stop creates or use a provably disjoint new code namespace; do not assume a partial backup preserves no-reassignment. Replication is not by itself a tested backup or failover protocol. The baseline has no implemented database, replication or restoration.\n\n**Wrong explanation:** \u201cRollback means revert every record and delete unused codes.\u201d That can invalidate acknowledged links, lose replay identity or assign an old code to someone new.\n\n**To a teammate:** \u201cAlert on the user's promise, constrain primary work while we recover, and keep previous code able to read durable state. Cache rollback must never become permission to reuse a code.\u201d\n\n**In an interview:** state one SLO boundary, one symptom and diagnostic signal, one safe mitigation and one verification. Then defend why reservations and replay retention survive your rollout.\n\n### Sources and scope\n\n[Google SRE monitoring](https://sre.google/sre-book/monitoring-distributed-systems/) motivates traffic/latency/errors/saturation and distinguishing symptoms from causes. [Google SRE objectives](https://sre.google/sre-book/service-level-objectives/) motivates explicit indicators, targets and windows. [OWASP REST security](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html) supports authorization, validation and safe auditing. The target, budget example, incident, rollout and restore exercises are original proposed policies; no monitoring, moderation or infrastructure is executed by this workshop.\n",
+      "rubric": [
+        {
+          "id": "boundary",
+          "prompt": "I defined success, time/window boundaries, expected 404 and honest rejection accounting."
+        },
+        {
+          "id": "signals",
+          "prompt": "I used traffic, latency, errors and saturation to distinguish evidence from a cause hypothesis."
+        },
+        {
+          "id": "incident",
+          "prompt": "I chose bounded mitigation and verified recovery without weakening eligibility."
+        },
+        {
+          "id": "protection",
+          "prompt": "I protected control actions and described privacy/abuse limits without adding destination fetching."
+        },
+        {
+          "id": "migration",
+          "prompt": "I preserved reservations and retained replay promises across mixed versions, rollback and restore."
+        }
+      ],
+      "sourceIds": [
+        "sre-monitoring",
+        "sre-service-objectives",
+        "owasp-rest-security",
+        "postgres-16-transactions",
+        "azure-cache-aside"
+      ],
+      "experimentLinks": [
+        {
+          "topicId": "request-flow",
+          "label": "Observe saturation before choosing an operational action",
+          "instruction": "Run Finite queue overload, compare completion and rejection evidence, then explain what real service latency/pool signals the simplified model omits."
+        },
+        {
+          "topicId": "distributed-rate-limiter",
+          "label": "Defend the identity and outage policy for abuse control",
+          "instruction": "Compare Global counter with Local counters and Counter backend outage. The model has one identity and zero network latency; it does not authorize URL-shortener operator actions."
+        }
+      ],
+      "walkthroughs": [
+        {
+          "id": "incident-response",
+          "title": "Observe, mitigate, verify",
+          "summary": "An illustrative cache-representation incident; the operator keeps the primary budget and correctness promise.",
+          "nodes": [
+            {
+              "id": "operator",
+              "title": "Operator",
+              "detail": "Uses a reviewed runbook, bounded rollout permissions and a recorded incident timeline."
+            },
+            {
+              "id": "signals",
+              "title": "Service signals",
+              "detail": "Separates redirect/create traffic, outcomes and latency; observes aggregate pool waiting, cache bypass and primary work without logging destinations."
+            },
+            {
+              "id": "service",
+              "title": "Service instances",
+              "detail": "Enforce a total deadline and aggregate admission; optional mapping cache can be disabled without changing eligibility."
+            },
+            {
+              "id": "store",
+              "title": "Primary store",
+              "detail": "Owns immutable code mappings, current eligibility, permanent reservations and retained create results."
+            }
+          ],
+          "steps": [
+            {
+              "id": "observe",
+              "title": "Observe: candidate latency and decode errors",
+              "from": "signals",
+              "to": "operator",
+              "detail": "Candidate p95, cache errors and pool wait rise. Compare a control cohort and comparable traffic; correlation alone does not establish cause."
+            },
+            {
+              "id": "budget",
+              "title": "Mitigate: halt rollout and bound admission",
+              "from": "operator",
+              "to": "service",
+              "detail": "Pause new rollout, limit aggregate primary work, and select a compatible rollback or cache-disable configuration. Do not amplify retries."
+            },
+            {
+              "id": "fallback",
+              "title": "SQL: full rows with current eligibility",
+              "from": "service",
+              "to": "store",
+              "detail": "Admitted requests use the authoritative mapping/eligibility path. Cache rollback changes row/byte work, not the strict one-lookup-per-resolve promise."
+            },
+            {
+              "id": "preserve",
+              "title": "Preserve: refuse unavailable eligibility",
+              "from": "service",
+              "to": "service",
+              "detail": "Missing primary evidence remains 503 with no Location. Expiry/takedown remains 404; an old cached destination never authorizes fallback."
+            },
+            {
+              "id": "verify",
+              "title": "Verify: outcomes, replay and recovery",
+              "from": "operator",
+              "to": "signals",
+              "detail": "Probe create/same-key replay/expiry/takedown; compare outcome correctness, tail latency and pool waiting under comparable load. Keep incident ownership until evidence supports recovery."
+            }
+          ]
+        },
+        {
+          "id": "compatible-rollout",
+          "title": "Roll out without forgetting old promises",
+          "summary": "Mixed-version handlers and a versioned optional cache keep a safe rollback path.",
+          "nodes": [
+            {
+              "id": "operator",
+              "title": "Operator",
+              "detail": "Uses a reviewed runbook, bounded rollout permissions and a recorded incident timeline."
+            },
+            {
+              "id": "signals",
+              "title": "Service signals",
+              "detail": "Separates redirect/create traffic, outcomes and latency; observes aggregate pool waiting, cache bypass and primary work without logging destinations."
+            },
+            {
+              "id": "service",
+              "title": "Service instances",
+              "detail": "Enforce a total deadline and aggregate admission; optional mapping cache can be disabled without changing eligibility."
+            },
+            {
+              "id": "store",
+              "title": "Primary store",
+              "detail": "Owns immutable code mappings, current eligibility, permanent reservations and retained create results."
+            }
+          ],
+          "steps": [
+            {
+              "id": "plan",
+              "title": "Plan: declare compatibility and stop signals",
+              "from": "operator",
+              "to": "service",
+              "detail": "Both handler versions preserve immutable destinations, permanent reservations and all still-promised 24-hour replay records."
+            },
+            {
+              "id": "expand",
+              "title": "Expand: optional compatible state",
+              "from": "service",
+              "to": "store",
+              "detail": "Add fields old handlers tolerate; retain existing ownership/replay records. No destructive migration or code release is part of this change."
+            },
+            {
+              "id": "canary",
+              "title": "Canary: small cohort within aggregate budget",
+              "from": "operator",
+              "to": "service",
+              "detail": "Use a distinct cache representation if necessary, a bounded primary fallback and explicit stop criteria. Old and new handler pools share the primary budget."
+            },
+            {
+              "id": "compare",
+              "title": "Check: controlled correctness and load signals",
+              "from": "service",
+              "to": "signals",
+              "detail": "Test create/replay/expiry/takedown with owned synthetic links, then compare outcome and latency/pool signals before broadening traffic."
+            },
+            {
+              "id": "rollback",
+              "title": "Rollback: compatible handler or cache bypass",
+              "from": "operator",
+              "to": "service",
+              "detail": "If stop signals fire, return to compatible handlers or disable the optional cache; budget full-row work and preserve primary eligibility."
+            },
+            {
+              "id": "retire",
+              "title": "Retire: only after old readers and windows end",
+              "from": "operator",
+              "to": "store",
+              "detail": "Remove obsolete representation only after compatibility/restore evidence and old consumers are gone. Never truncate an existing replay promise or release a code reservation."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "defense",
+      "title": "Explain and defend your design",
+      "prompt": "Give a simple two-minute explanation: promise, assumptions, estimate, baseline, create/resolve paths, one failure, and one justified evolution. Then defend three changed requirements: cache-only availability during primary outage, editable destinations, and recovery from lost reservations. Use the self-check to name the weakest claim in your explanation and revise it.",
+      "reference": "## Explain it so someone can draw it\n\nA URL shortener stores a permanent ownership decision for a short code. Creation makes that decision atomically; resolve checks whether the link may still be used and hands the client its destination. Start there before naming technologies.\n\n### A 30-second version\n\n\u201cWe accept a destination and optional expiry, create a unique short code, and redirect while the link is active. A primary store owns the code, mapping and bounded create-retry result. We never give an old code to a different destination. Resolve checks current expiry/takedown, so a stale cache cannot revive a link. I add caching only after identifying what work it removes.\u201d\n\nThis is an explanation scaffold, not a timed practice tool. Read it, close the reference, and write your version in the revision box.\n\n### A two-minute version\n\n1. **Promise and scope:** create and public resolve; immutable destination/owner, optional expiry, protected takedown, uniform missing/expired/taken-down 404. No analytics dashboard, editable aliases or preview fetching in the baseline. Immediate per-read eligibility does not cancel a redirect already authorized before a concurrent takedown.\n2. **Demand:** use the stated estimator example, not an interview fact: 1,000,000 daily users and 10 operations each, 90% reads and a 5\u00d7 peak factor. That gives 10,000,000 operations/day and approximately 520.83 peak reads/s plus 57.87 peak writes/s. Identify unit assumptions and measure actual latency/skew before sizing workers or databases.\n3. **Simple design:** client \u2192 stateless handlers \u2192 primary store. The store owns permanent code reservations, links and 24-hour caller/key replay records. Creating all three records is one transaction; bounded candidate collisions cannot reassign a code.\n4. **Request paths:** create validates and records an original result before 201. If the acknowledgement is lost, retry the same accepted fields and caller/key within the retained window. Resolve reads current mapping/eligibility; eligible returns 302 with no-store, expired/unknown/taken-down returns 404 without Location. Primary failure returns 503, not a fabricated missing result.\n5. **Evolution and tradeoff:** add optional immutable destination caching only if full-row transfer/decoding is the evidenced bottleneck. Strict cache hits still make primary eligibility reads, so 95% mapping hits do not cut primary lookup QPS. If QPS is the bottleneck, say this optimization is insufficient. Bound admission, dependency deadlines and retries.\n6. **Operate and revisit:** watch outcome correctness, tail latency and primary saturation. Preserve reservations/replay windows across rollout and restore. A requirement to serve cache-only during primary outage must explicitly change the freshness/revocation promise.\n\nThese are design choices under stated assumptions. The workshop has executed estimator/cache/request-flow/rate-limit experiments and authored walkthroughs; it has no running short-link service or database benchmark.\n\n### A 45-minute discussion outline\n\nUse this as an adaptable speaking plan, not an enforced countdown: 5 minutes clarifying requirements, 5 estimating demand, 10 baseline/API/data, 10 create/resolve and correctness, 10 a bottleneck/failure/evolution, 5 operations and recap. If the interviewer changes direction, prioritize the changed requirement and explain your next decision; a component checklist is not the objective.\n\n### Changed requirement 1: \u201cKeep redirecting when the primary is down\u201d\n\n**Current answer:** we cannot verify current eligibility, so even a warm mapping cache yields 503. The chosen strict promise trades outage availability for current per-read expiry/takedown decisions.\n\n**Follow-up:** if delayed revocation becomes acceptable, negotiate exactly which stale state may be used, for how long, with what absolute expiry and failure policy. Include stale fills, maximum observation age, clock uncertainty and already authorized in-flight responses. A cache TTL measured from a delayed fill alone does not prove a bound since takedown. Name the new guarantee and its tests before claiming an availability win; do not label the cache \u201calways consistent.\u201d\n\n### Changed requirement 2: \u201cLet owners edit destinations\u201d\n\n**Current answer:** this breaks the invariant that an active code has one immutable destination. Our mapping cache assumes immutability. First redefine authorization and ownership/version semantics; then design concurrent edits, stale-cache/version handling, audit and behavior of old browser redirects. Do not reuse the existing cache argument or call an edit a normal immutable mapping hit. The app does not implement this changed design.\n\n### Changed requirement 3: \u201cRestore yesterday's backup and resume creates\u201d\n\n**Current answer:** an old snapshot may omit acknowledged reservations and replay results. Before resuming creation, recover/reconcile every previously issued code or use a provably disjoint namespace. Otherwise a historical bookmark could go to a new owner. State RPO/RTO and tests; stop writes if the ownership guarantee cannot be established. Deleting expired links is not permission to reclaim their codes.\n\n### Changed requirement 4: \u201cMake a hot link much faster\u201d\n\nFind the limiting work first: row bytes/decoding, primary eligibility QPS, connection waiting, or destination-site loading. The last is outside our response boundary. More handlers or a mapping cache can help a particular constraint but also move it. Use the cache experiment to explain a cold burst; it has no coalescing. Use Request Flow for bounded work; it is not a database throughput benchmark.\n\n### Self-assess with evidence, not a score\n\n- **Clear:** a teammate can repeat the promise and draw the three-box baseline from your explanation.\n- **Concrete:** you gave units and traced one create and one resolve, including status and the authority behind the decision.\n- **Correct:** you preserved ownership, replay/expiry boundaries and the distinction between unavailable and missing evidence.\n- **Defensible:** you named a bottleneck, showed what your change removes and stated what it cannot fix.\n- **Adaptable:** you changed assumptions explicitly, described an alternative and named a check that would distinguish it.\n\nUse the existing Covered/Needs revision choices as your judgments, not an automatic grade. Reading a reference or ticking a criterion does not prove interview readiness. Write the weakest claim, an improved explanation and the experiment or source you would use to defend it. A real newcomer teach-back remains a release check.\n\n**Wrong explanation:** \u201cUse Redis, Kafka, replicas and microservices because the system must scale.\u201d It does not say what the service promises, which work is slow, or how correctness survives failures. No extra service is justified by this baseline.\n\n**To a teammate:** \u201cA code's ownership is durable; the cache is optional. I can trace why each response is safe and say what a proposed optimization actually removes.\u201d\n\n**Interview recap:** \u201cI started with the simplest correct design, quantified assumed load, traced the important paths, protected the invariant under failures, and only evolved the component tied to a named bottleneck. Here is the requirement that would make me choose differently.\u201d\n\n### Sources and scope\n\n[PostgreSQL transaction semantics](https://www.postgresql.org/docs/16/tutorial-transactions.html), [Microsoft cache-aside considerations](https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside), [HTTP semantics](https://www.rfc-editor.org/rfc/rfc9110.html) and [AWS load-test guidance](https://docs.aws.amazon.com/wellarchitected/latest/framework/perf_process_culture_load_test.html) support the underlying engineering boundaries. The speaking schedule, self-check and alternatives are original teaching aids; no source guarantees an interview outcome.\n",
+      "rubric": [
+        {
+          "id": "clarity",
+          "prompt": "I explained the promise and simple baseline in words someone else can repeat."
+        },
+        {
+          "id": "paths",
+          "prompt": "I traced create/replay and resolve/error paths with authority and status."
+        },
+        {
+          "id": "numbers",
+          "prompt": "I used stated units/assumptions and separated estimates from measured capacity."
+        },
+        {
+          "id": "tradeoff",
+          "prompt": "I connected one evolution to a bottleneck and named what it cannot fix."
+        },
+        {
+          "id": "adaptation",
+          "prompt": "I explicitly changed guarantees for new requirements and stated verification/remaining limits."
+        }
+      ],
+      "sourceIds": [
+        "postgres-16-transactions",
+        "azure-cache-aside",
+        "rfc-9110-http-semantics",
+        "aws-performance-efficiency"
+      ],
+      "experimentLinks": [
+        {
+          "topicId": "capacity-estimation",
+          "label": "Explain an estimate from actual Java evidence",
+          "instruction": "Run Interview baseline and revise one input. In your pitch give the units and changed result, and explain why mean concurrency does not determine p95 or worker capacity."
+        },
+        {
+          "topicId": "cache-aside",
+          "label": "Teach back a cold burst and stale hit",
+          "instruction": "Run Cold burst without request coalescing, then Baseline: hit, miss, and stale read. Explain the observed duplicate origin reads and stale value without claiming these are URL-shortener eligibility semantics."
+        }
+      ],
+      "walkthroughs": [
+        {
+          "id": "design-defense",
+          "title": "Walk through a defendable explanation",
+          "summary": "Connect each proposed component to a promise, request path or evidenced bottleneck.",
+          "nodes": [
+            {
+              "id": "interviewer",
+              "title": "Interviewer",
+              "detail": "Asks for assumptions, a simple working design, evidence and tradeoffs; changed requirements need an explicit new promise."
+            },
+            {
+              "id": "candidate",
+              "title": "Your explanation",
+              "detail": "Connects the problem, baseline, request paths, failure behavior and justified evolution in plain language."
+            },
+            {
+              "id": "service",
+              "title": "Service instances",
+              "detail": "Illustrative stateless handlers; validate, enforce bounded work, and check current eligibility."
+            },
+            {
+              "id": "store",
+              "title": "Primary store",
+              "detail": "Transactionally owns code reservations, links and retained create results; not implemented in this learning app."
+            },
+            {
+              "id": "cache",
+              "title": "Optional cache",
+              "detail": "Immutable destination hints under a named payload/decoding bottleneck; hits still require current primary eligibility."
+            }
+          ],
+          "steps": [
+            {
+              "id": "clarify",
+              "title": "Clarify: promise before components",
+              "from": "interviewer",
+              "to": "candidate",
+              "detail": "Create and resolve with immutable ownership, optional expiry and protected takedown. State the per-read eligibility and in-flight response limit."
+            },
+            {
+              "id": "baseline",
+              "title": "Baseline: bounded stateless handlers",
+              "from": "candidate",
+              "to": "service",
+              "detail": "Begin with a client, handlers and one primary authority. Estimate demand with explicit units; do not infer measured capacity from the arithmetic."
+            },
+            {
+              "id": "create",
+              "title": "Create: atomic ownership and replay",
+              "from": "service",
+              "to": "store",
+              "detail": "Reserve a unique code, create the immutable mapping and record the accepted result in one transaction before 201. Same-key recovery is bounded to the retained 24-hour promise."
+            },
+            {
+              "id": "resolve",
+              "title": "Resolve: current eligibility",
+              "from": "service",
+              "to": "store",
+              "detail": "Return 302 only after current eligibility; unknown/expired/taken-down is uniform 404, failed authority is 503, both without Location."
+            },
+            {
+              "id": "evolve",
+              "title": "Evolve: only a named bottleneck",
+              "from": "candidate",
+              "to": "cache",
+              "detail": "Under a payload/decoding bottleneck cache immutable destination bytes; still check current eligibility. A hit ratio is not a reduction in strict primary QPS."
+            },
+            {
+              "id": "challenge",
+              "title": "Challenge: name the changed promise",
+              "from": "interviewer",
+              "to": "candidate",
+              "detail": "Cache-only outage availability, editable destinations or lost reservations require explicit new correctness/recovery rules. Defend one alternative and one distinguishing check."
+            }
+          ]
         }
       ]
     }

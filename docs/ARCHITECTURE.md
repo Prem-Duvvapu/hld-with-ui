@@ -57,13 +57,13 @@ backend/
 content/
   catalog.json            canonical publication metadata
   topics/<id>/            lesson.md, questions.json, resources.json, checkpoints.json (guided)
-  case-studies/<id>/      workshop.json, resources.json (draft URL-shortener eight-stage workshop)
+  case-studies/<id>/      workshop.json, resources.json (draft URL-shortener ten-stage workshop)
 contracts/                OpenAPI, JSON Schemas, API examples
 scripts/                  planning-document validation
 docs/                     plans, decisions, work items, templates, evidence
 ```
 
-**Planned** additions, created only when their work item needs them: two remaining workshop stages and publication (HLD-09B/C), progress features (HLD-10); shared Practice/Guided answer storage and import/reset controls are implemented in `features/learning/`. Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
+**Planned** additions, created only when their work item needs them: workshop publication (HLD-09C), progress features (HLD-10); shared Practice/Guided answer storage and import/reset controls are implemented in `features/learning/`. Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
 
 Backend model packages are organized by capability, not one enormous controller or service per topic. Each model has its own typed event schema with a closed `kind` vocabulary. A shared model interface and renderer registry are **planned** only if a concrete second consumer needs them (see [SIMULATION_SPEC.md](SIMULATION_SPEC.md#3-proposed-java-interface)).
 
@@ -79,7 +79,7 @@ Package validated lessons and metadata into the backend artifact during build; d
 
 ## 4. Initial API contract
 
-The topic endpoints serve all four published topics. Simulation endpoints are implemented for `request-flow`, `distributed-rate-limiter`, and `cache-aside`; estimator endpoints for `capacity-estimation`. Case-study delivery serves the draft URL-shortener resource (Requirements through Failures) by explicit ID; search and stats remain **planned**.
+The topic endpoints serve all four published topics. Simulation endpoints are implemented for `request-flow`, `distributed-rate-limiter`, and `cache-aside`; estimator endpoints for `capacity-estimation`. Case-study delivery serves the draft URL-shortener resource (Requirements through Defense) by explicit ID; search and stats remain **planned**.
 
 | Endpoint | Purpose and behavior |
 | --- | --- |

@@ -59,9 +59,10 @@ function rejectChange(change, expected) {
 }
 
 test("reject publication before the full design journey exists", () => {
-  rejectChange((catalog) => {
+  rejectChange((catalog, workshop) => {
     catalog.find((entry) => entry.id === "url-shortener").status = "published";
-  }, /published workshop missing stage operations/);
+    workshop.stages = workshop.stages.filter((stage) => stage.id !== "defense");
+  }, /published workshop missing stage defense/);
 });
 
 test("reject mismatched content version", () => {

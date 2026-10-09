@@ -2,7 +2,7 @@
 
 ## Current state
 
-The React/TypeScript frontend and Java backend implement request flow, capacity estimation, rate limiting, and cache-aside. A draft URL-shortener workshop with Requirements through Failures (eight stages) is available by direct case-study route and remains outside published topic discovery. Consult the roadmap and actual code for remaining stages and release gates. Do not describe planned features or unperformed checks as implemented.
+The React/TypeScript frontend and Java backend implement request flow, capacity estimation, rate limiting, and cache-aside. A draft URL-shortener workshop with Requirements through Defense (ten authored stages) is available by direct case-study route and remains outside published topic discovery. Consult the roadmap and actual code for remaining release gates. Do not describe planned features or unperformed checks as implemented.
 
 The owner considers **lld-with-ui the best existing project**. Use it as the primary product reference: shared module shell, hands-on operations, guided simulation, architecture/sequence diagrams, and design details. Other sibling repositories are secondary references. Their repository-specific agent rules do not automatically govern this repository.
 

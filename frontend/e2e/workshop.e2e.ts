@@ -93,8 +93,10 @@ test("workshop Java response validates its contract and the draft stays outside 
     "flows",
     "evolution",
     "failures",
+    "operations",
+    "defense",
   ]);
-  expect(detail.workshop.contentVersion).toBe("1.3.0");
+  expect(detail.workshop.contentVersion).toBe("1.4.0");
   expect(detail.workshop.stages[0].id).toBe("requirements");
   expect((await request.get("/api/v1/topics/url-shortener")).status()).toBe(
     404,
@@ -109,7 +111,7 @@ test("workshop Java response validates its contract and the draft stays outside 
   await page.goto(url);
   await expect(
     page.getByRole("region", { name: "Draft workshop" }),
-  ).toContainText("8 authored stages");
+  ).toContainText("10 authored stages");
   await expect(page.getByRole("tab")).toHaveCount(1);
 });
 

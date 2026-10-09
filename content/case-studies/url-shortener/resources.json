@@ -131,5 +131,38 @@
     "supports": "Resource-bounded timeouts, uncertain side effects, retry multiplication and pacing; specific three-layer/three-attempt arithmetic and URL-shortener retry retention are workshop assumptions.",
     "reviewedAt": "2026-10-09",
     "accessStatus": "available"
+  },
+  {
+    "id": "sre-monitoring",
+    "title": "Monitoring Distributed Systems",
+    "organization": "Google",
+    "url": "https://sre.google/sre-book/monitoring-distributed-systems/",
+    "sourceType": "documentation",
+    "relevantSections": "Symptoms Versus Causes; The Four Golden Signals; Monitoring for the Long Term",
+    "supports": "Signal selection, outcome/latency distinctions and actionable monitoring; incident, rollout and numeric targets are original workshop exercises.",
+    "reviewedAt": "2026-10-09",
+    "accessStatus": "available"
+  },
+  {
+    "id": "sre-service-objectives",
+    "title": "Service Level Objectives",
+    "organization": "Google",
+    "url": "https://sre.google/sre-book/service-level-objectives/",
+    "sourceType": "documentation",
+    "relevantSections": "Indicators; Objectives; Choosing Indicators; Selecting Targets",
+    "supports": "Explicit service indicators, targets, measurement boundaries and aggregation windows; the illustrative 99.9%/200 ms exercise is not a Google recommendation or measured guarantee.",
+    "reviewedAt": "2026-10-09",
+    "accessStatus": "available"
+  },
+  {
+    "id": "owasp-rest-security",
+    "title": "REST Security Cheat Sheet",
+    "organization": "OWASP",
+    "url": "https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html",
+    "sourceType": "documentation",
+    "relevantSections": "Access Control; Input validation; Audit logs",
+    "supports": "Per-endpoint authorization, bounded input validation and safe audit logging; product moderation, restore and takedown ordering are separately scoped design choices.",
+    "reviewedAt": "2026-10-09",
+    "accessStatus": "available"
   }
 ]

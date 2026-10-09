@@ -48,7 +48,7 @@ describe("Design workshop", () => {
     const first = view();
     expect(
       screen.getByRole("region", { name: "Draft workshop" }),
-    ).toHaveTextContent("8 authored stages");
+    ).toHaveTextContent("10 authored stages");
     expect(raw).toBeNull();
     fireEvent.change(
       screen.getByRole("textbox", { name: "Your original answer" }),
