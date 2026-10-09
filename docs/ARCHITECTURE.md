@@ -79,7 +79,7 @@ Package validated lessons and metadata into the backend artifact during build; d
 
 ## 4. Initial API contract
 
-The topic endpoints serve all four published topics. Simulation endpoints are implemented for `request-flow`, `distributed-rate-limiter`, and `cache-aside`; estimator endpoints for `capacity-estimation`. Case-study delivery serves the draft URL-shortener resource (Requirements through Defense) by explicit ID; search and stats remain **planned**.
+The topic endpoints serve all four published topics. Simulation endpoints are implemented for `request-flow`, `distributed-rate-limiter`, and `cache-aside`; estimator endpoints for `capacity-estimation`. Case-study delivery serves the draft URL-shortener resource (Requirements through Defense) by explicit ID. Search is implemented over packaged published content; catalog stats remain **planned**.
 
 | Endpoint | Purpose and behavior |
 | --- | --- |
@@ -89,7 +89,7 @@ The topic endpoints serve all four published topics. Simulation endpoints are im
 | `POST /api/v1/simulations/{id}/runs` | Validate and execute one bounded simulation, returning a complete trace |
 | `GET /api/v1/estimators/{id}` | Read estimator defaults, presets, limits, and assumptions |
 | `POST /api/v1/estimators/{id}/calculations` | Return unit-aware calculations, intermediate values, assumptions, and sensitivity range |
-| `GET /api/v1/search?q=...` | Search published titles, body text, and glossary terms; bounded results |
+| `GET /api/v1/search?q=...` | Implemented: literal term search over published titles, summaries, lessons and workshop stage narratives; optional level/capability filters, 100-unit query bound, 20 results plus total match count |
 | `GET /api/v1/case-studies` | Published validated case metadata, ordered by catalog order then ID; draft/planned entries omitted, empty array when none are published |
 | `GET /api/v1/case-studies/{id}` | Implemented: authored draft/published case metadata and versioned stages/rubrics; unknown/planned/topic IDs return 404 |
 | `GET /api/v1/catalog/stats` | Generated counts by publication state and available capability |
@@ -99,6 +99,14 @@ Unknown IDs and unknown routes return 404. Invalid parameters return 400 with fi
 Simulation input is a flat, per-model object with `schemaVersion`, `modelVersion`, `seed`, and model-specific fields (for example `arrivalTimesMs`, or cache `operations`); `request-flow` v1.1.1 adds a bounded optional `failureSchedule`. Unknown fields are rejected. Results include versions, seed, status, events, per-request outcomes, metrics, and assumptions; limited runs add truncation reason, last virtual time, and incomplete counts. Cache-aside results also carry `initialState` and each event's post-event key state, which the playback renders ([decision 0006](decisions/0006-cache-event-key-state.md)); other models have no state snapshots. See [SIMULATION_SPEC.md](SIMULATION_SPEC.md) for accepted versions and envelope details.
 
 Do not retain runs on the server initially. Playback and backwards seek are local operations over the returned trace. A run ID is for correlation, not a promise that a retrieval URL exists. Long-running jobs, cancellation, SSE, and run storage require a later decision if bounded synchronous execution becomes inadequate.
+
+### Published-content search
+
+`SearchService` builds an in-memory document list from `CatalogService` at startup: one document per published topic lesson, and one per published workshop stage (including rubric and walkthrough narrative). Draft/planned content and learner answers are excluded. Case stage links preserve semantic IDs. Case publication remains subject to its independent review gates.
+
+Queries are explicit GET requests, with 2–100 UTF-16 code units or blank text and optional level/capability enums. Unknown/repeated filters return the structured 400 problem. Every normalized literal term must match; title matches precede summary then body matches. Catalog order/ID break ties, preserving case stage order. At most 20 hits are returned with a total match count and bounded plain excerpts. No external search service, fuzzy matching, stemming or arbitrary HTML rendering. See [decision 0015](decisions/0015-published-content-search.md).
+
+The lazy `/search` React route preserves submitted criteria in the URL for refresh/history. Editing controls does not silently replace submitted results; a notice asks the learner to apply changes. Older responses are ignored, controls keep focus across submission, and clear/error/retry/no-result states remain explicit. No search text or result is persisted as learning progress.
 
 ## 5. State and persistence
 

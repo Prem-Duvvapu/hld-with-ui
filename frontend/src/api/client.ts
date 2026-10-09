@@ -3,6 +3,7 @@ import {
   CacheCompatibilityError,
 } from "./cacheCompatibility";
 import type {
+  SearchResponse,
   CatalogEntry,
   CaseStudyDetail,
   CacheAsideDescriptor,
@@ -71,6 +72,12 @@ async function request<T>(
 }
 
 export const api = {
+  search: (query: string, level = "", capability = "") => {
+    const params = new URLSearchParams({ q: query });
+    if (level) params.set("level", level);
+    if (capability) params.set("capability", capability);
+    return request<SearchResponse>(`/api/v1/search?${params}`);
+  },
   topics: () => request<CatalogEntry[]>("/api/v1/topics"),
   topic: (id: string) => request<TopicDetail>(`/api/v1/topics/${id}`),
   caseStudies: () => request<CatalogEntry[]>("/api/v1/case-studies"),

@@ -2291,3 +2291,15 @@ th {
     padding-top: 3px;
   }
 }
+
+.header-search {
+  margin-right: 16px;
+  font-size: 13px;
+  text-underline-offset: 4px;
+}
+
+@media (max-width: 640px) {
+  .header-search {
+    margin-left: auto;
+  }
+}

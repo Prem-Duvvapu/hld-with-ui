@@ -6,7 +6,7 @@ This file records verified evidence and remaining manual checks for the shared s
 
 ## Current technical evidence
 
-The sections below retain the September baseline. Current automated evidence includes 135 Java tests, 177 frontend tests and 99 browser journeys in merged PR #49. All ten authored URL-shortener stages remain draft; see [HLD-09B4](work-items/HLD-09B4.md). [HLD-04C](work-items/HLD-04C.md) verifies actual serialized trace scope and simultaneous HTTP isolation.
+The sections below retain the September baseline. Current automated evidence includes 151 Java tests, 183 frontend tests and 104 browser journeys plus launcher smoke in [PR #51](https://github.com/Prem-Duvvapu/hld-with-ui/pull/51) on implementation commit `e73c2b0` ([CI run](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/37990344060)). [HLD-10A](work-items/HLD-10A.md) records published-content search behavior and limits. The final documentation commit requires passing CI before merge. All ten authored URL-shortener stages remain draft; see [HLD-09B4](work-items/HLD-09B4.md). [HLD-04C](work-items/HLD-04C.md) verifies actual serialized trace scope and simultaneous HTTP isolation.
 
 [HLD-09C-A](work-items/HLD-09C-A.md) adds native 200% Chromium zoom checks for the four published module result flows and workshop Operations: 720/320 CSS pixels, both themes, reduced motion, keyboard actions and cache error/recovery. Its native-pixel screenshots supplement assertions; the standard mobile tests remain separate. These are bounded automated/agent visual checks. Real screen-reader, newcomer teach-back and broader manual view/stage review remain open.
 

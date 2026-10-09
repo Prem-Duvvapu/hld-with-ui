@@ -142,6 +142,10 @@ The **Data** stage explains ownership, unique code reservations and atomic creat
 
 **Operations** teaches SLO boundaries, privacy-aware signals, incident mitigation, protected control paths and compatible rollout/restore. **Defense** provides 30-second/two-minute explanations, an adaptable discussion outline and changed-requirement follow-ups. Three new illustrative paths can be stepped through with a full textual equivalent. The workshop is a learning exercise and creates no short links. Full publication also needs the outstanding manual learning/accessibility reviews. See [HLD-09B4](docs/work-items/HLD-09B4.md) for evidence and [the delivery incident](docs/INCIDENTS.md) for the hosted backend deployment issue.
 
+## Find an explanation
+
+Use **Search** in the header, or open `/search`. Search published titles, summaries and lesson text, then narrow by level or learning activity. All whitespace-separated terms must match; results link directly to Study or a published workshop stage. Java returns at most 20 matching pages and the total match count. Blank text, no matches, invalid filters and backend failures have explicit states; draft/planned modules and saved answers are excluded. Search criteria survive refresh and browser history in the URL. Bookmarks and Continue learning remain planned.
+
 ## Saved learning answers
 
 The **Practice** tab saves your choices, written explanations, and reference-view

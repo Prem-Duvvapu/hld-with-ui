@@ -6,6 +6,12 @@ import { ThemeToggle } from "../components/ThemeToggle";
 import LearningNetworkNav from "../components/LearningNetworkNav";
 import { LoadingState } from "../components/AsyncState";
 
+const SearchPage = lazy(() =>
+  import("../pages/SearchPage").then((module) => ({
+    default: module.SearchPage,
+  })),
+);
+
 const RequestFlowPage = lazy(() =>
   import("../pages/RequestFlowPage").then((module) => ({
     default: module.RequestFlowPage,
@@ -52,6 +58,9 @@ export function App() {
           </span>
         </Link>
         <div className="header-note">Learn by changing the system</div>
+        <Link className="header-search" to="/search">
+          Search
+        </Link>
         <ThemeToggle />
       </header>
       <main id="main-content">
@@ -64,6 +73,7 @@ export function App() {
         >
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/search" element={<SearchPage />} />
             <Route path="/topics/request-flow" element={<RequestFlowPage />} />
             <Route
               path="/topics/capacity-estimation"

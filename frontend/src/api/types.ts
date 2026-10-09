@@ -49,3 +49,6 @@ export type CacheEntryState = components["schemas"]["CacheEntryState"];
 export type OriginValueState = components["schemas"]["OriginValueState"];
 
 export type WorkshopWalkthrough = components["schemas"]["WorkshopWalkthrough"];
+
+export type SearchResponse = components["schemas"]["SearchResponse"];
+export type SearchHit = components["schemas"]["SearchHit"];

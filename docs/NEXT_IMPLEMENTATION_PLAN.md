@@ -150,7 +150,7 @@ Verify every stage, save/resume, content/contract/capability agreement, deep lin
 
 ### Discovery
 
-Implement bounded search over published Java-delivered content with stable links and useful excerpts. No external search service is needed. Add bookmarks, Continue learning, and the first-release path using saved activity state. Test empty/no-result/error states and removed/updated content. Completion counts come from recorded evidence, not page visits.
+[HLD-10A](work-items/HLD-10A.md) implements bounded search over published Java-delivered content with stable links, filters and useful excerpts. No external search service is needed. Add bookmarks, Continue learning, and the first-release path using saved activity state. Test empty/no-result/error states and removed/updated content. Completion counts come from recorded evidence, not page visits.
 
 ### Release
 

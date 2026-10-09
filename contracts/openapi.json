@@ -430,6 +430,75 @@
         },
         "description": "Published, startup-validated case-study metadata in catalog order, then ID. Draft and planned entries are omitted. Returns an empty array when none are published. Explicit draft detail routes remain available."
       }
+    },
+    "/api/v1/search": {
+      "get": {
+        "operationId": "searchPublishedContent",
+        "summary": "Search published concepts and workshop stages",
+        "description": "Packaged public content only. Literal terms must all occur in title, summary or plain body text. Title matches precede summary then body; ties use catalog order and stable IDs, preserving workshop stage order. Draft/planned content and learner answers are excluded. Unknown/repeated filters return 400. Returns at most 20 results with the total match count.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "Blank returns no results; otherwise 2\u2013100 UTF-16 code units. Searches all whitespace-separated terms as literal substrings, ignoring case and compatibility character forms.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "description": "Optional catalog level.",
+            "schema": {
+              "type": "string",
+              "enum": ["", "Beginner", "Intermediate", "Advanced"]
+            }
+          },
+          {
+            "name": "capability",
+            "in": "query",
+            "required": false,
+            "description": "Optional declared learning activity.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "",
+                "study",
+                "simulation",
+                "estimator",
+                "case-study",
+                "practice",
+                "guided"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bounded search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2642,6 +2711,70 @@
             "items": {
               "$ref": "#/components/schemas/WorkshopStep"
             }
+          }
+        }
+      },
+      "SearchHit": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["entry", "path", "excerpt"],
+        "properties": {
+          "entry": {
+            "$ref": "#/components/schemas/CatalogEntry"
+          },
+          "stageId": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "maxLength": 100
+          },
+          "stageTitle": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^/(topics|case-studies)/[a-z0-9-]+\\?(view=study|stage=[a-z0-9-]+)$",
+            "maxLength": 240
+          },
+          "excerpt": {
+            "type": "string",
+            "maxLength": 222
+          }
+        }
+      },
+      "SearchResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "query",
+          "results",
+          "totalMatches",
+          "limit"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "query": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "results": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/SearchHit"
+            }
+          },
+          "totalMatches": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit": {
+            "type": "integer",
+            "const": 20
           }
         }
       }
