@@ -1,7 +1,9 @@
 package com.hld.api;
 
 import com.hld.catalog.CaseStudyDetail;
+import com.hld.catalog.CatalogEntry;
 import com.hld.catalog.CatalogService;
+import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +16,11 @@ public class CaseStudyController {
 
     public CaseStudyController(CatalogService catalog) {
         this.catalog = catalog;
+    }
+
+    @GetMapping
+    public List<CatalogEntry> caseStudies() {
+        return catalog.publishedCaseStudies();
     }
 
     @GetMapping("/{id}")

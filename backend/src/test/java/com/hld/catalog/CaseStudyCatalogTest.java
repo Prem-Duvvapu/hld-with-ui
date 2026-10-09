@@ -27,6 +27,7 @@ class CaseStudyCatalogTest {
         doReturn(List.of(entry("planned", null))).when(mapper).readValue(any(InputStream.class), ArgumentMatchers.<TypeReference<Object>>any());
         CatalogService service = new CatalogService(mapper);
         assertThat(service.publishedTopics()).isEmpty();
+        assertThat(service.publishedCaseStudies()).isEmpty();
         assertThatThrownBy(() -> service.caseStudy("url-shortener"))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("404");
     }
@@ -42,9 +43,23 @@ class CaseStudyCatalogTest {
         doReturn(List.of(published), workshop).when(mapper).readValue(any(InputStream.class), ArgumentMatchers.<TypeReference<Object>>any());
         CatalogService service = new CatalogService(mapper);
         assertThat(service.publishedTopics()).isEmpty();
+        assertThat(service.publishedCaseStudies()).containsExactly(published);
         assertThat(service.caseStudy("url-shortener").workshop()).isEqualTo(workshop);
         assertThatThrownBy(() -> service.topic("url-shortener"))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("404");
+    }
+
+    @Test
+    void draftWorkshopIsDeliveredByExplicitIdButExcludedFromDiscovery() throws Exception {
+        CatalogEntry draft = entry("draft", "case-studies/url-shortener/workshop.json");
+        Workshop workshop = new Workshop(1, "url-shortener", "1.0.0", "Introduction", "Invariant",
+                List.of(new Workshop.WorkshopStage("requirements", "Title", "Prompt", "Reference",
+                        List.of(new Workshop.RubricCriterion("explain", "Explain")), List.of(), List.of("http-semantics"))));
+        ObjectMapper mapper = mock(ObjectMapper.class);
+        doReturn(List.of(draft), workshop).when(mapper).readValue(any(InputStream.class), ArgumentMatchers.<TypeReference<Object>>any());
+        CatalogService service = new CatalogService(mapper);
+        assertThat(service.publishedCaseStudies()).isEmpty();
+        assertThat(service.caseStudy("url-shortener").workshop()).isEqualTo(workshop);
     }
 
     @Test

@@ -9,25 +9,28 @@ describe("HomePage", () => {
   it("loads the catalog from the backend and links to the published module", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({
+      vi.fn().mockImplementation(async (path: string) => ({
         ok: true,
-        json: async () => [
-          {
-            id: "request-flow",
-            kind: "topic",
-            title: "Request Flow & Load Balancing",
-            summary: "Trace a request.",
-            category: "Foundations",
-            level: "Beginner",
-            order: 1,
-            status: "published",
-            prerequisites: [],
-            outcomes: ["Explain queue time"],
-            capabilities: ["study", "simulation", "practice"],
-            contentVersion: "1.0.0",
-          },
-        ],
-      }),
+        json: async () =>
+          path === "/api/v1/topics"
+            ? [
+                {
+                  id: "request-flow",
+                  kind: "topic",
+                  title: "Request Flow & Load Balancing",
+                  summary: "Trace a request.",
+                  category: "Foundations",
+                  level: "Beginner",
+                  order: 1,
+                  status: "published",
+                  prerequisites: [],
+                  outcomes: ["Explain queue time"],
+                  capabilities: ["study", "simulation", "practice"],
+                  contentVersion: "1.0.0",
+                },
+              ]
+            : [],
+      })),
     );
 
     render(
@@ -49,7 +52,14 @@ describe("HomePage", () => {
   });
 
   it("shows a recoverable backend error", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(async (path: string) => {
+        if (path === "/api/v1/case-studies")
+          return { ok: true, json: async () => [] };
+        throw new TypeError("offline");
+      }),
+    );
     render(
       <MemoryRouter>
         <HomePage />

@@ -46,6 +46,14 @@ public class CatalogService {
                 .toList();
     }
 
+    public List<CatalogEntry> publishedCaseStudies() {
+        return workshops.values().stream()
+                .map(CaseStudyDetail::entry)
+                .filter(entry -> "published".equals(entry.status()))
+                .sorted(Comparator.comparingInt(CatalogEntry::order).thenComparing(CatalogEntry::id))
+                .toList();
+    }
+
     public TopicDetail topic(String id) {
         CatalogEntry entry = topics.stream()
                 .filter(topic -> topic.id().equals(id) && "topic".equals(topic.kind()) && "published".equals(topic.status()))

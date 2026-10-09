@@ -26,7 +26,7 @@ Verify that enlarged text still supports actual Java results, keyboard actions a
 | Agent visual inspection | Passed for ten representative captures | Every flow inspected in both themes, spanning small/wide views. Local tables/navigation scroll independently; no page overflow. This is not a real screen-reader or newcomer review. |
 | Lint / format / test discovery | Passed | Full frontend lint/format and explicit TypeScript compile of the native test; both projects discover 95 tests in 14 files, preserving all 93 earlier journeys |
 | Plan / whitespace | Passed | 57 docs, 264 local links, 59 curriculum IDs and five catalog identities; diff check clean |
-| Full frontend/backend/browser CI | Required before merge | This slice has no product/model changes; CI runs all 133 Java, 174 frontend and 95 browser tests plus launcher smoke. Local checks above do not claim the full suite was rerun. |
+| Full frontend/backend/browser CI | Passed before merge | [PR #48 CI](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/37975912759) passed all 133 Java, 174 frontend and 95 browser tests plus launcher smoke. Squash merged as `902dfe5`. Local checks above do not claim the full suite was rerun locally. |
 
 ## Evidence matrix
 

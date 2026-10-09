@@ -15,7 +15,11 @@ npm run contracts:validate
 npm run contracts:check
 ```
 
-`contracts:check` regenerates the committed TypeScript output and fails when it differs, then validates content shape and semantics. Semantic checks cover unique IDs, prerequisite references and cycles, content paths, lesson heading order, question ownership and answers, source references, capability-to-model references, and guided checkpoints (the `guided` capability requires `checkpointsPath`; each target's event kind must exist in its simulation's event contract). Java tests run each checkpoint's preset and resolve its target event. Workshop checks validate stable stage/answer identities, versions, source references, published experiment links, and the full-journey publication guard. Eight isolated negative fixtures run as part of `contracts:validate`; Java separately validates packaged case resources at startup.
+`contracts:check` regenerates the committed TypeScript output and fails when it differs, then validates content shape and semantics. Semantic checks cover unique IDs, prerequisite references and cycles, content paths, lesson heading order, question ownership and answers, source references, capability-to-model references, and guided checkpoints (the `guided` capability requires `checkpointsPath`; each target's event kind must exist in its simulation's event contract). Java tests run each checkpoint's preset and resolve its target event. Workshop checks validate stable stage/answer identities, versions, source references, published experiment links, and the full-journey publication guard. Isolated negative fixtures run as part of `contracts:validate`; Java separately validates packaged case resources at startup.
+
+## Case discovery
+
+`GET /api/v1/case-studies` returns an array of `CatalogEntry` metadata for startup-validated, published workshops, sorted by catalog order then ID. Draft/planned cases are omitted; the current production catalog yields `[]`. Explicit authored draft detail routes stay available for review. This additive endpoint does not change workshop schemas, content/model versions, answer storage or the topic collection. See [the discovery decision](../docs/decisions/0014-published-case-discovery.md).
 
 ## Versioning
 

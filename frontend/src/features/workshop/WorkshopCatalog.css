@@ -1,0 +1,7 @@
+.workshop-catalog {
+  padding-top: 0;
+}
+
+.workshop-catalog .module-card {
+  min-height: 260px;
+}

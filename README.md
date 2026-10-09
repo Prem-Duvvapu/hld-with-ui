@@ -128,7 +128,7 @@ The model uses one identity, one-token requests, round-robin routing, and zero c
 
 ## Draft URL-shortener workshop
 
-Open `/case-studies/url-shortener` on your local app, or [try the draft workshop](https://hld-with-ui.vercel.app/case-studies/url-shortener) after the frontend and Java deployment includes this change. It is deliberately excluded from the home page's published modules.
+Open `/case-studies/url-shortener` on your local app, or [try the draft workshop](https://hld-with-ui.vercel.app/case-studies/url-shortener) after the frontend and Java deployment includes this change. It is deliberately excluded from home discovery. The home page reads published workshops from Java through `/api/v1/case-studies`; the collection is currently empty. Workshops will appear after their catalog publication and release review.
 
 The **Requirements** stage helps you describe create/redirect behavior, expiry and ownership correctness, workload/service objectives, abuse policy, and non-goals before drawing components. Write an original attempt, reveal one worked reference, self-check, then write a separate revision. Both answers stay visible and save on this browser using the same backup/import/reset controls as Practice. Reference reading remains available when saving is blocked.
 
