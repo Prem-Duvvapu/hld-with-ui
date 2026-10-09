@@ -61,3 +61,7 @@ Error messages keep their previous wording; only their numbers now come from the
 The review follow-up adds OpenAPI validation of real HTTP descriptor/results (all presets, missing keys, Unicode/multiple keys, and virtual-time-limited runs). The frontend rejects unsupported cache model/schema versions, preset versions, unknown event kinds, and missing initial state with a recoverable error. This is a scoped compatibility gate, not full runtime JSON Schema validation. Browser tests cover rejection and successful retry. HLD-05 (cache diagram and playback) is next; it can render `initialState` and each event's key state without parsing narration.
 
 Verification results for this follow-up are recorded in its pull request. Manual zoom and screen-reader review remain separate release gates.
+
+## Slice C — actual serialization and simultaneous HTTP isolation
+
+[HLD-04C](HLD-04C.md) closes the previously unevidenced event-array serialization and simultaneous-request fixture checks. It uses the application serializer, escaped Unicode and structured cache snapshots, four byte budgets and real random-port HTTP calls across all three shared simulator beans. The two-byte-budget test demonstrates that the full response is outside the events budget. Model semantics/versions are unchanged; this evidence does not implement global admission or an independent body/response ceiling.

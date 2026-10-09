@@ -7,7 +7,8 @@ package com.hld.simulation.engine;
  *
  * @param maxEvents          maximum number of events the trace may contain
  * @param maxVirtualTimeMs   maximum virtual time before the run is truncated
- * @param maxTraceBytes      maximum estimated serialized trace size in bytes
+ * @param maxTraceBytes      maximum conservative serialized events-array size in bytes;
+ *                           excludes result metadata, initial state, outcomes and metrics
  * @param wallDeadlineMs     maximum wall-clock duration in milliseconds;
  *                           zero or negative disables the wall-time check
  */
