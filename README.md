@@ -175,3 +175,11 @@ refused visibly; download a backup and reset a module to free space.
 ## References
 
 **[lld-with-ui](https://github.com/Prem-Duvvapu/lld-with-ui) is the primary product reference**, as selected by the project owner: hands-on modules, guided simulations, diagrams, and design details in a consistent shell. [dsa-with-ui](https://github.com/Prem-Duvvapu/dsa-with-ui) and [cs-fundamentals-with-ui](https://github.com/Prem-Duvvapu/cs-fundamentals-with-ui) provide supporting practices. The user-provided [system design resource collection](https://github.com/ashishps1/awesome-system-design-resources) is a discovery index; lessons will include primary sources and original explanations.
+
+## License
+
+This project's original code and documentation are licensed under the [MIT License](LICENSE).
+Copyright (c) 2026 Prem Duvvapu.
+
+Third-party dependencies and materials remain subject to their own licenses and notices;
+the project license does not replace those terms.
