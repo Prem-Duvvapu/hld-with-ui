@@ -105,6 +105,15 @@ For documentation-only work, check internal links, IDs/dependencies, numbers, an
 
 ## Handoff and maintenance
 
+### Project license
+
+The repository's original code and documentation use the [MIT License](../LICENSE),
+with the project license also declared in the frontend manifest/lockfile and Java
+POM. Third-party materials retain their own terms. Verification checks the standard
+license text, metadata consistency, unchanged dependencies and documentation links;
+required application CI runs on the contribution PR. This maintenance change does
+not complete module publication or outstanding learner reviews.
+
 ### Visitor analytics
 
 The deployed frontend mounts Vercel Web Analytics once at the application root
