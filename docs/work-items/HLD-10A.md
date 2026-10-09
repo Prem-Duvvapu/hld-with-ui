@@ -31,7 +31,7 @@ Help a learner find a concept such as stale reads or token buckets without knowi
 | Browser | Passed: five journeys | Final packaged-Java/production frontend run includes corrected card-action bounds, word-boundary excerpts and ambiguous-link reset; real contract, draft exclusion, keyboard/Study/history/reload, mocked failure/recovery and six width/theme combinations |
 | Agent visual inspection | Passed for corrected 320 / 1440 in both themes | Result action lies inside its card; readable excerpts/controls/focus; full-page captures start at document top. Not a real screen-reader/newcomer review |
 | Contract drift / plan / whitespace | Passed | Generated types match; 18 content fixtures passed. Final plan validation: 62 docs / 291 local links / 59 curriculum IDs / five catalog identities. Clean diff |
-| Required CI | Pending | Must pass before squash merge; full 104-browser suite is not claimed locally |
+| Required CI | Passed on implementation commit `e73c2b0` | [PR #51 run 37990344060](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/37990344060): 151 Java / 183 frontend / 104 browser tests and both launcher smoke scenarios; Quality, Browser journeys, security and Vercel preview checks passed. Final documentation commit must also pass required checks before merge |
 
 Initial checks caught a literal-punctuation formatting bug, a loading-vs-completed test assertion, a numbered-tab test locator mismatch and a floating shared card action. Fixed the underlying formatting/layout issues and corrected the test assumptions before publication. Browser coverage now checks the action stays within its card at each width/theme.
 
