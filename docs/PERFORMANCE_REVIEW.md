@@ -120,8 +120,9 @@ the complete row counts, they justify inspecting eager table rendering and seek 
 raising input limits or adding larger learning traces. They do not establish an interview
 simulator's throughput or a production service's latency objective.
 
-Current bundle observations remain in [RELEASE_REVIEW.md](RELEASE_REVIEW.md). Initial lesson
-load/render, heap/load/network sizing, representative hosted measurements, and controlled
+Current bundle observations remain in [RELEASE_REVIEW.md](RELEASE_REVIEW.md).
+[HLD-11D](work-items/HLD-11D.md) adds [initial reading and bounded process-memory evidence](LOADING_AND_MEMORY_REVIEW.md).
+Used-heap peaks, sustained/hosted load and networking/thread sizing, and controlled
 before/after evidence for any rendering optimization remain open. Any pagination/virtualization
 change must keep every event accessible, label visible ranges, preserve full Java metrics,
 and update semantic verification deliberately. Human screen-reader/newcomer reviews and the

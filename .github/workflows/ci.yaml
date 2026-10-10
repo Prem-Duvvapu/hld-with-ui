@@ -104,12 +104,28 @@ jobs:
           path: frontend/target/browser-performance-evidence.json
           if-no-files-found: error
           retention-days: 30
+      - name: Measure initial reading load and browser cache reuse
+        run: npm run perf:lessons
+        working-directory: frontend
+        env:
+          CI: 'true'
+          HLD_PERFORMANCE_REVISION: ${{ github.sha }}
+      - name: Upload lesson loading evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lesson-loading-evidence
+          path: frontend/target/lesson-loading-evidence.json
+          if-no-files-found: ignore
+          retention-days: 30
       - name: Upload failed performance traces
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: browser-performance-failure-traces
-          path: frontend/test-results/performance/
+          path: |
+            frontend/test-results/performance/
+            frontend/test-results/lesson-performance/
           retention-days: 7
       - name: Launcher smoke (start, proxy health, Ctrl+C cleanup, occupied port)
         run: bash scripts/start-smoke-test.sh
@@ -149,6 +165,18 @@ jobs:
           name: java-performance-evidence
           path: backend/target/performance-evidence.json
           if-no-files-found: error
+          retention-days: 30
+      - name: Measure bounded process memory with real HTTP
+        run: python3 scripts/runtime-memory-evidence.py --revision ${{ github.sha }}
+      - name: Preserve incomplete evidence and occupied port owners
+        run: python3 -m unittest discover -s scripts -p 'test_runtime_memory_evidence.py' -v
+      - name: Upload runtime memory evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-memory-evidence
+          path: backend/target/runtime-memory-evidence.json
+          if-no-files-found: ignore
           retention-days: 30
       - name: Build the deployment image from repository root
         run: docker build --file backend/Dockerfile --tag hld-runtime:ci .

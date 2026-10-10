@@ -107,3 +107,10 @@ Route splitting keeps module code out of the initial JavaScript entry. No perfor
 - confirm loading, backend error, validation error, empty, and completed states in a real browser.
 
 Until those checks are recorded, `P0-03`, `P1-05`, and the Capacity Estimation release review remain in progress.
+
+## Initial reading and bounded process memory
+
+[HLD-11D](work-items/HLD-11D.md) adds measured production reading visits with actual Java
+content/no-POST checks, and a copied-jar Linux memory exercise with full response replay,
+413/recovery and negative ownership/failure checks. See [methods and archived observations](LOADING_AND_MEMORY_REVIEW.md).
+This is laboratory evidence; hosted/network/thread budgets and human reviews remain open.
