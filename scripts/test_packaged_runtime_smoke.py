@@ -52,21 +52,23 @@ class PackagedRuntimeFailures(unittest.TestCase):
                 self.assertEqual(run.call_args_list[1].args[0], ["docker", "rm", "--force", name])
 
     def test_occupied_port_fails_without_disturbing_its_owner(self):
-        with socket.socket() as listener:
-            listener.bind(("127.0.0.1", 0))
-            listener.listen()
-            port = listener.getsockname()[1]
-            result = subprocess.run(
-                [sys.executable, str(SMOKE), "--jar", str(JAR), "--port", str(port)],
-                capture_output=True, text=True, timeout=15,
-            )
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn("Address already in use", result.stderr)
-            self.assertNotIn("PASS", result.stdout)
-            # The unrelated listener is still accepting connections after the rejected launch.
-            with socket.create_connection(("127.0.0.1", port), timeout=2):
-                connection, _ = listener.accept()
-                connection.close()
+        for reuse in (0, 1):
+            with self.subTest(reuse=reuse), socket.socket() as listener:
+                listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, reuse)
+                listener.bind(("127.0.0.1", 0))
+                listener.listen()
+                port = listener.getsockname()[1]
+                result = subprocess.run(
+                    [sys.executable, str(SMOKE), "--jar", str(JAR), "--port", str(port)],
+                    capture_output=True, text=True, timeout=15,
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("Address already in use", result.stderr)
+                self.assertNotIn("PASS", result.stdout)
+                # The unrelated listener still accepts connections after the rejected launch.
+                with socket.create_connection(("127.0.0.1", port), timeout=2):
+                    connection, _ = listener.accept()
+                    connection.close()
 
     def test_a_healthy_but_mismatched_artifact_fails_and_releases_its_port(self):
         self.assertTrue(JAR.is_file(), "Package the Java backend before running integration checks")

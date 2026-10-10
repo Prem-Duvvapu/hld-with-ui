@@ -68,9 +68,9 @@ Parallel read-only review found a failure path where diagnostic timeouts could s
 removal; unconditional removal and a regression test fix it. It also prompted full delivered
 content comparisons, bounded socket probes, and startup polling using the remaining deadline.
 The first actual CI image build succeeded, then the image smoke failed its preflight bind
-after the copied-jar run left closed connections in TCP TIME_WAIT ([run](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/38055371733)).
+after the copied-jar cleanup, consistent with closed-connection TCP TIME_WAIT ([run](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/38055371733)).
 The probe now permits reuse of closed connections with `SO_REUSEADDR`; active listening
-owners still fail the bind and remain untouched. Both the actual active-close regression and
+owners still fail the bind and remain untouched, with address reuse both enabled and disabled. Both the actual active-close regression and
 immediate repeated jar checks pass. The final head must pass all three CI jobs before merge.
 
 Tiny baseline fixtures prove JRE/model compatibility for those paths; they are not load tests.
