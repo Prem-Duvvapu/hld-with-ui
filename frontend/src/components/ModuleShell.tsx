@@ -33,6 +33,16 @@ export const requestFlowTabs: ReadonlyArray<ModuleTab<ModuleView>> = [
 ];
 
 const PanelActiveContext = createContext(true);
+const ModuleActivityContext = createContext<{
+  question: string | null;
+  checkpoint: string | null;
+  selectCheckpoint: ((id: string) => void) | null;
+}>({ question: null, checkpoint: null, selectCheckpoint: null });
+
+// Selectors name authored activities only; they never restore or run a model.
+export function useModuleActivity() {
+  return useContext(ModuleActivityContext);
+}
 
 /**
  * Whether the module panel containing the caller is the selected tab.
@@ -169,7 +179,19 @@ export function ModuleShell<T extends string>({
         >
           {visited.has(tab.id) && (
             <PanelActiveContext.Provider value={tab.id === active}>
-              {panels[tab.id]}
+              <ModuleActivityContext.Provider
+                value={{
+                  question: params.get("question"),
+                  checkpoint: params.get("checkpoint"),
+                  selectCheckpoint: (id) => {
+                    const next = new URLSearchParams(params);
+                    next.set("checkpoint", id);
+                    setParams(next);
+                  },
+                }}
+              >
+                {panels[tab.id]}
+              </ModuleActivityContext.Provider>
             </PanelActiveContext.Provider>
           )}
         </section>

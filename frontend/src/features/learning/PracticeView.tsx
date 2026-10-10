@@ -1,4 +1,8 @@
-import { useSyncExternalStore } from "react";
+import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
+import {
+  useModuleActivity,
+  usePanelActive,
+} from "../../components/ModuleShell";
 import type { Question } from "../../api/types";
 import {
   getPracticeStore,
@@ -192,6 +196,18 @@ export function PracticeView({
 }) {
   const store = getPracticeStore();
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const { question: requested } = useModuleActivity();
+  const active = usePanelActive();
+  const questionList = useRef<HTMLDivElement>(null);
+  const selected = questions.find((question) => question.id === requested)?.id;
+  useLayoutEffect(() => {
+    if (!active || !selected) return;
+    const target = Array.from(questionList.current?.children ?? []).find(
+      (child) => child.getAttribute("data-question-id") === selected,
+    ) as HTMLElement | undefined;
+    target?.focus({ preventScroll: true });
+    target?.scrollIntoView({ block: "start", behavior: "instant" });
+  }, [selected, active]);
   const answerProps = (question: Question): AnswerProps => ({
     saved: snapshot.answers.find(
       (answer) =>
@@ -215,24 +231,37 @@ export function PracticeView({
         <p>{description}</p>
       </div>
       <AnswerStorageControls topicId={topicId} topicTitle={topicTitle} />
-      <div className="question-list">
-        {questions.map((question, index) =>
-          question.options ? (
-            <ChoiceQuestion
-              key={question.id}
-              question={question}
-              number={index + 1}
-              {...answerProps(question)}
-            />
-          ) : (
-            <InterviewQuestion
-              key={question.id}
-              question={question}
-              number={index + 1}
-              {...answerProps(question)}
-            />
-          ),
-        )}
+      {requested && !selected && (
+        <p className="practice-version-note" role="note">
+          This saved question is no longer available. Your earlier answer
+          remains in your backup; the current questions are below.
+        </p>
+      )}
+      <div className="question-list" ref={questionList}>
+        {questions.map((question, index) => (
+          <div
+            key={question.id}
+            data-question-id={question.id}
+            tabIndex={-1}
+            className="practice-resume-target"
+          >
+            {question.options ? (
+              <ChoiceQuestion
+                key={question.id}
+                question={question}
+                number={index + 1}
+                {...answerProps(question)}
+              />
+            ) : (
+              <InterviewQuestion
+                key={question.id}
+                question={question}
+                number={index + 1}
+                {...answerProps(question)}
+              />
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
