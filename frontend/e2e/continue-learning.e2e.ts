@@ -207,6 +207,11 @@ test("resume: guided checkpoint survives reload/history without starting a simul
     .getByRole("button", { name: "Warm hit", exact: true })
     .click();
   await expect(page).toHaveURL(/checkpoint=warm-hit/);
+  // The URL changes before React commits the checkpoint transition.
+  // Exercise Back only after the intermediate destination actually renders.
+  await expect(
+    page.getByRole("heading", { name: "Warm hit", exact: true }),
+  ).toBeFocused();
   await page.goBack();
   await expect(
     page.getByRole("heading", { name: "Stale hit", exact: true }),
@@ -218,6 +223,23 @@ test("resume: guided checkpoint survives reload/history without starting a simul
   await expect(
     page.getByRole("button", { name: "Run and reveal", exact: true }),
   ).toBeEnabled();
+  await page
+    .getByRole("button", { name: "Next checkpoint →", exact: true })
+    .click();
+  await expect(page).toHaveURL(/checkpoint=expiry-miss/);
+  await expect(
+    page.getByRole("heading", {
+      name: "Miss at the expiry boundary",
+      exact: true,
+    }),
+  ).toBeFocused();
+  await page
+    .getByRole("button", { name: "← Previous checkpoint", exact: true })
+    .click();
+  await expect(page).toHaveURL(/checkpoint=stale-hit/);
+  await expect(
+    page.getByRole("heading", { name: "Stale hit", exact: true }),
+  ).toBeFocused();
   expect(await durable(page)).toBe(raw);
   expect(runs).toEqual([]);
 });

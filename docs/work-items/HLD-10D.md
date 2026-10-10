@@ -57,6 +57,25 @@ connect their saved reasoning to current activities without invented completion 
 | Required full CI / launcher | Recorded on the contribution PR; must pass before merge | GitHub Quality and Browser journeys |
 | Real newcomer/screen reader and workshop publication | Not performed; release gates stay open | URL_SHORTENER_PUBLICATION_REVIEW.md |
 
+## Required-CI follow-up
+
+Initial CI `38047895391` passed Quality and 123/125 browser tests, but did not pass the required
+browser gate. Its trace shows the resume test pressed Back immediately after the URL changed,
+before the intermediate checkpoint rendered; it now asserts Warm hit heading focus first.
+The search check sampled card/action rectangles in separate browser tasks during scrolling;
+it now samples both together and retains both original containment assertions.
+
+Inspection also found a real Guided control bug: Next/Previous updated local state while router
+selection still governed the displayed checkpoint. All three selection controls now use one
+function that updates the actual checkpoint URL. A router-backed component test and the existing
+real-Java history browser journey assert next/previous destinations, heading focus, unchanged
+answer bytes and no automatic Java run. No production focus assertion or layout requirement was
+removed. Follow-up local checks passed: 10 Guided component tests, typecheck/lint/format, and all 9
+repeated real-Java browser checks (three runs each of Guided history/Next/Previous and the two
+search themes). Artifacts: `/tmp/hld-path-guided-unit.log`, `/tmp/hld-path-ci-fix-type.log`,
+`/tmp/hld-path-ci-fix-lint.log`, `/tmp/hld-path-ci-fix-format-check.log`,
+`/tmp/hld-path-ci-fix-browser.log`. Passing follow-up CI is still required before merge.
+
 ## Visual evidence
 
 Six captures from the successful Java-backed browser run show the unavailable workshop slot,

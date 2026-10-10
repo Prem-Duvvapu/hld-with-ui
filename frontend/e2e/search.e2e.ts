@@ -158,12 +158,22 @@ for (const theme of ["light", "dark"] as const) {
         .toBe(true);
       await hit.focus();
       await expect(hit).toBeFocused();
-      const card = (await hit.boundingBox())!;
-      const action = (await hit.locator(".card-link").boundingBox())!;
-      expect(action.y).toBeGreaterThanOrEqual(card.y);
-      expect(action.y + action.height).toBeLessThanOrEqual(
-        card.y + card.height,
-      );
+      // Read both rectangles in one browser task so scrolling cannot move
+      // the viewport between the two measurements.
+      const bounds = await hit.evaluate((card) => {
+        const action = card.querySelector(".card-link");
+        if (!action) throw new Error("Search result action is missing");
+        const cardBox = card.getBoundingClientRect();
+        const actionBox = action.getBoundingClientRect();
+        return {
+          cardTop: cardBox.top,
+          cardBottom: cardBox.bottom,
+          actionTop: actionBox.top,
+          actionBottom: actionBox.bottom,
+        };
+      });
+      expect(bounds.actionTop).toBeGreaterThanOrEqual(bounds.cardTop);
+      expect(bounds.actionBottom).toBeLessThanOrEqual(bounds.cardBottom);
       await page.evaluate(() =>
         window.scrollTo({ top: 0, behavior: "instant" }),
       );
