@@ -148,3 +148,10 @@ The local workflow uses wrapper-backed Java startup, locked frontend dependencie
 First hosted workflow: build frontend assets and backend image, proxy `/api`, support deep-link refresh, configure health checks and resource limits. No provider or free-tier guarantee is assumed.
 
 Read pages must not eagerly load topology editors or all simulation assets. Measure initial compressed JS, lesson render time, trace generation, and playback on a documented machine/browser before setting budgets. Virtualize long event logs, avoid rendering off-screen events, and show when displayed samples omit data. Metrics always use the defined full observation set.
+
+[HLD-11C](work-items/HLD-11C.md) adds opt-in evidence over real Java models/configured Jackson
+and the production browser. [PERFORMANCE_REVIEW.md](PERFORMANCE_REVIEW.md) records separate
+generation/serialization, local proxy HTTP, semantic readiness/frame and Chromium costs, with
+actual fixture counts and declared machine/sampling boundaries. CI preserves full reports;
+local archived samples retain their provenance. Initial lesson loading, heap/load/network
+budgets and measured before/after rendering changes remain independent release work.

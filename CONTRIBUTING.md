@@ -84,6 +84,33 @@ python3 scripts/packaged-runtime-smoke.py --image hld-runtime:local
 CI's **Packaged runtime** job runs both modes. This proves the checked artifact works; deployed
 backend commit/version verification and human learning/accessibility review remain separate gates.
 
+## Performance evidence
+
+After the package/frontend gates, run the opt-in evidence suites sequentially:
+
+```bash
+(cd backend && ./mvnw -B -Dtest=SimulationPerformanceEvidenceTest -Dhld.performance=true test)
+(cd frontend && npm run perf:browser)
+```
+
+Default Maven verification discovers 183 tests: 182 execute and this performance test is
+intentionally skipped. The explicit command executes the additional test over eleven
+workloads with one untimed reference run, three warmups and ten samples each. Generation
+and configured JSON serialization are separate intervals; semantic replay and existing byte
+ceilings are checked without arbitrary time assertions.
+
+The browser command uses the production build and real Java on 18580/14573
+(`PERF_BACKEND_PORT`/`PERF_FRONTEND_PORT`), one worker, and twenty workload/viewport groups.
+It checks real results/selection and records HTTP, semantic readiness, animation-frame and
+Chromium counters. `PERF_SAMPLES` accepts 1–10 (default three); `PERF_OUTPUT` overrides the
+report path. Reports go to ignored `backend/target/performance-evidence.json` and
+`frontend/target/browser-performance-evidence.json`. CI runs the suites explicitly and uploads
+both reports. See [measurement boundaries and baselines](docs/PERFORMANCE_REVIEW.md).
+
+Do not rebuild the jar or replace `dist` while any browser suite runs. Avoid another owned
+build/benchmark during timed sampling. Local timings do not prove heap use, hosted capacity,
+physical paint, or speed on real mobile hardware.
+
 ## Contribution boundaries
 
 - Work from the canonical catalog and contracts; do not hand-maintain competing module lists.

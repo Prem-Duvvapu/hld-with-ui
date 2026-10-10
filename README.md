@@ -95,7 +95,9 @@ The [CI workflow](.github/workflows/ci.yaml) runs these gates on pull requests a
 CI also builds the existing deployment Docker image and exercises packaged content, each
 published model/estimator baseline, the draft workshop, learning path and cleanup with no
 checkout mounted at runtime. See [packaged runtime checks](CONTRIBUTING.md#packaged-runtime-checks)
-for the jar-only command and local Docker command.
+for the jar-only command and local Docker command. CI also records bounded Java generation/
+serialization and real production-browser cost evidence; see [performance review](docs/PERFORMANCE_REVIEW.md)
+for reproduction, measurements and their limits.
 
 API and content contracts live in [contracts](contracts/README.md). React API types are generated from OpenAPI, and CI rejects generated-type drift, malformed content, broken prerequisites, unresolved sources, and capabilities without a registered model.
 
