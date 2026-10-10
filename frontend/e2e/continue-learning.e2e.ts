@@ -181,9 +181,30 @@ test("resume: guided checkpoint survives reload/history without starting a simul
     .getByRole("navigation", { name: "Checkpoints" })
     .getByRole("button", { name: "Stale hit", exact: true })
     .click();
+  // Wait for the selected checkpoint to render before using its shared textarea.
+  await expect(
+    page.getByRole("heading", { name: "Stale hit", exact: true }),
+  ).toBeFocused();
   await page
     .getByRole("textbox", { name: "Your prediction (optional)", exact: true })
     .fill("The cache may return v1 while origin is at v2.");
+  await expect
+    .poll(async () => {
+      const data = JSON.parse((await durable(page)) ?? '{"answers":[]}') as {
+        answers: SavedAnswer[];
+      };
+      return data.answers.find(
+        (answer) => answer.activityId === "stale-hit-prediction",
+      );
+    })
+    .toMatchObject({
+      topicId: "cache-aside",
+      activityId: "stale-hit-prediction",
+      answer: {
+        kind: "text",
+        text: "The cache may return v1 while origin is at v2.",
+      },
+    });
   await home(page);
   await expect(
     resume(page).getByRole("link", { name: "Continue saved work" }),

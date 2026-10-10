@@ -195,6 +195,19 @@ for (const theme of ["light", "dark"] as const) {
             await expect(
               target.getByRole("list", { name: "Learning path steps" }),
             ).toBeVisible();
+            const card = target.locator(".path-step").first();
+            await card.getByText(/Record my progress/).click();
+            await target
+              .getByText("Back up or manage completion marks")
+              .click();
+            const reading = card.getByRole("checkbox", {
+              name: "I've read this lesson",
+            });
+            await reading.focus();
+            await expect(reading).toBeFocused();
+            if (!(await reading.isChecked()))
+              await page.keyboard.press("Space");
+            await expect(reading).toBeChecked();
             const suggested = target.getByRole("link", {
               name: "Open suggested module",
             });

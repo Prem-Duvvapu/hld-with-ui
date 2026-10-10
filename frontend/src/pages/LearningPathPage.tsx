@@ -16,6 +16,9 @@ import {
   pathModuleLink,
 } from "../features/learning/pathEvidence";
 import "../features/learning/LearningPath.css";
+import { getCompletionStore } from "../features/learning/completionStorage";
+import { CompletionControls } from "../features/learning/CompletionControls";
+import { CompletionTools } from "../features/learning/CompletionTools";
 
 type State = {
   id: string;
@@ -32,6 +35,11 @@ export function LearningPathPage() {
   const retryFocus = useRef<string | null>(null);
   const store = getPracticeStore();
   const saved = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const completionStore = getCompletionStore();
+  const completion = useSyncExternalStore(
+    completionStore.subscribe,
+    completionStore.getSnapshot,
+  );
   const current = state.id === id && state.attempt === attempt;
   const path = current ? state.path : undefined;
   usePageTitle(`${path?.title ?? "Learning path"} · HLD with UI`);
@@ -88,11 +96,21 @@ export function LearningPathPage() {
       (step) => step.available && step.entry?.status === "published",
     ) ?? [];
   const evidence = new Map(
-    available.map((step) => [step.moduleId, pathEvidence(step, saved.answers)]),
+    available.map((step) => [
+      step.moduleId,
+      pathEvidence(step, saved.answers, completion.records),
+    ]),
   );
   const withAnswers = available.filter(
     (step) => evidence.get(step.moduleId)!.answered > 0,
   ).length;
+  const readCount = available.filter(
+    (step) => evidence.get(step.moduleId)!.reading,
+  ).length;
+  const reviewedCount = available.reduce(
+    (sum, step) => sum + evidence.get(step.moduleId)!.reviewed,
+    0,
+  );
   const suggested =
     available.find((step) => evidence.get(step.moduleId)!.answered === 0) ??
     available[0];
@@ -151,9 +169,24 @@ export function LearningPathPage() {
               {withAnswers === 1 ? "step has" : "steps have"} saved answers
             </span>
           </div>
+          <div
+            className="path-summary"
+            aria-label="Explicit reading and practice progress"
+          >
+            <span>
+              <strong>{readCount}</strong>{" "}
+              {readCount === 1 ? "lesson marked" : "lessons marked"} read
+            </span>
+            <span>
+              <strong>{reviewedCount}</strong>{" "}
+              {reviewedCount === 1 ? "answer marked" : "answers marked"}{" "}
+              reviewed
+            </span>
+          </div>
           <p className="path-evidence-note">
             Saved answers and reference views describe work on this browser.
-            They do not certify completion or mastery.
+            Reading and practice reviews are recorded only when you choose to
+            mark them. They do not certify mastery.
           </p>
           {saved.issue && (
             <p className="path-notice" role="note">
@@ -162,6 +195,14 @@ export function LearningPathPage() {
               before leaving. Previous saved data has not been replaced.
             </p>
           )}
+          {completion.issue && (
+            <p className="path-notice" role="note">
+              Completion storage needs attention. {completion.issue} Download
+              your marks before leaving; previous saved data has not been
+              replaced.
+            </p>
+          )}
+          <CompletionTools />
           {suggested?.entry ? (
             <aside
               className="path-suggestion"
@@ -258,6 +299,18 @@ export function LearningPathPage() {
                             {work!.viewed === 1 ? "view" : "views"} recorded
                           </span>
                         </div>
+                        <div className="path-work">
+                          <span>
+                            {work!.reading
+                              ? "Reading marked complete"
+                              : "Reading not marked complete"}
+                          </span>
+                          <span>
+                            {work!.reviewed} / {work!.answered} saved answers
+                            marked reviewed
+                          </span>
+                        </div>
+                        <CompletionControls step={step} />
                         {!!work!.earlier && (
                           <p className="path-notice" role="note">
                             {work!.earlier} earlier or unavailable activity{" "}

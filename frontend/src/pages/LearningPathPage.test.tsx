@@ -14,6 +14,10 @@ import {
   serializeAnswers,
   type PracticeAnswer,
 } from "../features/learning/practiceStorage";
+import {
+  createCompletionStore,
+  serializeCompletions,
+} from "../features/learning/completionStorage";
 import { LearningPathPage } from "./LearningPathPage";
 
 const definition = definitions[0]!;
@@ -67,6 +71,14 @@ function fixture(): LearningPath {
     ),
   };
 }
+let completionRaw: string | null;
+let completionStore: ReturnType<typeof createCompletionStore>;
+vi.mock("../features/learning/completionStorage", async (original) => ({
+  ...(await original<
+    typeof import("../features/learning/completionStorage")
+  >()),
+  getCompletionStore: () => completionStore,
+}));
 let raw: string | null;
 let writes: ReturnType<typeof vi.fn<(key: string, value: string) => void>>;
 let store: ReturnType<typeof createPracticeStore>;
@@ -110,6 +122,16 @@ async function ready() {
   return screen.findByRole("list", { name: "Learning path steps" });
 }
 beforeEach(() => {
+  completionRaw = null;
+  completionStore = createCompletionStore(
+    () => ({
+      getItem: () => completionRaw,
+      setItem: (_key, value) => {
+        completionRaw = value;
+      },
+    }),
+    () => "2026-10-10T12:00:00.000Z",
+  );
   setup();
   vi.spyOn(api, "learningPath").mockResolvedValue(fixture());
 });
@@ -190,9 +212,7 @@ it("reacts to a real saved-answer mutation and reset without inferring completio
   expect(
     screen.getByRole("link", { name: "Open suggested module" }),
   ).toHaveAttribute("href", "/topics/request-flow?view=study");
-  expect(
-    screen.getByText(/do not certify completion or mastery/),
-  ).toBeVisible();
+  expect(screen.getByText(/do not certify mastery/)).toBeVisible();
 });
 it("keeps session work visible when saving is denied without changing previous bytes", async () => {
   writes.mockImplementation(() => {
@@ -322,4 +342,123 @@ it("offers review when each available step has a current valid answer and reject
   expect(
     screen.getByText(/1 earlier or unavailable activity record is/),
   ).toBeVisible();
+});
+
+it("records reading and exact practice reviews explicitly, invalidates edits, and clears only marks with focus restored", async () => {
+  setup([saved()]);
+  view();
+  const list = await ready();
+  const card = within(list).getAllByRole("listitem")[0]!;
+  fireEvent.click(within(card).getByText(/Record my progress/));
+  const original = raw;
+  expect(
+    screen.getByLabelText("Explicit reading and practice progress"),
+  ).toHaveTextContent("0 lessons marked read0 answers marked reviewed");
+  fireEvent.click(
+    within(card).getByRole("checkbox", { name: "I've read this lesson" }),
+  );
+  fireEvent.click(
+    within(card).getByRole("button", { name: "Mark 1 answer reviewed" }),
+  );
+  expect(
+    screen.getByLabelText("Explicit reading and practice progress"),
+  ).toHaveTextContent("1 lesson marked read1 answer marked reviewed");
+  expect(raw).toBe(original);
+  expect(writes).not.toHaveBeenCalled();
+  act(() => {
+    store.save(saved({ answer: { kind: "text", text: "Changed reasoning" } }));
+  });
+  expect(
+    screen.getByLabelText("Explicit reading and practice progress"),
+  ).toHaveTextContent("0 answers marked reviewed");
+  fireEvent.click(
+    within(card).getByRole("button", { name: "Clear these completion marks" }),
+  );
+  expect(
+    within(card).getByRole("button", { name: "Keep my marks" }),
+  ).toHaveFocus();
+  fireEvent.click(
+    within(card).getByRole("button", {
+      name: "Confirm clear completion marks",
+    }),
+  );
+  expect(within(card).getByText(/Record my progress/)).toHaveFocus();
+  expect(store.getSnapshot().answers[0]!.answer).toEqual({
+    kind: "text",
+    text: "Changed reasoning",
+  });
+  expect(completionStore.getSnapshot().records).toEqual([]);
+});
+it("does not offer practice reviews for a reference-only answer and leaves the draft without controls", async () => {
+  setup([saved({ answer: { kind: "text", text: "" }, referenceViewed: true })]);
+  view();
+  const list = await ready();
+  const cards = within(list)
+    .getAllByRole("listitem")
+    .filter((item) => item.classList.contains("path-step"));
+  fireEvent.click(within(cards[0]!).getByText(/Record my progress/));
+  expect(
+    within(cards[0]!).getByRole("button", {
+      name: "Mark saved answers reviewed",
+    }),
+  ).toBeDisabled();
+  expect(within(cards[3]!).queryByRole("checkbox")).toBeNull();
+  expect(completionRaw).toBeNull();
+});
+it("previews explicit replacement without changing answers; cancellation and stale import keep marks", async () => {
+  setup([saved()]);
+  view();
+  await ready();
+  fireEvent.click(screen.getByText("Back up or manage completion marks"));
+  const file = new File(
+    [
+      serializeCompletions([
+        {
+          kind: "reading",
+          moduleId: "request-flow",
+          contentVersion: "1.1.0",
+          updatedAt: "2026-10-10T12:00:00.000Z",
+        },
+      ]),
+    ],
+    "marks.json",
+    { type: "application/json" },
+  );
+  Object.defineProperty(file, "text", {
+    value: async () =>
+      serializeCompletions([
+        {
+          kind: "reading",
+          moduleId: "request-flow",
+          contentVersion: "1.1.0",
+          updatedAt: "2026-10-10T12:00:00.000Z",
+        },
+      ]),
+  });
+  fireEvent.change(screen.getByLabelText("Completion backup file"), {
+    target: { files: [file] },
+  });
+  await screen.findByRole("group", { name: "Review completion backup" });
+  expect(completionStore.getSnapshot().records).toEqual([]);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Keep current completion marks" }),
+  );
+  expect(screen.getByLabelText("Completion backup file")).toHaveFocus();
+  fireEvent.change(screen.getByLabelText("Completion backup file"), {
+    target: { files: [file] },
+  });
+  await screen.findByRole("group", { name: "Review completion backup" });
+  act(() => {
+    completionStore.markReading("cache-aside", "1.1.0", true);
+  });
+  fireEvent.click(
+    screen.getByRole("button", { name: "Replace with this completion backup" }),
+  );
+  expect(
+    screen.getByText(/Completion marks changed after this preview/),
+  ).toBeVisible();
+  expect(completionStore.getSnapshot().records[0]!.moduleId).toBe(
+    "cache-aside",
+  );
+  expect(writes).not.toHaveBeenCalled();
 });
