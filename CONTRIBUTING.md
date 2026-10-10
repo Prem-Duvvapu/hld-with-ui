@@ -54,6 +54,34 @@ bash scripts/start-smoke-test.sh
 
 The root launcher is for Linux/WSL and accepts `BACKEND_PORT` and `FRONTEND_PORT`. It starts only this repository's two services and stops both when interrupted. Run it after installing frontend dependencies with `npm ci --prefix frontend`.
 
+## Packaged runtime checks
+
+After packaging the backend, use Python 3 to exercise the jar from an empty temporary working
+directory. The check copies only the executable jar into that directory, compares delivered
+content with the canonical checkout, runs each published simulation/estimator baseline,
+checks draft visibility and the learning path, then stops its own process and checks port cleanup.
+
+```bash
+python3 scripts/packaged-runtime-smoke.py --jar backend/target/hld-backend-0.1.0-SNAPSHOT.jar
+python3 -m unittest discover -s scripts -p 'test_packaged_runtime_smoke.py' -v
+```
+
+Failure checks reject a healthy but mismatched artifact, preserve an occupied port's owner,
+and ensure failed container log collection still attempts removal. The default smoke port is
+18480; override with `--port`. The script refuses occupied ports before starting anything.
+
+When Docker is available, build the existing deployment image from the repository root and
+exercise it without mounted content. The smoke uses a uniquely named local container with
+512 MiB memory and one CPU, then removes it. These are test constraints, not production sizing.
+
+```bash
+docker build --file backend/Dockerfile --tag hld-runtime:local .
+python3 scripts/packaged-runtime-smoke.py --image hld-runtime:local
+```
+
+CI's **Packaged runtime** job runs both modes. This proves the checked artifact works; deployed
+backend commit/version verification and human learning/accessibility review remain separate gates.
+
 ## Contribution boundaries
 
 - Work from the canonical catalog and contracts; do not hand-maintain competing module lists.

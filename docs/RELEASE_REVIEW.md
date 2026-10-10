@@ -1,14 +1,47 @@
 # Release review evidence
 
-Updated: 2026-10-09
+Updated: 2026-10-10
 
 This file records verified evidence and remaining manual checks for the shared shell and first modules. It does not mark a release gate complete by itself.
 
 ## Current technical evidence
 
-The sections below retain the September baseline. Current automated evidence includes 151 Java tests, 183 frontend tests and 104 browser journeys plus launcher smoke in [PR #51](https://github.com/Prem-Duvvapu/hld-with-ui/pull/51) on implementation commit `e73c2b0` ([CI run](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/37990344060)). [HLD-10A](work-items/HLD-10A.md) records published-content search behavior and limits. The final documentation commit requires passing CI before merge. All ten authored URL-shortener stages remain draft; see [HLD-09B4](work-items/HLD-09B4.md). [HLD-04C](work-items/HLD-04C.md) verifies actual serialized trace scope and simultaneous HTTP isolation.
+The sections below retain the September baseline. Current merged automated evidence is 182 Java tests, 273 frontend tests and 139 browser journeys plus two launcher smoke scenarios in [PR #58](https://github.com/Prem-Duvvapu/hld-with-ui/pull/58), squash commit `7e61a5d`, checked at contribution head `2aeb49f` ([CI run](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/38053790520)). The earlier [PR #51](https://github.com/Prem-Duvvapu/hld-with-ui/pull/51) counts are historical. [HLD-10A](work-items/HLD-10A.md) records published-content search behavior and limits. The final documentation commit requires passing CI before merge. All ten authored URL-shortener stages remain draft; see [HLD-09B4](work-items/HLD-09B4.md). [HLD-04C](work-items/HLD-04C.md) verifies actual serialized trace scope and simultaneous HTTP isolation.
 
 [HLD-09C-A](work-items/HLD-09C-A.md) adds native 200% Chromium zoom checks for the four published module result flows and workshop Operations: 720/320 CSS pixels, both themes, reduced motion, keyboard actions and cache error/recovery. Its native-pixel screenshots supplement assertions; the standard mobile tests remain separate. These are bounded automated/agent visual checks. Real screen-reader, newcomer teach-back and broader manual view/stage review remain open.
+
+## Packaged runtime and fresh-checkout evidence
+
+[HLD-11B](work-items/HLD-11B.md) records a fresh source-only checkout at `7e61a5d`, locked
+frontend installation, Java verify and the full frontend gate. The jar-only smoke copies just
+the executable jar into an empty temporary runtime directory. Delivered metadata, complete
+lesson text, questions, checkpoints and workshop content agree with the canonical source
+(accounting for omitted null fields/default empty walkthroughs); each published simulation/
+estimator baseline runs, draft discovery/path availability stays honest, and cleanup releases
+its owned process/port. A healthy-but-mismatched artifact is deliberately rejected.
+
+The CI Packaged runtime job additionally builds the existing Dockerfile from root and checks
+the Java 17 JRE image without mounts. Its actual result is recorded in HLD-11B/PR evidence;
+local Docker is unavailable because Docker Desktop WSL integration is disabled. Neither a
+successful image nor these fixture limits establish production heap/throughput capacity.
+
+Hosted verification remains **failed/incomplete**: warmed Render/proxy responses still have
+old content/model versions, broken flow/cache runs and case/path 500s. The frontend responds,
+but this does not close backend freshness. See [the incident](INCIDENTS.md).
+
+Current production-build observations (2026-10-10, Node 20.19.4; raw/gzip decimal kB):
+
+| Artifact | Raw | Gzip |
+| --- | ---: | ---: |
+| Main entry JS | 304.45 | 95.98 |
+| Shared lazy JS chunk | 122.04 | 38.01 |
+| Shared CSS | 39.82 | 8.32 |
+| Request-flow route JS | 20.03 | 6.25 |
+| Cache route JS | 34.08 | 10.18 |
+| Workshop route JS | 13.87 | 4.87 |
+
+These are build artifact sizes, not browser render time, sustained capacity or a measured
+performance budget. Tiny/maximum generation and render-cost review remains independent work.
 
 ## Automated interaction review
 

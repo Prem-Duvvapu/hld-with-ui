@@ -100,3 +100,27 @@ jobs:
           name: playwright-report
           path: frontend/playwright-report/
           retention-days: 7
+
+  runtime:
+    name: Packaged runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Build executable jar
+        run: ./mvnw -B -q package -DskipTests
+        working-directory: backend
+      - name: Run jar outside the checkout
+        run: python3 scripts/packaged-runtime-smoke.py --jar backend/target/hld-backend-0.1.0-SNAPSHOT.jar
+      - name: Reject mismatched artifacts and protect occupied ports
+        run: python3 -m unittest discover -s scripts -p 'test_packaged_runtime_smoke.py' -v
+      - name: Build the deployment image from repository root
+        run: docker build --file backend/Dockerfile --tag hld-runtime:ci .
+      - name: Run deployment image without mounted content
+        run: python3 scripts/packaged-runtime-smoke.py --image hld-runtime:ci
