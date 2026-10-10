@@ -144,7 +144,7 @@ The **Data** stage explains ownership, unique code reservations and atomic creat
 
 ## Find an explanation
 
-Use **Search** in the header, or open `/search`. Search published titles, summaries and lesson text, then narrow by level or learning activity. All whitespace-separated terms must match; results link directly to Study or a published workshop stage. Java returns at most 20 matching pages and the total match count. Blank text, no matches, invalid filters and backend failures have explicit states; draft/planned modules and saved answers are excluded. Search criteria survive refresh and browser history in the URL. Bookmarks and the first-release path view remain planned.
+Use **Search** in the header, or open `/search`. Search published titles, summaries and lesson text, then narrow by level or learning activity. All whitespace-separated terms must match; results link directly to Study or a published workshop stage. Java returns at most 20 matching pages and the total match count. Blank text, no matches, invalid filters and backend failures have explicit states; draft/planned modules and saved answers are excluded. Search criteria survive refresh and browser history in the URL. The first-release path view remains planned.
 
 ## Continue saved work
 
@@ -158,6 +158,19 @@ run again. Page visits never mark a module complete.
 The home card also offers the existing safe answer backup/import/reset controls. Storage
 warnings remain visible when those tools are collapsed. This is saved reasoning on this browser;
 playground runs and the last page visited are not stored. See [HLD-10B](docs/work-items/HLD-10B.md).
+
+## Save a module for later
+
+Choose **Save module** in a published module header, then open **Bookmarks** or home's
+**Saved modules** link. The reading list checks the current catalog before linking. Removed
+or unpublished modules remain in your backup; changed content asks for fresh review.
+A bookmark does not create an answer, completion mark, or Continue learning activity.
+
+**Back up or manage bookmarks** downloads a separate bookmark JSON file, previews imports
+while keeping existing saves, and confirms a reset of bookmarks only. Answer backups stay
+unchanged. Storage failures keep your actions for the session with downloads and explicit retry;
+unreadable previous data is preserved. Bookmarks are local to this browser, with no account sync.
+See [HLD-10C](docs/work-items/HLD-10C.md).
 
 ## Saved learning answers
 

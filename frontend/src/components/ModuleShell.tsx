@@ -9,6 +9,7 @@ import {
 import { Link, useSearchParams } from "react-router-dom";
 import type { CatalogEntry } from "../api/types";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { BookmarkButton } from "../features/learning/BookmarkButton";
 
 export const requestFlowViews = [
   "playground",
@@ -134,6 +135,7 @@ export function ModuleShell<T extends string>({
             CONTENT <strong>v{topic.contentVersion}</strong>
           </div>
         </div>
+        <BookmarkButton entry={topic} />
         <div className="learning-outcomes">
           <strong>After this module, you can</strong>
           <ul>

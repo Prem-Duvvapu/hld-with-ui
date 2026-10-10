@@ -2297,9 +2297,19 @@ th {
   font-size: 13px;
   text-underline-offset: 4px;
 }
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-right: 16px;
+}
+.header-tools .header-search {
+  margin: 0;
+  padding-block: 12px;
+}
 
 @media (max-width: 640px) {
-  .header-search {
+  .header-tools {
     margin-left: auto;
   }
 }
