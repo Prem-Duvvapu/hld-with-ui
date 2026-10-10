@@ -25,8 +25,9 @@ without reading content from the checkout at runtime. Keep deployed-state failur
 - Compare canonical metadata and complete delivered lesson/question/checkpoint/workshop content;
   normalize only null optional fields and default empty walkthroughs. Check catalog-derived
   discovery/path availability, search, structured unknown-case errors and tiny model/estimator runs.
-- Four lifecycle/failure tests: healthy mismatched artifact, occupied unrelated port, closed
-  server connection reuse, and failed Docker diagnostics still attempting removal. Remove only the tracked process/container and check its port.
+- Six lifecycle/failure tests: healthy mismatched artifact, occupied unrelated port, closed
+  server connection reuse, failed Docker diagnostics still attempting removal, transient
+  readiness connection retries, and rejection of the wrong health identity. Remove only the tracked process/container and check its port.
 - Add CI Packaged runtime job for Java 21 copied-jar and Java 17 JRE Docker-image execution.
 - Reconcile contributor instructions, release evidence, current build sizes and live incident.
 - No UI redesign, model/API/content-version changes, new runtime services or workshop publication.
@@ -56,7 +57,7 @@ Environment: 2026-10-10; Java 17.0.20.1, Node 20.19.4, Python 3, Linux/WSL, four
 | `cd backend && ./mvnw -B verify` | PASS: 182 tests; packaged jar | `/tmp/hld-runtime-clean-java.log` |
 | Full CONTRIBUTING frontend gate | PASS: contract drift/26 negative fixtures, typecheck/lint/format, 273 unit tests, production build | `/tmp/hld-runtime-clean-build.log` plus command output |
 | Copied-jar runtime smoke | PASS: current content, three simulation baselines, estimator, draft/workshop/path/search/errors and cleanup | `/tmp/hld-runtime-jar-final.log` |
-| Runtime lifecycle/failure tests | PASS: four tests, including real healthy mismatched jar, active port protection, closed connection reuse and owned-process cleanup | `/tmp/hld-runtime-negative-reuse.log` |
+| Runtime lifecycle/failure tests | PASS: six tests, including real healthy mismatched jar, active port protection, closed connection reuse and mocked Docker readiness/cleanup failures | `/tmp/hld-runtime-negative-final.log` |
 | Immediate repeated copied-jar launch on the same port | PASS: two complete runs, both owned processes stopped | `/tmp/hld-runtime-jar-repeat.log` |
 | Full source-only-checkout browser gate | PASS: 139 journeys, including native 200% zoom | `/tmp/hld-runtime-clean-browser.log` |
 | Launcher smoke | PASS: interrupt cleanup and occupied-port protection, two scenarios | `/tmp/hld-runtime-clean-launcher.log` |
@@ -71,7 +72,12 @@ The first actual CI image build succeeded, then the image smoke failed its prefl
 after the copied-jar cleanup, consistent with closed-connection TCP TIME_WAIT ([run](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/38055371733)).
 The probe now permits reuse of closed connections with `SO_REUSEADDR`; active listening
 owners still fail the bind and remain untouched, with address reuse both enabled and disabled. Both the actual active-close regression and
-immediate repeated jar checks pass. The final head must pass all three CI jobs before merge.
+immediate repeated jar checks pass. The next CI image smoke reached launch but a transient Docker-proxy `ConnectionResetError`
+was not retried ([run](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/38055648967)).
+Readiness now retries connection errors within the existing deadline, checking the owned
+container is still running before each attempt. Incorrect health identity remains an immediate
+failure. The two new mocked harness tests cover those paths; actual image execution is still
+required by CI. The final head must pass all three CI jobs before merge.
 
 Tiny baseline fixtures prove JRE/model compatibility for those paths; they are not load tests.
 

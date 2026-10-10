@@ -67,7 +67,8 @@ python3 -m unittest discover -s scripts -p 'test_packaged_runtime_smoke.py' -v
 ```
 
 Failure checks reject a healthy but mismatched artifact, preserve an occupied port's owner,
-and ensure failed container log collection still attempts removal. The default smoke port is
+ensure failed container log collection still attempts removal, and exercise bounded startup
+connection retries without accepting an unexpected health identity. The default smoke port is
 18480; override with `--port`. The script refuses active listening ports before starting anything; closed TCP connections
 can be reused by a subsequent run.
 

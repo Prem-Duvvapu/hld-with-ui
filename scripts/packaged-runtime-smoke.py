@@ -159,7 +159,7 @@ def runtime(args, folder, log):
             try:
                 check(api(base, "/api/v1/health", timeout=min(10, max(0.1, deadline - time.monotonic()))) == {"status": "ready", "service": "hld-with-ui"}, "Health identity differs")
                 break
-            except (URLError, TimeoutError):
+            except (URLError, TimeoutError, ConnectionError):
                 time.sleep(0.2)  # Startup polling only; no simulator timing.
         else:
             raise RuntimeError("Packaged runtime did not become ready within 60 seconds")

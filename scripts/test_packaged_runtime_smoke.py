@@ -1,5 +1,6 @@
-"""Failure checks use a real built jar; no substitute Java or HTTP server."""
+"""Real jar/port integration checks plus mocked Docker harness failure checks."""
 
+import argparse
 import json
 import importlib.util
 import io
@@ -10,6 +11,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+from urllib.error import URLError
 import zipfile
 
 
@@ -28,6 +30,36 @@ def free_port():
 
 
 class PackagedRuntimeFailures(unittest.TestCase):
+    def test_readiness_retries_transient_connection_failures_then_cleans_its_container(self):
+        for failure in (ConnectionResetError("starting"), TimeoutError("starting"), URLError("starting")):
+            args = argparse.Namespace(jar=None, image="hld-test-image", port=free_port())
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as folder, patch.object(
+                smoke.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "true\n", "")
+            ) as run, patch.object(smoke, "api", side_effect=[
+                failure, {"status": "ready", "service": "hld-with-ui"}
+            ]) as api, patch.object(smoke.time, "sleep"), patch.object(smoke, "stop_container") as stop:
+                with smoke.runtime(args, Path(folder), io.StringIO()) as base:
+                    self.assertEqual(base, f"http://127.0.0.1:{args.port}")
+                self.assertEqual(api.call_count, 2)
+                launch = run.call_args_list[0].args[0]
+                name = launch[launch.index("--name") + 1]
+                self.assertEqual(stop.call_args.args[0], name)
+                self.assertEqual(len(run.call_args_list), 3)  # Launch, two alive checks.
+
+    def test_readiness_rejects_an_unexpected_health_identity_and_cleans_its_container(self):
+        args = argparse.Namespace(jar=None, image="hld-test-image", port=free_port())
+        with tempfile.TemporaryDirectory() as folder, patch.object(
+            smoke.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "true\n", "")
+        ) as run, patch.object(smoke, "api", return_value={"status": "ready", "service": "other"}) as api, patch.object(
+            smoke, "stop_container"
+        ) as stop:
+            with self.assertRaisesRegex(RuntimeError, "Health identity differs"):
+                with smoke.runtime(args, Path(folder), io.StringIO()):
+                    self.fail("An unexpected service must never pass readiness")
+            self.assertEqual(api.call_count, 1)
+            launch = run.call_args_list[0].args[0]
+            self.assertEqual(stop.call_args.args[0], launch[launch.index("--name") + 1])
+
     def test_closed_server_connections_do_not_block_a_subsequent_launch(self):
         with socket.socket() as listener:
             listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
