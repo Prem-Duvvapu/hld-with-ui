@@ -41,7 +41,9 @@ Current production-build observations (2026-10-10, Node 20.19.4; raw/gzip decima
 | Workshop route JS | 13.87 | 4.87 |
 
 These are build artifact sizes, not browser render time, sustained capacity or a measured
-performance budget. Tiny/maximum generation and render-cost review remains independent work.
+performance budget. Tiny/maximum generation and production-browser HTTP/render/seek baselines are now recorded in
+[PERFORMANCE_REVIEW.md](PERFORMANCE_REVIEW.md) and [HLD-11C](work-items/HLD-11C.md). Initial
+lesson/loading, heap/load/network budgets and measured rendering improvements remain open.
 
 ## Automated interaction review
 

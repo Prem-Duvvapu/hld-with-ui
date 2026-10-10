@@ -1,0 +1,828 @@
+{
+  "schemaVersion": "1.0",
+  "environment": {
+    "capturedAtUtc": "2026-10-10T13:51:55.738855188Z",
+    "revision": "b1147c2+working-tree",
+    "javaRuntime": "17.0.20.1+1-1-24.04-Ubuntu",
+    "javaVm": "OpenJDK 64-Bit Server VM",
+    "os": "Linux",
+    "osVersion": "6.18.40.1-microsoft-standard-WSL2",
+    "architecture": "amd64",
+    "logicalProcessors": 4,
+    "jvmMaxHeapBytes": 1820327936,
+    "measurementSourceSha256": "6040a426470b4ba0570f05783a3162b49ff89de860c27538e352606cc812e383",
+    "applicationSourceSha256": "de1ce62a1f1c346cf7a0f51de17f0f9a551fe40cc0d72851ef2dc638493efaf9"
+  },
+  "untimedReferenceRunsPerFixture": 1,
+  "warmupsPerFixture": 3,
+  "samplesPerFixture": 10,
+  "measurementBoundary": "Sequential in-process simulator/calculator call then configured Jackson serialization; no HTTP, startup, parsing, validation annotations, bounded-controller buffering or browser cost. Assertions outside timing. Not a JMH benchmark, sustained-load test, heap measurement or production sizing.",
+  "fixtures": [
+    {
+      "id": "flow-tiny",
+      "status": "completed",
+      "modelVersion": "1.1.1",
+      "requestBytes": 165,
+      "eventsBytes": 587,
+      "responseBytes": 1536,
+      "eventCount": 4,
+      "outcomeCount": 1,
+      "samples": [
+        {
+          "index": 1,
+          "generationNs": 98337,
+          "serializationNs": 161991
+        },
+        {
+          "index": 2,
+          "generationNs": 244864,
+          "serializationNs": 282988
+        },
+        {
+          "index": 3,
+          "generationNs": 143871,
+          "serializationNs": 174870
+        },
+        {
+          "index": 4,
+          "generationNs": 103844,
+          "serializationNs": 201401
+        },
+        {
+          "index": 5,
+          "generationNs": 126742,
+          "serializationNs": 211908
+        },
+        {
+          "index": 6,
+          "generationNs": 109761,
+          "serializationNs": 178353
+        },
+        {
+          "index": 7,
+          "generationNs": 102658,
+          "serializationNs": 144480
+        },
+        {
+          "index": 8,
+          "generationNs": 98514,
+          "serializationNs": 137195
+        },
+        {
+          "index": 9,
+          "generationNs": 132622,
+          "serializationNs": 225132
+        },
+        {
+          "index": 10,
+          "generationNs": 118933,
+          "serializationNs": 128722
+        }
+      ],
+      "generation": {
+        "minMs": 0.098337,
+        "medianMs": 0.114347,
+        "maxMs": 0.244864
+      },
+      "serialization": {
+        "minMs": 0.128722,
+        "medianMs": 0.1766115,
+        "maxMs": 0.282988
+      },
+      "canonicalInputSha256": "6f5a3ce31b25eb04930212bda6eae1a81ef1260588a0323b0e980717f8fed39d"
+    },
+    {
+      "id": "flow-max-count",
+      "status": "completed",
+      "modelVersion": "1.1.1",
+      "requestBytes": 391,
+      "eventsBytes": 75409,
+      "responseBytes": 92178,
+      "eventCount": 492,
+      "outcomeCount": 100,
+      "samples": [
+        {
+          "index": 1,
+          "generationNs": 2339944,
+          "serializationNs": 2395036
+        },
+        {
+          "index": 2,
+          "generationNs": 2466402,
+          "serializationNs": 1254822
+        },
+        {
+          "index": 3,
+          "generationNs": 2152989,
+          "serializationNs": 652850
+        },
+        {
+          "index": 4,
+          "generationNs": 1693155,
+          "serializationNs": 621516
+        },
+        {
+          "index": 5,
+          "generationNs": 1681646,
+          "serializationNs": 607057
+        },
+        {
+          "index": 6,
+          "generationNs": 2209133,
+          "serializationNs": 658592
+        },
+        {
+          "index": 7,
+          "generationNs": 1847845,
+          "serializationNs": 620600
+        },
+        {
+          "index": 8,
+          "generationNs": 1703954,
+          "serializationNs": 638553
+        },
+        {
+          "index": 9,
+          "generationNs": 1804504,
+          "serializationNs": 612034
+        },
+        {
+          "index": 10,
+          "generationNs": 1627284,
+          "serializationNs": 566091
+        }
+      ],
+      "generation": {
+        "minMs": 1.627284,
+        "medianMs": 1.8261745,
+        "maxMs": 2.466402
+      },
+      "serialization": {
+        "minMs": 0.566091,
+        "medianMs": 0.6300345,
+        "maxMs": 2.395036
+      },
+      "canonicalInputSha256": "857ce44ced59273c18ebdb17d276a6899ddeaa61e41b446837958f068dfdc2c9"
+    },
+    {
+      "id": "flow-virtual-limit",
+      "status": "limited",
+      "truncationReason": "virtual_time_limit",
+      "modelVersion": "1.1.1",
+      "requestBytes": 807,
+      "eventsBytes": 46753,
+      "responseBytes": 47521,
+      "eventCount": 300,
+      "outcomeCount": 0,
+      "samples": [
+        {
+          "index": 1,
+          "generationNs": 1412471,
+          "serializationNs": 404013
+        },
+        {
+          "index": 2,
+          "generationNs": 1459772,
+          "serializationNs": 395240
+        },
+        {
+          "index": 3,
+          "generationNs": 1435121,
+          "serializationNs": 430302
+        },
+        {
+          "index": 4,
+          "generationNs": 1509324,
+          "serializationNs": 444861
+        },
+        {
+          "index": 5,
+          "generationNs": 1467313,
+          "serializationNs": 516202
+        },
+        {
+          "index": 6,
+          "generationNs": 1463313,
+          "serializationNs": 442561
+        },
+        {
+          "index": 7,
+          "generationNs": 1545812,
+          "serializationNs": 458593
+        },
+        {
+          "index": 8,
+          "generationNs": 1391373,
+          "serializationNs": 523522
+        },
+        {
+          "index": 9,
+          "generationNs": 1345293,
+          "serializationNs": 426100
+        },
+        {
+          "index": 10,
+          "generationNs": 1349839,
+          "serializationNs": 392061
+        }
+      ],
+      "generation": {
+        "minMs": 1.345293,
+        "medianMs": 1.4474465,
+        "maxMs": 1.545812
+      },
+      "serialization": {
+        "minMs": 0.392061,
+        "medianMs": 0.4364315,
+        "maxMs": 0.523522
+      },
+      "canonicalInputSha256": "787bc526843658019af1a0c7c1e4777e6af1faa0f26d6fb83261e632d5465077"
+    },
+    {
+      "id": "cache-tiny",
+      "status": "completed",
+      "modelVersion": "1.0.1",
+      "requestBytes": 239,
+      "eventsBytes": 664,
+      "responseBytes": 2058,
+      "eventCount": 3,
+      "outcomeCount": 1,
+      "samples": [
+        {
+          "index": 1,
+          "generationNs": 30569,
+          "serializationNs": 53564
+        },
+        {
+          "index": 2,
+          "generationNs": 118058,
+          "serializationNs": 242651
+        },
+        {
+          "index": 3,
+          "generationNs": 98534,
+          "serializationNs": 100500
+        },
+        {
+          "index": 4,
+          "generationNs": 38577,
+          "serializationNs": 59975
+        },
+        {
+          "index": 5,
+          "generationNs": 32348,
+          "serializationNs": 76744
+        },
+        {
+          "index": 6,
+          "generationNs": 35666,
+          "serializationNs": 99586
+        },
+        {
+          "index": 7,
+          "generationNs": 38675,
+          "serializationNs": 57242
+        },
+        {
+          "index": 8,
+          "generationNs": 33021,
+          "serializationNs": 54216
+        },
+        {
+          "index": 9,
+          "generationNs": 31343,
+          "serializationNs": 59968
+        },
+        {
+          "index": 10,
+          "generationNs": 31965,
+          "serializationNs": 209459
+        }
+      ],
+      "generation": {
+        "minMs": 0.030569,
+        "medianMs": 0.0343435,
+        "maxMs": 0.118058
+      },
+      "serialization": {
+        "minMs": 0.053564,
+        "medianMs": 0.0683595,
+        "maxMs": 0.242651
+      },
+      "canonicalInputSha256": "128e2b659d1d140a87f0fe9f1a4d29bfea43e94ef00552706977462127c51dc7"
+    },
+    {
+      "id": "cache-max-cold-gets",
+      "status": "completed",
+      "modelVersion": "1.0.1",
+      "requestBytes": 3803,
+      "eventsBytes": 74671,
+      "responseBytes": 87852,
+      "eventCount": 300,
+      "outcomeCount": 100,
+      "samples": [
+        {
+          "index": 1,
+          "generationNs": 810174,
+          "serializationNs": 696511
+        },
+        {
+          "index": 2,
+          "generationNs": 583351,
+          "serializationNs": 856228
+        },
+        {
+          "index": 3,
+          "generationNs": 519035,
+          "serializationNs": 1058746
+        },
+        {
+          "index": 4,
+          "generationNs": 489424,
+          "serializationNs": 747632
+        },
+        {
+          "index": 5,
+          "generationNs": 584261,
+          "serializationNs": 730139
+        },
+        {
+          "index": 6,
+          "generationNs": 516595,
+          "serializationNs": 990286
+        },
+        {
+          "index": 7,
+          "generationNs": 462291,
+          "serializationNs": 710531
+        },
+        {
+          "index": 8,
+          "generationNs": 460053,
+          "serializationNs": 544302
+        },
+        {
+          "index": 9,
+          "generationNs": 389498,
+          "serializationNs": 494965
+        },
+        {
+          "index": 10,
+          "generationNs": 395480,
+          "serializationNs": 604621
+        }
+      ],
+      "generation": {
+        "minMs": 0.389498,
+        "medianMs": 0.5030095,
+        "maxMs": 0.810174
+      },
+      "serialization": {
+        "minMs": 0.494965,
+        "medianMs": 0.720335,
+        "maxMs": 1.058746
+      },
+      "canonicalInputSha256": "1f0717c3d6760a47f7642fda5a0e0f9287521e1c013774d44e66f49481609dcc"
+    },
+    {
+      "id": "cache-max-ascii-updates",
+      "status": "completed",
+      "modelVersion": "1.0.1",
+      "requestBytes": 37530,
+      "eventsBytes": 76949,
+      "responseBytes": 78481,
+      "eventCount": 100,
+      "outcomeCount": 0,
+      "samples": [
+        {
+          "index": 1,
+          "generationNs": 235421,
+          "serializationNs": 225025
+        },
+        {
+          "index": 2,
+          "generationNs": 366103,
+          "serializationNs": 347115
+        },
+        {
+          "index": 3,
+          "generationNs": 247546,
+          "serializationNs": 220093
+        },
+        {
+          "index": 4,
+          "generationNs": 224582,
+          "serializationNs": 219837
+        },
+        {
+          "index": 5,
+          "generationNs": 234050,
+          "serializationNs": 231270
+        },
+        {
+          "index": 6,
+          "generationNs": 240490,
+          "serializationNs": 225970
+        },
+        {
+          "index": 7,
+          "generationNs": 222398,
+          "serializationNs": 207616
+        },
+        {
+          "index": 8,
+          "generationNs": 247747,
+          "serializationNs": 236891
+        },
+        {
+          "index": 9,
+          "generationNs": 226465,
+          "serializationNs": 203477
+        },
+        {
+          "index": 10,
+          "generationNs": 269648,
+          "serializationNs": 227566
+        }
+      ],
+      "generation": {
+        "minMs": 0.222398,
+        "medianMs": 0.2379555,
+        "maxMs": 0.366103
+      },
+      "serialization": {
+        "minMs": 0.203477,
+        "medianMs": 0.2254975,
+        "maxMs": 0.347115
+      },
+      "canonicalInputSha256": "53d8dffe52dd56803f20e0ebb5753ab8ff166e482fa526f59d7193abe7667c7b"
+    },
+    {
+      "id": "cache-max-escaped-update-read",
+      "status": "completed",
+      "modelVersion": "1.0.1",
+      "requestBytes": 119882,
+      "eventsBytes": 731325,
+      "responseBytes": 835283,
+      "eventCount": 200,
+      "outcomeCount": 50,
+      "samples": [
+        {
+          "index": 1,
+          "generationNs": 432670,
+          "serializationNs": 2602323
+        },
+        {
+          "index": 2,
+          "generationNs": 442396,
+          "serializationNs": 2548032
+        },
+        {
+          "index": 3,
+          "generationNs": 386574,
+          "serializationNs": 2677855
+        },
+        {
+          "index": 4,
+          "generationNs": 442443,
+          "serializationNs": 2610078
+        },
+        {
+          "index": 5,
+          "generationNs": 407653,
+          "serializationNs": 3193275
+        },
+        {
+          "index": 6,
+          "generationNs": 608979,
+          "serializationNs": 4571137
+        },
+        {
+          "index": 7,
+          "generationNs": 607542,
+          "serializationNs": 2292551
+        },
+        {
+          "index": 8,
+          "generationNs": 631890,
+          "serializationNs": 2266968
+        },
+        {
+          "index": 9,
+          "generationNs": 676878,
+          "serializationNs": 2269527
+        },
+        {
+          "index": 10,
+          "generationNs": 749860,
+          "serializationNs": 2124725
+        }
+      ],
+      "generation": {
+        "minMs": 0.386574,
+        "medianMs": 0.5249925,
+        "maxMs": 0.74986
+      },
+      "serialization": {
+        "minMs": 2.124725,
+        "medianMs": 2.5751775,
+        "maxMs": 4.571137
+      },
+      "canonicalInputSha256": "6df18bc7f7887f5a9b360ddda16b0511f33f5f5ee144ac357f8b00020b0418a8"
+    },
+    {
+      "id": "limiter-tiny",
+      "status": "completed",
+      "modelVersion": "1.0.0",
+      "requestBytes": 262,
+      "eventsBytes": 295,
+      "responseBytes": 1145,
+      "eventCount": 2,
+      "outcomeCount": 1,
+      "samples": [
+        {
+          "index": 1,
+          "generationNs": 21881,
+          "serializationNs": 29298
+        },
+        {
+          "index": 2,
+          "generationNs": 77252,
+          "serializationNs": 129306
+        },
+        {
+          "index": 3,
+          "generationNs": 38831,
+          "serializationNs": 35978
+        },
+        {
+          "index": 4,
+          "generationNs": 23368,
+          "serializationNs": 31195
+        },
+        {
+          "index": 5,
+          "generationNs": 22737,
+          "serializationNs": 28446
+        },
+        {
+          "index": 6,
+          "generationNs": 23666,
+          "serializationNs": 28747
+        },
+        {
+          "index": 7,
+          "generationNs": 22034,
+          "serializationNs": 28871
+        },
+        {
+          "index": 8,
+          "generationNs": 22349,
+          "serializationNs": 28281
+        },
+        {
+          "index": 9,
+          "generationNs": 22066,
+          "serializationNs": 28187
+        },
+        {
+          "index": 10,
+          "generationNs": 22075,
+          "serializationNs": 39803
+        }
+      ],
+      "generation": {
+        "minMs": 0.021881,
+        "medianMs": 0.022543,
+        "maxMs": 0.077252
+      },
+      "serialization": {
+        "minMs": 0.028187,
+        "medianMs": 0.0290845,
+        "maxMs": 0.129306
+      },
+      "canonicalInputSha256": "ef20a244c4e555533cc88bce2b9861c90e93ea8a2e5bec99eb2e370c02d923e7"
+    },
+    {
+      "id": "limiter-max-count",
+      "status": "completed",
+      "modelVersion": "1.0.0",
+      "requestBytes": 1261,
+      "eventsBytes": 157015,
+      "responseBytes": 253447,
+      "eventCount": 1000,
+      "outcomeCount": 500,
+      "samples": [
+        {
+          "index": 1,
+          "generationNs": 1156971,
+          "serializationNs": 1006400
+        },
+        {
+          "index": 2,
+          "generationNs": 1131304,
+          "serializationNs": 978681
+        },
+        {
+          "index": 3,
+          "generationNs": 1372752,
+          "serializationNs": 3310907
+        },
+        {
+          "index": 4,
+          "generationNs": 1490219,
+          "serializationNs": 1530624
+        },
+        {
+          "index": 5,
+          "generationNs": 1501279,
+          "serializationNs": 999411
+        },
+        {
+          "index": 6,
+          "generationNs": 1464538,
+          "serializationNs": 898229
+        },
+        {
+          "index": 7,
+          "generationNs": 1151287,
+          "serializationNs": 956704
+        },
+        {
+          "index": 8,
+          "generationNs": 1209095,
+          "serializationNs": 992602
+        },
+        {
+          "index": 9,
+          "generationNs": 1312921,
+          "serializationNs": 1065192
+        },
+        {
+          "index": 10,
+          "generationNs": 1173528,
+          "serializationNs": 998963
+        }
+      ],
+      "generation": {
+        "minMs": 1.131304,
+        "medianMs": 1.261008,
+        "maxMs": 1.501279
+      },
+      "serialization": {
+        "minMs": 0.898229,
+        "medianMs": 0.999187,
+        "maxMs": 3.310907
+      },
+      "canonicalInputSha256": "ea997aa9fc2c367377114040cba92dc77553e4ad1399d3cf6e0b468795928ce1"
+    },
+    {
+      "id": "capacity-baseline",
+      "status": "estimated",
+      "requestBytes": 248,
+      "eventsBytes": 0,
+      "responseBytes": 3610,
+      "eventCount": 0,
+      "outcomeCount": 0,
+      "samples": [
+        {
+          "index": 1,
+          "generationNs": 6224,
+          "serializationNs": 217346
+        },
+        {
+          "index": 2,
+          "generationNs": 13328,
+          "serializationNs": 327568
+        },
+        {
+          "index": 3,
+          "generationNs": 7843,
+          "serializationNs": 424586
+        },
+        {
+          "index": 4,
+          "generationNs": 19641,
+          "serializationNs": 445629
+        },
+        {
+          "index": 5,
+          "generationNs": 13976,
+          "serializationNs": 366186
+        },
+        {
+          "index": 6,
+          "generationNs": 11141,
+          "serializationNs": 311467
+        },
+        {
+          "index": 7,
+          "generationNs": 11525,
+          "serializationNs": 284946
+        },
+        {
+          "index": 8,
+          "generationNs": 10086,
+          "serializationNs": 310530
+        },
+        {
+          "index": 9,
+          "generationNs": 10542,
+          "serializationNs": 371734
+        },
+        {
+          "index": 10,
+          "generationNs": 8595,
+          "serializationNs": 669410
+        }
+      ],
+      "generation": {
+        "minMs": 0.006224,
+        "medianMs": 0.0108415,
+        "maxMs": 0.019641
+      },
+      "serialization": {
+        "minMs": 0.217346,
+        "medianMs": 0.346877,
+        "maxMs": 0.66941
+      },
+      "canonicalInputSha256": "31c106939765bfd873726321116b197ceab2e74537be9b69c977273ae66b8155"
+    },
+    {
+      "id": "capacity-max-scalars",
+      "status": "estimated",
+      "requestBytes": 278,
+      "eventsBytes": 0,
+      "responseBytes": 3651,
+      "eventCount": 0,
+      "outcomeCount": 0,
+      "samples": [
+        {
+          "index": 1,
+          "generationNs": 6149,
+          "serializationNs": 95521
+        },
+        {
+          "index": 2,
+          "generationNs": 6365,
+          "serializationNs": 99099
+        },
+        {
+          "index": 3,
+          "generationNs": 5867,
+          "serializationNs": 100027
+        },
+        {
+          "index": 4,
+          "generationNs": 5910,
+          "serializationNs": 93000
+        },
+        {
+          "index": 5,
+          "generationNs": 6206,
+          "serializationNs": 117488
+        },
+        {
+          "index": 6,
+          "generationNs": 6291,
+          "serializationNs": 90676
+        },
+        {
+          "index": 7,
+          "generationNs": 6024,
+          "serializationNs": 85307
+        },
+        {
+          "index": 8,
+          "generationNs": 5977,
+          "serializationNs": 86839
+        },
+        {
+          "index": 9,
+          "generationNs": 6124,
+          "serializationNs": 80809
+        },
+        {
+          "index": 10,
+          "generationNs": 6034,
+          "serializationNs": 104954
+        }
+      ],
+      "generation": {
+        "minMs": 0.005867,
+        "medianMs": 0.006079,
+        "maxMs": 0.006365
+      },
+      "serialization": {
+        "minMs": 0.080809,
+        "medianMs": 0.0942605,
+        "maxMs": 0.117488
+      },
+      "canonicalInputSha256": "4a556597890a29cbbbc55b8f3272d460d2031863217127868247eb076fccc51a"
+    }
+  ],
+  "archive": {
+    "rawReportSha256": "60e181686da2712c7b13d36cd845766fc1037acb39cefb09471894ed9655195c",
+    "inputEncoding": "Full generated inputs remain in CI artifacts and fixture factories. This archive replaces each input with SHA-256 of canonical JSON (UTF-8, sorted keys, compact separators, ensure_ascii=False), preserving every timing sample and summary."
+  }
+}

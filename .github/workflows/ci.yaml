@@ -91,6 +91,26 @@ jobs:
         working-directory: frontend
         env:
           CI: 'true'
+      - name: Measure bounded production UI performance
+        run: npm run perf:browser
+        working-directory: frontend
+        env:
+          CI: 'true'
+          HLD_PERFORMANCE_REVISION: ${{ github.sha }}
+      - name: Upload browser performance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-performance-evidence
+          path: frontend/target/browser-performance-evidence.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload failed performance traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-performance-failure-traces
+          path: frontend/test-results/performance/
+          retention-days: 7
       - name: Launcher smoke (start, proxy health, Ctrl+C cleanup, occupied port)
         run: bash scripts/start-smoke-test.sh
       - name: Upload Playwright report
@@ -120,6 +140,16 @@ jobs:
         run: python3 scripts/packaged-runtime-smoke.py --jar backend/target/hld-backend-0.1.0-SNAPSHOT.jar
       - name: Reject mismatched artifacts and protect occupied ports
         run: python3 -m unittest discover -s scripts -p 'test_packaged_runtime_smoke.py' -v
+      - name: Measure sequential generation and serialization costs
+        run: ./mvnw -B -q -Dtest=SimulationPerformanceEvidenceTest -Dhld.performance=true -Dhld.performance.revision=${{ github.sha }} test
+        working-directory: backend
+      - name: Upload Java performance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-performance-evidence
+          path: backend/target/performance-evidence.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Build the deployment image from repository root
         run: docker build --file backend/Dockerfile --tag hld-runtime:ci .
       - name: Run deployment image without mounted content
