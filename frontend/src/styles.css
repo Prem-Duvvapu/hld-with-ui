@@ -2313,3 +2313,15 @@ th {
     margin-left: auto;
   }
 }
+
+.home-path-link {
+  padding-top: 32px;
+}
+.home-path-link a {
+  color: var(--green);
+  font-weight: 700;
+}
+.home-path-link p {
+  color: var(--muted);
+  margin: 6px 0 0;
+}

@@ -104,6 +104,7 @@ for (const theme of ["light", "dark"] as const) {
           "url-shortener",
           "continue-learning",
           "bookmarks",
+          "learning-path",
         ]) {
           await page.goto(
             id === "url-shortener"
@@ -112,7 +113,9 @@ for (const theme of ["light", "dark"] as const) {
                 ? "/"
                 : id === "bookmarks"
                   ? "/bookmarks"
-                  : `/topics/${id}`,
+                  : id === "learning-path"
+                    ? "/learning-paths/first-system-design"
+                    : `/topics/${id}`,
           );
           await nativeZoom(page, worker, 2);
           await expect
@@ -184,6 +187,28 @@ for (const theme of ["light", "dark"] as const) {
             target = page.getByRole("table", { name: "Cache GET outcomes" });
             await expect(target).toContainText("MISS");
             await expect(target).toContainText("HIT");
+          } else if (id === "learning-path") {
+            target = page.getByRole("region", {
+              name: "Your first system design",
+              exact: true,
+            });
+            await expect(
+              target.getByRole("list", { name: "Learning path steps" }),
+            ).toBeVisible();
+            const suggested = target.getByRole("link", {
+              name: "Open suggested module",
+            });
+            await suggested.focus();
+            await expect(suggested).toBeFocused();
+            await expect(
+              target.locator(".path-step-unavailable a"),
+            ).toHaveCount(0);
+            const optional = target.getByRole("link", {
+              name: "Distributed Rate Limiter",
+              exact: true,
+            });
+            await optional.focus();
+            await expect(optional).toBeFocused();
           } else if (id === "bookmarks") {
             target = page.getByRole("region", {
               name: "Saved modules",

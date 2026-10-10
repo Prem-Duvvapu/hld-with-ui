@@ -61,13 +61,18 @@ export function HomePage() {
             and explaining the tradeoffs in your own words.
           </p>
           <div className="hero-actions">
-            <a
-              className="button primary"
-              href={hasSavedWork ? "#continue-learning" : "#modules"}
-            >
-              {hasSavedWork ? "Continue learning" : "Start learning"}{" "}
-              <span aria-hidden="true">→</span>
-            </a>
+            {hasSavedWork ? (
+              <a className="button primary" href="#continue-learning">
+                Continue learning <span aria-hidden="true">→</span>
+              </a>
+            ) : (
+              <Link
+                className="button primary"
+                to="/learning-paths/first-system-design"
+              >
+                Start learning <span aria-hidden="true">→</span>
+              </Link>
+            )}
             <span className="quiet-note">
               {hasSavedWork
                 ? saved.issue
@@ -131,6 +136,12 @@ export function HomePage() {
       </section>
 
       <ContinueLearning entries={topics ?? []} />
+      <div className="home-path-link page-width">
+        <Link to="/learning-paths/first-system-design">
+          Explore the first learning path <span aria-hidden="true">→</span>
+        </Link>
+        <p>A suggested order with prerequisites and your saved reasoning.</p>
+      </div>
       <section className="catalog page-width" id="modules" tabIndex={-1}>
         <div className="section-heading">
           <div>
@@ -138,8 +149,8 @@ export function HomePage() {
             <h2>Foundation modules</h2>
           </div>
           <p>
-            Each module connects a clear mental model to a working Java
-            simulation.
+            Each module connects a clear mental model to a Java experiment or
+            calculator.
           </p>
         </div>
         {error ? (

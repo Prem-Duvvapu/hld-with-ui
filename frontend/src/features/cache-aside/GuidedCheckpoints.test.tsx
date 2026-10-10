@@ -1,3 +1,7 @@
+import { MemoryRouter, useLocation } from "react-router-dom";
+import { ModuleShell } from "../../components/ModuleShell";
+import catalog from "../../../../content/catalog.json";
+import type { CatalogEntry } from "../../api/types";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CacheAsideDescriptor, GuidedCheckpoint } from "../../api/types";
@@ -326,4 +330,53 @@ describe("GuidedCheckpoints", () => {
       "This checkpoint no longer matches the Java trace",
     );
   });
+});
+
+function CheckpointLocation() {
+  return (
+    <output aria-label="Selected checkpoint URL">{useLocation().search}</output>
+  );
+}
+it("Next/Previous and checkpoint selection share the actual router destination without running Java", async () => {
+  const fetchMock = mockRun();
+  const topic = catalog.find(
+    (entry) => entry.id === "cache-aside",
+  )! as CatalogEntry;
+  render(
+    <MemoryRouter
+      initialEntries={["/topics/cache-aside?view=guided&checkpoint=stale-hit"]}
+    >
+      <CheckpointLocation />
+      <ModuleShell
+        topic={topic}
+        tabs={[{ id: "guided", label: "Guided" }]}
+        defaultView="guided"
+        panels={{
+          guided: (
+            <GuidedCheckpoints
+              checkpoints={checkpoints}
+              descriptor={descriptor}
+            />
+          ),
+        }}
+      />
+    </MemoryRouter>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Next checkpoint →" }));
+  expect(screen.getByLabelText("Selected checkpoint URL")).toHaveTextContent(
+    "checkpoint=expiry-miss",
+  );
+  expect(
+    screen.getByRole("heading", { name: "Expiry miss", level: 2 }),
+  ).toHaveFocus();
+  fireEvent.click(
+    screen.getByRole("button", { name: "← Previous checkpoint" }),
+  );
+  expect(screen.getByLabelText("Selected checkpoint URL")).toHaveTextContent(
+    "checkpoint=stale-hit",
+  );
+  expect(
+    screen.getByRole("heading", { name: "Stale hit", level: 2 }),
+  ).toHaveFocus();
+  expect(fetchMock).not.toHaveBeenCalled();
 });

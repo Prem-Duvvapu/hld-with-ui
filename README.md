@@ -144,7 +144,22 @@ The **Data** stage explains ownership, unique code reservations and atomic creat
 
 ## Find an explanation
 
-Use **Search** in the header, or open `/search`. Search published titles, summaries and lesson text, then narrow by level or learning activity. All whitespace-separated terms must match; results link directly to Study or a published workshop stage. Java returns at most 20 matching pages and the total match count. Blank text, no matches, invalid filters and backend failures have explicit states; draft/planned modules and saved answers are excluded. Search criteria survive refresh and browser history in the URL. The first-release path view remains planned.
+Use **Search** in the header, or open `/search`. Search published titles, summaries and lesson text, then narrow by level or learning activity. All whitespace-separated terms must match; results link directly to Study or a published workshop stage. Java returns at most 20 matching pages and the total match count. Blank text, no matches, invalid filters and backend failures have explicit states; draft/planned modules and saved answers are excluded. Search criteria survive refresh and browser history in the URL. The first learning path is available from home.
+
+## Follow a learning path
+
+Choose **Start learning** on home, or **Explore the first learning path** when returning.
+The path orders Request Flow → Capacity → Cache-Aside → URL Shortener, with published
+prerequisite links and optional Rate Limiter depth. Java resolves titles, versions,
+publication state and answer identities from the packaged catalog/content.
+
+The URL Shortener step is clearly unavailable until publication review passes; the path
+does not link to the draft. Existing direct draft links and saved-answer resume still work.
+Counts distinguish available steps, steps with current saved answers and reference views.
+Old or removed activity records stay in backups and do not count as current work. The
+suggestion selects the first available step without a current answer; it does not judge
+correctness or completion. No page visit saves progress or runs an experiment.
+See [HLD-10D](docs/work-items/HLD-10D.md). Explicit completion remains pending.
 
 ## Continue saved work
 

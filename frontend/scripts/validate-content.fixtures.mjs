@@ -17,7 +17,7 @@ import { test } from "node:test";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const workshopPath = "content/case-studies/url-shortener/workshop.json";
 
-function rejectChange(change, expected) {
+function rejectChange(change, expected, changePaths = () => {}) {
   const fixture = mkdtempSync(join(tmpdir(), "hld-content-"));
   try {
     for (const directory of ["content", "contracts"])
@@ -40,6 +40,10 @@ function rejectChange(change, expected) {
     const workshop = JSON.parse(
       readFileSync(join(fixture, workshopPath), "utf8"),
     );
+    const pathsFile = join(fixture, "content/learning-paths.json");
+    const paths = JSON.parse(readFileSync(pathsFile, "utf8"));
+    changePaths(paths);
+    writeFileSync(pathsFile, JSON.stringify(paths));
     change(catalog, workshop);
     writeFileSync(
       join(fixture, "content/catalog.json"),
@@ -186,3 +190,65 @@ test("reject an indirect prerequisite cycle", () => {
     ];
   }, /prerequisite cycle/);
 });
+
+for (const [name, change, expected] of [
+  [
+    "unknown module",
+    (paths) => {
+      paths[0].steps[0].moduleId = "missing";
+    },
+    /unknown path module missing/,
+  ],
+  [
+    "duplicate step",
+    (paths) => {
+      paths[0].steps.push(paths[0].steps[0]);
+    },
+    /duplicate path module request-flow/,
+  ],
+  [
+    "reordered prerequisite",
+    (paths) => {
+      paths[0].steps.reverse();
+    },
+    /prerequisites must appear before/,
+  ],
+  [
+    "optional duplicate",
+    (paths) => {
+      paths[0].optionalModuleIds.push("cache-aside");
+    },
+    /duplicate path module cache-aside/,
+  ],
+  [
+    "duplicate path",
+    (paths) => {
+      paths.push(paths[0]);
+    },
+    /learning paths: duplicate/,
+  ],
+  [
+    "unsupported version",
+    (paths) => {
+      paths[0].schemaVersion = 2;
+    },
+    /must be equal to constant/,
+  ],
+  [
+    "empty path",
+    (paths) => {
+      paths[0].steps = [];
+    },
+    /fewer than 1 items/,
+  ],
+  [
+    "extra field",
+    (paths) => {
+      paths[0].steps[0].href = "/made-up";
+    },
+    /additional properties/,
+  ],
+]) {
+  test(`reject learning path ${name}`, () =>
+    rejectChange(() => {}, expected, change));
+}

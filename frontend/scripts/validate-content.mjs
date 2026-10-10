@@ -422,6 +422,34 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
 unique(questionIds, "questions");
 unique(checkpointIds, "checkpoints");
 
+const learningPaths = readJson("content/learning-paths.json");
+validateSchema(
+  "contracts/learning-paths.schema.json",
+  learningPaths,
+  "learning paths",
+);
+unique(
+  learningPaths.map((path) => path.id),
+  "learning paths",
+);
+for (const path of learningPaths) {
+  const seen = new Set();
+  for (const id of [
+    ...(path.steps ?? []).map((step) => step.moduleId),
+    ...(path.optionalModuleIds ?? []),
+  ]) {
+    const entry = entries.get(id);
+    if (!entry) errors.push(`${path.id}: unknown path module ${id}`);
+    if (seen.has(id)) errors.push(`${path.id}: duplicate path module ${id}`);
+    if (
+      entry &&
+      !entry.prerequisites.every((prerequisite) => seen.has(prerequisite))
+    )
+      errors.push(`${path.id}: prerequisites must appear before ${id}`);
+    seen.add(id);
+  }
+}
+
 if (errors.length) {
   errors.forEach((error) => process.stderr.write(`${error}\n`));
   process.exitCode = 1;

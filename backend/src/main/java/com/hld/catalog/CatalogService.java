@@ -41,6 +41,10 @@ public class CatalogService {
         this.workshops = Map.copyOf(loaded);
     }
 
+    List<CatalogEntry> entriesForLearningPaths() {
+        return topics;
+    }
+
     public List<CatalogEntry> publishedTopics() {
         return topics.stream()
                 .filter(topic -> "topic".equals(topic.kind()) && "published".equals(topic.status()))

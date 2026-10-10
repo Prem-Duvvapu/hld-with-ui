@@ -3,6 +3,7 @@ import {
   CacheCompatibilityError,
 } from "./cacheCompatibility";
 import type {
+  LearningPath,
   SearchResponse,
   CatalogEntry,
   CaseStudyDetail,
@@ -72,6 +73,8 @@ async function request<T>(
 }
 
 export const api = {
+  learningPath: (id: string) =>
+    request<LearningPath>(`/api/v1/learning-paths/${encodeURIComponent(id)}`),
   search: (query: string, level = "", capability = "") => {
     const params = new URLSearchParams({ q: query });
     if (level) params.set("level", level);

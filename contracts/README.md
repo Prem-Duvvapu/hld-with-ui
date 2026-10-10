@@ -3,7 +3,7 @@
 This directory is the machine-readable boundary between authored content, the Java API, and the React application.
 
 - `openapi.json` defines current HTTP requests, responses, errors, simulation events, and model data.
-- `catalog.schema.json`, `questions.schema.json`, `resources.schema.json`, `checkpoints.schema.json`, and `workshop.schema.json` define authored JSON.
+- `catalog.schema.json`, `questions.schema.json`, `resources.schema.json`, `checkpoints.schema.json`, `workshop.schema.json`, and `learning-paths.schema.json` define authored JSON.
 - `examples/` contains valid inputs checked against the OpenAPI schemas.
 - `frontend/src/api/generated.ts` is generated. Do not edit it directly.
 
@@ -30,3 +30,10 @@ npm run contracts:check
 The HTTP contract version is the OpenAPI `info.version`. Each simulation request records `schemaVersion` and `modelVersion`; incompatible values are rejected. Increase the model version when behavior changes enough to alter replay. Increase the schema version when the request or trace shape becomes incompatible. Preserve examples for every supported version.
 
 OpenAPI describes what the running server returns. JSON Schema establishes structural validity; Java tests remain responsible for model semantics, and human review remains responsible for technical and teaching quality.
+
+Learning paths contain ordered canonical module references and purposes, with optional deeper
+references. Shape/size/schema checks reject unsupported fields; semantic checks require unique
+path/module IDs, existing catalog references, and every prerequisite earlier in the main/optional
+order. Java repeats these checks at startup. The API resolves published entries and current answer
+identities, hiding entry/activity metadata for draft/planned steps. Browser tests validate the
+actual Java response against OpenAPI and separately assert the draft publication boundary.

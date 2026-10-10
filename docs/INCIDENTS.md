@@ -15,6 +15,13 @@
 
 Before HLD-09B2 delivery, both the Vercel-proxied topics and URL-shortener case requests timed out after 15 seconds each. This establishes neither backend freshness nor recovery; it does not prove the earlier artifact is still deployed. The incident remains open pending a deployed-commit/log check and successful version/case responses.
 
+### 2026-10-10 recheck
+
+During HLD-10D delivery, the Vercel-proxied topics, URL-shortener case and learning-path requests
+each timed out after 15 seconds. The new path endpoint was not yet merged at this check, and
+these timeouts establish neither its deployment nor backend recovery. The incident stays open;
+the successful local/CI artifact and Vercel frontend build remain separate evidence.
+
 ### Cause and required action
 
 The observed responses indicate an older backend artifact; its exact deployed commit and reason for missing deployment have not been verified. No authenticated Render deployment capability is configured in this environment. Deploy latest `main` for the existing Render service, inspect its deployed commit/logs, and verify the public API again. No credentials belong in this repository.

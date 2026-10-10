@@ -1,0 +1,27 @@
+[
+  {
+    "schemaVersion": 1,
+    "id": "first-system-design",
+    "title": "Your first system design",
+    "summary": "Follow a request, estimate its demand, reduce repeated reads, then bring those decisions together in a URL shortener.",
+    "steps": [
+      {
+        "moduleId": "request-flow",
+        "purpose": "Follow one request through the system"
+      },
+      {
+        "moduleId": "capacity-estimation",
+        "purpose": "Put numbers behind the workload"
+      },
+      {
+        "moduleId": "cache-aside",
+        "purpose": "Reduce repeated reads and explain stale data"
+      },
+      {
+        "moduleId": "url-shortener",
+        "purpose": "Design and defend a URL shortener"
+      }
+    ],
+    "optionalModuleIds": ["distributed-rate-limiter"]
+  }
+]

@@ -251,6 +251,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/learning-paths/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read an ordered learning path with published destinations and current answer identities */
+    get: operations["getLearningPath"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -925,6 +942,28 @@ export interface components {
       /** @constant */
       limit: 20;
     };
+    LearningActivity: {
+      id: string;
+      /** @enum {string} */
+      kind: "text" | "choice";
+      optionIds: string[];
+    };
+    LearningPathStep: {
+      moduleId: string;
+      purpose: string;
+      available: boolean;
+      entry?: components["schemas"]["CatalogEntry"];
+      activities: components["schemas"]["LearningActivity"][];
+    };
+    LearningPath: {
+      /** @constant */
+      schemaVersion: 1;
+      id: string;
+      title: string;
+      summary: string;
+      steps: components["schemas"]["LearningPathStep"][];
+      optionalModules: components["schemas"]["CatalogEntry"][];
+    };
   };
   responses: never;
   parameters: {
@@ -1348,6 +1387,37 @@ export interface operations {
       };
       /** @description Structured error */
       400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  getLearningPath: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components["parameters"]["ContentId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Validated path; unpublished steps have no entry or activity metadata */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LearningPath"];
+        };
+      };
+      /** @description No learning path with this ID */
+      404: {
         headers: {
           [name: string]: unknown;
         };

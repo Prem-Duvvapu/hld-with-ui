@@ -499,6 +499,39 @@
           }
         }
       }
+    },
+    "/api/v1/learning-paths/{id}": {
+      "get": {
+        "operationId": "getLearningPath",
+        "summary": "Read an ordered learning path with published destinations and current answer identities",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ContentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validated path; unpublished steps have no entry or activity metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningPath"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No learning path with this ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2775,6 +2808,115 @@
           "limit": {
             "type": "integer",
             "const": 20
+          }
+        }
+      },
+      "LearningActivity": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "optionIds"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "maxLength": 100
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["text", "choice"]
+          },
+          "optionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "maxLength": 100
+            },
+            "maxItems": 20,
+            "minItems": 0
+          }
+        }
+      },
+      "LearningPathStep": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["moduleId", "purpose", "available", "activities"],
+        "properties": {
+          "moduleId": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "maxLength": 100
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S"
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "entry": {
+            "$ref": "#/components/schemas/CatalogEntry"
+          },
+          "activities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearningActivity"
+            },
+            "maxItems": 200,
+            "minItems": 0
+          }
+        }
+      },
+      "LearningPath": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "id",
+          "title",
+          "summary",
+          "steps",
+          "optionalModules"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "maxLength": 100
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S"
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "pattern": "\\S"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearningPathStep"
+            },
+            "maxItems": 12,
+            "minItems": 1
+          },
+          "optionalModules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CatalogEntry"
+            },
+            "maxItems": 8,
+            "minItems": 0
           }
         }
       }

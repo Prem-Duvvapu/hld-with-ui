@@ -123,6 +123,12 @@ export function GuidedCheckpoints({
       });
   }
 
+  function select(index: number) {
+    setError("");
+    setCurrent(index);
+    selectCheckpoint?.(checkpoints[index]!.id);
+  }
+
   async function reveal() {
     if (!preset) return;
     const id = checkpoint.id;
@@ -175,11 +181,7 @@ export function GuidedCheckpoints({
                 <button
                   type="button"
                   aria-current={index === current ? "step" : undefined}
-                  onClick={() => {
-                    setError("");
-                    setCurrent(index);
-                    selectCheckpoint?.(item.id);
-                  }}
+                  onClick={() => select(index)}
                 >
                   <span aria-hidden="true">
                     {runs[item.presetId] &&
@@ -360,10 +362,7 @@ export function GuidedCheckpoints({
               type="button"
               className="button secondary"
               disabled={current === 0}
-              onClick={() => {
-                setError("");
-                setCurrent(current - 1);
-              }}
+              onClick={() => select(current - 1)}
             >
               ← Previous checkpoint
             </button>
@@ -371,10 +370,7 @@ export function GuidedCheckpoints({
               type="button"
               className="button secondary"
               disabled={current === checkpoints.length - 1}
-              onClick={() => {
-                setError("");
-                setCurrent(current + 1);
-              }}
+              onClick={() => select(current + 1)}
             >
               Next checkpoint →
             </button>

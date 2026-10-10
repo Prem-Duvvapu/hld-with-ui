@@ -149,3 +149,15 @@ Before publishing, a reviewer follows the topic from its prerequisite entry poin
 ## 8. Author handoff
 
 Report changed files, outcomes covered, sources checked, numeric/trace evidence, validation results, unresolved assumptions, and publication status. A module is complete only when content and declared capabilities agree.
+
+## 9. Learning paths
+
+`content/learning-paths.json` follows `contracts/learning-paths.schema.json`. Each version-1
+path has a stable `id`, `title`, `summary`, ordered `steps` (`moduleId`, `purpose`), and
+`optionalModuleIds`. Reference existing canonical IDs; do not copy module titles, versions,
+capabilities, routes or publication flags. Every prerequisite must appear earlier in the
+main/optional order. Paths have at most 12 steps and 8 optional references, with no duplicates
+or main/optional overlap. Draft/planned steps can describe upcoming guidance; they cannot
+supply destinations or saved-answer evidence. Keep the editorial purpose short and actionable.
+The path renderer separates saved answers, reference views and availability; none certifies
+completion or mastery. Publication still requires the existing module/release review gates.
