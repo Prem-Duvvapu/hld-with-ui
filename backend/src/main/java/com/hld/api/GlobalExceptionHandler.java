@@ -14,6 +14,12 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(HttpResourceException.class)
+    ResponseEntity<ApiError> resourceLimit(HttpResourceException exception) {
+        return ResponseEntity.status(exception.status())
+                .body(ApiError.of(exception.code(), exception.getMessage(), Map.of()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ApiError> invalidBody(MethodArgumentNotValidException exception) {
         Map<String, String> fields = new LinkedHashMap<>();

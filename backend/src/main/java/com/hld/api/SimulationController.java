@@ -1,7 +1,6 @@
 package com.hld.api;
 
 import com.hld.simulation.RequestFlowInput;
-import com.hld.simulation.RequestFlowResult;
 import com.hld.simulation.RequestFlowSimulator;
 import com.hld.simulation.RoutingPolicy;
 import com.hld.simulation.SimulationDescriptor;
@@ -10,6 +9,7 @@ import com.hld.simulation.engine.InFlightBehavior;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,10 +21,12 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api/v1/simulations")
 public class SimulationController {
+    private final SimulationResponses responses;
     private final RequestFlowSimulator simulator;
 
-    public SimulationController(RequestFlowSimulator simulator) {
+    public SimulationController(RequestFlowSimulator simulator, SimulationResponses responses) {
         this.simulator = simulator;
+        this.responses = responses;
     }
 
     @GetMapping("/{id}")
@@ -70,9 +72,9 @@ public class SimulationController {
     }
 
     @PostMapping("/{id}/runs")
-    public RequestFlowResult run(@PathVariable String id, @Valid @RequestBody RequestFlowInput input) {
+    public ResponseEntity<byte[]> run(@PathVariable String id, @Valid @RequestBody RequestFlowInput input) {
         requireRequestFlow(id);
-        return simulator.run(input);
+        return responses.json(simulator.run(input));
     }
 
     private void requireRequestFlow(String id) {

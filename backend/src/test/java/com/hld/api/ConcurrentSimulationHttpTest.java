@@ -20,7 +20,8 @@ import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
 
 /** Concurrent real HTTP runs use shared Spring simulator beans, never shared modeled state. */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "hld.http.max-concurrent-simulations=32")
 class ConcurrentSimulationHttpTest {
     @LocalServerPort int port;
     @Autowired ObjectMapper mapper;

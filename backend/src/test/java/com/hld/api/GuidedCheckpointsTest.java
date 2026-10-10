@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hld.cache.CacheAsideDescriptor.CacheAsidePreset;
 import com.hld.cache.CacheAsideResult;
+import com.hld.cache.CacheAsideSimulator;
 import com.hld.cache.CacheAsideTraceEvent;
 import com.hld.catalog.CatalogService;
 import com.hld.catalog.GuidedCheckpoint;
@@ -23,6 +24,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 class GuidedCheckpointsTest {
     @Autowired CatalogService catalog;
     @Autowired CacheAsideController cache;
+    @Autowired CacheAsideSimulator simulator;
 
     record Resolved(CacheAsideResult result, CacheAsideTraceEvent event) {}
 
@@ -31,7 +33,7 @@ class GuidedCheckpointsTest {
                 .filter(candidate -> candidate.id().equals(checkpoint.presetId()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError(checkpoint.id() + ": unknown preset " + checkpoint.presetId()));
-        CacheAsideResult result = cache.run(preset.input());
+        CacheAsideResult result = simulator.run(preset.input());
         assertThat(result.status()).as(checkpoint.id() + " runs to completion").isEqualTo("completed");
         GuidedCheckpoint.Target target = checkpoint.target();
         List<CacheAsideTraceEvent> matches = result.events().stream()
