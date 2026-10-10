@@ -171,7 +171,9 @@ Counts distinguish available steps, steps with current saved answers and referen
 Old or removed activity records stay in backups and do not count as current work. The
 suggestion selects the first available step without a current answer; it does not judge
 correctness or completion. No page visit saves progress or runs an experiment.
-See [HLD-10D](docs/work-items/HLD-10D.md). Explicit completion remains pending.
+See [HLD-10D](docs/work-items/HLD-10D.md) for the path and
+[HLD-10E](docs/work-items/HLD-10E.md) for explicit reading and exact-answer review marks.
+Those marks are separate from saved-answer/reference engagement and do not certify mastery.
 
 ## Continue saved work
 
