@@ -8,12 +8,18 @@ import { usePageTitle } from "../hooks/usePageTitle";
 import { ContinueLearning } from "../features/learning/ContinueLearning";
 import { getPracticeStore } from "../features/learning/practiceStorage";
 import { latestSavedWork } from "../features/learning/resumeLearning";
+import { getBookmarkStore } from "../features/learning/bookmarkStorage";
 
 export function HomePage() {
   usePageTitle("HLD with UI · Visual system design lab");
   const store = getPracticeStore();
   const saved = useSyncExternalStore(store.subscribe, store.getSnapshot);
   const hasSavedWork = latestSavedWork(saved.answers).length > 0;
+  const bookmarkStore = getBookmarkStore();
+  const bookmarks = useSyncExternalStore(
+    bookmarkStore.subscribe,
+    bookmarkStore.getSnapshot,
+  );
   const [topics, setTopics] = useState<CatalogEntry[] | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -69,6 +75,9 @@ export function HomePage() {
                   : "Saved work on this browser"
                 : "No setup inside the lesson"}
             </span>
+            <Link className="home-bookmarks-link" to="/bookmarks">
+              Saved modules ({bookmarks.bookmarks.length})
+            </Link>
           </div>
         </div>
         <div

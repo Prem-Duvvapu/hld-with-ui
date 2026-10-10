@@ -1,0 +1,129 @@
+.module-bookmark {
+  margin-top: 20px;
+}
+.module-bookmark .button {
+  gap: 8px;
+}
+.module-bookmark p {
+  max-width: 680px;
+  font-size: 13px;
+}
+.bookmarks-page {
+  padding-block: 40px 90px;
+}
+.bookmarks-page h1 {
+  font-size: clamp(40px, 6vw, 66px);
+  letter-spacing: -0.05em;
+  margin: 0 0 16px;
+  line-height: 1.05;
+}
+.bookmarks-intro {
+  max-width: 680px;
+  color: var(--muted);
+  margin-bottom: 30px;
+}
+.bookmark-tools {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 20px;
+  margin-block: 24px;
+}
+.bookmark-tools summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+.bookmark-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-block: 20px;
+}
+.bookmark-tools label {
+  display: grid;
+  gap: 8px;
+  max-width: 540px;
+}
+.bookmark-tools input {
+  width: 100%;
+  min-width: 0;
+}
+.bookmark-preview,
+.bookmark-reset {
+  border-left: 3px solid var(--green);
+  padding: 4px 16px;
+  margin-top: 20px;
+}
+.bookmark-preview ul {
+  padding-left: 20px;
+}
+.bookmark-warning {
+  border-left: 3px solid var(--orange);
+  padding: 12px 16px;
+  background: var(--surface);
+}
+.bookmark-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.bookmark-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 24px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 24px;
+}
+.bookmark-row > div {
+  min-width: 0;
+}
+.bookmark-row h2 {
+  font-size: 24px;
+  line-height: 1.25;
+  margin: 4px 0 12px;
+}
+.bookmark-row p {
+  max-width: 680px;
+  color: var(--muted);
+}
+.bookmark-row .button {
+  flex-shrink: 0;
+}
+.bookmark-row a {
+  text-underline-offset: 5px;
+}
+.bookmark-row .bookmark-reference {
+  font-size: 12px;
+}
+.bookmark-reference code {
+  font-family: var(--mono);
+}
+.bookmark-empty {
+  border: 1px dashed var(--line);
+  padding: 28px;
+}
+.bookmarks-page p,
+.bookmark-row h2,
+.bookmark-preview li {
+  overflow-wrap: anywhere;
+}
+.bookmarks-page h1:focus {
+  outline: 3px solid var(--orange);
+  outline-offset: 6px;
+}
+.home-bookmarks-link {
+  font-size: 13px;
+  text-underline-offset: 4px;
+}
+@media (max-width: 640px) {
+  .bookmark-row {
+    flex-direction: column;
+    padding: 18px;
+    gap: 12px;
+  }
+  .bookmark-tools {
+    padding: 16px;
+  }
+}

@@ -103,13 +103,16 @@ for (const theme of ["light", "dark"] as const) {
           "cache-aside",
           "url-shortener",
           "continue-learning",
+          "bookmarks",
         ]) {
           await page.goto(
             id === "url-shortener"
               ? "/case-studies/url-shortener?stage=operations"
               : id === "continue-learning"
                 ? "/"
-                : `/topics/${id}`,
+                : id === "bookmarks"
+                  ? "/bookmarks"
+                  : `/topics/${id}`,
           );
           await nativeZoom(page, worker, 2);
           await expect
@@ -125,6 +128,14 @@ for (const theme of ["light", "dark"] as const) {
             await page.keyboard.press("Enter");
             target = page.getByLabel("Run metrics", { exact: true });
             await expect(target).toContainText("COMPLETED6requests");
+            const save = page.getByRole("button", {
+              name: /^(Save module|Module saved)$/,
+            });
+            if ((await save.getAttribute("aria-pressed")) === "false") {
+              await save.focus();
+              await page.keyboard.press("Enter");
+            }
+            await expect(save).toHaveAttribute("aria-pressed", "true");
           } else if (id === "capacity-estimation") {
             const run = page.getByRole("button", {
               name: /Calculate estimate/,
@@ -173,6 +184,25 @@ for (const theme of ["light", "dark"] as const) {
             target = page.getByRole("table", { name: "Cache GET outcomes" });
             await expect(target).toContainText("MISS");
             await expect(target).toContainText("HIT");
+          } else if (id === "bookmarks") {
+            target = page.getByRole("region", {
+              name: "Saved modules",
+              exact: true,
+            });
+            const link = target.getByRole("link", {
+              name: "Request Flow & Load Balancing",
+              exact: true,
+            });
+            await expect(link).toBeVisible();
+            await link.focus();
+            await expect(link).toBeFocused();
+            await target.locator(".bookmark-tools > summary").click();
+            const backup = target.getByRole("button", {
+              name: "Download bookmarks",
+              exact: true,
+            });
+            await backup.focus();
+            await expect(backup).toBeFocused();
           } else if (id === "continue-learning") {
             const resume = page.getByRole("region", {
               name: "Continue learning",

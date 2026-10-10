@@ -11,6 +11,11 @@ const SearchPage = lazy(() =>
     default: module.SearchPage,
   })),
 );
+const BookmarksPage = lazy(() =>
+  import("../pages/BookmarksPage").then((module) => ({
+    default: module.BookmarksPage,
+  })),
+);
 
 const RequestFlowPage = lazy(() =>
   import("../pages/RequestFlowPage").then((module) => ({
@@ -58,9 +63,14 @@ export function App() {
           </span>
         </Link>
         <div className="header-note">Learn by changing the system</div>
-        <Link className="header-search" to="/search">
-          Search
-        </Link>
+        <nav className="header-tools" aria-label="Learning tools">
+          <Link className="header-search" to="/search">
+            Search
+          </Link>
+          <Link className="header-search" to="/bookmarks">
+            Bookmarks
+          </Link>
+        </nav>
         <ThemeToggle />
       </header>
       <main id="main-content">
@@ -74,6 +84,7 @@ export function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/search" element={<SearchPage />} />
+            <Route path="/bookmarks" element={<BookmarksPage />} />
             <Route path="/topics/request-flow" element={<RequestFlowPage />} />
             <Route
               path="/topics/capacity-estimation"
