@@ -151,3 +151,8 @@
     padding: 16px;
   }
 }
+
+.guided-card h2:focus {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
+}

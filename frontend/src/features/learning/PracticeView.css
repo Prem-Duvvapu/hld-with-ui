@@ -163,3 +163,7 @@
     flex-direction: column;
   }
 }
+.practice-resume-target:focus {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
+}

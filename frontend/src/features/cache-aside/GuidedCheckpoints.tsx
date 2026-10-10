@@ -1,4 +1,8 @@
-import { useState, useSyncExternalStore } from "react";
+import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useModuleActivity,
+  usePanelActive,
+} from "../../components/ModuleShell";
 import "./GuidedCheckpoints.css";
 import { api } from "../../api/client";
 import type {
@@ -34,7 +38,17 @@ export function GuidedCheckpoints({
   topicId?: string;
   contentVersion?: string;
 }) {
-  const [current, setCurrent] = useState(0);
+  const [localCurrent, setCurrent] = useState(0);
+  const { checkpoint: requested, selectCheckpoint } = useModuleActivity();
+  const active = usePanelActive();
+  const requestedIndex = checkpoints.findIndex((item) => item.id === requested);
+  const current = selectCheckpoint ? Math.max(0, requestedIndex) : localCurrent;
+  const heading = useRef<HTMLHeadingElement>(null);
+  useLayoutEffect(() => {
+    if (!active || requestedIndex < 0) return;
+    heading.current?.focus({ preventScroll: true });
+    heading.current?.scrollIntoView({ block: "start", behavior: "instant" });
+  }, [active, requestedIndex]);
   const store = getPracticeStore();
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
   // One Java run per preset, shared by every checkpoint that uses it.
@@ -164,6 +178,7 @@ export function GuidedCheckpoints({
                   onClick={() => {
                     setError("");
                     setCurrent(index);
+                    selectCheckpoint?.(item.id);
                   }}
                 >
                   <span aria-hidden="true">
@@ -198,7 +213,15 @@ export function GuidedCheckpoints({
             Checkpoint {current + 1} of {checkpoints.length} · Preset:{" "}
             {preset?.title ?? checkpoint.presetId}
           </p>
-          <h2 id="guided-title">{checkpoint.title}</h2>
+          <h2 id="guided-title" ref={heading} tabIndex={-1}>
+            {checkpoint.title}
+          </h2>
+          {requested && requestedIndex < 0 && (
+            <p className="practice-version-note" role="note">
+              This saved checkpoint is no longer available. Your answers remain
+              in your backup; start with the current first checkpoint.
+            </p>
+          )}
           {prediction && prediction.contentVersion !== contentVersion && (
             <p className="practice-version-note" role="note">
               Your prediction was saved for content v{prediction.contentVersion}

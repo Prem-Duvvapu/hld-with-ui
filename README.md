@@ -144,7 +144,20 @@ The **Data** stage explains ownership, unique code reservations and atomic creat
 
 ## Find an explanation
 
-Use **Search** in the header, or open `/search`. Search published titles, summaries and lesson text, then narrow by level or learning activity. All whitespace-separated terms must match; results link directly to Study or a published workshop stage. Java returns at most 20 matching pages and the total match count. Blank text, no matches, invalid filters and backend failures have explicit states; draft/planned modules and saved answers are excluded. Search criteria survive refresh and browser history in the URL. Bookmarks and Continue learning remain planned.
+Use **Search** in the header, or open `/search`. Search published titles, summaries and lesson text, then narrow by level or learning activity. All whitespace-separated terms must match; results link directly to Study or a published workshop stage. Java returns at most 20 matching pages and the total match count. Blank text, no matches, invalid filters and backend failures have explicit states; draft/planned modules and saved answers are excluded. Search criteria survive refresh and browser history in the URL. Bookmarks and the first-release path view remain planned.
+
+## Continue saved work
+
+After you save a Practice answer, Guided prediction or workshop decision, home offers
+**Continue learning**. Reopen the actual question, checkpoint or stage, or choose another
+saved module. The card checks the current lesson before linking; older answers ask for fresh
+review, and removed activities stay in your backup. An existing draft answer can resume its
+labeled draft route without publishing the workshop. Guided evidence needs an explicit Java
+run again. Page visits never mark a module complete.
+
+The home card also offers the existing safe answer backup/import/reset controls. Storage
+warnings remain visible when those tools are collapsed. This is saved reasoning on this browser;
+playground runs and the last page visited are not stored. See [HLD-10B](docs/work-items/HLD-10B.md).
 
 ## Saved learning answers
 

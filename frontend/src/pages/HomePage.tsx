@@ -1,13 +1,19 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { Link } from "react-router-dom";
 import { api, ApiClientError } from "../api/client";
 import type { CatalogEntry } from "../api/types";
 import { ErrorState, LoadingState } from "../components/AsyncState";
 import { WorkshopCatalog } from "../features/workshop/WorkshopCatalog";
 import { usePageTitle } from "../hooks/usePageTitle";
+import { ContinueLearning } from "../features/learning/ContinueLearning";
+import { getPracticeStore } from "../features/learning/practiceStorage";
+import { latestSavedWork } from "../features/learning/resumeLearning";
 
 export function HomePage() {
   usePageTitle("HLD with UI · Visual system design lab");
+  const store = getPracticeStore();
+  const saved = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const hasSavedWork = latestSavedWork(saved.answers).length > 0;
   const [topics, setTopics] = useState<CatalogEntry[] | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -49,10 +55,20 @@ export function HomePage() {
             and explaining the tradeoffs in your own words.
           </p>
           <div className="hero-actions">
-            <a className="button primary" href="#modules">
-              Start learning <span aria-hidden="true">→</span>
+            <a
+              className="button primary"
+              href={hasSavedWork ? "#continue-learning" : "#modules"}
+            >
+              {hasSavedWork ? "Continue learning" : "Start learning"}{" "}
+              <span aria-hidden="true">→</span>
             </a>
-            <span className="quiet-note">No setup inside the lesson</span>
+            <span className="quiet-note">
+              {hasSavedWork
+                ? saved.issue
+                  ? "Work kept in this session"
+                  : "Saved work on this browser"
+                : "No setup inside the lesson"}
+            </span>
           </div>
         </div>
         <div
@@ -105,7 +121,8 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="catalog page-width" id="modules">
+      <ContinueLearning entries={topics ?? []} />
+      <section className="catalog page-width" id="modules" tabIndex={-1}>
         <div className="section-heading">
           <div>
             <p className="eyebrow">Learning path</p>

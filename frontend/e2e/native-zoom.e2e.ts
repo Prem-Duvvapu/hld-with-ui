@@ -102,11 +102,14 @@ for (const theme of ["light", "dark"] as const) {
           "distributed-rate-limiter",
           "cache-aside",
           "url-shortener",
+          "continue-learning",
         ]) {
           await page.goto(
             id === "url-shortener"
               ? "/case-studies/url-shortener?stage=operations"
-              : `/topics/${id}`,
+              : id === "continue-learning"
+                ? "/"
+                : `/topics/${id}`,
           );
           await nativeZoom(page, worker, 2);
           await expect
@@ -170,6 +173,30 @@ for (const theme of ["light", "dark"] as const) {
             target = page.getByRole("table", { name: "Cache GET outcomes" });
             await expect(target).toContainText("MISS");
             await expect(target).toContainText("HIT");
+          } else if (id === "continue-learning") {
+            const resume = page.getByRole("region", {
+              name: "Continue learning",
+              exact: true,
+            });
+            const link = resume.getByRole("link", {
+              name: "Continue saved work",
+            });
+            await expect(link).toBeVisible();
+            await expect(
+              resume.getByText("Draft workshop · Saved work"),
+            ).toBeVisible();
+            await link.focus();
+            await expect(link).toBeFocused();
+            const summary = resume.locator(".continue-backups > summary");
+            await summary.focus();
+            await page.keyboard.press("Enter");
+            const backup = resume.getByRole("button", {
+              name: "Download answers",
+              exact: true,
+            });
+            await backup.focus();
+            await expect(backup).toBeFocused();
+            target = resume;
           } else {
             const original = page.getByRole("textbox", {
               name: "Your original answer",
