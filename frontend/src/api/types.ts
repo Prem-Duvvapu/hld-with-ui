@@ -52,3 +52,6 @@ export type WorkshopWalkthrough = components["schemas"]["WorkshopWalkthrough"];
 
 export type SearchResponse = components["schemas"]["SearchResponse"];
 export type SearchHit = components["schemas"]["SearchHit"];
+
+export type LearningPath = components["schemas"]["LearningPath"];
+export type LearningPathStep = components["schemas"]["LearningPathStep"];

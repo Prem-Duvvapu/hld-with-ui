@@ -6,6 +6,12 @@ import { ThemeToggle } from "../components/ThemeToggle";
 import LearningNetworkNav from "../components/LearningNetworkNav";
 import { LoadingState } from "../components/AsyncState";
 
+const LearningPathPage = lazy(() =>
+  import("../pages/LearningPathPage").then((module) => ({
+    default: module.LearningPathPage,
+  })),
+);
+
 const SearchPage = lazy(() =>
   import("../pages/SearchPage").then((module) => ({
     default: module.SearchPage,
@@ -83,6 +89,7 @@ export function App() {
         >
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/learning-paths/:id" element={<LearningPathPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/bookmarks" element={<BookmarksPage />} />
             <Route path="/topics/request-flow" element={<RequestFlowPage />} />

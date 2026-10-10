@@ -56,6 +56,7 @@ backend/
   src/test/               model, engine, and API tests
 content/
   catalog.json            canonical publication metadata
+  learning-paths.json     bounded ordered references and editorial purposes
   topics/<id>/            lesson.md, questions.json, resources.json, checkpoints.json (guided)
   case-studies/<id>/      workshop.json, resources.json (draft URL-shortener ten-stage workshop)
 contracts/                OpenAPI, JSON Schemas, API examples
@@ -63,7 +64,7 @@ scripts/                  planning-document validation
 docs/                     plans, decisions, work items, templates, evidence
 ```
 
-**Planned** additions, created only when their work item needs them: workshop publication after release review (HLD-09C), progress features (HLD-10); shared Practice/Guided answer storage and import/reset controls are implemented in `features/learning/`. Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
+**Planned** additions, created only when their work item needs them: workshop publication after release review (HLD-09C), explicit completion evidence (HLD-10); shared Practice/Guided answer storage, import/reset, Continue learning, bookmarks and the first learning path are implemented in `features/learning/` and their lazy routes. Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
 
 Backend model packages are organized by capability, not one enormous controller or service per topic. Each model has its own typed event schema with a closed `kind` vocabulary. A shared model interface and renderer registry are **planned** only if a concrete second consumer needs them (see [SIMULATION_SPEC.md](SIMULATION_SPEC.md#3-proposed-java-interface)).
 
@@ -76,6 +77,8 @@ Separate editorial status (`planned`, `draft`, `published`) from capabilities (`
 Workshops use `workshopPath` and `GET /api/v1/case-studies/{id}` with `{entry, workshop}`. Java loads a matching canonical case path at startup. Typed stages and related-experiment links are checked against the content and API contracts; incomplete cases fail the publication guard. See [decision 0010](decisions/0010-draft-workshop-content-and-answers.md). Optional authored walkthroughs carry bounded participants and ordered steps in the same resource; Java validates endpoint references and React renders manual selection plus a full text equivalent, with no execution claims. See [decision 0012](decisions/0012-authored-workshop-walkthroughs.md). [Decision 0016](decisions/0016-workshop-eligibility-clock-and-objective.md) clarifies the authored expiry clock/decision boundary and aligns Requirements with Operations; no simulation or HTTP contract changes.
 
 Package validated lessons and metadata into the backend artifact during build; do not depend on the process working directory or fetch GitHub at runtime. The build must run from a clean checkout and Docker context with those resources included. Do not execute authored MDX or arbitrary HTML. Sanitize rendered content and SVGs; diagram generation must not permit script execution or uncontrolled file/network access.
+
+Authored learning paths reference canonical module IDs rather than copying titles, prerequisites or publication state. Java checks prerequisite order and resolves published destinations and current answer identities at startup. Draft/planned steps remain labeled upcoming guidance with no runnable link; optional unpublished references are omitted. See [decision 0019](decisions/0019-catalog-derived-learning-path.md).
 
 ## 4. Initial API contract
 
@@ -92,6 +95,7 @@ The topic endpoints serve all four published topics. Simulation endpoints are im
 | `GET /api/v1/search?q=...` | Implemented: literal term search over published titles, summaries, lessons and workshop stage narratives; optional level/capability filters, 100-unit query bound, 20 results plus total match count |
 | `GET /api/v1/case-studies` | Published validated case metadata, ordered by catalog order then ID; draft/planned entries omitted, empty array when none are published |
 | `GET /api/v1/case-studies/{id}` | Implemented: authored draft/published case metadata and versioned stages/rubrics; unknown/planned/topic IDs return 404 |
+| `GET /api/v1/learning-paths/{id}` | Ordered guidance with canonical published metadata and current answer identities; unavailable steps have no destination/activity metadata |
 | `GET /api/v1/catalog/stats` | Generated counts by publication state and available capability |
 
 Unknown IDs and unknown routes return 404. Invalid parameters return 400 with field paths and readable explanations. Oversized-request (413) and overload (429/503) responses are **planned**; today, bounded input sizes are enforced by validation and return 400. Responses use one structured problem format including `code`, `message`, and `fieldErrors` when applicable. No stack traces in client errors.
