@@ -37,3 +37,20 @@ path/module IDs, existing catalog references, and every prerequisite earlier in 
 order. Java repeats these checks at startup. The API resolves published entries and current answer
 identities, hiding entry/activity metadata for draft/planned steps. Browser tests validate the
 actual Java response against OpenAPI and separately assert the draft publication boundary.
+
+## HTTP resource failures
+
+Every API POST has a raw-body ceiling (default 256 KiB), including chunked/unknown-length
+bodies. The three simulation run endpoints also have a complete serialized-result ceiling
+(default 4 MiB) and share process-local synchronous admission (default 2, no queue).
+
+- 413 `request_too_large`: reduce the workload before sending it again.
+- 422 `result_too_large`: reduce the workload to obtain a complete deliverable result.
+- 503 `simulation_busy`: keep inputs and retry explicitly; `Retry-After: 1` is a delay hint,
+  not a promise of capacity after one second.
+
+All use the closed `ApiError` shape: `code`, `message`, `fieldErrors`, and required ISO
+`timestamp`. This timestamp was already emitted by Java; HLD-11A reconciles its omission
+from OpenAPI. No successful-response shape, model/schema version, or answer backup changes.
+An HTTP overload failure is distinct from a rate-limiter decision inside a simulated run.
+See [decision 0021](../docs/decisions/0021-http-simulation-resource-guards.md) for configuration and limits.

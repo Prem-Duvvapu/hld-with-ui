@@ -4,12 +4,12 @@ import com.hld.cache.CacheAsideDescriptor;
 import com.hld.cache.CacheAsideDescriptor.CacheAsidePreset;
 import com.hld.cache.CacheAsideInput;
 import com.hld.cache.CacheAsideLimits;
-import com.hld.cache.CacheAsideResult;
 import com.hld.cache.CacheAsideSimulator;
 import com.hld.cache.CacheOperation;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,10 +22,12 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/v1/simulations")
 public class CacheAsideController {
 
+    private final SimulationResponses responses;
     private final CacheAsideSimulator simulator;
 
-    public CacheAsideController(CacheAsideSimulator simulator) {
+    public CacheAsideController(CacheAsideSimulator simulator, SimulationResponses responses) {
         this.simulator = simulator;
+        this.responses = responses;
     }
 
     @GetMapping("/cache-aside")
@@ -78,7 +80,7 @@ public class CacheAsideController {
     }
 
     @PostMapping("/cache-aside/runs")
-    public CacheAsideResult run(@Valid @RequestBody CacheAsideInput input) {
-        return simulator.run(input);
+    public ResponseEntity<byte[]> run(@Valid @RequestBody CacheAsideInput input) {
+        return responses.json(simulator.run(input));
     }
 }

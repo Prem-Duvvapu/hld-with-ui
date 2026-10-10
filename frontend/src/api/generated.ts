@@ -81,7 +81,10 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Run one bounded deterministic simulation */
+    /**
+     * Run one bounded deterministic simulation
+     * @description Simulation delivery uses process-local admission before body parsing (default two active requests across models), a bounded raw body, and bounded serialization of the entire result (default 4 MiB). These HTTP safeguards are outside modeled behavior. No queued or automatic retry is added; an admitted run keeps its existing model/schema semantics.
+     */
     post: operations["runSimulation"];
     delete?: never;
     options?: never;
@@ -149,7 +152,10 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Run one deterministic rate limiter simulation */
+    /**
+     * Run one deterministic rate limiter simulation
+     * @description Simulation delivery uses process-local admission before body parsing (default two active requests across models), a bounded raw body, and bounded serialization of the entire result (default 4 MiB). These HTTP safeguards are outside modeled behavior. No queued or automatic retry is added; an admitted run keeps its existing model/schema semantics.
+     */
     post: operations["runRateLimiterSimulation"];
     delete?: never;
     options?: never;
@@ -183,7 +189,10 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Run one deterministic cache-aside simulation */
+    /**
+     * Run one deterministic cache-aside simulation
+     * @description Simulation delivery uses process-local admission before body parsing (default two active requests across models), a bounded raw body, and bounded serialization of the entire result (default 4 MiB). These HTTP safeguards are outside modeled behavior. No queued or automatic retry is added; an admitted run keeps its existing model/schema semantics.
+     */
     post: operations["runCacheAsideSimulation"];
     delete?: never;
     options?: never;
@@ -484,6 +493,11 @@ export interface components {
       fieldErrors: {
         [key: string]: string;
       };
+      /**
+       * Format: date-time
+       * @description Server error time; external metadata, excluded from simulation replay.
+       */
+      timestamp: string;
     };
     CapacityEstimateInput: {
       /** @constant */
@@ -1119,6 +1133,35 @@ export interface operations {
           "application/json": components["schemas"]["ApiError"];
         };
       };
+      /** @description request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free. */
+      503: {
+        headers: {
+          /** @description Retry hint in seconds. Capacity may remain occupied. */
+          "Retry-After"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
     };
   };
   getEstimator: {
@@ -1194,6 +1237,15 @@ export interface operations {
           "application/json": components["schemas"]["ApiError"];
         };
       };
+      /** @description request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
     };
   };
   getRateLimiterSimulation: {
@@ -1247,6 +1299,35 @@ export interface operations {
           "application/json": components["schemas"]["ApiError"];
         };
       };
+      /** @description request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free. */
+      503: {
+        headers: {
+          /** @description Retry hint in seconds. Capacity may remain occupied. */
+          "Retry-After"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
     };
   };
   getCacheAsideSimulation: {
@@ -1294,6 +1375,35 @@ export interface operations {
       /** @description Structured error */
       400: {
         headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free. */
+      503: {
+        headers: {
+          /** @description Retry hint in seconds. Capacity may remain occupied. */
+          "Retry-After"?: string;
           [name: string]: unknown;
         };
         content: {

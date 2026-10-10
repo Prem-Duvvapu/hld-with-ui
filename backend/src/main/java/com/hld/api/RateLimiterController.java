@@ -5,11 +5,11 @@ import com.hld.ratelimit.CounterScope;
 import com.hld.ratelimit.RateLimitAlgorithm;
 import com.hld.ratelimit.RateLimiterDescriptor;
 import com.hld.ratelimit.RateLimiterInput;
-import com.hld.ratelimit.RateLimiterResult;
 import com.hld.ratelimit.RateLimiterSimulator;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,10 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/simulations/distributed-rate-limiter")
 public class RateLimiterController {
+    private final SimulationResponses responses;
     private final RateLimiterSimulator simulator;
 
-    public RateLimiterController(RateLimiterSimulator simulator) {
+    public RateLimiterController(RateLimiterSimulator simulator, SimulationResponses responses) {
         this.simulator = simulator;
+        this.responses = responses;
     }
 
     @GetMapping
@@ -62,8 +64,8 @@ public class RateLimiterController {
     }
 
     @PostMapping("/runs")
-    public RateLimiterResult run(@Valid @RequestBody RateLimiterInput input) {
-        return simulator.run(input);
+    public ResponseEntity<byte[]> run(@Valid @RequestBody RateLimiterInput input) {
+        return responses.json(simulator.run(input));
     }
 
     private RateLimiterInput input(

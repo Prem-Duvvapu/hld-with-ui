@@ -94,6 +94,27 @@ The [CI workflow](.github/workflows/ci.yaml) runs these gates on pull requests a
 
 API and content contracts live in [contracts](contracts/README.md). React API types are generated from OpenAPI, and CI rejects generated-type drift, malformed content, broken prerequisites, unresolved sources, and capabilities without a registered model.
 
+## Backend resource limits
+
+Java bounds API POST bodies and complete simulation responses, and admits a small number of
+simulations at once. Limits are inclusive and can be set with environment variables:
+
+| Variable | Default | Accepted range |
+| --- | --- | --- |
+| `HLD_MAX_REQUEST_BYTES` | 262,144 (256 KiB) | 512–1,048,576 bytes |
+| `HLD_MAX_SIMULATION_RESPONSE_BYTES` | 4,194,304 (4 MiB) | 512–16,777,216 bytes |
+| `HLD_MAX_CONCURRENT_SIMULATIONS` | 2 per Java process | 1–32 |
+
+Invalid values fail startup. Too-large bodies return 413; too-large simulation results return
+422; busy simulation requests return 503 with `Retry-After: 1`. The app keeps your inputs and
+asks for an explicit retry. Existing results are kept and labeled stale in request flow and
+the rate limiter; cache clears results when rerunning. No automatic retry or server run queue
+is added. Reading lessons and health checks do not use simulation permits.
+
+These limits protect bounded synchronous requests; they do not set a JVM heap cap or prove
+hosted capacity. Slow connections, deployment networking/thread budgets, and limits across
+multiple replicas need separate operational checks. See [the decision](docs/decisions/0021-http-simulation-resource-guards.md).
+
 ## Deployment
 
 The app deploys the same way as lld-with-ui and dsa-with-ui: the Java backend on Render's free tier and the React frontend as a static Vercel build.

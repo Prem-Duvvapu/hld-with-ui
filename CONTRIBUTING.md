@@ -39,6 +39,8 @@ The default browser command includes the ordinary `chromium` project and an isol
 
 Browser journeys run the packaged Java backend and the production frontend build on isolated ports (18080 and 14173, overridable with `E2E_BACKEND_PORT` and `E2E_FRONTEND_PORT`) and stop both afterwards. They need the backend jar and Playwright's Chromium:
 
+Finish the backend package and frontend quality gate before starting browser journeys. Do not rebuild the running jar or replace `frontend/dist` while its test servers are active; missing files during a rebuild can make valid pages fail.
+
 ```bash
 (cd backend && ./mvnw -B package -DskipTests)
 (cd frontend && npx playwright install chromium && npm run e2e)
