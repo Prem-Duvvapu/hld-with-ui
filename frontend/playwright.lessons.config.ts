@@ -1,29 +1,28 @@
 import { defineConfig, devices } from "@playwright/test";
 import production from "./playwright.config";
 
-const backendPort = Number(process.env.PERF_BACKEND_PORT ?? 18580);
-const frontendPort = Number(process.env.PERF_FRONTEND_PORT ?? 14573);
+const backendPort = Number(process.env.LESSON_BACKEND_PORT ?? 18581);
+const frontendPort = Number(process.env.LESSON_FRONTEND_PORT ?? 14574);
 const originalFrontendPort = Number(process.env.E2E_FRONTEND_PORT ?? 14173);
 const servers = Array.isArray(production.webServer)
   ? production.webServer
   : [production.webServer!];
 
-// Reuse the production-build/real-Java launch commands and cleanup lifecycle.
 export default defineConfig({
   ...production,
   testDir: "./e2e/performance",
-  testMatch: "**/rendering.perf.ts",
+  testMatch: "**/lesson-loading.perf.ts",
   workers: 1,
   retries: 0,
   maxFailures: 1,
   timeout: 120_000,
   reporter: [["list"]],
-  outputDir: "test-results/performance",
+  outputDir: "test-results/lesson-performance",
   use: {
     baseURL: `http://127.0.0.1:${frontendPort}`,
     trace: "retain-on-failure",
   },
-  projects: [{ name: "chromium-performance", use: devices["Desktop Chrome"] }],
+  projects: [{ name: "chromium-lessons", use: devices["Desktop Chrome"] }],
   webServer: servers.map((server, index) => ({
     ...server,
     command:

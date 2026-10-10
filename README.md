@@ -97,7 +97,8 @@ published model/estimator baseline, the draft workshop, learning path and cleanu
 checkout mounted at runtime. See [packaged runtime checks](CONTRIBUTING.md#packaged-runtime-checks)
 for the jar-only command and local Docker command. CI also records bounded Java generation/
 serialization and real production-browser cost evidence; see [performance review](docs/PERFORMANCE_REVIEW.md)
-for reproduction, measurements and their limits.
+for reproduction, measurements and their limits. Initial reading/cache behavior and bounded
+Java process-memory evidence are in [the loading/memory review](docs/LOADING_AND_MEMORY_REVIEW.md).
 
 API and content contracts live in [contracts](contracts/README.md). React API types are generated from OpenAPI, and CI rejects generated-type drift, malformed content, broken prerequisites, unresolved sources, and capabilities without a registered model.
 

@@ -111,6 +111,37 @@ Do not rebuild the jar or replace `dist` while any browser suite runs. Avoid ano
 build/benchmark during timed sampling. Local timings do not prove heap use, hosted capacity,
 physical paint, or speed on real mobile hardware.
 
+## Reading load and bounded memory evidence
+
+Generate Java performance fixtures first, then run the new suites sequentially after builds:
+
+```bash
+(cd backend && ./mvnw -B -Dtest=SimulationPerformanceEvidenceTest -Dhld.performance=true test)
+python3 scripts/runtime-memory-evidence.py
+python3 -m unittest discover -s scripts -p 'test_runtime_memory_evidence.py' -v
+(cd frontend && npm run perf:lessons)
+```
+
+Memory evidence requires Linux `/proc` and JDK `jcmd`, uses port 18680 and an owned copied
+jar with explicit laboratory `-Xms32m -Xmx128m`, and preserves default HTTP limits. Twenty
+rounds exercise two client simulations plus a canonical lesson read per batch; successful
+responses match complete reference digests. The 413/recovery and two actual negative CLI
+checks protect limits, partial evidence and port/process ownership. Heap snapshots and
+sampled RSS do not establish peak used heap, total-process limits or hosted capacity.
+
+`perf:lessons` uses 18581/14574 (`LESSON_BACKEND_PORT`/`LESSON_FRONTEND_PORT`). Twenty
+groups cover the four Study routes and direct draft Requirements, at 1440/320 widths, with
+fresh-context and primed same-context document visits. `LESSON_SAMPLES` accepts 1–10
+(default three); `LESSON_OUTPUT` overrides the ignored JSON path. Reading must trigger no
+POST, actual content/headings/controls must reconcile, and all sampling groups must complete.
+The original `perf:browser` command still runs only its simulation-rendering suite.
+
+Reports are `backend/target/runtime-memory-evidence.json` and
+`frontend/target/lesson-loading-evidence.json`. CI retains evidence, including partial reports,
+for 30 days; failed commands still fail their jobs. See [methods and actual observations](docs/LOADING_AND_MEMORY_REVIEW.md).
+Do not run a build or another owned benchmark while timing, and do not replace the jar/`dist`
+while browser servers are live.
+
 ## Contribution boundaries
 
 - Work from the canonical catalog and contracts; do not hand-maintain competing module lists.

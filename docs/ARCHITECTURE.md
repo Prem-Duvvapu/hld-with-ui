@@ -153,5 +153,7 @@ Read pages must not eagerly load topology editors or all simulation assets. Meas
 and the production browser. [PERFORMANCE_REVIEW.md](PERFORMANCE_REVIEW.md) records separate
 generation/serialization, local proxy HTTP, semantic readiness/frame and Chromium costs, with
 actual fixture counts and declared machine/sampling boundaries. CI preserves full reports;
-local archived samples retain their provenance. Initial lesson loading, heap/load/network
-budgets and measured before/after rendering changes remain independent release work.
+local archived samples retain their provenance. [HLD-11D](work-items/HLD-11D.md) adds fresh/primed
+reading-load evidence and a bounded real-HTTP process-memory exercise with complete replay
+and ownership/failure checks ([methods](LOADING_AND_MEMORY_REVIEW.md)). Used-heap peaks,
+sustained/hosted load, network/thread budgets and measured rendering changes remain release work.

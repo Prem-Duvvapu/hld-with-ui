@@ -19,7 +19,8 @@
     "test": "vitest run",
     "preview": "vite preview",
     "e2e": "playwright test",
-    "perf:browser": "playwright test --config playwright.perf.config.ts"
+    "perf:browser": "playwright test --config playwright.perf.config.ts",
+    "perf:lessons": "playwright test --config playwright.lessons.config.ts"
   },
   "dependencies": {
     "@vercel/analytics": "2.0.1",

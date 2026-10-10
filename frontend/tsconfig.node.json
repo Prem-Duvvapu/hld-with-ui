@@ -11,6 +11,7 @@
     "vite.config.ts",
     "playwright.config.ts",
     "playwright.perf.config.ts",
+    "playwright.lessons.config.ts",
     "e2e",
     "src/api/types.ts",
     "src/api/generated.ts"
