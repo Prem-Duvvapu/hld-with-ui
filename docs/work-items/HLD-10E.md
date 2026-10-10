@@ -55,6 +55,7 @@ helps them return to a changed assumption and explain it again after their reaso
 | Native 200% zoom | PASS: 2 tests, both themes at actual 320/720 CSS widths, expanded reading/backup controls | `/tmp/hld-completion-zoom-final.log` |
 | Screenshot refresh | PASS: both themes × 320/768/1440; expanded controls and explicit reading state | `/tmp/hld-completion-ui-final.log`; six images below |
 | Plan/launcher syntax/diff checks | PASS: documentation/reference validator, `bash -n start.sh`, `git diff --check` | `/tmp/hld-completion-plan.log` |
+| Guided resume followup | PASS: 3 repeated actual-Java journeys; typecheck/lint/format pass | `/tmp/hld-completion-resume.log`, `/tmp/hld-completion-followup-type.log`, `/tmp/hld-completion-followup-lint.log`, `/tmp/hld-completion-followup-format.log` |
 | Required PR CI | Result recorded on the PR; all required checks must pass before merge | Exact contribution head checked before squash merge |
 
 The first local native-zoom attempt was interrupted when concurrently packaging its running
@@ -74,6 +75,21 @@ and focus assertions, rather than the images alone, verify interaction/layout be
 - [768 dark](assets/hld-10e/learning-path-768-dark.png)
 - [1440 light](assets/hld-10e/learning-path-1440-light.png)
 - [1440 dark](assets/hld-10e/learning-path-1440-dark.png)
+
+### Final-head CI resume precondition
+
+The implementation head's CI run `38050168956` passed. Final documentation head `e491e6d`
+failed one existing Guided resume test in run `38050213609`: after clicking Stale hit it typed
+into the still-rendered Cold miss textarea before the router transition committed. The trace
+has click completion at 45732 ms, fill start at 45735 ms, the previous heading in the fill
+snapshot, and Stale hit committed after that fill. The saved resume target correctly resolved
+the activity that actually received the text.
+
+The test now waits for the selected Stale hit heading/focus before filling and checks the
+actual durable `stale-hit-prediction` record before leaving. All original resume/history/focus
+and no-automatic-run assertions remain. This strengthens the flow precondition and persistence
+check without a production timing workaround or relaxed assertion. The focused real-Java
+repeated verification and final CI result are recorded on the PR.
 
 ## Handoff and limits
 
