@@ -12,6 +12,18 @@ The idea is simple: **see a system work, change one condition, explain what happ
 **Status: four working learning modules.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers ten authored stages from Requirements through Defense by direct link; publication checks and later roadmap modules remain pending.
 
 
+## Record your learning
+
+The first learning path separates saved answers from progress you explicitly record. Expand
+**Record my progress** on an available step to mark its lesson read or its current saved answers
+reviewed. Editing an answer or changing the lesson version makes an earlier review stop counting.
+These are your self-checks, not automatic grades or a claim of mastery.
+
+Completion marks have a separate local JSON backup. Its preview clearly asks before replacing all
+completion marks; working answers and bookmarks stay saved. Keep your answer backup too when
+moving browsers, since a reviewed mark counts only with its matching working answer. Storage
+failures offer session downloads and save retry; no personal answers are sent to Java.
+
 ## Visitor analytics
 
 The deployed frontend uses [Vercel Web Analytics](https://vercel.com/docs/analytics/quickstart)

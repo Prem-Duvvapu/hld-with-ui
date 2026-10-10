@@ -6,6 +6,7 @@ import addFormats from "ajv-formats";
 const pathUrl = "/learning-paths/first-system-design";
 const apiUrl = "/api/v1/learning-paths/first-system-design";
 const key = "hld-practice-v1";
+const completionKey = "hld-completion-v1";
 const contract = JSON.parse(
   readFileSync(
     new URL("../../contracts/openapi.json", import.meta.url),
@@ -83,6 +84,9 @@ test("learning path: Java contract and home lead to real ordered prerequisites w
   });
   await expect(prerequisites.getByRole("link")).toHaveCount(2);
   expect(await raw(page)).toBeNull();
+  expect(
+    await page.evaluate((key) => localStorage.getItem(key), completionKey),
+  ).toBeNull();
   expect(posts).toEqual([]);
   await page.getByRole("link", { name: "Open suggested module" }).click();
   await expect(page).toHaveURL(/topics\/request-flow\?view=study$/);
@@ -263,6 +267,15 @@ for (const theme of ["light", "dark"] as const)
       await page.setViewportSize({ width, height: 1000 });
       await page.goto(pathUrl);
       await ready(page);
+      const card = page.locator(".path-step").first();
+      await card.getByText(/Record my progress/).click();
+      await page.getByText("Back up or manage completion marks").click();
+      const reading = card.getByRole("checkbox", {
+        name: "I've read this lesson",
+      });
+      await reading.focus();
+      if (!(await reading.isChecked())) await page.keyboard.press("Space");
+      await expect(reading).toBeChecked();
       const link = page.getByRole("link", { name: "Open suggested module" });
       await link.focus();
       await expect(link).toBeFocused();
@@ -277,6 +290,10 @@ for (const theme of ["light", "dark"] as const)
           }),
         })),
       ).toEqual({ page: true, links: true });
+      // Capture from the top so offscreen fixed elements do not appear in a full-page image.
+      await page.evaluate(() =>
+        window.scrollTo({ top: 0, behavior: "instant" }),
+      );
       await page.screenshot({
         path: testInfo.outputPath(`learning-path-${width}-${theme}.png`),
         fullPage: true,
@@ -292,3 +309,127 @@ for (const theme of ["light", "dark"] as const)
       await ready(page);
     }
   });
+
+test("completion: explicit marks survive refresh and backup restore, edits invalidate reviews without altering answers", async ({
+  page,
+}) => {
+  const posts: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST" && request.url().includes("/api/"))
+      posts.push(request.url());
+  });
+  await page.goto("/topics/request-flow?view=practice");
+  await page
+    .getByRole("textbox")
+    .first()
+    .fill(
+      "Two workers cause waiting during a burst. Bound the queue and reject overload.",
+    );
+  const original = await raw(page);
+  await page.goto(pathUrl);
+  await ready(page);
+  const card = page.locator(".path-step").first();
+  await card.getByText(/Record my progress/).click();
+  const reading = card.getByRole("checkbox", { name: "I've read this lesson" });
+  await reading.focus();
+  await page.keyboard.press("Space");
+  const review = card.getByRole("button", { name: "Mark 1 answer reviewed" });
+  await review.focus();
+  await page.keyboard.press("Enter");
+  const summary = page.getByLabel("Explicit reading and practice progress");
+  await expect(summary).toContainText("1 lesson marked read");
+  await expect(summary).toContainText("1 answer marked reviewed");
+  expect(await raw(page)).toBe(original);
+  expect(posts).toEqual([]);
+  await page.reload();
+  await ready(page);
+  await expect(summary).toContainText("1 answer marked reviewed");
+  await page.getByText("Back up or manage completion marks").click();
+  const downloading = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Download completion marks", exact: true })
+    .click();
+  const file = await downloading;
+  const backup = readFileSync((await file.path())!, "utf8");
+  expect(JSON.parse(backup)).toMatchObject({
+    app: "hld-with-ui",
+    kind: "completion",
+    schemaVersion: 1,
+  });
+  await card.getByText(/Record my progress/).click();
+  await card
+    .getByRole("button", { name: "Clear these completion marks" })
+    .click();
+  await expect(
+    card.getByRole("button", { name: "Keep my marks" }),
+  ).toBeFocused();
+  await card
+    .getByRole("button", { name: "Confirm clear completion marks" })
+    .click();
+  await expect(card.getByText(/Record my progress/)).toBeFocused();
+  await expect(summary).toContainText("0 lessons marked read");
+  expect(await raw(page)).toBe(original);
+  await page.getByLabel("Completion backup file").setInputFiles({
+    name: "completion.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(backup),
+  });
+  await expect(
+    page.getByRole("group", { name: "Review completion backup" }),
+  ).toContainText("replaces all");
+  await page
+    .getByRole("button", { name: "Replace with this completion backup" })
+    .click();
+  await expect(page.getByLabel("Completion backup file")).toBeFocused();
+  await expect(summary).toContainText("1 answer marked reviewed");
+  expect(await raw(page)).toBe(original);
+  await page.goto("/topics/request-flow?view=practice");
+  await page
+    .getByRole("textbox")
+    .first()
+    .fill("Edited: a balancer cannot increase worker capacity.");
+  await page.goto(pathUrl);
+  await ready(page);
+  await expect(summary).toContainText("0 answers marked reviewed");
+  await expect(summary).toContainText("1 lesson marked read");
+  expect(posts).toEqual([]);
+});
+test("completion: denied writes retain session marks, show recovery and export without overwriting other progress", async ({
+  page,
+}) => {
+  await page.addInitScript((key) => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (name, value) {
+      if (name === key) throw new DOMException("blocked", "SecurityError");
+      return original.call(this, name, value);
+    };
+  }, completionKey);
+  await page.goto(pathUrl);
+  await ready(page);
+  const card = page.locator(".path-step").first();
+  await card.getByText(/Record my progress/).click();
+  await card.getByRole("checkbox", { name: "I've read this lesson" }).check();
+  await expect(
+    page.getByLabel("Explicit reading and practice progress"),
+  ).toContainText("1 lesson marked read");
+  await expect(
+    page.getByText(/Completion storage needs attention/),
+  ).toBeVisible();
+  expect(
+    await page.evaluate((key) => localStorage.getItem(key), completionKey),
+  ).toBeNull();
+  expect(await raw(page)).toBeNull();
+  await page.getByText("Back up or manage completion marks").click();
+  const downloading = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Download completion marks", exact: true })
+    .click();
+  expect(
+    JSON.parse(readFileSync((await (await downloading).path())!, "utf8"))
+      .records,
+  ).toHaveLength(1);
+  await page
+    .getByRole("button", { name: "Try saving completion marks again" })
+    .click();
+  await expect(card.getByRole("checkbox")).toBeChecked();
+});

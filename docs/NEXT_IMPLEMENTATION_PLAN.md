@@ -152,7 +152,7 @@ Verify every stage, save/resume, content/contract/capability agreement, deep lin
 
 ### Discovery
 
-[HLD-10A](work-items/HLD-10A.md) implements bounded search over published Java-delivered content with stable links, filters and useful excerpts. No external search service is needed. [HLD-10B](work-items/HLD-10B.md) resumes recorded answers at their current authored stage/question/checkpoint. [HLD-10C](work-items/HLD-10C.md) adds local module bookmarks with explicit separate backups. [HLD-10D](work-items/HLD-10D.md) adds the first learning path using Java-resolved identities and saved activity state. Explicit completion evidence remains pending. Test empty/no-result/error states and removed/updated content. Completion counts come from recorded evidence, not page visits.
+[HLD-10A](work-items/HLD-10A.md) implements bounded search over published Java-delivered content with stable links, filters and useful excerpts. No external search service is needed. [HLD-10B](work-items/HLD-10B.md) resumes recorded answers at their current authored stage/question/checkpoint. [HLD-10C](work-items/HLD-10C.md) adds local module bookmarks with explicit separate backups. [HLD-10D](work-items/HLD-10D.md) adds the first learning path using Java-resolved identities and saved activity state. [HLD-10E](work-items/HLD-10E.md) adds explicit, separate reading and exact-answer practice review marks with completion-only backups and safe replacement imports. Whole-module/path mastery is not inferred. Test empty/no-result/error states and removed/updated content. Completion counts come from recorded evidence, not page visits.
 
 ### Release
 

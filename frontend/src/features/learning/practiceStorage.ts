@@ -52,7 +52,7 @@ const id = (value: unknown): value is string =>
   /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) &&
   value.length <= 100;
 
-function validAnswer(value: unknown): value is PracticeAnswer {
+export function validAnswer(value: unknown): value is PracticeAnswer {
   if (
     !object(value) ||
     !keys(value, [
