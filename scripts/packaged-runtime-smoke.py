@@ -181,6 +181,14 @@ def runtime(args, folder, log):
             check(probe.connect_ex(("127.0.0.1", args.port)) != 0, "Owned runtime port still occupied after cleanup")
 
 
+def check_port_available(port):
+    with socket.socket() as probe:
+        # Permit reuse after an owned server closes active connections (TCP TIME_WAIT).
+        # Listening port owners still prevent this bind; never stop an unrelated process.
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        probe.bind(("127.0.0.1", port))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     source = parser.add_mutually_exclusive_group(required=True)
@@ -189,8 +197,7 @@ def main():
     parser.add_argument("--port", type=int, default=18480)
     args = parser.parse_args()
     check(1 <= args.port <= 65535, "Port must be 1–65535")
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", args.port))  # Refuse occupied ports before launching anything.
+    check_port_available(args.port)  # Refuse occupied listeners before launching anything.
     with tempfile.TemporaryDirectory(prefix="hld-runtime-") as temporary:
         folder = Path(temporary)
         with (folder / "server.log").open("w+", encoding="utf-8") as log:

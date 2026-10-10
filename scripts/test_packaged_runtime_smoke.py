@@ -28,6 +28,20 @@ def free_port():
 
 
 class PackagedRuntimeFailures(unittest.TestCase):
+    def test_closed_server_connections_do_not_block_a_subsequent_launch(self):
+        with socket.socket() as listener:
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            listener.bind(("127.0.0.1", 0))
+            listener.listen()
+            port = listener.getsockname()[1]
+            with socket.create_connection(("127.0.0.1", port), timeout=2) as client:
+                connection, _ = listener.accept()
+                with connection:
+                    connection.shutdown(socket.SHUT_WR)  # Server actively closes first.
+                    self.assertEqual(client.recv(1), b"")
+        # No listening owner remains, although the server-side TCP tuple can be TIME_WAIT.
+        smoke.check_port_available(port)
+
     def test_failed_log_collection_still_removes_only_the_owned_container(self):
         name = "hld-runtime-owned-test"
         for failure in [subprocess.TimeoutExpired(["docker", "logs", name], 10), OSError("log failure")]:
