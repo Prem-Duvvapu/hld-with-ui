@@ -12,6 +12,16 @@ Status: authoring contract with an implemented subset. The machine-readable cont
 
 Rejected versions (`request-flow` `1.1.0`, `cache-aside` `1.0.0`) and their reasons are recorded in [decision 0004](decisions/0004-simulation-causality-corrections.md). The estimator `capacity-estimation` is not an event simulation and has no trace.
 
+### Unregistered queue-capacity development model
+
+`queues-tail-latency` now has a pure Java domain model (schema `1.0`, model `1.0.0`) with
+finite workers, one FIFO waiting queue, per-job service times and typed post-event snapshots.
+It is not one of the registered API models in the table above. Its queue-local collector
+admits events before state mutation and charges bounded structured state against the same
+default `SimulationBudget`; cooperative deadline checks remain external guards. It uses no
+random choices. Standalone model schemas/examples precede draft API/React delivery; see
+[decision 0023](decisions/0023-queue-capacity-model.md) and [HLD-13A](work-items/HLD-13A.md).
+
 ## 1. What an experiment promises
 
 An experiment computes state transitions from inputs. A guided animation may replay those transitions, but cannot fabricate them. Every model declares what it represents, what it omits, input bounds, failure behavior, and metric definitions.

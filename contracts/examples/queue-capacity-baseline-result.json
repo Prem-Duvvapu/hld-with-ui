@@ -1,0 +1,216 @@
+{
+  "schemaVersion": "1.0",
+  "simulationId": "queues-tail-latency",
+  "modelVersion": "1.0.0",
+  "seed": 7,
+  "status": "completed",
+  "lastVirtualTimeMs": 20,
+  "assumptions": [
+    "One shared FIFO waiting queue feeds identical workers; service time belongs to each job.",
+    "Waiting capacity excludes running jobs. A full waiting queue rejects arrivals without retry.",
+    "All completions at a timestamp precede queued starts and new arrivals.",
+    "Existing waiters start first; equal-time arrivals retain input order and use the first idle worker.",
+    "Network overhead, failures, durable broker delivery, acknowledgments and retries are excluded.",
+    "Successful latency statistics include completed jobs only; p95 uses nearest rank.",
+    "The observation window starts at virtual time zero; throughput describes this finite batch.",
+    "No choices are random in this version. Seed is replay metadata, not a workload generator.",
+    "A cooperative wall-time stop is an external censored guard and may differ across machines."
+  ],
+  "initialState": {
+    "queuedJobIds": [],
+    "workers": [
+      {
+        "id": "worker-1"
+      }
+    ]
+  },
+  "events": [
+    {
+      "sequence": 1,
+      "timeMs": 0,
+      "kind": "job.started",
+      "jobId": "job-1",
+      "workerId": "worker-1",
+      "message": "Job job-1 started on worker-1.",
+      "state": {
+        "queuedJobIds": [],
+        "workers": [
+          {
+            "id": "worker-1",
+            "jobId": "job-1",
+            "startedAtMs": 0,
+            "scheduledCompletionAtMs": 10
+          }
+        ]
+      }
+    },
+    {
+      "sequence": 2,
+      "timeMs": 0,
+      "kind": "job.queued",
+      "jobId": "job-2",
+      "message": "Job job-2 entered the shared waiting queue.",
+      "state": {
+        "queuedJobIds": ["job-2"],
+        "workers": [
+          {
+            "id": "worker-1",
+            "jobId": "job-1",
+            "startedAtMs": 0,
+            "scheduledCompletionAtMs": 10
+          }
+        ]
+      }
+    },
+    {
+      "sequence": 3,
+      "timeMs": 0,
+      "kind": "job.rejected",
+      "jobId": "job-3",
+      "message": "Job job-3 was rejected because the shared waiting queue is full.",
+      "state": {
+        "queuedJobIds": ["job-2"],
+        "workers": [
+          {
+            "id": "worker-1",
+            "jobId": "job-1",
+            "startedAtMs": 0,
+            "scheduledCompletionAtMs": 10
+          }
+        ]
+      }
+    },
+    {
+      "sequence": 4,
+      "timeMs": 0,
+      "kind": "job.rejected",
+      "jobId": "job-4",
+      "message": "Job job-4 was rejected because the shared waiting queue is full.",
+      "state": {
+        "queuedJobIds": ["job-2"],
+        "workers": [
+          {
+            "id": "worker-1",
+            "jobId": "job-1",
+            "startedAtMs": 0,
+            "scheduledCompletionAtMs": 10
+          }
+        ]
+      }
+    },
+    {
+      "sequence": 5,
+      "timeMs": 10,
+      "kind": "job.completed",
+      "jobId": "job-1",
+      "workerId": "worker-1",
+      "message": "Job job-1 completed on worker-1.",
+      "state": {
+        "queuedJobIds": ["job-2"],
+        "workers": [
+          {
+            "id": "worker-1"
+          }
+        ]
+      }
+    },
+    {
+      "sequence": 6,
+      "timeMs": 10,
+      "kind": "job.started",
+      "jobId": "job-2",
+      "workerId": "worker-1",
+      "message": "Job job-2 started on worker-1.",
+      "state": {
+        "queuedJobIds": [],
+        "workers": [
+          {
+            "id": "worker-1",
+            "jobId": "job-2",
+            "startedAtMs": 10,
+            "scheduledCompletionAtMs": 20
+          }
+        ]
+      }
+    },
+    {
+      "sequence": 7,
+      "timeMs": 20,
+      "kind": "job.completed",
+      "jobId": "job-2",
+      "workerId": "worker-1",
+      "message": "Job job-2 completed on worker-1.",
+      "state": {
+        "queuedJobIds": [],
+        "workers": [
+          {
+            "id": "worker-1"
+          }
+        ]
+      }
+    }
+  ],
+  "finalState": {
+    "queuedJobIds": [],
+    "workers": [
+      {
+        "id": "worker-1"
+      }
+    ]
+  },
+  "outcomes": [
+    {
+      "jobId": "job-1",
+      "status": "COMPLETED",
+      "arrivalTimeMs": 0,
+      "serviceTimeMs": 10,
+      "workerId": "worker-1",
+      "startTimeMs": 0,
+      "terminalTimeMs": 10,
+      "waitTimeMs": 0,
+      "latencyMs": 10
+    },
+    {
+      "jobId": "job-2",
+      "status": "COMPLETED",
+      "arrivalTimeMs": 0,
+      "serviceTimeMs": 10,
+      "workerId": "worker-1",
+      "startTimeMs": 10,
+      "terminalTimeMs": 20,
+      "waitTimeMs": 10,
+      "latencyMs": 20
+    },
+    {
+      "jobId": "job-3",
+      "status": "REJECTED",
+      "arrivalTimeMs": 0,
+      "serviceTimeMs": 10,
+      "terminalTimeMs": 0
+    },
+    {
+      "jobId": "job-4",
+      "status": "REJECTED",
+      "arrivalTimeMs": 0,
+      "serviceTimeMs": 10,
+      "terminalTimeMs": 0
+    }
+  ],
+  "metrics": {
+    "totalJobs": 4,
+    "completed": 2,
+    "rejected": 2,
+    "queued": 0,
+    "running": 0,
+    "notArrived": 0,
+    "successfulSamples": 2,
+    "meanSuccessfulWaitMs": 5.0,
+    "meanSuccessfulLatencyMs": 15.0,
+    "p95SuccessfulWaitMs": 10,
+    "p95SuccessfulLatencyMs": 20,
+    "peakWaiting": 1,
+    "observationStartMs": 0,
+    "observationEndMs": 20,
+    "completedThroughputPerSecond": 100.0
+  }
+}

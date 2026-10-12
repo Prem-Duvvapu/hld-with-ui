@@ -70,9 +70,10 @@ draft development follows decision 0022 and the curriculum's prerequisite order.
 
 The [queue-delivery handoff](QUEUE_DELIVERY_IMPLEMENTATION_PLAN.md) specifies the future
 delivery/effect/ACK experiment, exact fixtures, typed state, UI and checks. It is preparation,
-not a shipped module. Its first missing prerequisite, `queues-tail-latency`, is the next
-implementation: bounded Java contract/model, explicit draft preview delivery, then React
-learning flow and teaching review. The existing topic API does not serve draft topics;
+not a shipped module. Its prerequisite `queues-tail-latency` now has a bounded Java
+contract/model in [HLD-13A](work-items/HLD-13A.md), with no API or UI registration yet.
+Next add explicit draft preview delivery, React learning flow and teaching review before
+implementing dependent delivery behavior. The existing topic API does not serve draft topics;
 adding a draft catalog entry alone cannot provide a usable preview.
 
 ## 4. HLD-05: cache visual playback — implement first

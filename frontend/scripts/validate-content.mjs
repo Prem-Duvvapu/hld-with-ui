@@ -73,6 +73,16 @@ for (const example of ["request-flow-baseline", "request-flow-overload"]) {
   }
 }
 
+// Model-only schemas do not register HTTP routes or published capabilities.
+for (const kind of ["input", "result"]) {
+  const example = `queue-capacity-baseline-${kind}`;
+  validateSchema(
+    `contracts/queue-capacity.${kind}.schema.json`,
+    readJson(`contracts/examples/${example}.json`),
+    example,
+  );
+}
+
 unique(
   catalog.map((entry) => entry.id),
   "catalog",

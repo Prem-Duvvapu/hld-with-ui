@@ -4,7 +4,7 @@ This directory is the machine-readable boundary between authored content, the Ja
 
 - `openapi.json` defines current HTTP requests, responses, errors, simulation events, and model data.
 - `catalog.schema.json`, `questions.schema.json`, `resources.schema.json`, `checkpoints.schema.json`, `workshop.schema.json`, and `learning-paths.schema.json` define authored JSON.
-- `examples/` contains valid inputs checked against the OpenAPI schemas.
+- `examples/` contains inputs checked against OpenAPI plus explicitly named draft domain input/result examples checked against their standalone schemas.
 - `frontend/src/api/generated.ts` is generated. Do not edit it directly.
 
 Run contract generation and validation from `frontend/`:
@@ -30,6 +30,21 @@ npm run contracts:check
 The HTTP contract version is the OpenAPI `info.version`. Each simulation request records `schemaVersion` and `modelVersion`; incompatible values are rejected. Increase the model version when behavior changes enough to alter replay. Increase the schema version when the request or trace shape becomes incompatible. Preserve examples for every supported version.
 
 OpenAPI describes what the running server returns. JSON Schema establishes structural validity; Java tests remain responsible for model semantics, and human review remains responsible for technical and teaching quality.
+
+## Unpublished queue capacity contract
+
+`queue-capacity.input.schema.json` and `queue-capacity.result.schema.json` describe the
+pure Java `queues-tail-latency` model (`1.0` schema, `1.0.0` model). These standalone schemas
+register no HTTP endpoint, catalog capability or frontend API type. The two
+`queue-capacity-baseline-*` examples are validated by the existing contract gate; the Java
+serialization test compares the result example with an actual model run.
+
+Jobs have unique bounded IDs, nondecreasing arrivals and individual service durations.
+JSON Schema checks fields/types/ranges; Java additionally enforces ID uniqueness and arrival
+ordering. Seed metadata uses the signed JavaScript-safe integer range. Queue capacity counts
+only waiting jobs. Typed post-event snapshots support future playback, and completed metrics
+exclude rejected/unfinished jobs. See [decision 0023](../docs/decisions/0023-queue-capacity-model.md).
+Draft preview delivery and the learning UI remain pending.
 
 Learning paths contain ordered canonical module references and purposes, with optional deeper
 references. Shape/size/schema checks reject unsupported fields; semantic checks require unique

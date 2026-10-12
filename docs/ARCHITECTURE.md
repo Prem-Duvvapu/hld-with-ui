@@ -52,7 +52,7 @@ frontend/
   scripts/                content and contract validation
 backend/
   pom.xml, mvnw, .mvn/
-  src/main/java/com/hld/  api, catalog, simulation (+ engine), cache, ratelimit, estimation
+  src/main/java/com/hld/  api, catalog, simulation (+ engine), cache, ratelimit, estimation, queues
   src/test/               model, engine, and API tests
 content/
   catalog.json            canonical publication metadata
@@ -67,6 +67,12 @@ docs/                     plans, decisions, work items, templates, evidence
 **Planned** additions, created only when their work item needs them: workshop publication after release review (HLD-09C); shared Practice/Guided answer storage, import/reset, Continue learning, bookmarks, the first learning path and explicit completion marks are implemented in `features/learning/` and their lazy routes. Semantic fixtures currently live in backend tests rather than a top-level `fixtures/` directory.
 
 Backend model packages are organized by capability, not one enormous controller or service per topic. Each model has its own typed event schema with a closed `kind` vocabulary. A shared model interface and renderer registry are **planned** only if a concrete second consumer needs them (see [SIMULATION_SPEC.md](SIMULATION_SPEC.md#3-proposed-java-interface)).
+
+`queues/` contains an unpublished pure Java queue-capacity model, with immutable typed
+state/events/outcomes and a queue-local admission collector. It is not a Spring bean and
+has no descriptor/run endpoint or catalog capability. Standalone model schemas and actual
+serialized fixture checks precede deliberate draft-preview delivery and the React module;
+see [decision 0023](decisions/0023-queue-capacity-model.md).
 
 ## 3. Catalog and content
 

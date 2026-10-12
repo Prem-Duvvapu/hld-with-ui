@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "workers": 1,
+  "queueCapacity": 1,
+  "jobs": [
+    {
+      "id": "job-1",
+      "arrivalTimeMs": 0,
+      "serviceTimeMs": 10
+    },
+    {
+      "id": "job-2",
+      "arrivalTimeMs": 0,
+      "serviceTimeMs": 10
+    },
+    {
+      "id": "job-3",
+      "arrivalTimeMs": 0,
+      "serviceTimeMs": 10
+    },
+    {
+      "id": "job-4",
+      "arrivalTimeMs": 0,
+      "serviceTimeMs": 10
+    }
+  ],
+  "seed": 7
+}
