@@ -68,3 +68,23 @@ export type QueueCapacityDescriptor =
   components["schemas"]["QueueCapacityDescriptor"];
 export type QueueCapacityLimits = components["schemas"]["QueueCapacityLimits"];
 export type QueueCapacityPreset = components["schemas"]["QueueCapacityPreset"];
+
+export type DeliveryInput = components["schemas"]["DeliveryInput"];
+export type DeliveryResult = components["schemas"]["DeliveryResult"];
+export type DeliveryDescriptor = components["schemas"]["DeliveryDescriptor"];
+export type DeliveryLimits = components["schemas"]["DeliveryLimits"];
+export type DeliveryPreset = components["schemas"]["DeliveryPreset"];
+export type DeliveryEvent = components["schemas"]["DeliveryEvent"];
+export type DeliveryState = components["schemas"]["DeliveryState"];
+export type DeliveryChanges = components["schemas"]["DeliveryChanges"];
+export type DeliveryMessage = components["schemas"]["DeliveryMessage"];
+export type DeliveryConsumer = components["schemas"]["DeliveryConsumer"];
+export type DeliveryAttempt = components["schemas"]["DeliveryAttempt"];
+export type DeliveryLedgerEntry = components["schemas"]["DeliveryLedgerEntry"];
+export type DeliveryMetrics = components["schemas"]["DeliveryMetrics"];
+export type DeliveryMessageOutcome =
+  components["schemas"]["DeliveryMessageOutcome"];
+export type DeliveryFailureOutcome =
+  components["schemas"]["DeliveryFailureOutcome"];
+export type DeliveryLostAcknowledgmentOutcome =
+  components["schemas"]["DeliveryLostAcknowledgmentOutcome"];

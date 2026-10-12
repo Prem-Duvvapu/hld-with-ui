@@ -167,6 +167,8 @@ post-event changes; playback reconstruction must apply every preceding delta. Ea
 ID rather than shallow-merging. With the configured omitted-null JSON representation, an absent
 nullable field clears its former value; it must not preserve an earlier processing pointer. The local guarded
 collector preserves partial-prefix populations and reports `no_future_progress` only after all
-valid pending actions drain. This adds no shared scheduler or HTTP registry. See
+valid pending actions drain. HLD-14B adds strict draft descriptor/run endpoints and real HTTP guard/isolation evidence
+without changing this model, its versions or scheduler. The canonical schemas are validated
+lazily in React before presentation; state projection applies all prior deltas by full replacement. See
 [HLD-14A](work-items/HLD-14A.md) and [decision 0026](decisions/0026-atomic-delivery-transition-batches.md)
 for independent state axes, input/tie policies and actual checks.

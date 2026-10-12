@@ -3,6 +3,7 @@ import catalog from "../../../../content/catalog.json";
 import questions from "../../../../content/topics/request-flow/questions.json";
 import checkpoints from "../../../../content/topics/cache-aside/checkpoints.json";
 import queueCheckpoints from "../../../../content/topics/queues-tail-latency/checkpoints.json";
+import deliveryQuestions from "../../../../content/topics/queues-delivery/questions.json";
 import queueQuestions from "../../../../content/topics/queues-tail-latency/questions.json";
 import workshop from "../../../../content/case-studies/url-shortener/workshop.json";
 import type {
@@ -168,6 +169,31 @@ describe("resume recorded learning work", () => {
       removed: true,
     });
     expect(() => topicResumeTarget(record, queue)).toThrow(/unavailable/);
+  });
+  it("resumes a saved delivery Practice answer only at its authored draft destination", () => {
+    const delivery = {
+      topic: entries.find((entry) => entry.id === "queues-delivery")!,
+      questions: deliveryQuestions,
+      checkpoints: [],
+      lessonMarkdown: "Separate broker and ledger boundaries.",
+    } as TopicDetail;
+    const record = {
+      ...saved,
+      topicId: "queues-delivery",
+      activityId: delivery.questions[0]!.id,
+    };
+    expect(supportsDraftTopicResume(record.topicId)).toBe(true);
+    expect(draftTopicResumeTarget(record, delivery)).toMatchObject({
+      path: `/draft/topics/queues-delivery?view=practice&question=${record.activityId}`,
+      removed: false,
+    });
+    expect(
+      draftTopicResumeTarget(
+        { ...record, activityId: "nonexistent-guided-prediction" },
+        delivery,
+      ),
+    ).toMatchObject({ path: "/draft/topics/queues-delivery", removed: true });
+    expect(() => topicResumeTarget(record, delivery)).toThrow(/unavailable/);
   });
   it.each(["prediction", "tradeoff"])(
     "resumes the supported draft queue checkpoint from its %s record",

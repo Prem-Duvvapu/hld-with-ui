@@ -15,7 +15,7 @@ npm run contracts:validate
 npm run contracts:check
 ```
 
-`contracts:check` exports canonical queue-capacity schemas into OpenAPI, regenerates the committed TypeScript output and fails when either differs, then validates content shape and semantics. Semantic checks cover unique IDs, prerequisite references and cycles, content paths, lesson heading order, question ownership and answers, source references, capability-to-model references, and guided checkpoints (the `guided` capability requires `checkpointsPath`; each target's event kind must exist in its simulation's event contract). Java tests run each checkpoint's preset and resolve its target event. Workshop checks validate stable stage/answer identities, versions, source references, published experiment links, and the full-journey publication guard. Isolated negative fixtures run as part of `contracts:validate`; Java separately validates packaged case resources and catalog prerequisite references, publication closure and cycles at startup, including Java-only builds. These checks do not establish manual release readiness.
+`contracts:check` exports canonical queue-capacity and delivery schemas into OpenAPI, regenerates the committed TypeScript and delivery descriptor schema output and fails when these differ, then validates content shape and semantics. Semantic checks cover unique IDs, prerequisite references and cycles, content paths, lesson heading order, question ownership and answers, source references, capability-to-model references, and guided checkpoints (the `guided` capability requires `checkpointsPath`; each target's event kind must exist in its simulation's event contract). Java tests run each checkpoint's preset and resolve its target event. Workshop checks validate stable stage/answer identities, versions, source references, published experiment links, and the full-journey publication guard. Isolated negative fixtures run as part of `contracts:validate`; Java separately validates packaged case resources and catalog prerequisite references, publication closure and cycles at startup, including Java-only builds. These checks do not establish manual release readiness.
 
 ## Case discovery
 
@@ -60,18 +60,24 @@ order. Java repeats these checks at startup. The API resolves published entries 
 identities, hiding entry/activity metadata for draft/planned steps. Browser tests validate the
 actual Java response against OpenAPI and separately assert the draft publication boundary.
 
-## Standalone queue delivery domain contract
+## Draft queue delivery contract
 
 `queue-delivery.input.schema.json` and `queue-delivery.result.schema.json` describe the
-illustrative `queues-delivery` domain model (`1.0` schema, `1.0.0` model). These standalone
-schemas do not register an HTTP endpoint, catalog capability, generated frontend type or UI.
-The existing exporter continues to export only the implemented HTTP model and guided contracts.
+illustrative `queues-delivery` model (`1.0` schema, `1.0.0` model). HLD-14A supplied the
+standalone Java model and schemas. HTTP version `1.3.0` adds its descriptor/run endpoints and
+an explicit draft learning route with Playground, Study and Practice. Published topic/search
+collections and learning paths continue to exclude the draft. Guided coverage is not advertised.
+The deterministic exporter derives delivery components and generated frontend aliases from
+these canonical schemas. It also generates the descriptor validation schema from only the
+reachable OpenAPI components, with its own drift check.
 
 Inputs use bounded ASCII identities, explicit enqueue/failure/lost-ACK schedules and signed
 JavaScript-safe seeds. JSON Schema checks closed fields, types and bounds. Java additionally
 checks unique identities, referenced schedule subjects, loss selectors, chronological
 alternating crash/recovery actions and the ACK-before timing inequality. The schema accepts
-parsed JSON values; it does not claim to detect duplicate raw JSON keys or token spellings.
+parsed JSON values. The model-specific HTTP controller additionally rejects duplicate keys,
+trailing roots, missing/null fields and numeric strings, fractions, exponents or booleans used
+for integer fields.
 
 Result events carry typed post-event entity changes. Each kind requires its applicable
 message/attempt/consumer identities; only `effect.committed` carries a ledger append. Lease,
@@ -85,12 +91,18 @@ The baseline input and actual Java-serialized result in `examples/` are checked 
 `contracts:validate`; the delivery fixture suite adds positive boundary and meaningful negative
 checks. Its derived limited structural fixture is explicitly distinguished from an executed
 limited simulation. Serialization comparison and causal semantics remain Java test responsibilities.
+The delivery API methods load their Ajv validator and canonical schemas lazily; existing
+published routes do not eagerly load that compiler. Compatibility checks reject unsupported
+shapes, unsafe entity references and unordered traces, and correlate seed, initial workload
+identities/times and fault selector metadata with the captured request. They validate evidence
+without manufacturing outcomes or latency statistics. The existing pinned Ajv package is
+classified as a production dependency; no separate validation vocabulary is maintained.
 See the [delivery implementation handoff](../docs/QUEUE_DELIVERY_IMPLEMENTATION_PLAN.md).
 
 ## HTTP resource failures
 
 Every API POST has a raw-body ceiling (default 256 KiB), including chunked/unknown-length
-bodies. The four simulation run endpoints also have a complete serialized-result ceiling
+bodies. The five simulation run endpoints also have a complete serialized-result ceiling
 (default 4 MiB) and share process-local synchronous admission (default 2, no queue).
 
 - 413 `request_too_large`: reduce the workload before sending it again.

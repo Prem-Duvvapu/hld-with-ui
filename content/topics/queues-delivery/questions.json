@@ -1,0 +1,123 @@
+[
+  {
+    "id": "delivery-lost-ack",
+    "topicId": "queues-delivery",
+    "level": "beginner",
+    "kind": "prediction",
+    "prompt": "One message starts at 0 ms. Processing takes 50 ms, ACK delay is 5 ms and the lease is 100 ms. ACK-after is selected and the first ACK is lost. Predict deliveries, effects and accepted ACK time.",
+    "explanation": "The first effect commits at 50 ms, but the ACK at 55 ms is lost. Expiry at 100 ms permits delivery 2. Its effect commits at 150 ms and its ACK is accepted at 155 ms. There are two deliveries, two durable records and one extra effect. First-effect latency is 50 ms over one message; accepted-ACK latency is 155 ms over one message.",
+    "modelAnswer": "The first effect commits at 50 ms, but the ACK at 55 ms is lost. Expiry at 100 ms permits delivery 2. Its effect commits at 150 ms and its ACK is accepted at 155 ms. There are two deliveries, two durable records and one extra effect. First-effect latency is 50 ms over one message; accepted-ACK latency is 155 ms over one message.",
+    "rubric": [
+      "Separates the lost ACK from the committed effect",
+      "Gives 50/55/100/150/155 ms in causal order",
+      "Counts first-effect samples per message, not per ledger append"
+    ],
+    "followUp": "Would a longer lease erase the already committed first effect?"
+  },
+  {
+    "id": "delivery-early-ack-crash",
+    "topicId": "queues-delivery",
+    "level": "beginner",
+    "kind": "prediction",
+    "prompt": "Use processing 50 ms, ACK delay 5 ms and lease 100 ms. Crash at 25 ms and recover at 75 ms. Compare ACK-before with ACK-after.",
+    "explanation": "ACK-before accepts confirmation at 5 ms. Crash at 25 ms cancels the uncommitted effect due at 50 ms. Recovery still occurs at 75 ms, but the broker has already acknowledged the message: one delivery, zero effects, one acknowledged-without-effect message. ACK-after instead retries at 100 ms, commits one effect at 150 ms and accepts the ACK at 155 ms: two deliveries, one effect, zero extra effects.",
+    "modelAnswer": "ACK-before accepts confirmation at 5 ms. Crash at 25 ms cancels the uncommitted effect due at 50 ms. Recovery still occurs at 75 ms, but the broker has already acknowledged the message: one delivery, zero effects, one acknowledged-without-effect message. ACK-after instead retries at 100 ms, commits one effect at 150 ms and accepts the ACK at 155 ms: two deliveries, one effect, zero extra effects.",
+    "rubric": [
+      "Identifies early accepted ACK at 5 ms",
+      "Does not retry an already acknowledged message",
+      "Explains the two-delivery but one-effect contrasting run"
+    ],
+    "followUp": "What changes if the consumer crashes at 52 ms instead?"
+  },
+  {
+    "id": "delivery-crash-window",
+    "topicId": "queues-delivery",
+    "level": "intermediate",
+    "kind": "diagnosis",
+    "prompt": "With ACK-after, processing 50 ms, ACK delay 5 ms and lease 100 ms, crash at 52 ms and recover at 102 ms. Has the first attempt done useful work? When does the retry finish?",
+    "explanation": "The first effect is durable at 50 ms. Crash at 52 ms cancels the unsent ACK due at 55 ms. The lease expires at 100 ms, but the consumer remains down until 102 ms. Delivery 2 starts at 102 ms, appends another effect at 152 ms and is acknowledged at 157 ms. Two deliveries and two effects produce one extra effect. First-effect latency remains 50 ms.",
+    "modelAnswer": "The first effect is durable at 50 ms. Crash at 52 ms cancels the unsent ACK due at 55 ms. The lease expires at 100 ms, but the consumer remains down until 102 ms. Delivery 2 starts at 102 ms, appends another effect at 152 ms and is acknowledged at 157 ms. Two deliveries and two effects produce one extra effect. First-effect latency remains 50 ms.",
+    "rubric": [
+      "Preserves committed work through the crash",
+      "Waits for recovery at 102 ms before dispatch",
+      "Does not equate acknowledgment uncertainty with no effect"
+    ],
+    "followUp": "How would you protect an order mutation against repeating the same logical request?"
+  },
+  {
+    "id": "delivery-lease-boundary",
+    "topicId": "queues-delivery",
+    "level": "intermediate",
+    "kind": "calculation",
+    "prompt": "Processing takes 95 ms, ACK delay is 5 ms, lease is 100 ms and the maximum is two attempts. Predict the ACK-at-deadline outcome, then change only the lease to 101 ms.",
+    "explanation": "Expiry precedes ACK receipt at the same virtual time, and tokens must arrive strictly before their deadline. Effects commit at 95 and 195 ms. ACKs at 100 and 200 ms are stale; the message is dead-lettered at 200 ms after two attempts. There are two effects and no accepted ACK samples. With lease 101 ms, the first ACK is accepted at 100 ms: one delivery and one effect. The invalidated expiry at 101 ms does not extend the run.",
+    "modelAnswer": "Expiry precedes ACK receipt at the same virtual time, and tokens must arrive strictly before their deadline. Effects commit at 95 and 195 ms. ACKs at 100 and 200 ms are stale; the message is dead-lettered at 200 ms after two attempts. There are two effects and no accepted ACK samples. With lease 101 ms, the first ACK is accepted at 100 ms: one delivery and one effect. The invalidated expiry at 101 ms does not extend the run.",
+    "rubric": [
+      "States the model-specific strict deadline and tie rule",
+      "Reports two effects despite dead-letter status",
+      "Gives the 101 ms contrasting lease and unavailable zero-sample ACK statistics"
+    ],
+    "followUp": "Does this deadline rule claim to reproduce SQS DeleteMessage behavior?"
+  },
+  {
+    "id": "delivery-overlap-dlq",
+    "topicId": "queues-delivery",
+    "level": "intermediate",
+    "kind": "diagnosis",
+    "prompt": "Two consumers process one message. Processing is 150 ms, ACK delay 5 ms, lease 100 ms and maximum attempts two. Can an effect commit after the broker moves the message to dead letters?",
+    "explanation": "Yes. Attempt 1 starts at 0 ms; its expired lease permits attempt 2 on consumer 2 at 100 ms. Effect 1 commits at 150 ms; its ACK at 155 ms is stale. Attempt 2 expires and the message is dead-lettered at 200 ms. That expiry does not fence the consumer: effect 2 commits at 250 ms and its ACK at 255 ms is stale. Final state has two effects, one extra effect, one dead-lettered message and no accepted ACK.",
+    "modelAnswer": "Yes. Attempt 1 starts at 0 ms; its expired lease permits attempt 2 on consumer 2 at 100 ms. Effect 1 commits at 150 ms; its ACK at 155 ms is stale. Attempt 2 expires and the message is dead-lettered at 200 ms. That expiry does not fence the consumer: effect 2 commits at 250 ms and its ACK at 255 ms is stale. Final state has two effects, one extra effect, one dead-lettered message and no accepted ACK.",
+    "rubric": [
+      "Keeps broker eligibility separate from consumer processing",
+      "Includes the effect at 250 ms after dead-lettering",
+      "Explains why a lease token alone does not protect the ledger"
+    ],
+    "followUp": "What would the protected resource have to check to reject a stale writer?"
+  },
+  {
+    "id": "delivery-limited-prefix",
+    "topicId": "queues-delivery",
+    "level": "intermediate",
+    "kind": "diagnosis",
+    "prompt": "A message arrives at the default 60,000 ms ceiling. Processing takes 50 ms and ACK delay is 5 ms with ACK-after. The run stops before the next event. Is the effect missing?",
+    "explanation": "The run is limited by virtual time. Delivery starts at 60,000 ms, with effect scheduled at 60,050 ms, ACK at 60,055 ms and lease deadline at 60,100 ms. None of those later events is observed. Report one running attempt and a pending ACK, zero observed effects/accepted ACKs, unavailable latency samples and unknown acknowledged-without-effect count. A scheduled event is not a completed result or confirmed business loss.",
+    "modelAnswer": "The run is limited by virtual time. Delivery starts at 60,000 ms, with effect scheduled at 60,050 ms, ACK at 60,055 ms and lease deadline at 60,100 ms. None of those later events is observed. Report one running attempt and a pending ACK, zero observed effects/accepted ACKs, unavailable latency samples and unknown acknowledged-without-effect count. A scheduled event is not a completed result or confirmed business loss.",
+    "rubric": [
+      "Names the observation boundary and future scheduled times",
+      "Distinguishes observed zero from an eventual guarantee",
+      "Keeps unavailable or unknown values visible"
+    ],
+    "followUp": "What evidence is needed before comparing this prefix to a settled baseline?"
+  },
+  {
+    "id": "delivery-stall-recovery",
+    "topicId": "queues-delivery",
+    "level": "intermediate",
+    "kind": "prediction",
+    "prompt": "Crash the only consumer at 0 ms before one message is enqueued at 0 ms. There is no recovery. Compare this with adding recovery at 75 ms.",
+    "explanation": "Crash phase precedes enqueue at the same time. Without recovery, the message is ready but no consumer is available and no valid future action can make progress: limited/no_future_progress at 0 ms, zero deliveries/effects, and unknown acknowledged-without-effect count. With recovery at 75 ms, dispatch starts then, the effect commits at 125 ms and ACK-after is accepted at 130 ms. A valid future recovery prevents declaring a stall early.",
+    "modelAnswer": "Crash phase precedes enqueue at the same time. Without recovery, the message is ready but no consumer is available and no valid future action can make progress: limited/no_future_progress at 0 ms, zero deliveries/effects, and unknown acknowledged-without-effect count. With recovery at 75 ms, dispatch starts then, the effect commits at 125 ms and ACK-after is accepted at 130 ms. A valid future recovery prevents declaring a stall early.",
+    "rubric": [
+      "Separates ready work from delivered work",
+      "Checks valid future actions before diagnosing no progress",
+      "Gives the recovery run times 75/125/130 ms"
+    ],
+    "followUp": "What operational signal distinguishes a down consumer pool from merely slow processing?"
+  },
+  {
+    "id": "delivery-order-effect-boundary",
+    "topicId": "queues-delivery",
+    "level": "intermediate",
+    "kind": "design-decision",
+    "prompt": "An order worker uses ACK-after. It stores a durable order update and then asks an external provider to send a receipt. A lost ACK causes redelivery. What invariant and evidence should your design review ask for?",
+    "explanation": "Require repeated delivery of the same logical order operation to preserve the intended business outcome. Inspect request identity, delivery attempts, durable mutations, provider responses and ambiguous failures separately. ACK-after alone allows duplicate effects, as the two-delivery/two-record lost-ACK trace shows. A later implementation should protect local request identity and mutation atomically, then use provider idempotency or reconciliation for the external receipt. A local transaction cannot atomically cover an unrelated provider. The current model appends records without deduplication; it demonstrates the problem rather than implementing this protection.",
+    "modelAnswer": "Require repeated delivery of the same logical order operation to preserve the intended business outcome. Inspect request identity, delivery attempts, durable mutations, provider responses and ambiguous failures separately. ACK-after alone allows duplicate effects, as the two-delivery/two-record lost-ACK trace shows. A later implementation should protect local request identity and mutation atomically, then use provider idempotency or reconciliation for the external receipt. A local transaction cannot atomically cover an unrelated provider. The current model appends records without deduplication; it demonstrates the problem rather than implementing this protection.",
+    "rubric": [
+      "States the business invariant and logical identity",
+      "Uses delivery/effect evidence rather than an exactly-once label",
+      "Separates the local atomic boundary from provider coordination",
+      "Acknowledges that transactions and idempotency implementation are later prerequisites"
+    ],
+    "followUp": "How does the design change if the provider lacks idempotency keys and can time out after sending?"
+  }
+]

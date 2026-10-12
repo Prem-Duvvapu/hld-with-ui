@@ -38,7 +38,7 @@ export function latestSavedWork(answers: readonly PracticeAnswer[]) {
 
 // Resume only an explicitly implemented draft renderer; catalog metadata cannot create a route.
 export function supportsDraftTopicResume(id: string) {
-  return id === "queues-tail-latency";
+  return id === "queues-tail-latency" || id === "queues-delivery";
 }
 
 function resolveTopicTarget(

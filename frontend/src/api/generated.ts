@@ -331,6 +331,43 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/simulations/queues-delivery": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read the broker/consumer/ledger descriptor used by the draft delivery module */
+    get: operations["getDeliverySimulation"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/simulations/queues-delivery/runs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Run the deterministic delivery, acknowledgment and durable-effect model
+     * @description Simulation delivery uses process-local admission before body parsing (default two active requests across models), a bounded raw body, and bounded serialization of the entire result (default 4 MiB). These HTTP safeguards are outside modeled behavior. No queued or automatic retry is added; an admitted run keeps its existing model/schema semantics. Required properties, exact JSON token types, duplicate keys and nested job fields are checked before domain execution.
+     */
+    post: operations["runDeliverySimulation"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1183,6 +1220,289 @@ export interface components {
       observationEndMs: number;
       completedThroughputPerSecond?: number | null;
     } & unknown;
+    DeliveryLimits: {
+      /** @constant */
+      minMessages: 1;
+      /** @constant */
+      maxMessages: 20;
+      /** @constant */
+      minConsumers: 1;
+      /** @constant */
+      maxConsumers: 3;
+      /** @constant */
+      maxFailures: 8;
+      /** @constant */
+      maxLostAcknowledgments: 20;
+      /** @constant */
+      minTimeMs: 0;
+      /** @constant */
+      maxTimeMs: 60000;
+      /** @constant */
+      minProcessingTimeMs: 1;
+      /** @constant */
+      maxProcessingTimeMs: 1000;
+      /** @constant */
+      minAcknowledgmentDelayMs: 1;
+      /** @constant */
+      maxAcknowledgmentDelayMs: 1000;
+      /** @constant */
+      minVisibilityTimeoutMs: 1;
+      /** @constant */
+      maxVisibilityTimeoutMs: 60000;
+      /** @constant */
+      minDeliveryAttempts: 1;
+      /** @constant */
+      maxDeliveryAttempts: 5;
+      /** @constant */
+      minSeed: -9007199254740991;
+      /** @constant */
+      maxSeed: 9007199254740991;
+      /** @constant */
+      idPattern: "^[a-z][a-z0-9-]{0,31}$";
+      /** @constant */
+      maxVirtualTimeMs: 60000;
+      /** @constant */
+      maxEvents: 10000;
+      /** @constant */
+      maxTraceBytes: 2097152;
+    };
+    DeliveryPreset: {
+      id: string;
+      title: string;
+      question: string;
+      input: components["schemas"]["DeliveryInput"];
+    };
+    DeliveryDescriptor: {
+      /** @constant */
+      id: "queues-delivery";
+      title: string;
+      /** @constant */
+      kind: "simulation";
+      /** @constant */
+      modelVersion: "1.0.0";
+      description: string;
+      limits: components["schemas"]["DeliveryLimits"];
+      presets: components["schemas"]["DeliveryPreset"][];
+      assumptions: string[];
+    };
+    /**
+     * Queue delivery domain input
+     * @description Canonical input for the illustrative queues-delivery model, schema 1.0/model 1.0.0. Its OpenAPI component derives from this schema; topic publication belongs to the catalog. Arrays retain authored input order. Java additionally validates unique message/consumer IDs, referenced fault identities, unique loss selectors, alternating chronological failure schedules and ACK-before delay strictly less than processing time. JSON Schema validates parsed JSON values, not token spellings or duplicate JSON keys. The delivery HTTP controller separately rejects duplicate keys, trailing roots and nonintegral or coerced JSON tokens.
+     */
+    DeliveryInput: {
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      modelVersion: "1.0.0";
+      messages: {
+        id: string;
+        enqueueTimeMs: number;
+      }[];
+      consumers: {
+        id: string;
+      }[];
+      processingTimeMs: number;
+      acknowledgmentDelayMs: number;
+      visibilityTimeoutMs: number;
+      maxDeliveryAttempts: number;
+      /** @enum {unknown} */
+      acknowledgmentPolicy: "ACK_BEFORE_EFFECT" | "ACK_AFTER_EFFECT";
+      failures: {
+        consumerId: string;
+        /** @enum {unknown} */
+        action: "CRASH" | "RECOVER";
+        timeMs: number;
+      }[];
+      lostAcknowledgments: {
+        messageId: string;
+        attempt: number;
+      }[];
+      seed: number;
+    };
+    /**
+     * Queue delivery domain result
+     * @description Canonical authoritative result for the illustrative queues-delivery model. Events contain typed post-event entity changes and optional committed ledger appends. Nullable unavailable fields may be omitted by the configured Java mapper. Independent lease/effect/ACK states do not imply exactly-once effects or vendor-specific broker behavior. Java checks causal identity equality, ordering, entity reconstruction, counter reconciliation and whole-batch prefix admission; JSON Schema checks shape and declared local conditions. OpenAPI and the lazy delivery client derive their shape validation from this canonical schema; catalog publication remains independent. Result observed/scheduled times use the conservative finite-input ceiling 60,000 + 100 deliveries × (60,000 lease + 1,000 processing + 1,000 ACK) = 6,260,000 ms; custom budgets may exceed the default 60,000 ms guard.
+     */
+    DeliveryResult: {
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      simulationId: "queues-delivery";
+      /** @constant */
+      modelVersion: "1.0.0";
+      seed: number;
+      /** @enum {unknown} */
+      status: "completed" | "limited";
+      truncationReason?:
+        | (
+            | "event_limit"
+            | "trace_size_limit"
+            | "virtual_time_limit"
+            | "wall_time_limit"
+            | "no_future_progress"
+          )
+        | null;
+      lastVirtualTimeMs: number;
+      assumptions: string[];
+      initialState: components["schemas"]["DeliveryState"];
+      events: components["schemas"]["DeliveryEvent"][];
+      finalState: components["schemas"]["DeliveryState"];
+      messageOutcomes: components["schemas"]["DeliveryMessageOutcome"][];
+      attemptOutcomes: components["schemas"]["DeliveryAttempt"][];
+      ledger: components["schemas"]["DeliveryLedgerEntry"][];
+      metrics: components["schemas"]["DeliveryMetrics"];
+      failureOutcomes: components["schemas"]["DeliveryFailureOutcome"][];
+      lostAcknowledgmentOutcomes: components["schemas"]["DeliveryLostAcknowledgmentOutcome"][];
+    } & unknown;
+    DeliveryMessage: {
+      id: string;
+      /** @enum {unknown} */
+      status:
+        "NOT_ENQUEUED" | "READY" | "LEASED" | "ACKNOWLEDGED" | "DEAD_LETTERED";
+      enqueueTimeMs: number;
+      availableSinceMs?: number | null;
+      deliveryCount: number;
+      currentAttemptId?: string | null;
+      acknowledgedAtMs?: number | null;
+    } & (unknown & unknown & unknown & unknown & unknown & unknown);
+    DeliveryConsumer: {
+      id: string;
+      /** @enum {unknown} */
+      status: "READY" | "DOWN";
+      currentAttemptId?: string | null;
+    };
+    DeliveryAttempt: {
+      id: string;
+      messageId: string;
+      attempt: number;
+      consumerId: string;
+      leaseToken: string;
+      leaseDeadlineMs: number;
+      startedAtMs: number;
+      scheduledEffectAtMs: number;
+      scheduledAckAtMs: number;
+      /** @enum {unknown} */
+      leaseStatus: "ACTIVE" | "EXPIRED" | "ACKNOWLEDGED";
+      /** @enum {unknown} */
+      effectStatus: "PROCESSING" | "COMMITTED" | "CANCELLED";
+      /** @enum {unknown} */
+      ackStatus:
+        "PENDING" | "SENT" | "ACCEPTED" | "LOST" | "STALE" | "CANCELLED";
+      effectCommittedAtMs?: number | null;
+      ackSentAtMs?: number | null;
+      ackResolvedAtMs?: number | null;
+      cancelledAtMs?: number | null;
+    } & (unknown & unknown & unknown & unknown & unknown & unknown & unknown);
+    DeliveryLedgerEntry: {
+      id: string;
+      messageId: string;
+      attemptId: string;
+      consumerId: string;
+      committedAtMs: number;
+    };
+    DeliveryState: {
+      messages: components["schemas"]["DeliveryMessage"][];
+      consumers: components["schemas"]["DeliveryConsumer"][];
+      attempts: components["schemas"]["DeliveryAttempt"][];
+    };
+    DeliveryChanges: {
+      messages: components["schemas"]["DeliveryMessage"][];
+      consumers: components["schemas"]["DeliveryConsumer"][];
+      attempts: components["schemas"]["DeliveryAttempt"][];
+    };
+    DeliveryEvent: {
+      sequence: number;
+      timeMs: number;
+      /** @enum {unknown} */
+      kind:
+        | "message.enqueued"
+        | "delivery.started"
+        | "effect.committed"
+        | "ack.sent"
+        | "ack.accepted"
+        | "ack.lost"
+        | "ack.stale"
+        | "lease.expired"
+        | "message.requeued"
+        | "message.dead-lettered"
+        | "consumer.crashed"
+        | "consumer.recovered"
+        | "attempt.cancelled";
+      messageId?: string | null;
+      attemptId?: string | null;
+      consumerId?: string | null;
+      message: string;
+      changes: components["schemas"]["DeliveryChanges"];
+      ledgerEntry?: components["schemas"]["DeliveryLedgerEntry"] | null;
+    } & (unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown);
+    DeliveryMessageOutcome: {
+      messageId: string;
+      /** @enum {unknown} */
+      status:
+        "NOT_ENQUEUED" | "READY" | "LEASED" | "ACKNOWLEDGED" | "DEAD_LETTERED";
+      deliveries: number;
+      committedEffects: number;
+      acknowledgedAtMs?: number | null;
+      firstEffectAtMs?: number | null;
+      ackLatencyMs?: number | null;
+      firstEffectLatencyMs?: number | null;
+    } & (unknown & unknown & unknown);
+    DeliveryMetrics: {
+      deliveryAttempts: number;
+      redeliveries: number;
+      committedEffects: number;
+      messagesWithEffect: number;
+      extraEffects: number;
+      acknowledgedMessages: number;
+      deadLetteredMessages: number;
+      notEnqueued: number;
+      ready: number;
+      leased: number;
+      runningEffects: number;
+      pendingAcknowledgments: number;
+      pendingFailureActions: number;
+      pendingEnqueues: number;
+      ackLatencySamples: number;
+      effectLatencySamples: number;
+      acknowledgedWithoutEffect?: number | null;
+      meanAckLatencyMs?: number | null;
+      p95AckLatencyMs?: number | null;
+      meanFirstEffectLatencyMs?: number | null;
+      p95FirstEffectLatencyMs?: number | null;
+    } & (unknown & unknown);
+    DeliveryFailureOutcome: {
+      index: number;
+      consumerId: string;
+      /** @enum {unknown} */
+      action: "CRASH" | "RECOVER";
+      timeMs: number;
+      /** @enum {unknown} */
+      status: "REACHED" | "UNOBSERVED";
+    };
+    DeliveryLostAcknowledgmentOutcome: {
+      messageId: string;
+      attempt: number;
+      /** @enum {unknown} */
+      status:
+        "REACHED" | "ACK_CANCELLED" | "ATTEMPT_NOT_DELIVERED" | "UNOBSERVED";
+    };
   };
   responses: never;
   parameters: {
@@ -1813,6 +2133,88 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["QueueCapacityResult"];
+        };
+      };
+      /** @description Structured error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free. */
+      503: {
+        headers: {
+          /** @description Retry hint in seconds. Capacity may remain occupied. */
+          "Retry-After"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  getDeliverySimulation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DeliveryDescriptor"];
+        };
+      };
+    };
+  };
+  runDeliverySimulation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["DeliveryInput"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DeliveryResult"];
         };
       };
       /** @description Structured error */
