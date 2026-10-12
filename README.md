@@ -11,6 +11,10 @@ The idea is simple: **see a system work, change one condition, explain what happ
 
 **Status: four working learning modules.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers ten authored stages from Requirements through Defense by direct link; publication checks and later roadmap modules remain pending.
 
+Draft backend development also includes a pure Java queue-capacity model with finite workers,
+waiting limits and per-job service durations. It has no API registration or learning UI yet;
+see [HLD-13A](docs/work-items/HLD-13A.md). It does not add a fifth published module.
+
 
 ## Record your learning
 

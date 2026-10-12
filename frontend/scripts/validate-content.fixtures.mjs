@@ -17,13 +17,19 @@ import { test } from "node:test";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const workshopPath = "content/case-studies/url-shortener/workshop.json";
 
-function rejectChange(change, expected, changePaths = () => {}) {
+function rejectChange(
+  change,
+  expected,
+  changePaths = () => {},
+  changeContracts = () => {},
+) {
   const fixture = mkdtempSync(join(tmpdir(), "hld-content-"));
   try {
     for (const directory of ["content", "contracts"])
       cpSync(join(root, directory), join(fixture, directory), {
         recursive: true,
       });
+    changeContracts(fixture);
     mkdirSync(join(fixture, "frontend/scripts"), { recursive: true });
     cpSync(
       join(root, "frontend/scripts/validate-content.mjs"),
@@ -61,6 +67,125 @@ function rejectChange(change, expected, changePaths = () => {}) {
     rmSync(fixture, { recursive: true, force: true });
   }
 }
+
+function rejectQueueExample(kind, change, expected) {
+  rejectChange(
+    () => {},
+    expected,
+    () => {},
+    (fixture) => {
+      const path = join(
+        fixture,
+        `contracts/examples/queue-capacity-baseline-${kind}.json`,
+      );
+      const example = JSON.parse(readFileSync(path, "utf8"));
+      change(example);
+      writeFileSync(path, JSON.stringify(example));
+    },
+  );
+}
+
+test("reject unknown queue model controls", () => {
+  rejectQueueExample(
+    "input",
+    (input) => {
+      input.hiddenRetry = true;
+    },
+    /queue-capacity-baseline-input.*additional properties/,
+  );
+});
+
+test("reject queue service duration with the wrong type", () => {
+  rejectQueueExample(
+    "input",
+    (input) => {
+      input.jobs[0].serviceTimeMs = "10";
+    },
+    /queue-capacity-baseline-input.*must be integer/,
+  );
+});
+
+test("reject unsupported queue model version", () => {
+  rejectQueueExample(
+    "input",
+    (input) => {
+      input.modelVersion = "2.0.0";
+    },
+    /queue-capacity-baseline-input.*constant/,
+  );
+});
+
+test("reject an unsafe queue seed before future JavaScript round trips", () => {
+  rejectQueueExample(
+    "input",
+    (input) => {
+      input.seed = Number.MAX_SAFE_INTEGER + 1;
+    },
+    /queue-capacity-baseline-input.*must be <=/,
+  );
+});
+
+test("reject unrecognized queue trace transitions", () => {
+  rejectQueueExample(
+    "result",
+    (result) => {
+      result.events[0].kind = "job.fabricated";
+    },
+    /queue-capacity-baseline-result.*allowed values/,
+  );
+});
+
+test("reject queue events without authoritative state", () => {
+  rejectQueueExample(
+    "result",
+    (result) => {
+      delete result.events[0].state;
+    },
+    /queue-capacity-baseline-result.*required property 'state'/,
+  );
+});
+
+test("reject completed queue outcomes without observed latency", () => {
+  rejectQueueExample(
+    "result",
+    (result) => {
+      delete result.outcomes[0].latencyMs;
+    },
+    /queue-capacity-baseline-result.*required property 'latencyMs'/,
+  );
+});
+
+test("reject active queue workers without scheduled completion", () => {
+  rejectQueueExample(
+    "result",
+    (result) => {
+      delete result.events[0].state.workers[0].scheduledCompletionAtMs;
+    },
+    /queue-capacity-baseline-result.*required property 'scheduledCompletionAtMs'/,
+  );
+});
+
+test("reject a waiting queue job assigned to a worker", () => {
+  rejectQueueExample(
+    "result",
+    (result) => {
+      result.events.find((event) => event.kind === "job.queued").workerId =
+        "worker-1";
+    },
+    /queue-capacity-baseline-result.*must be null/,
+  );
+});
+
+test("reject limited queue results without a stopping reason", () => {
+  rejectQueueExample(
+    "result",
+    (result) => {
+      result.status = "limited";
+      delete result.truncationReason;
+    },
+    /queue-capacity-baseline-result.*required property 'truncationReason'/,
+  );
+});
 
 test("reject publication before the full design journey exists", () => {
   rejectChange((catalog, workshop) => {
