@@ -277,6 +277,60 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/draft/topics/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read an explicitly requested draft topic; published and planned entries remain unavailable here */
+    get: operations["getDraftTopic"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/simulations/queues-tail-latency": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read the queue-capacity simulation descriptor used by the draft learning module */
+    get: operations["getQueueCapacitySimulation"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/simulations/queues-tail-latency/runs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Run the deterministic finite worker-queue model
+     * @description Simulation delivery uses process-local admission before body parsing (default two active requests across models), a bounded raw body, and bounded serialization of the entire result (default 4 MiB). These HTTP safeguards are outside modeled behavior. No queued or automatic retry is added; an admitted run keeps its existing model/schema semantics. Required properties, exact JSON token types, duplicate keys and nested job fields are checked before domain execution.
+     */
+    post: operations["runQueueCapacitySimulation"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -978,6 +1032,150 @@ export interface components {
       steps: components["schemas"]["LearningPathStep"][];
       optionalModules: components["schemas"]["CatalogEntry"][];
     };
+    QueueCapacityLimits: {
+      /** @constant */
+      minJobs: 1;
+      /** @constant */
+      maxJobs: 100;
+      /** @constant */
+      minWorkers: 1;
+      /** @constant */
+      maxWorkers: 8;
+      /** @constant */
+      minQueueCapacity: 0;
+      /** @constant */
+      maxQueueCapacity: 100;
+      /** @constant */
+      minArrivalTimeMs: 0;
+      /** @constant */
+      maxArrivalTimeMs: 60000;
+      /** @constant */
+      minServiceTimeMs: 1;
+      /** @constant */
+      maxServiceTimeMs: 10000;
+      /** @constant */
+      minSeed: -9007199254740991;
+      /** @constant */
+      maxSeed: 9007199254740991;
+      /** @constant */
+      jobIdPattern: "^[a-z][a-z0-9-]{0,31}$";
+    };
+    QueueCapacityPreset: {
+      id: string;
+      title: string;
+      question: string;
+      input: components["schemas"]["QueueCapacityInput"];
+    };
+    QueueCapacityDescriptor: {
+      /** @constant */
+      id: "queues-tail-latency";
+      title: string;
+      /** @constant */
+      kind: "simulation";
+      /** @constant */
+      modelVersion: "1.0.0";
+      description: string;
+      limits: components["schemas"]["QueueCapacityLimits"];
+      presets: components["schemas"]["QueueCapacityPreset"][];
+      assumptions: string[];
+    };
+    /**
+     * Queue capacity simulation input
+     * @description Input for the illustrative queues-tail-latency model. Java additionally validates nondecreasing arrivals and unique job IDs. Topic publication is independent of model registration. The HTTP API requires integral JSON tokens and rejects duplicate keys and trailing JSON values; JSON Schema validates the parsed value rather than token spelling.
+     */
+    QueueCapacityInput: {
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      modelVersion: "1.0.0";
+      workers: number;
+      queueCapacity: number;
+      jobs: {
+        id: string;
+        arrivalTimeMs: number;
+        serviceTimeMs: number;
+      }[];
+      seed: number;
+    };
+    /**
+     * Queue capacity simulation result
+     * @description Authoritative typed post-event state for the illustrative worker-queue model. Nullable unavailable values may be omitted by the application mapper. Publication status belongs to the topic catalog.
+     */
+    QueueCapacityResult: {
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      simulationId: "queues-tail-latency";
+      /** @constant */
+      modelVersion: "1.0.0";
+      seed: number;
+      /** @enum {unknown} */
+      status: "completed" | "limited";
+      truncationReason?:
+        | (
+            | "event_limit"
+            | "trace_size_limit"
+            | "virtual_time_limit"
+            | "wall_time_limit"
+          )
+        | null;
+      lastVirtualTimeMs: number;
+      assumptions: string[];
+      initialState: components["schemas"]["QueueCapacityState"];
+      events: components["schemas"]["QueueCapacityEvent"][];
+      finalState: components["schemas"]["QueueCapacityState"];
+      outcomes: components["schemas"]["QueueCapacityOutcome"][];
+      metrics: components["schemas"]["QueueCapacityMetrics"];
+    } & unknown;
+    QueueCapacityState: {
+      queuedJobIds: string[];
+      workers: ({
+        id: string;
+        jobId?: string | null;
+        startedAtMs?: number | null;
+        scheduledCompletionAtMs?: number | null;
+      } & unknown)[];
+    };
+    QueueCapacityEvent: {
+      sequence: number;
+      timeMs: number;
+      /** @enum {unknown} */
+      kind: "job.queued" | "job.started" | "job.completed" | "job.rejected";
+      jobId: string;
+      workerId?: string | null;
+      message: string;
+      state: components["schemas"]["QueueCapacityState"];
+    } & (unknown & unknown);
+    QueueCapacityOutcome: {
+      jobId: string;
+      /** @enum {unknown} */
+      status: "NOT_ARRIVED" | "QUEUED" | "RUNNING" | "COMPLETED" | "REJECTED";
+      arrivalTimeMs: number;
+      serviceTimeMs: number;
+      workerId?: string | null;
+      startTimeMs?: number | null;
+      terminalTimeMs?: number | null;
+      waitTimeMs?: number | null;
+      latencyMs?: number | null;
+    } & (unknown & unknown & unknown & unknown & unknown);
+    QueueCapacityMetrics: {
+      totalJobs: number;
+      completed: number;
+      rejected: number;
+      queued: number;
+      running: number;
+      notArrived: number;
+      successfulSamples: number;
+      peakWaiting: number;
+      meanSuccessfulWaitMs?: number | null;
+      meanSuccessfulLatencyMs?: number | null;
+      p95SuccessfulWaitMs?: number | null;
+      p95SuccessfulLatencyMs?: number | null;
+      /** @constant */
+      observationStartMs: 0;
+      observationEndMs: number;
+      completedThroughputPerSecond?: number | null;
+    } & unknown;
   };
   responses: never;
   parameters: {
@@ -1529,6 +1727,119 @@ export interface operations {
       /** @description No learning path with this ID */
       404: {
         headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  getDraftTopic: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: components["parameters"]["ContentId"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TopicDetail"];
+        };
+      };
+      /** @description Structured error */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  getQueueCapacitySimulation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QueueCapacityDescriptor"];
+        };
+      };
+    };
+  };
+  runQueueCapacitySimulation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["QueueCapacityInput"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QueueCapacityResult"];
+        };
+      };
+      /** @description Structured error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free. */
+      503: {
+        headers: {
+          /** @description Retry hint in seconds. Capacity may remain occupied. */
+          "Retry-After"?: string;
           [name: string]: unknown;
         };
         content: {

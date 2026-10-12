@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import catalog from "../../../../content/catalog.json";
 import questions from "../../../../content/topics/request-flow/questions.json";
+import queueQuestions from "../../../../content/topics/queues-tail-latency/questions.json";
 import workshop from "../../../../content/case-studies/url-shortener/workshop.json";
 import type {
   CaseStudyDetail,
@@ -34,6 +35,12 @@ const caseStudy = {
   entry: entries.find((entry) => entry.id === "url-shortener")!,
   workshop,
 } as CaseStudyDetail;
+const queue = {
+  topic: entries.find((entry) => entry.id === "queues-tail-latency")!,
+  questions: queueQuestions,
+  checkpoints: [],
+  lessonMarkdown: "An explicit draft queue lesson.",
+} as TopicDetail;
 const saved: PracticeAnswer = {
   topicId: "request-flow",
   activityId: "request-flow-interview",
@@ -120,6 +127,101 @@ describe("Continue learning", () => {
     expect(screen.getByText("Draft workshop · Saved work")).toBeVisible();
     expect(screen.getByRole("note")).toHaveTextContent("Content has changed");
     expect(raw).toBe(original);
+  });
+  it("resumes saved draft queue reasoning through its exact preview question without mislabeling it a workshop", async () => {
+    setup([
+      {
+        ...saved,
+        topicId: queue.topic.id,
+        activityId: queue.questions[0]!.id,
+        contentVersion: queue.topic.contentVersion,
+      },
+    ]);
+    vi.mocked(api.topic).mockRejectedValue(
+      new ApiClientError("No published queue topic", 404),
+    );
+    const drafts = vi.spyOn(api, "draftTopic").mockResolvedValue(queue);
+    const cases = vi.spyOn(api, "caseStudy");
+    const original = raw;
+    view();
+    expect(
+      await screen.findByRole("link", { name: "Continue saved work" }),
+    ).toHaveAttribute(
+      "href",
+      `/draft/topics/queues-tail-latency?view=practice&question=${queue.questions[0]!.id}`,
+    );
+    expect(screen.getByText("Draft topic · Saved work")).toBeVisible();
+    expect(screen.queryByText("Draft workshop · Saved work")).toBeNull();
+    expect(drafts).toHaveBeenCalledExactlyOnceWith(queue.topic.id);
+    expect(cases).not.toHaveBeenCalled();
+    expect(raw).toBe(original);
+  });
+  it("keeps missing draft answers downloadable and does not invent a preview after all deliberate lookups return404", async () => {
+    setup([
+      { ...saved, topicId: queue.topic.id, activityId: queue.questions[0]!.id },
+    ]);
+    vi.mocked(api.topic).mockRejectedValue(
+      new ApiClientError("No published topic", 404),
+    );
+    const drafts = vi
+      .spyOn(api, "draftTopic")
+      .mockRejectedValue(new ApiClientError("Draft removed", 404));
+    const cases = vi
+      .spyOn(api, "caseStudy")
+      .mockRejectedValue(new ApiClientError("No case", 404));
+    const original = raw;
+    view();
+    expect(await screen.findByRole("note")).toHaveTextContent(
+      "no longer available",
+    );
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(drafts).toHaveBeenCalledExactlyOnceWith(queue.topic.id);
+    expect(cases).toHaveBeenCalledExactlyOnceWith(queue.topic.id);
+    expect(raw).toBe(original);
+  });
+  it("retains a failed draft lookup as an explicit retry rather than silently falling back to a case", async () => {
+    setup([
+      { ...saved, topicId: queue.topic.id, activityId: queue.questions[0]!.id },
+    ]);
+    vi.mocked(api.topic).mockRejectedValue(
+      new ApiClientError("No published topic", 404),
+    );
+    const drafts = vi
+      .spyOn(api, "draftTopic")
+      .mockRejectedValueOnce(
+        new ApiClientError("Draft temporarily offline", 503),
+      )
+      .mockResolvedValue(queue);
+    const cases = vi.spyOn(api, "caseStudy");
+    view();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Draft temporarily offline",
+    );
+    expect(cases).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(
+      await screen.findByRole("link", { name: "Continue saved work" }),
+    ).toHaveAttribute(
+      "href",
+      `/draft/topics/queues-tail-latency?view=practice&question=${queue.questions[0]!.id}`,
+    );
+    expect(drafts).toHaveBeenCalledTimes(2);
+  });
+  it("does not probe unimplemented draft renderer IDs just because an answer backup names them", async () => {
+    setup([{ ...saved, topicId: "future-queue" }]);
+    vi.mocked(api.topic).mockRejectedValue(
+      new ApiClientError("No published topic", 404),
+    );
+    const drafts = vi.spyOn(api, "draftTopic");
+    vi.spyOn(api, "caseStudy").mockRejectedValue(
+      new ApiClientError("No case", 404),
+    );
+    view();
+    expect(await screen.findByRole("note")).toHaveTextContent(
+      "no longer available",
+    );
+    expect(drafts).not.toHaveBeenCalled();
+    expect(screen.queryByRole("link")).toBeNull();
   });
   it("keeps reference-only reading distinct from a written attempt", async () => {
     setup([

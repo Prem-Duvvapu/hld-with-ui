@@ -11,10 +11,11 @@ The idea is simple: **see a system work, change one condition, explain what happ
 
 **Status: four working learning modules.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers ten authored stages from Requirements through Defense by direct link; publication checks and later roadmap modules remain pending.
 
-Draft backend development also includes a pure Java queue-capacity model with finite workers,
-waiting limits and per-job service durations. It has no API registration or learning UI yet;
-see [HLD-13A](docs/work-items/HLD-13A.md). It does not add a fifth published module.
-
+A draft **Queues & Tail Latency** module is available at
+`/draft/topics/queues-tail-latency`. It connects a strict Java API to editable worker/buffer/job
+controls, real snapshot playback, a worked lesson and six Practice questions. It models
+in-memory waiting and rejection; durable delivery, retries and acknowledgments remain future
+work. See [HLD-13B](docs/work-items/HLD-13B.md). There are still four published modules.
 
 ## Record your learning
 
@@ -98,7 +99,7 @@ bash -n start.sh
 The [CI workflow](.github/workflows/ci.yaml) runs these gates on pull requests and `main`.
 
 CI also builds the existing deployment Docker image and exercises packaged content, each
-published model/estimator baseline, the draft workshop, learning path and cleanup with no
+published model/estimator baseline, the draft workshop, draft queue module, learning path and cleanup with no
 checkout mounted at runtime. See [packaged runtime checks](CONTRIBUTING.md#packaged-runtime-checks)
 for the jar-only command and local Docker command. CI also records bounded Java generation/
 serialization and real production-browser cost evidence; see [performance review](docs/PERFORMANCE_REVIEW.md)

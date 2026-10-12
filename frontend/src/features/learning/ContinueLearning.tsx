@@ -13,6 +13,8 @@ import { getPracticeStore, type PracticeAnswer } from "./practiceStorage";
 import { AnswerStorageControls } from "./AnswerStorageControls";
 import {
   latestSavedWork,
+  draftTopicResumeTarget,
+  supportsDraftTopicResume,
   topicResumeTarget,
   workshopResumeTarget,
   type ResumeTarget,
@@ -42,10 +44,29 @@ function SavedWork({
           // inferring a topic/case registry from a browser's stored ID.
           if (!(cause instanceof ApiClientError) || cause.status !== 404)
             throw cause;
-          next = workshopResumeTarget(
-            saved,
-            await api.caseStudy(saved.topicId),
-          );
+          if (supportsDraftTopicResume(saved.topicId)) {
+            try {
+              next = draftTopicResumeTarget(
+                saved,
+                await api.draftTopic(saved.topicId),
+              );
+            } catch (draftCause) {
+              if (
+                !(draftCause instanceof ApiClientError) ||
+                draftCause.status !== 404
+              )
+                throw draftCause;
+              next = workshopResumeTarget(
+                saved,
+                await api.caseStudy(saved.topicId),
+              );
+            }
+          } else {
+            next = workshopResumeTarget(
+              saved,
+              await api.caseStudy(saved.topicId),
+            );
+          }
         }
         if (active) {
           setTarget(next);
@@ -97,7 +118,9 @@ function SavedWork({
           <div>
             <p className="eyebrow">
               {target.entry.status === "draft"
-                ? "Draft workshop · Saved work"
+                ? target.entry.kind === "topic"
+                  ? "Draft topic · Saved work"
+                  : "Draft workshop · Saved work"
                 : "Your saved work"}
             </p>
             <h3>{target.entry.title}</h3>

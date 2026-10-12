@@ -36,22 +36,36 @@ export function latestSavedWork(answers: readonly PracticeAnswer[]) {
   );
 }
 
-export function topicResumeTarget(
+// Resume only an explicitly implemented draft renderer; catalog metadata cannot create a route.
+export function supportsDraftTopicResume(id: string) {
+  return id === "queues-tail-latency";
+}
+
+function resolveTopicTarget(
   saved: PracticeAnswer,
   detail: TopicDetail,
+  draft: boolean,
 ): ResumeTarget {
   const entry = detail?.topic;
   if (
     !entry ||
     entry.id !== saved.topicId ||
     entry.kind !== "topic" ||
-    entry.status !== "published" ||
+    entry.status !== (draft ? "draft" : "published") ||
     !Array.isArray(entry.capabilities) ||
     !Array.isArray(detail.questions) ||
-    !Array.isArray(detail.checkpoints)
+    !Array.isArray(detail.checkpoints) ||
+    (draft &&
+      (!supportsDraftTopicResume(entry.id) ||
+        typeof detail.lessonMarkdown !== "string" ||
+        !detail.lessonMarkdown.trim() ||
+        !(["study", "simulation", "practice"] as const).every((capability) =>
+          entry.capabilities.includes(capability),
+        ) ||
+        !entry.simulationIds?.includes(entry.id)))
   )
     throw new Error("This saved module is unavailable in the current catalog.");
-  const base = `/topics/${encodeURIComponent(entry.id)}`;
+  const base = `${draft ? "/draft/topics" : "/topics"}/${encodeURIComponent(entry.id)}`;
   const question =
     entry.capabilities.includes("practice") &&
     detail.questions.find((item) => item.id === saved.activityId);
@@ -63,6 +77,7 @@ export function topicResumeTarget(
       removed: false,
     };
   const checkpoint =
+    !draft &&
     entry.capabilities.includes("guided") &&
     detail.checkpoints.find((item) =>
       ["prediction", "tradeoff"].some(
@@ -82,6 +97,17 @@ export function topicResumeTarget(
     activity: "Open the current module",
     removed: true,
   };
+}
+
+export function topicResumeTarget(saved: PracticeAnswer, detail: TopicDetail) {
+  return resolveTopicTarget(saved, detail, false);
+}
+
+export function draftTopicResumeTarget(
+  saved: PracticeAnswer,
+  detail: TopicDetail,
+) {
+  return resolveTopicTarget(saved, detail, true);
 }
 
 export function workshopResumeTarget(

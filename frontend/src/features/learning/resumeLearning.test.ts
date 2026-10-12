@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import catalog from "../../../../content/catalog.json";
 import questions from "../../../../content/topics/request-flow/questions.json";
 import checkpoints from "../../../../content/topics/cache-aside/checkpoints.json";
+import queueQuestions from "../../../../content/topics/queues-tail-latency/questions.json";
 import workshop from "../../../../content/case-studies/url-shortener/workshop.json";
 import type {
   CaseStudyDetail,
@@ -11,6 +12,8 @@ import type {
 import type { PracticeAnswer } from "./practiceStorage";
 import {
   latestSavedWork,
+  draftTopicResumeTarget,
+  supportsDraftTopicResume,
   topicResumeTarget,
   workshopResumeTarget,
 } from "./resumeLearning";
@@ -27,6 +30,12 @@ const cache = {
   topic: entries.find((entry) => entry.id === "cache-aside")!,
   questions: [],
   checkpoints,
+} as TopicDetail;
+const queue = {
+  topic: entries.find((entry) => entry.id === "queues-tail-latency")!,
+  questions: queueQuestions,
+  checkpoints: [],
+  lessonMarkdown: "An explicit draft queue lesson.",
 } as TopicDetail;
 export const caseStudy = {
   entry: entries.find((entry) => entry.id === "url-shortener")!,
@@ -136,6 +145,57 @@ describe("resume recorded learning work", () => {
       topicResumeTarget(saved, {
         ...topic,
         topic: { ...topic.topic, status: "draft" },
+      }),
+    ).toThrow(/unavailable/);
+  });
+  it("resumes only the supported draft topic at its exact authored practice question", () => {
+    const record = {
+      ...saved,
+      topicId: queue.topic.id,
+      activityId: queue.questions[0]!.id,
+    };
+    expect(supportsDraftTopicResume(record.topicId)).toBe(true);
+    expect(draftTopicResumeTarget(record, queue)).toMatchObject({
+      path: `/draft/topics/queues-tail-latency?view=practice&question=${record.activityId}`,
+      activity: queue.questions[0]!.prompt,
+      removed: false,
+    });
+    expect(
+      draftTopicResumeTarget({ ...record, activityId: "retired" }, queue),
+    ).toMatchObject({
+      path: "/draft/topics/queues-tail-latency",
+      removed: true,
+    });
+    expect(() => topicResumeTarget(record, queue)).toThrow(/unavailable/);
+  });
+  it("does not manufacture draft destinations from unsupported IDs or incompatible metadata", () => {
+    const record = {
+      ...saved,
+      topicId: queue.topic.id,
+      activityId: queue.questions[0]!.id,
+    };
+    expect(supportsDraftTopicResume("future-queue")).toBe(false);
+    for (const status of ["published", "planned"] as const) {
+      expect(() =>
+        draftTopicResumeTarget(record, {
+          ...queue,
+          topic: { ...queue.topic, status },
+        } as unknown as TopicDetail),
+      ).toThrow(/unavailable/);
+    }
+    expect(() =>
+      draftTopicResumeTarget(
+        { ...record, topicId: "future-queue" },
+        {
+          ...queue,
+          topic: { ...queue.topic, id: "future-queue" },
+        },
+      ),
+    ).toThrow(/unavailable/);
+    expect(() =>
+      draftTopicResumeTarget(record, {
+        ...queue,
+        topic: { ...queue.topic, capabilities: ["study"] },
       }),
     ).toThrow(/unavailable/);
   });

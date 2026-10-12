@@ -65,6 +65,18 @@ public class CatalogService {
                 .filter(topic -> topic.id().equals(id) && "topic".equals(topic.kind()) && "published".equals(topic.status()))
                 .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No published topic has id " + id + "."));
+        return loadTopic(entry);
+    }
+
+    public TopicDetail draftTopic(String id) {
+        CatalogEntry entry = topics.stream()
+                .filter(topic -> topic.id().equals(id) && "topic".equals(topic.kind()) && "draft".equals(topic.status()))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No draft topic has id " + id + "."));
+        return loadTopic(entry);
+    }
+
+    private TopicDetail loadTopic(CatalogEntry entry) {
         String lesson = readText("content/" + entry.lessonPath());
         List<Question> questions = readJson("content/" + entry.questionsPath(), new TypeReference<>() {});
         List<GuidedCheckpoint> checkpoints = entry.checkpointsPath() == null

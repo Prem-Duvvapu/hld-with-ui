@@ -95,6 +95,26 @@ test("reject unknown queue model controls", () => {
   );
 });
 
+test("reject queue job IDs ending in a newline", () => {
+  rejectQueueExample(
+    "input",
+    (input) => {
+      input.jobs[0].id = "job\n";
+    },
+    /queue-capacity-baseline-input.*must NOT be valid/,
+  );
+});
+
+test("reject queue worker IDs ending in a newline", () => {
+  rejectQueueExample(
+    "result",
+    (result) => {
+      result.initialState.workers[0].id = "worker-1\n";
+    },
+    /queue-capacity-baseline-result.*must NOT be valid/,
+  );
+});
+
 test("reject queue service duration with the wrong type", () => {
   rejectQueueExample(
     "input",

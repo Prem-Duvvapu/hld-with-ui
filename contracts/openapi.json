@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "HLD with UI API",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Versioned contract for the HLD learning application. Simulation results are illustrative modeled runs."
   },
   "servers": [
@@ -574,7 +574,7 @@
             "name": "q",
             "in": "query",
             "required": false,
-            "description": "Blank returns no results; otherwise 2\u2013100 UTF-16 code units. Searches all whitespace-separated terms as literal substrings, ignoring case and compatibility character forms.",
+            "description": "Blank returns no results; otherwise 2–100 UTF-16 code units. Searches all whitespace-separated terms as literal substrings, ignoring case and compatibility character forms.",
             "schema": {
               "type": "string",
               "maxLength": 100
@@ -664,6 +664,136 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/draft/topics/{id}": {
+      "get": {
+        "operationId": "getDraftTopic",
+        "summary": "Read an explicitly requested draft topic; published and planned entries remain unavailable here",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ContentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/queues-tail-latency": {
+      "get": {
+        "operationId": "getQueueCapacitySimulation",
+        "summary": "Read the queue-capacity simulation descriptor used by the draft learning module",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueCapacityDescriptor"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/queues-tail-latency/runs": {
+      "post": {
+        "operationId": "runQueueCapacitySimulation",
+        "summary": "Run the deterministic finite worker-queue model",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueueCapacityInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueCapacityResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Retry hint in seconds. Capacity may remain occupied.",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[0-9]+$",
+                  "examples": ["1"]
+                }
+              }
+            }
+          }
+        },
+        "description": "Simulation delivery uses process-local admission before body parsing (default two active requests across models), a bounded raw body, and bounded serialization of the entire result (default 4 MiB). These HTTP safeguards are outside modeled behavior. No queued or automatic retry is added; an admitted run keeps its existing model/schema semantics. Required properties, exact JSON token types, duplicate keys and nested job fields are checked before domain execution."
       }
     }
   },
@@ -3057,6 +3187,991 @@
             "minItems": 0
           }
         }
+      },
+      "QueueCapacityLimits": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "minJobs",
+          "maxJobs",
+          "minWorkers",
+          "maxWorkers",
+          "minQueueCapacity",
+          "maxQueueCapacity",
+          "minArrivalTimeMs",
+          "maxArrivalTimeMs",
+          "minServiceTimeMs",
+          "maxServiceTimeMs",
+          "minSeed",
+          "maxSeed",
+          "jobIdPattern"
+        ],
+        "properties": {
+          "minJobs": {
+            "type": "integer",
+            "const": 1
+          },
+          "maxJobs": {
+            "type": "integer",
+            "const": 100
+          },
+          "minWorkers": {
+            "type": "integer",
+            "const": 1
+          },
+          "maxWorkers": {
+            "type": "integer",
+            "const": 8
+          },
+          "minQueueCapacity": {
+            "type": "integer",
+            "const": 0
+          },
+          "maxQueueCapacity": {
+            "type": "integer",
+            "const": 100
+          },
+          "minArrivalTimeMs": {
+            "type": "integer",
+            "const": 0
+          },
+          "maxArrivalTimeMs": {
+            "type": "integer",
+            "const": 60000
+          },
+          "minServiceTimeMs": {
+            "type": "integer",
+            "const": 1
+          },
+          "maxServiceTimeMs": {
+            "type": "integer",
+            "const": 10000
+          },
+          "minSeed": {
+            "type": "integer",
+            "const": -9007199254740991
+          },
+          "maxSeed": {
+            "type": "integer",
+            "const": 9007199254740991
+          },
+          "jobIdPattern": {
+            "type": "string",
+            "const": "^[a-z][a-z0-9-]{0,31}$"
+          }
+        }
+      },
+      "QueueCapacityPreset": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "question", "input"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "question": {
+            "type": "string"
+          },
+          "input": {
+            "$ref": "#/components/schemas/QueueCapacityInput"
+          }
+        }
+      },
+      "QueueCapacityDescriptor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "modelVersion",
+          "description",
+          "limits",
+          "presets",
+          "assumptions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "const": "queues-tail-latency"
+          },
+          "title": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "const": "simulation"
+          },
+          "modelVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "description": {
+            "type": "string"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/QueueCapacityLimits"
+          },
+          "presets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QueueCapacityPreset"
+            }
+          },
+          "assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "QueueCapacityInput": {
+        "title": "Queue capacity simulation input",
+        "description": "Input for the illustrative queues-tail-latency model. Java additionally validates nondecreasing arrivals and unique job IDs. Topic publication is independent of model registration. The HTTP API requires integral JSON tokens and rejects duplicate keys and trailing JSON values; JSON Schema validates the parsed value rather than token spelling.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "modelVersion",
+          "workers",
+          "queueCapacity",
+          "jobs",
+          "seed"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "const": "1.0.0"
+          },
+          "workers": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8
+          },
+          "queueCapacity": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "jobs": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "arrivalTimeMs", "serviceTimeMs"],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                  "not": {
+                    "pattern": "\\s"
+                  }
+                },
+                "arrivalTimeMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 60000
+                },
+                "serviceTimeMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 10000
+                }
+              }
+            }
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "QueueCapacityResult": {
+        "title": "Queue capacity simulation result",
+        "description": "Authoritative typed post-event state for the illustrative worker-queue model. Nullable unavailable values may be omitted by the application mapper. Publication status belongs to the topic catalog.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "simulationId",
+          "modelVersion",
+          "seed",
+          "status",
+          "lastVirtualTimeMs",
+          "assumptions",
+          "initialState",
+          "events",
+          "finalState",
+          "outcomes",
+          "metrics"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": "1.0"
+          },
+          "simulationId": {
+            "const": "queues-tail-latency"
+          },
+          "modelVersion": {
+            "const": "1.0.0"
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "status": {
+            "enum": ["completed", "limited"]
+          },
+          "truncationReason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "event_limit",
+                  "trace_size_limit",
+                  "virtual_time_limit",
+                  "wall_time_limit"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastVirtualTimeMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1060000
+          },
+          "assumptions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 1000
+            }
+          },
+          "initialState": {
+            "$ref": "#/components/schemas/QueueCapacityState"
+          },
+          "events": {
+            "type": "array",
+            "maxItems": 10000,
+            "items": {
+              "$ref": "#/components/schemas/QueueCapacityEvent"
+            }
+          },
+          "finalState": {
+            "$ref": "#/components/schemas/QueueCapacityState"
+          },
+          "outcomes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/QueueCapacityOutcome"
+            }
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/QueueCapacityMetrics"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "completed"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "truncationReason": {
+                  "type": "null"
+                }
+              }
+            },
+            "else": {
+              "required": ["truncationReason"],
+              "properties": {
+                "truncationReason": {
+                  "enum": [
+                    "event_limit",
+                    "trace_size_limit",
+                    "virtual_time_limit",
+                    "wall_time_limit"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "QueueCapacityState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["queuedJobIds", "workers"],
+        "properties": {
+          "queuedJobIds": {
+            "type": "array",
+            "maxItems": 100,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,31}$",
+              "not": {
+                "pattern": "\\s"
+              }
+            }
+          },
+          "workers": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id"],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^worker-[1-8]$",
+                  "not": {
+                    "pattern": "\\s"
+                  }
+                },
+                "jobId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                      "not": {
+                        "pattern": "\\s"
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "startedAtMs": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1060000
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "scheduledCompletionAtMs": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1060000
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "required": ["jobId"],
+                    "properties": {
+                      "jobId": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "then": {
+                    "required": ["startedAtMs", "scheduledCompletionAtMs"],
+                    "properties": {
+                      "startedAtMs": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1060000
+                      },
+                      "scheduledCompletionAtMs": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1060000
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "startedAtMs": {
+                        "type": "null"
+                      },
+                      "scheduledCompletionAtMs": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "QueueCapacityEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sequence", "timeMs", "kind", "jobId", "message", "state"],
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "timeMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1060000
+          },
+          "kind": {
+            "enum": [
+              "job.queued",
+              "job.started",
+              "job.completed",
+              "job.rejected"
+            ]
+          },
+          "jobId": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,31}$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "workerId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^worker-[1-8]$",
+                "not": {
+                  "pattern": "\\s"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "state": {
+            "$ref": "#/components/schemas/QueueCapacityState"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["job.started", "job.completed"]
+                }
+              }
+            },
+            "then": {
+              "required": ["workerId"],
+              "properties": {
+                "workerId": {
+                  "type": "string",
+                  "pattern": "^worker-[1-8]$",
+                  "not": {
+                    "pattern": "\\s"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["job.queued", "job.rejected"]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "workerId": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "QueueCapacityOutcome": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["jobId", "status", "arrivalTimeMs", "serviceTimeMs"],
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,31}$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "status": {
+            "enum": [
+              "NOT_ARRIVED",
+              "QUEUED",
+              "RUNNING",
+              "COMPLETED",
+              "REJECTED"
+            ]
+          },
+          "arrivalTimeMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 60000
+          },
+          "serviceTimeMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "workerId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^worker-[1-8]$",
+                "not": {
+                  "pattern": "\\s"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "startTimeMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1060000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "terminalTimeMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1060000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "waitTimeMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1060000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latencyMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1060000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "COMPLETED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "workerId": {
+                  "type": "string",
+                  "pattern": "^worker-[1-8]$",
+                  "not": {
+                    "pattern": "\\s"
+                  }
+                },
+                "startTimeMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1060000
+                },
+                "terminalTimeMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1060000
+                },
+                "waitTimeMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1060000
+                },
+                "latencyMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1060000
+                }
+              },
+              "required": [
+                "workerId",
+                "startTimeMs",
+                "terminalTimeMs",
+                "waitTimeMs",
+                "latencyMs"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "RUNNING"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "workerId": {
+                  "type": "string",
+                  "pattern": "^worker-[1-8]$",
+                  "not": {
+                    "pattern": "\\s"
+                  }
+                },
+                "startTimeMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1060000
+                },
+                "terminalTimeMs": {
+                  "type": "null"
+                },
+                "waitTimeMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1060000
+                },
+                "latencyMs": {
+                  "type": "null"
+                }
+              },
+              "required": ["workerId", "startTimeMs", "waitTimeMs"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "REJECTED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "workerId": {
+                  "type": "null"
+                },
+                "startTimeMs": {
+                  "type": "null"
+                },
+                "terminalTimeMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1060000
+                },
+                "waitTimeMs": {
+                  "type": "null"
+                },
+                "latencyMs": {
+                  "type": "null"
+                }
+              },
+              "required": ["terminalTimeMs"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "QUEUED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "workerId": {
+                  "type": "null"
+                },
+                "startTimeMs": {
+                  "type": "null"
+                },
+                "terminalTimeMs": {
+                  "type": "null"
+                },
+                "waitTimeMs": {
+                  "type": "null"
+                },
+                "latencyMs": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "NOT_ARRIVED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "workerId": {
+                  "type": "null"
+                },
+                "startTimeMs": {
+                  "type": "null"
+                },
+                "terminalTimeMs": {
+                  "type": "null"
+                },
+                "waitTimeMs": {
+                  "type": "null"
+                },
+                "latencyMs": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "QueueCapacityMetrics": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "totalJobs",
+          "completed",
+          "rejected",
+          "queued",
+          "running",
+          "notArrived",
+          "successfulSamples",
+          "peakWaiting",
+          "observationStartMs",
+          "observationEndMs"
+        ],
+        "properties": {
+          "totalJobs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "completed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "rejected": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "queued": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "running": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "notArrived": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "successfulSamples": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "peakWaiting": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "meanSuccessfulWaitMs": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1060000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meanSuccessfulLatencyMs": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1060000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "p95SuccessfulWaitMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1060000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "p95SuccessfulLatencyMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1060000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "observationStartMs": {
+            "const": 0
+          },
+          "observationEndMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1060000
+          },
+          "completedThroughputPerSecond": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "successfulSamples": {
+                  "const": 0
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "meanSuccessfulWaitMs": {
+                  "type": "null"
+                },
+                "meanSuccessfulLatencyMs": {
+                  "type": "null"
+                },
+                "p95SuccessfulWaitMs": {
+                  "type": "null"
+                },
+                "p95SuccessfulLatencyMs": {
+                  "type": "null"
+                }
+              }
+            },
+            "else": {
+              "required": [
+                "meanSuccessfulWaitMs",
+                "meanSuccessfulLatencyMs",
+                "p95SuccessfulWaitMs",
+                "p95SuccessfulLatencyMs"
+              ],
+              "properties": {
+                "meanSuccessfulWaitMs": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1060000
+                },
+                "meanSuccessfulLatencyMs": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1060000
+                },
+                "p95SuccessfulWaitMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1060000
+                },
+                "p95SuccessfulLatencyMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1060000
+                }
+              }
+            }
+          }
+        ]
       }
     }
   }

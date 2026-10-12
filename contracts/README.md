@@ -15,7 +15,7 @@ npm run contracts:validate
 npm run contracts:check
 ```
 
-`contracts:check` regenerates the committed TypeScript output and fails when it differs, then validates content shape and semantics. Semantic checks cover unique IDs, prerequisite references and cycles, content paths, lesson heading order, question ownership and answers, source references, capability-to-model references, and guided checkpoints (the `guided` capability requires `checkpointsPath`; each target's event kind must exist in its simulation's event contract). Java tests run each checkpoint's preset and resolve its target event. Workshop checks validate stable stage/answer identities, versions, source references, published experiment links, and the full-journey publication guard. Isolated negative fixtures run as part of `contracts:validate`; Java separately validates packaged case resources and catalog prerequisite references, publication closure and cycles at startup, including Java-only builds. These checks do not establish manual release readiness.
+`contracts:check` exports canonical queue schemas into OpenAPI, regenerates the committed TypeScript output and fails when either differs, then validates content shape and semantics. Semantic checks cover unique IDs, prerequisite references and cycles, content paths, lesson heading order, question ownership and answers, source references, capability-to-model references, and guided checkpoints (the `guided` capability requires `checkpointsPath`; each target's event kind must exist in its simulation's event contract). Java tests run each checkpoint's preset and resolve its target event. Workshop checks validate stable stage/answer identities, versions, source references, published experiment links, and the full-journey publication guard. Isolated negative fixtures run as part of `contracts:validate`; Java separately validates packaged case resources and catalog prerequisite references, publication closure and cycles at startup, including Java-only builds. These checks do not establish manual release readiness.
 
 ## Case discovery
 
@@ -31,20 +31,23 @@ The HTTP contract version is the OpenAPI `info.version`. Each simulation request
 
 OpenAPI describes what the running server returns. JSON Schema establishes structural validity; Java tests remain responsible for model semantics, and human review remains responsible for technical and teaching quality.
 
-## Unpublished queue capacity contract
+## Draft queue capacity contract
 
-`queue-capacity.input.schema.json` and `queue-capacity.result.schema.json` describe the
-pure Java `queues-tail-latency` model (`1.0` schema, `1.0.0` model). These standalone schemas
-register no HTTP endpoint, catalog capability or frontend API type. The two
-`queue-capacity-baseline-*` examples are validated by the existing contract gate; the Java
-serialization test compares the result example with an actual model run.
+`queue-capacity.input.schema.json` and `queue-capacity.result.schema.json` own the
+`queues-tail-latency` shape (`1.0` schema, `1.0.0` model). The deterministic exporter in
+`frontend/scripts/sync-queue-contract.mjs` derives its OpenAPI components with internal refs;
+generated frontend types derive from OpenAPI. HTTP contract version `1.1.0` adds explicit
+`GET /api/v1/draft/topics/{id}` and queue descriptor/run endpoints. Draft topic lookup rejects
+published/planned/case IDs; published collections and search exclude the queue topic.
 
-Jobs have unique bounded IDs, nondecreasing arrivals and individual service durations.
-JSON Schema checks fields/types/ranges; Java additionally enforces ID uniqueness and arrival
-ordering. Seed metadata uses the signed JavaScript-safe integer range. Queue capacity counts
-only waiting jobs. Typed post-event snapshots support future playback, and completed metrics
-exclude rejected/unfinished jobs. See [decision 0023](../docs/decisions/0023-queue-capacity-model.md).
-Draft preview delivery and the learning UI remain pending.
+Jobs have unique bounded ASCII IDs, nondecreasing arrivals and individual service durations.
+JSON Schema checks parsed fields/types/ranges; Java additionally rejects duplicate keys,
+trailing roots, nonintegral token spellings, repeated IDs and unordered arrivals. Missing/null
+or coerced values cannot silently become defaults. Seed metadata uses signed JavaScript-safe
+integers. Queue capacity counts waiting jobs only. Typed snapshots drive playback, and
+completed metrics exclude rejected/unfinished jobs. The two baseline examples are validated
+by the content gate and compared with actual Java serialization and packaged HTTP output.
+See [decision 0024](../docs/decisions/0024-draft-queue-experience.md).
 
 Learning paths contain ordered canonical module references and purposes, with optional deeper
 references. Shape/size/schema checks reject unsupported fields; semantic checks require unique
@@ -56,7 +59,7 @@ actual Java response against OpenAPI and separately assert the draft publication
 ## HTTP resource failures
 
 Every API POST has a raw-body ceiling (default 256 KiB), including chunked/unknown-length
-bodies. The three simulation run endpoints also have a complete serialized-result ceiling
+bodies. The four simulation run endpoints also have a complete serialized-result ceiling
 (default 4 MiB) and share process-local synchronous admission (default 2, no queue).
 
 - 413 `request_too_large`: reduce the workload before sending it again.

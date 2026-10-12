@@ -59,8 +59,10 @@ describe("ModuleShell", () => {
       </MemoryRouter>,
     );
 
-    const study = screen.getByRole("tab", { name: /Study/ });
-    const architecture = screen.getByRole("tab", { name: /Architecture/ });
+    const study = screen.getByRole("tab", { name: "Study" });
+    const architecture = screen.getByRole("tab", {
+      name: "Architecture",
+    });
     const panel = screen.getByRole("tabpanel");
     expect(study).toHaveAttribute("aria-selected", "true");
     expect(study).toHaveAttribute("aria-controls", panel.id);

@@ -87,6 +87,29 @@ def verify(base):
             result = api(base, path + "/calculations", descriptor["presets"][0]["input"])
             check(result["status"] == "estimated" and result["estimatorId"] == estimator_id, f"Estimator unavailable: {estimator_id}")
             print(f"PASS packaged estimator {estimator_id}", flush=True)
+    for entry in catalog:
+        if entry["kind"] != "topic" or entry["status"] != "draft":
+            continue
+        identifier = quote(entry["id"], safe="")
+        api(base, f"/api/v1/topics/{identifier}", expected=404)
+        detail = api(base, f"/api/v1/draft/topics/{identifier}")
+        check(normalized(detail["topic"]) == normalized(entry), f"Draft topic metadata differs: {entry['id']}")
+        check(detail["lessonMarkdown"] == (ROOT / "content" / entry["lessonPath"]).read_text(encoding="utf-8"), f"Draft lesson bytes differ: {entry['id']}")
+        check(normalized(detail["questions"]) == normalized(source_json(entry["questionsPath"])), f"Draft questions differ: {entry['id']}")
+        print(f"PASS packaged draft topic {entry['id']} content={entry['contentVersion']}", flush=True)
+        if entry["id"] == "queues-tail-latency":
+            path = "/api/v1/simulations/queues-tail-latency"
+            descriptor = api(base, path)
+            baseline = next(preset for preset in descriptor["presets"] if preset["id"] == "baseline")
+            expected_input = json.loads((ROOT / "contracts/examples/queue-capacity-baseline-input.json").read_text())
+            expected_result = json.loads((ROOT / "contracts/examples/queue-capacity-baseline-result.json").read_text())
+            check(baseline["input"] == expected_input, "Packaged queue baseline input differs")
+            result = api(base, path + "/runs", baseline["input"])
+            check(normalized(result) == normalized(expected_result), "Packaged queue baseline full result differs")
+            api(base, "/api/v1/draft/topics/request-flow", expected=404)
+            check(all(hit["entry"]["status"] == "published" and hit["entry"]["id"] != entry["id"]
+                      for hit in api(base, "/api/v1/search?q=queues")["results"]), "Draft queue leaked into published search")
+            print("PASS packaged draft queue model and publication boundary", flush=True)
     check([entry["id"] for entry in api(base, "/api/v1/case-studies")] == [entry["id"] for entry in cases], "Case publication differs from catalog")
     for entry in catalog:
         if entry["kind"] != "case-study" or entry["status"] == "planned":
