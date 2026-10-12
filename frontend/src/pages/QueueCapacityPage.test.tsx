@@ -1,3 +1,4 @@
+import checkpointFixture from "../../../content/topics/queues-tail-latency/checkpoints.json";
 import catalogFixture from "../../../content/catalog.json";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
@@ -16,7 +17,7 @@ const topic: TopicDetail = {
   )! as TopicDetail["topic"],
   lessonMarkdown: "# Queues\n\nA buffer buys time; workers do the work.",
   questions: [],
-  checkpoints: [],
+  checkpoints: checkpointFixture as TopicDetail["checkpoints"],
 };
 function view(route = "/draft/topics/queues-tail-latency") {
   return render(
@@ -30,12 +31,12 @@ beforeEach(() => {
   vi.mocked(api.draftTopic).mockResolvedValue(topic);
   vi.mocked(api.queueDescriptor).mockResolvedValue(descriptor);
 });
-it("exposes exactly three implemented draft tabs with no bookmark or automatic run", async () => {
+it("exposes all six implemented draft tabs with no bookmark or automatic run", async () => {
   view();
   expect(
     await screen.findByRole("region", { name: "Draft queue module" }),
   ).toBeVisible();
-  expect(screen.getAllByRole("tab")).toHaveLength(3);
+  expect(screen.getAllByRole("tab")).toHaveLength(6);
   expect(
     screen.queryByRole("button", { name: "Save module" }),
   ).not.toBeInTheDocument();

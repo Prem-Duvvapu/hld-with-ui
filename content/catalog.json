@@ -180,18 +180,19 @@
       "Compare buffering and worker capacity while reporting rejected and unfinished work.",
       "Explain FIFO waiting and limits using a changed job duration."
     ],
-    "capabilities": ["study", "simulation", "practice"],
+    "capabilities": ["study", "simulation", "guided", "practice"],
     "lessonPath": "topics/queues-tail-latency/lesson.md",
     "questionsPath": "topics/queues-tail-latency/questions.json",
     "resourcesPath": "topics/queues-tail-latency/resources.json",
     "simulationIds": ["queues-tail-latency"],
     "estimatorIds": [],
-    "contentVersion": "1.0.0",
+    "contentVersion": "1.1.0",
     "reviewedAt": "2026-10-12",
     "sourceIds": [
       "google-sre-overload",
       "aws-load-shedding",
       "java-thread-pool-executor"
-    ]
+    ],
+    "checkpointsPath": "topics/queues-tail-latency/checkpoints.json"
   }
 ]

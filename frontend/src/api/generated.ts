@@ -407,17 +407,24 @@ export interface components {
       /** @description Guided simulation checkpoints; empty unless the topic has the guided capability. */
       checkpoints: components["schemas"]["GuidedCheckpoint"][];
     };
-    /** @description One predict -> reveal -> explain -> choose step. target names one event in the preset's Java trace by operation, kind, and occurrence. */
+    /** @description One predict -> reveal -> explain -> choose step. Its target selects a supported event in the real preset trace by stable operation or job identity, kind and occurrence. */
     GuidedCheckpoint: {
       id: string;
       title: string;
       simulationId: string;
       presetId: string;
-      target: {
-        operation: number;
-        kind: string;
-        occurrence: number;
-      };
+      /** @description Select exactly one semantic subject: a cache operation or a queue job ID, plus event kind and 1-based occurrence. */
+      target:
+        | {
+            operation: number;
+            kind: string;
+            occurrence: number;
+          }
+        | {
+            jobId: string;
+            kind: string;
+            occurrence: number;
+          };
       prompt: string;
       lookFor: string;
       explanation: string;

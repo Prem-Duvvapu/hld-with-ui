@@ -1314,11 +1314,15 @@ th {
   font-size: 15px;
 }
 .reading-layout {
+  min-width: 0;
   display: grid;
   grid-template-columns: 280px minmax(0, 700px);
   gap: 70px;
   justify-content: center;
   align-items: start;
+}
+.reading-layout > * {
+  min-width: 0;
 }
 .reading-aside {
   position: sticky;
@@ -1376,6 +1380,49 @@ th {
 .prose table {
   font-size: 13px;
 }
+/* Keep lesson examples readable inside their own keyboard-scrollable bounds. */
+.study-prose {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.study-scroll {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  overflow-x: auto;
+  margin-block: 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.study-scroll:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
+}
+.study-scroll pre {
+  width: max-content;
+  min-width: 100%;
+  margin: 0;
+  padding: 16px;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+.study-scroll pre code {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.study-scroll table {
+  min-width: 32rem;
+}
+.study-scroll th {
+  color: var(--ink);
+  font: 600 13px var(--sans);
+}
+.study-scroll td {
+  color: var(--muted);
+  max-width: 36rem;
+}
+
 .architecture-diagram {
   display: flex;
   align-items: center;
@@ -1687,7 +1734,7 @@ th {
     gap: 14px;
   }
   .reading-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 30px;
   }
   .reading-aside {

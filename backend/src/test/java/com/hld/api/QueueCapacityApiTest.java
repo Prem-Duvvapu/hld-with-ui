@@ -170,6 +170,40 @@ class QueueCapacityApiTest {
         assertThat(successful(post(mapper.writeValueAsBytes(baseline()))).path("status").asString()).isEqualTo("completed");
     }
 
+    @Test void servesCanonicalDraftCheckpointsWithoutChangingCacheTargetsOrPublishedDiscovery() throws Exception {
+        var draft = successful(get("/api/v1/draft/topics/queues-tail-latency"));
+        var canonicalCatalog = mapper.readTree(Files.readAllBytes(Path.of("../content/catalog.json")));
+        JsonNode canonicalEntry = null;
+        for (JsonNode entry : canonicalCatalog) {
+            if (entry.path("id").asString().equals("queues-tail-latency")) canonicalEntry = entry;
+        }
+        assertThat(canonicalEntry).isNotNull();
+        assertThat(draft.path("topic")).isEqualTo(canonicalEntry);
+        assertThat(draft.at("/topic/contentVersion").asString()).isEqualTo("1.1.0");
+        assertThat(draft.at("/topic/status").asString()).isEqualTo("draft");
+        assertThat(draft.at("/topic/capabilities")).anySatisfy(capability ->
+                assertThat(capability.asString()).isEqualTo("guided"));
+        var expected = mapper.readTree(Files.readAllBytes(Path.of("../content/topics/queues-tail-latency/checkpoints.json")));
+        assertThat(draft.path("checkpoints")).isEqualTo(expected);
+        assertThat(draft.path("checkpoints").size()).isEqualTo(8);
+        for (JsonNode checkpoint : draft.path("checkpoints")) {
+            assertThat(checkpoint.path("target").propertyNames()).containsExactlyInAnyOrder("jobId", "kind", "occurrence");
+        }
+        var cache = successful(get("/api/v1/topics/cache-aside"));
+        var expectedCache = mapper.readTree(Files.readAllBytes(Path.of("../content/topics/cache-aside/checkpoints.json")));
+        assertThat(cache.path("checkpoints")).isEqualTo(expectedCache);
+        for (JsonNode checkpoint : cache.path("checkpoints")) {
+            assertThat(checkpoint.path("target").propertyNames()).containsExactlyInAnyOrder("operation", "kind", "occurrence");
+        }
+        assertThat(get("/api/v1/topics/queues-tail-latency").statusCode()).isEqualTo(404);
+        for (JsonNode entry : successful(get("/api/v1/topics"))) {
+            assertThat(entry.path("id").asString()).isNotEqualTo("queues-tail-latency");
+        }
+        for (JsonNode hit : successful(get("/api/v1/search?q=queue")).path("results")) {
+            assertThat(hit.at("/entry/id").asString()).isNotEqualTo("queues-tail-latency");
+        }
+    }
+
     @Test void enforcesVersionsDomainRangesAndSafeSeedBoundaries() throws Exception {
         ObjectNode valid = (ObjectNode) mapper.valueToTree(baseline());
         for (String field : List.of("schemaVersion", "modelVersion")) {

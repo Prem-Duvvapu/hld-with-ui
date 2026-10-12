@@ -1,17 +1,26 @@
 import { useEffect, useId, useState } from "react";
 import type { QueueCapacityInput, QueueCapacityResult } from "../../api/types";
 import { queueEventLabels } from "../../api/queueCompatibility";
+import "./Queues.css";
 import { usePanelActive } from "../../components/ModuleShell";
 
 export function QueuePlayback({
   result,
   input,
+  initialPosition = -1,
+  showTrace = true,
+  title = "Follow one job through the queue",
 }: {
   result: QueueCapacityResult;
   input: QueueCapacityInput;
+  initialPosition?: number;
+  showTrace?: boolean;
+  title?: string;
 }) {
   const titleId = useId();
-  const [position, setPosition] = useState(-1);
+  const [position, setPosition] = useState(() =>
+    Math.max(-1, Math.min(initialPosition, result.events.length - 1)),
+  );
   const [playing, setPlaying] = useState(false);
   const [intervalMs, setIntervalMs] = useState(600);
   const active = usePanelActive();
@@ -43,7 +52,7 @@ export function QueuePlayback({
       <div className="queue-section-heading">
         <div>
           <p className="eyebrow">Observe cause and effect</p>
-          <h3 id={titleId}>Follow one job through the queue</h3>
+          <h3 id={titleId}>{title}</h3>
         </div>
         <span className="queue-model-tag">
           Model v{result.modelVersion} · Virtual time · FIFO
@@ -195,53 +204,55 @@ export function QueuePlayback({
           </p>
         )}
       </section>
-      <details className="queue-trace">
-        <summary>
-          Inspect the full event trace ({result.events.length} events)
-        </summary>
-        <div
-          className="queue-table-wrap"
-          tabIndex={0}
-          role="region"
-          aria-label="Scrollable queue event trace"
-        >
-          <table aria-label="Queue simulation event trace">
-            <thead>
-              <tr>
-                <th scope="col">Event</th>
-                <th scope="col">Time (ms)</th>
-                <th scope="col">Kind</th>
-                <th scope="col">Job</th>
-                <th scope="col">Explanation</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.events.map((item, index) => (
-                <tr
-                  key={item.sequence}
-                  className={index === position ? "selected" : ""}
-                >
-                  <td>
-                    <button
-                      type="button"
-                      className="queue-event-button"
-                      aria-label={`View event ${item.sequence}`}
-                      aria-pressed={index === position}
-                      onClick={() => seek(index)}
-                    >
-                      {item.sequence}
-                    </button>
-                  </td>
-                  <td>{item.timeMs}</td>
-                  <td>{item.kind}</td>
-                  <td>{item.jobId}</td>
-                  <td>{item.message}</td>
+      {showTrace && (
+        <details className="queue-trace">
+          <summary>
+            Inspect the full event trace ({result.events.length} events)
+          </summary>
+          <div
+            className="queue-table-wrap"
+            tabIndex={0}
+            role="region"
+            aria-label="Scrollable queue event trace"
+          >
+            <table aria-label="Queue simulation event trace">
+              <thead>
+                <tr>
+                  <th scope="col">Event</th>
+                  <th scope="col">Time (ms)</th>
+                  <th scope="col">Kind</th>
+                  <th scope="col">Job</th>
+                  <th scope="col">Explanation</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </details>
+              </thead>
+              <tbody>
+                {result.events.map((item, index) => (
+                  <tr
+                    key={item.sequence}
+                    className={index === position ? "selected" : ""}
+                  >
+                    <td>
+                      <button
+                        type="button"
+                        className="queue-event-button"
+                        aria-label={`View event ${item.sequence}`}
+                        aria-pressed={index === position}
+                        onClick={() => seek(index)}
+                      >
+                        {item.sequence}
+                      </button>
+                    </td>
+                    <td>{item.timeMs}</td>
+                    <td>{item.kind}</td>
+                    <td>{item.jobId}</td>
+                    <td>{item.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      )}
     </section>
   );
 }

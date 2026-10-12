@@ -88,6 +88,11 @@ sample population changed. State the rejection count alongside latency when comp
 
 ## Explore in the playground
 
+Use **Guided** to predict eight decisions before revealing their Java evidence. **Architecture**
+shows who admits, waits and processes jobs. **Job sequence** explains the baseline's started,
+waiting and rejected paths as illustrative walkthroughs; selecting a step does not run Java.
+Then return to Playground and change one input yourself.
+
 1. Predict how many jobs complete and how many are rejected with one waiting slot.
 2. Run the preset, select the initial state, then step to job-2 waiting and job-3 rejection.
 3. At 10 ms, inspect job-1 completing before job-2 starts. Follow the queue and worker cards.

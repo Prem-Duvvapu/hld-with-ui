@@ -36,6 +36,8 @@ class GuidedCheckpointsTest {
         CacheAsideResult result = simulator.run(preset.input());
         assertThat(result.status()).as(checkpoint.id() + " runs to completion").isEqualTo("completed");
         GuidedCheckpoint.Target target = checkpoint.target();
+        assertThat(target.operation()).isNotNull();
+        assertThat(target.jobId()).isNull();
         List<CacheAsideTraceEvent> matches = result.events().stream()
                 .filter(event -> event.operation() == target.operation() && event.kind().equals(target.kind()))
                 .toList();

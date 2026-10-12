@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import catalog from "../../../../content/catalog.json";
 import questions from "../../../../content/topics/request-flow/questions.json";
 import checkpoints from "../../../../content/topics/cache-aside/checkpoints.json";
+import queueCheckpoints from "../../../../content/topics/queues-tail-latency/checkpoints.json";
 import queueQuestions from "../../../../content/topics/queues-tail-latency/questions.json";
 import workshop from "../../../../content/case-studies/url-shortener/workshop.json";
 import type {
@@ -34,7 +35,7 @@ const cache = {
 const queue = {
   topic: entries.find((entry) => entry.id === "queues-tail-latency")!,
   questions: queueQuestions,
-  checkpoints: [],
+  checkpoints: queueCheckpoints,
   lessonMarkdown: "An explicit draft queue lesson.",
 } as TopicDetail;
 export const caseStudy = {
@@ -168,6 +169,36 @@ describe("resume recorded learning work", () => {
     });
     expect(() => topicResumeTarget(record, queue)).toThrow(/unavailable/);
   });
+  it.each(["prediction", "tradeoff"])(
+    "resumes the supported draft queue checkpoint from its %s record",
+    (suffix) => {
+      const checkpoint = queue.checkpoints[0]!;
+      expect(
+        draftTopicResumeTarget(
+          {
+            ...saved,
+            topicId: queue.topic.id,
+            activityId: `${checkpoint.id}-${suffix}`,
+          },
+          queue,
+        ),
+      ).toMatchObject({
+        path: `/draft/topics/queues-tail-latency?view=guided&checkpoint=${checkpoint.id}`,
+        activity: checkpoint.title,
+        removed: false,
+      });
+      for (const activityId of [
+        `${checkpoint.id}-extra-prediction`,
+        `${checkpoint.id}-unknown`,
+      ])
+        expect(
+          draftTopicResumeTarget(
+            { ...saved, topicId: queue.topic.id, activityId },
+            queue,
+          ),
+        ).toMatchObject({ removed: true });
+    },
+  );
   it("does not manufacture draft destinations from unsupported IDs or incompatible metadata", () => {
     const record = {
       ...saved,

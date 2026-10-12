@@ -73,7 +73,7 @@ for (const example of ["request-flow-baseline", "request-flow-overload"]) {
   }
 }
 
-// Model-only schemas do not register HTTP routes or published capabilities.
+// Canonical queue schemas validate model examples; editorial publication stays independent.
 for (const kind of ["input", "result"]) {
   const example = `queue-capacity-baseline-${kind}`;
   validateSchema(
@@ -162,8 +162,8 @@ const publishedWorkshopStages = [
   "defense",
 ];
 
-// Event kinds a simulation can emit, read from its run-result contract.
-function eventKinds(simulationId) {
+// Event kinds and available semantic selectors derive from the run-result contract.
+function eventSchema(simulationId) {
   const ref = (schema) => schema?.$ref?.split("/").at(-1);
   const result =
     openapi.paths?.[`/api/v1/simulations/${simulationId}/runs`]?.post
@@ -171,9 +171,10 @@ function eventKinds(simulationId) {
   const event = ref(
     openapi.components.schemas[ref(result)]?.properties?.events?.items,
   );
-  return new Set(
-    openapi.components.schemas[event]?.properties?.kind?.enum ?? [],
-  );
+  return openapi.components.schemas[event];
+}
+function eventKinds(simulationId) {
+  return new Set(eventSchema(simulationId)?.properties?.kind?.enum ?? []);
 }
 
 const requiredHeadings = [
@@ -351,6 +352,18 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
         errors.push(
           `${checkpoint.id}: ${checkpoint.simulationId} never emits ${checkpoint.target?.kind}`,
         );
+      for (const selector of ["operation", "jobId"]) {
+        if (
+          Object.hasOwn(checkpoint.target ?? {}, selector) &&
+          !Object.hasOwn(
+            eventSchema(checkpoint.simulationId)?.properties ?? {},
+            selector,
+          )
+        )
+          errors.push(
+            `${checkpoint.id}: ${checkpoint.simulationId} events do not support target selector ${selector}`,
+          );
+      }
       const optionIds = (checkpoint.tradeoff?.options ?? []).map(
         (option) => option.id,
       );

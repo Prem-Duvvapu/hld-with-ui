@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "HLD with UI API",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Versioned contract for the HLD learning application. Simulation results are illustrative modeled runs."
   },
   "servers": [
@@ -1075,23 +1075,52 @@
             "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
           },
           "target": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["operation", "kind", "occurrence"],
-            "properties": {
-              "operation": {
-                "type": "integer",
-                "minimum": 1
+            "description": "Select exactly one semantic subject: a cache operation or a queue job ID, plus event kind and 1-based occurrence.",
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["operation", "kind", "occurrence"],
+                "properties": {
+                  "operation": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "kind": {
+                    "type": "string",
+                    "pattern": "^[a-z]+\\.[a-z]+$"
+                  },
+                  "occurrence": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
               },
-              "kind": {
-                "type": "string",
-                "pattern": "^[a-z]+\\.[a-z]+$"
-              },
-              "occurrence": {
-                "type": "integer",
-                "minimum": 1
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["jobId", "kind", "occurrence"],
+                "properties": {
+                  "jobId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 32,
+                    "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                    "not": {
+                      "pattern": "\\s"
+                    }
+                  },
+                  "kind": {
+                    "type": "string",
+                    "pattern": "^[a-z]+\\.[a-z]+$"
+                  },
+                  "occurrence": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
               }
-            }
+            ]
           },
           "prompt": {
             "type": "string",
@@ -1144,7 +1173,7 @@
             }
           }
         },
-        "description": "One predict -> reveal -> explain -> choose step. target names one event in the preset's Java trace by operation, kind, and occurrence."
+        "description": "One predict -> reveal -> explain -> choose step. Its target selects a supported event in the real preset trace by stable operation or job identity, kind and occurrence."
       },
       "RequestFlowInput": {
         "type": "object",

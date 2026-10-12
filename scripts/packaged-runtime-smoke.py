@@ -96,6 +96,8 @@ def verify(base):
         check(normalized(detail["topic"]) == normalized(entry), f"Draft topic metadata differs: {entry['id']}")
         check(detail["lessonMarkdown"] == (ROOT / "content" / entry["lessonPath"]).read_text(encoding="utf-8"), f"Draft lesson bytes differ: {entry['id']}")
         check(normalized(detail["questions"]) == normalized(source_json(entry["questionsPath"])), f"Draft questions differ: {entry['id']}")
+        checkpoints = source_json(entry["checkpointsPath"]) if "checkpointsPath" in entry else []
+        check(normalized(detail["checkpoints"]) == normalized(checkpoints), f"Draft checkpoints differ: {entry['id']}")
         print(f"PASS packaged draft topic {entry['id']} content={entry['contentVersion']}", flush=True)
         if entry["id"] == "queues-tail-latency":
             path = "/api/v1/simulations/queues-tail-latency"

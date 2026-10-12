@@ -21,7 +21,11 @@ Its descriptor/run API supports the direct draft learning route, not published d
 admits events before state mutation and charges bounded structured state against the same
 default `SimulationBudget`; cooperative deadline checks remain external guards. It uses no
 random choices. Canonical standalone schemas/examples export into OpenAPI and generated React types. The
-UI selects returned snapshots and separates scheduled completion from actual outcomes. See
+UI selects returned snapshots and separates scheduled completion from actual outcomes.
+Eight Guided checkpoints select events by stable job ID, kind and occurrence; cache targets
+retain their operation selector. Exactly one supported selector is required, and Java tests
+reconcile every queue preset/target with authored numbers. The shared guided flow owns no
+model execution logic; see [decision 0025](decisions/0025-shared-guided-simulation.md). See
 [decision 0024](decisions/0024-draft-queue-experience.md) and [HLD-13B](work-items/HLD-13B.md).
 
 ## 1. What an experiment promises
