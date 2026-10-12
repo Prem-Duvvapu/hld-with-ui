@@ -170,3 +170,13 @@ local archived samples retain their provenance. [HLD-11D](work-items/HLD-11D.md)
 reading-load evidence and a bounded real-HTTP process-memory exercise with complete replay
 and ownership/failure checks ([methods](LOADING_AND_MEMORY_REVIEW.md)). Used-heap peaks,
 sustained/hosted load, network/thread budgets and measured rendering changes remain release work.
+
+### Delivery model before registration
+
+[HLD-14A](work-items/HLD-14A.md) adds a pure `com.hld.delivery` model with independent
+broker, consumer, lease, effect and ACK state; typed event changes reconstruct the presentation
+from immutable initial state. A local phased scheduler stages complete transition batches before
+committing state, ledger, future actions or reached faults. Shared `SimulationContext` supplies
+only its external cooperative guard. [Decision 0026](decisions/0026-atomic-delivery-transition-batches.md)
+records the rules. Standalone schemas and direct Java evidence do not register an HTTP route,
+bean, catalog entry or React renderer. Add those in the next explicit draft contribution.

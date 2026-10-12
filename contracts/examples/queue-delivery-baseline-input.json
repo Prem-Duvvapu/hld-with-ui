@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "messages": [
+    {
+      "id": "m1",
+      "enqueueTimeMs": 0
+    }
+  ],
+  "consumers": [
+    {
+      "id": "c1"
+    }
+  ],
+  "processingTimeMs": 50,
+  "acknowledgmentDelayMs": 5,
+  "visibilityTimeoutMs": 100,
+  "maxDeliveryAttempts": 3,
+  "acknowledgmentPolicy": "ACK_AFTER_EFFECT",
+  "failures": [],
+  "lostAcknowledgments": [],
+  "seed": 42
+}

@@ -1,7 +1,8 @@
 # Queue delivery: implementation handoff
 
-Prepared 2026-10-12 against `7a214d7` (PR #61). **Proposed model, contracts and UI;
-not implemented learning coverage.** Use this with the [implementation plan](IMPLEMENTATION_PLAN.md),
+Prepared 2026-10-12 against `7a214d7` (PR #61). **Original handoff, with implementation progress below.**
+[HLD-14A](work-items/HLD-14A.md) implements the pure Java delivery model and standalone
+contracts. Descriptor/API and React learning coverage remain pending. Use this with the [implementation plan](IMPLEMENTATION_PLAN.md),
 [curriculum](CURRICULUM.md), [simulation contract](SIMULATION_SPEC.md),
 [content contract](../content/CONTENT_SPEC.md) and [learning standard](LEARNING_STANDARD.md).
 
@@ -18,13 +19,13 @@ capacity/waiting prerequisite now has a Java model and explicit draft API/UI in
 [HLD-13A](work-items/HLD-13A.md) and [HLD-13B](work-items/HLD-13B.md).
 [HLD-13C](work-items/HLD-13C.md) adds its complete core Guided/architecture/job-path teaching
 flow; consult that contribution's actual verification evidence before dependent development.
-The delivery model and learning module described here remain proposed. The prerequisite's
+The pure delivery model and standalone schemas are now implemented in HLD-14A; its descriptor/API and learning module remain pending. The prerequisite's
 finite in-memory worker queue and the proposed durable broker are different boundaries;
 explain the distinction explicitly.
 
 [Decision 0022](decisions/0022-development-and-publication-gates.md) allows unpublished
 development before first-release human/hosted reviews finish. Publication still requires
-P2-05 and published prerequisite closure. The present contribution is preparation only.
+P2-05 and published prerequisite closure. This document records the preparation and versioned model decisions; work items supply actual implementation evidence.
 
 The first delivery model has **no deduplication**. The later `idempotency` module needs
 `transactions-isolation` and `queues-delivery`; implement those prerequisites before adding
@@ -150,7 +151,7 @@ Drain valid scheduled actions within budgets before classifying a stall: a remai
 enqueue or lease expiry can still change broker state even when no consumer can recover.
 After no valid scheduled actions remain, if ready work still exists and every consumer
 is down, return `limited` with the proposed reason `no_future_progress` and truthful pending counts.
-The new reason is not registered today. Existing event/byte/virtual-time/wall-time limits
+The new reason is implemented in the standalone domain model; no delivery HTTP route is registered yet. Existing event/byte/virtual-time/wall-time limits
 remain distinct. A limited run is an observed prefix, not proof that an ACKed message will
 never receive its still-pending effect.
 
@@ -195,8 +196,8 @@ or a plausible animation is insufficient evidence.
 
 ## 5. Proposed inputs, events and metrics
 
-These are implementation targets, not additions to OpenAPI in this documentation PR.
-Use proposed model version `1.0.0` and schema version `1.0`; align final representations
+The standalone input/result schemas and Java records now implement these targets. They are not registered in OpenAPI.
+The implemented model uses version `1.0.0` and schema version `1.0`; align HTTP representations
 with actual current API conventions when implementing and reject unsupported versions.
 
 | Input | Inclusive proposed bounds / rule |
@@ -208,12 +209,12 @@ with actual current API conventions when implementing and reject unsupported ver
 | `visibilityTimeoutMs` | Integer 1–60,000; may be shorter than processing |
 | `maxDeliveryAttempts` | Integer 1–5, including the first |
 | `acknowledgmentPolicy` | Exactly `ACK_BEFORE_EFFECT` or `ACK_AFTER_EFFECT` |
-| Consumer failure actions | 0–8 entries: consumer ID, `CRASH`/`RECOVER`, integer time 0–60,000 ms; start ready, alternate per consumer, reject same-consumer/same-time duplicates |
+| Consumer failure actions | 0–8 entries total: consumer ID, `CRASH`/`RECOVER`, integer time 0–60,000 ms; start ready, alternate per consumer, reject same-consumer/same-time duplicates |
 | Lost ACK selectors | 0–20 unique message-ID/attempt-number pairs; message must exist; attempt 1–max attempts |
-| Seed | Follow the existing input contract's integer range; first model has no random choices, so changing the seed need not change behavior |
+| Seed | Signed JavaScript-safe range ±9,007,199,254,740,991; no random choices, so changing the seed need not change behavior |
 
 Reject null/unknown fields, wrong types, nonintegers, invalid enums, unknown IDs, impossible
-failure schedules and unsupported versions. Validate direct domain invocation too. Check
+failure schedules and unsupported versions. Validate direct domain invocation too. HLD-14A accepts unsorted input arrays, validates chronological failure alternation using sorted copies, and retains original indexes. Equal-time recovery is inserted before enqueue. Pending ACK count includes planned ACK-after; unknown ACK-without-effect remains unavailable on every limited prefix. Check
 overflow before time arithmetic; a valid arrival whose work extends beyond 60,000 ms gets
 an honest virtual-time limited result rather than an invented completion.
 
@@ -344,10 +345,10 @@ attempts, or exactly-once email/payment.
 
 ## 8. Delivery sequence and checks
 
-Every row is **future implementation**, not completed evidence. Use one focused branch/PR
+Rows 1–2 now have implementation evidence in HLD-13A/B/C and HLD-14A; later rows remain future work. Use one focused branch/PR
 per contribution, actual local checks, required final-head CI, squash merge and updated main.
 
-For the first missing prerequisite, start with a calculable capacity fixture: four jobs
+The completed capacity prerequisite uses this calculable fixture: four jobs
 arrive at 0 ms, one worker takes 10 ms per job, and one waiting slot is available. In input
 order, two jobs are admitted and two rejected at 0 ms. The admitted jobs wait 0/10 ms and
 finish at 10/20 ms; mean successful latency is 15 ms. Define queue capacity as waiting slots,
@@ -366,7 +367,7 @@ per-job service durations to teach a concrete difference from request-flow's per
 | 6 | Release review and publication | P2-05, published prerequisites, all declared capabilities, human learning/accessibility evidence and complete module checks |
 | 7 | Timeouts/retries; storage/transactions prerequisites; idempotency; integrated cases | Respect curriculum closure and independently verify each new guarantee |
 
-Proposed verification commands, **not executed for the absent queue-delivery model**:
+Verification commands; actual executed scopes/results are recorded in HLD-14A. A browser check does not yet exercise a delivery renderer:
 
 ```bash
 node scripts/validate-plan.mjs

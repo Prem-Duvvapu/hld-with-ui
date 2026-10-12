@@ -1,0 +1,302 @@
+{
+  "schemaVersion": "1.0",
+  "simulationId": "queues-delivery",
+  "modelVersion": "1.0.0",
+  "seed": 42,
+  "status": "completed",
+  "lastVirtualTimeMs": 55,
+  "assumptions": [
+    "Illustrative durable broker and ledger; consumer failure does not erase a committed append.",
+    "Broker acknowledgment and ledger effect share no transaction; there is no duplicate protection.",
+    "One processing slot per consumer, freed on effect commit/cancellation; early ACK does not free it.",
+    "Only the current lease token strictly before its deadline is accepted; this is model policy, not an SQS guarantee.",
+    "Expiry permits another delivery without fencing running work; dead-lettering does not erase effects.",
+    "Transport delay is zero except configured ACK delay; selected transport loss precedes token validation.",
+    "Same-time phases: effects, expiry, ACK, crash, recovery/enqueue, dispatch; same-phase insertion order.",
+    "Recovery actions are initially scheduled before message enqueues; dispatch uses availability then input order.",
+    "Pending ACK includes planned ACK-after-effect. Scheduled times are not observed completions.",
+    "Completed means settled, not business success; confirmed ACK-without-effect is unknown on limited prefixes.",
+    "Producer failures, broker loss/replication, lease extension, backoff and external providers are excluded.",
+    "Seed is replay metadata; no random choices. External wall guards may censor differently across machines."
+  ],
+  "initialState": {
+    "messages": [
+      {
+        "id": "m1",
+        "status": "NOT_ENQUEUED",
+        "enqueueTimeMs": 0,
+        "deliveryCount": 0
+      }
+    ],
+    "consumers": [{ "id": "c1", "status": "READY" }],
+    "attempts": []
+  },
+  "events": [
+    {
+      "sequence": 1,
+      "timeMs": 0,
+      "kind": "message.enqueued",
+      "messageId": "m1",
+      "message": "The accepted message becomes ready in the broker.",
+      "changes": {
+        "messages": [
+          {
+            "id": "m1",
+            "status": "READY",
+            "enqueueTimeMs": 0,
+            "availableSinceMs": 0,
+            "deliveryCount": 0
+          }
+        ],
+        "consumers": [],
+        "attempts": []
+      }
+    },
+    {
+      "sequence": 2,
+      "timeMs": 0,
+      "kind": "delivery.started",
+      "messageId": "m1",
+      "attemptId": "m1-a1",
+      "consumerId": "c1",
+      "message": "A new attempt reserves a consumer and receives a fresh lease token.",
+      "changes": {
+        "messages": [
+          {
+            "id": "m1",
+            "status": "LEASED",
+            "enqueueTimeMs": 0,
+            "availableSinceMs": 0,
+            "deliveryCount": 1,
+            "currentAttemptId": "m1-a1"
+          }
+        ],
+        "consumers": [
+          { "id": "c1", "status": "READY", "currentAttemptId": "m1-a1" }
+        ],
+        "attempts": [
+          {
+            "id": "m1-a1",
+            "messageId": "m1",
+            "attempt": 1,
+            "consumerId": "c1",
+            "leaseToken": "m1-a1-lease",
+            "leaseDeadlineMs": 100,
+            "startedAtMs": 0,
+            "scheduledEffectAtMs": 50,
+            "scheduledAckAtMs": 55,
+            "leaseStatus": "ACTIVE",
+            "effectStatus": "PROCESSING",
+            "ackStatus": "PENDING"
+          }
+        ]
+      }
+    },
+    {
+      "sequence": 3,
+      "timeMs": 50,
+      "kind": "effect.committed",
+      "messageId": "m1",
+      "attemptId": "m1-a1",
+      "consumerId": "c1",
+      "message": "One durable ledger append commits; the processing slot becomes free.",
+      "changes": {
+        "messages": [],
+        "consumers": [{ "id": "c1", "status": "READY" }],
+        "attempts": [
+          {
+            "id": "m1-a1",
+            "messageId": "m1",
+            "attempt": 1,
+            "consumerId": "c1",
+            "leaseToken": "m1-a1-lease",
+            "leaseDeadlineMs": 100,
+            "startedAtMs": 0,
+            "scheduledEffectAtMs": 50,
+            "scheduledAckAtMs": 55,
+            "leaseStatus": "ACTIVE",
+            "effectStatus": "COMMITTED",
+            "ackStatus": "PENDING",
+            "effectCommittedAtMs": 50
+          }
+        ]
+      },
+      "ledgerEntry": {
+        "id": "m1-a1-effect",
+        "messageId": "m1",
+        "attemptId": "m1-a1",
+        "consumerId": "c1",
+        "committedAtMs": 50
+      }
+    },
+    {
+      "sequence": 4,
+      "timeMs": 55,
+      "kind": "ack.sent",
+      "messageId": "m1",
+      "attemptId": "m1-a1",
+      "consumerId": "c1",
+      "message": "The consumer sends acknowledgment for this attempt's token.",
+      "changes": {
+        "messages": [],
+        "consumers": [],
+        "attempts": [
+          {
+            "id": "m1-a1",
+            "messageId": "m1",
+            "attempt": 1,
+            "consumerId": "c1",
+            "leaseToken": "m1-a1-lease",
+            "leaseDeadlineMs": 100,
+            "startedAtMs": 0,
+            "scheduledEffectAtMs": 50,
+            "scheduledAckAtMs": 55,
+            "leaseStatus": "ACTIVE",
+            "effectStatus": "COMMITTED",
+            "ackStatus": "SENT",
+            "effectCommittedAtMs": 50,
+            "ackSentAtMs": 55
+          }
+        ]
+      }
+    },
+    {
+      "sequence": 5,
+      "timeMs": 55,
+      "kind": "ack.accepted",
+      "messageId": "m1",
+      "attemptId": "m1-a1",
+      "consumerId": "c1",
+      "message": "The broker accepts its current token; this does not prove a ledger effect.",
+      "changes": {
+        "messages": [
+          {
+            "id": "m1",
+            "status": "ACKNOWLEDGED",
+            "enqueueTimeMs": 0,
+            "availableSinceMs": 0,
+            "deliveryCount": 1,
+            "acknowledgedAtMs": 55
+          }
+        ],
+        "consumers": [],
+        "attempts": [
+          {
+            "id": "m1-a1",
+            "messageId": "m1",
+            "attempt": 1,
+            "consumerId": "c1",
+            "leaseToken": "m1-a1-lease",
+            "leaseDeadlineMs": 100,
+            "startedAtMs": 0,
+            "scheduledEffectAtMs": 50,
+            "scheduledAckAtMs": 55,
+            "leaseStatus": "ACKNOWLEDGED",
+            "effectStatus": "COMMITTED",
+            "ackStatus": "ACCEPTED",
+            "effectCommittedAtMs": 50,
+            "ackSentAtMs": 55,
+            "ackResolvedAtMs": 55
+          }
+        ]
+      }
+    }
+  ],
+  "finalState": {
+    "messages": [
+      {
+        "id": "m1",
+        "status": "ACKNOWLEDGED",
+        "enqueueTimeMs": 0,
+        "availableSinceMs": 0,
+        "deliveryCount": 1,
+        "acknowledgedAtMs": 55
+      }
+    ],
+    "consumers": [{ "id": "c1", "status": "READY" }],
+    "attempts": [
+      {
+        "id": "m1-a1",
+        "messageId": "m1",
+        "attempt": 1,
+        "consumerId": "c1",
+        "leaseToken": "m1-a1-lease",
+        "leaseDeadlineMs": 100,
+        "startedAtMs": 0,
+        "scheduledEffectAtMs": 50,
+        "scheduledAckAtMs": 55,
+        "leaseStatus": "ACKNOWLEDGED",
+        "effectStatus": "COMMITTED",
+        "ackStatus": "ACCEPTED",
+        "effectCommittedAtMs": 50,
+        "ackSentAtMs": 55,
+        "ackResolvedAtMs": 55
+      }
+    ]
+  },
+  "messageOutcomes": [
+    {
+      "messageId": "m1",
+      "status": "ACKNOWLEDGED",
+      "deliveries": 1,
+      "committedEffects": 1,
+      "acknowledgedAtMs": 55,
+      "firstEffectAtMs": 50,
+      "ackLatencyMs": 55,
+      "firstEffectLatencyMs": 50
+    }
+  ],
+  "attemptOutcomes": [
+    {
+      "id": "m1-a1",
+      "messageId": "m1",
+      "attempt": 1,
+      "consumerId": "c1",
+      "leaseToken": "m1-a1-lease",
+      "leaseDeadlineMs": 100,
+      "startedAtMs": 0,
+      "scheduledEffectAtMs": 50,
+      "scheduledAckAtMs": 55,
+      "leaseStatus": "ACKNOWLEDGED",
+      "effectStatus": "COMMITTED",
+      "ackStatus": "ACCEPTED",
+      "effectCommittedAtMs": 50,
+      "ackSentAtMs": 55,
+      "ackResolvedAtMs": 55
+    }
+  ],
+  "ledger": [
+    {
+      "id": "m1-a1-effect",
+      "messageId": "m1",
+      "attemptId": "m1-a1",
+      "consumerId": "c1",
+      "committedAtMs": 50
+    }
+  ],
+  "metrics": {
+    "deliveryAttempts": 1,
+    "redeliveries": 0,
+    "committedEffects": 1,
+    "messagesWithEffect": 1,
+    "extraEffects": 0,
+    "acknowledgedMessages": 1,
+    "acknowledgedWithoutEffect": 0,
+    "deadLetteredMessages": 0,
+    "notEnqueued": 0,
+    "ready": 0,
+    "leased": 0,
+    "runningEffects": 0,
+    "pendingAcknowledgments": 0,
+    "pendingFailureActions": 0,
+    "pendingEnqueues": 0,
+    "ackLatencySamples": 1,
+    "meanAckLatencyMs": 55.0,
+    "p95AckLatencyMs": 55,
+    "effectLatencySamples": 1,
+    "meanFirstEffectLatencyMs": 50.0,
+    "p95FirstEffectLatencyMs": 50
+  },
+  "failureOutcomes": [],
+  "lostAcknowledgmentOutcomes": []
+}
