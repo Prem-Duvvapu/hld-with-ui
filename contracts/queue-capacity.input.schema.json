@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hld-with-ui.dev/schemas/queue-capacity.input.schema.json",
-  "title": "Unpublished queue capacity model input",
-  "description": "Pure Java queues-tail-latency model only; no registered HTTP endpoint. Java also validates nondecreasing arrival order and unique job IDs.",
+  "title": "Queue capacity simulation input",
+  "description": "Input for the illustrative queues-tail-latency model. Java additionally validates nondecreasing arrivals and unique job IDs. Topic publication is independent of model registration. The HTTP API requires integral JSON tokens and rejects duplicate keys and trailing JSON values; JSON Schema validates the parsed value rather than token spelling.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -41,7 +41,10 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^[a-z][a-z0-9-]{0,31}$"
+            "pattern": "^[a-z][a-z0-9-]{0,31}$",
+            "not": {
+              "pattern": "\\s"
+            }
           },
           "arrivalTimeMs": {
             "type": "integer",

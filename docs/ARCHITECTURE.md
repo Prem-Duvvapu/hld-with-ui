@@ -68,11 +68,12 @@ docs/                     plans, decisions, work items, templates, evidence
 
 Backend model packages are organized by capability, not one enormous controller or service per topic. Each model has its own typed event schema with a closed `kind` vocabulary. A shared model interface and renderer registry are **planned** only if a concrete second consumer needs them (see [SIMULATION_SPEC.md](SIMULATION_SPEC.md#3-proposed-java-interface)).
 
-`queues/` contains an unpublished pure Java queue-capacity model, with immutable typed
-state/events/outcomes and a queue-local admission collector. It is not a Spring bean and
-has no descriptor/run endpoint or catalog capability. Standalone model schemas and actual
-serialized fixture checks precede deliberate draft-preview delivery and the React module;
-see [decision 0023](decisions/0023-queue-capacity-model.md).
+`queues/` contains a pure Java queue-capacity model with immutable typed state/events/outcomes
+and a queue-local admission collector, registered through a small Spring configuration. Its
+standard descriptor/run API supports the explicitly requested draft topic at
+`/draft/topics/queues-tail-latency`. React selects returned snapshots without a second queue
+engine. Standalone model schemas export deterministically into OpenAPI and generated types;
+see [decision 0024](decisions/0024-draft-queue-experience.md).
 
 ## 3. Catalog and content
 
@@ -88,12 +89,13 @@ Authored learning paths reference canonical module IDs rather than copying title
 
 ## 4. Initial API contract
 
-The topic endpoints serve all four published topics. Simulation endpoints are implemented for `request-flow`, `distributed-rate-limiter`, and `cache-aside`; estimator endpoints for `capacity-estimation`. Case-study delivery serves the draft URL-shortener resource (Requirements through Defense) by explicit ID. Search is implemented over packaged published content; catalog stats remain **planned**.
+The topic endpoints serve all four published topics. Simulation endpoints are implemented for `request-flow`, `distributed-rate-limiter`, `cache-aside`, and the draft `queues-tail-latency`; estimator endpoints for `capacity-estimation`. Case-study delivery serves the draft URL-shortener resource (Requirements through Defense) by explicit ID. Search is implemented over packaged published content; catalog stats remain **planned**.
 
 | Endpoint | Purpose and behavior |
 | --- | --- |
 | `GET /api/v1/topics` | Published metadata with capabilities and prerequisite IDs |
 | `GET /api/v1/topics/{id}` | Lesson, structured questions/resources, declared experiment or estimator references |
+| `GET /api/v1/draft/topics/{id}` | Explicit draft topic lesson/questions; published, planned and case IDs return 404; no discovery collection |
 | `GET /api/v1/simulations/{id}` | Version, input schema, defaults, presets, limits, model assumptions |
 | `POST /api/v1/simulations/{id}/runs` | Validate and execute one bounded simulation, returning a complete trace |
 | `GET /api/v1/estimators/{id}` | Read estimator defaults, presets, limits, and assumptions |
@@ -106,7 +108,7 @@ The topic endpoints serve all four published topics. Simulation endpoints are im
 
 Unknown IDs and unknown routes return 404. Invalid parameters return 400 with field paths and readable explanations. HLD-11A adds request-byte errors (413), oversized simulation-result errors (422), and process-local simulation admission errors (503 with `Retry-After: 1`). Invalid model fields remain 400. These HTTP guards are separate from a modeled rate-limiter rejection, which is an outcome inside a successful simulation response. Responses use one structured problem format with `code`, `message`, `fieldErrors`, and `timestamp`. No stack traces in client errors.
 
-Simulation input is a flat, per-model object with `schemaVersion`, `modelVersion`, `seed`, and model-specific fields (for example `arrivalTimesMs`, or cache `operations`); `request-flow` v1.1.1 adds a bounded optional `failureSchedule`. Unknown fields are rejected. Results include versions, seed, status, events, per-request outcomes, metrics, and assumptions; limited runs add truncation reason, last virtual time, and incomplete counts. Cache-aside results also carry `initialState` and each event's post-event key state, which the playback renders ([decision 0006](decisions/0006-cache-event-key-state.md)); other models have no state snapshots. See [SIMULATION_SPEC.md](SIMULATION_SPEC.md) for accepted versions and envelope details.
+Simulation input is a flat, per-model object with `schemaVersion`, `modelVersion`, `seed`, and model-specific fields (for example `arrivalTimesMs`, or cache `operations`); `request-flow` v1.1.1 adds a bounded optional `failureSchedule`. Unknown fields are rejected. Results include versions, seed, status, events, per-request outcomes, metrics, and assumptions; limited runs add truncation reason, last virtual time, and incomplete counts. Cache-aside results also carry `initialState` and each event's post-event key state, which the playback renders ([decision 0006](decisions/0006-cache-event-key-state.md)); The draft queue model also returns initial and post-event worker/queue snapshots; request flow and rate limiting have no state snapshots. See [SIMULATION_SPEC.md](SIMULATION_SPEC.md) for accepted versions and envelope details.
 
 Do not retain runs on the server initially. Playback and backwards seek are local operations over the returned trace. A run ID is for correlation, not a promise that a retrieval URL exists. Long-running jobs, cancellation, SSE, and run storage require a later decision if bounded synchronous execution becomes inadequate.
 

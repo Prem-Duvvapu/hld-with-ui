@@ -1,8 +1,16 @@
 import {
+  assertQueueCompatibility,
+  assertQueueRunInput,
+  QueueCompatibilityError,
+} from "./queueCompatibility";
+import {
   assertCacheCompatibility,
   CacheCompatibilityError,
 } from "./cacheCompatibility";
 import type {
+  QueueCapacityDescriptor,
+  QueueCapacityInput,
+  QueueCapacityResult,
   LearningPath,
   SearchResponse,
   CatalogEntry,
@@ -58,7 +66,10 @@ async function request<T>(
     return body as T;
   } catch (error) {
     if (error instanceof ApiClientError) throw error;
-    if (error instanceof CacheCompatibilityError) {
+    if (
+      error instanceof CacheCompatibilityError ||
+      error instanceof QueueCompatibilityError
+    ) {
       throw new ApiClientError(error.message);
     }
     if (error instanceof DOMException && error.name === "AbortError") {
@@ -81,6 +92,27 @@ export const api = {
     if (capability) params.set("capability", capability);
     return request<SearchResponse>(`/api/v1/search?${params}`);
   },
+  draftTopic: (id: string) =>
+    request<TopicDetail>(`/api/v1/draft/topics/${encodeURIComponent(id)}`),
+  queueDescriptor: () =>
+    request<QueueCapacityDescriptor>(
+      "/api/v1/simulations/queues-tail-latency",
+      undefined,
+      (body) => assertQueueCompatibility(body, "descriptor"),
+    ),
+  runQueue: (input: QueueCapacityInput) =>
+    request<QueueCapacityResult>(
+      "/api/v1/simulations/queues-tail-latency/runs",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      },
+      (body) => {
+        assertQueueCompatibility(body, "result");
+        assertQueueRunInput(body as QueueCapacityResult, input);
+      },
+    ),
   topics: () => request<CatalogEntry[]>("/api/v1/topics"),
   topic: (id: string) => request<TopicDetail>(`/api/v1/topics/${id}`),
   caseStudies: () => request<CatalogEntry[]>("/api/v1/case-studies"),

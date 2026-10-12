@@ -25,8 +25,9 @@ public final class QueueCapacitySimulator {
     public static final long MAX_SERVICE_TIME_MS = 10_000;
     public static final long MAX_ABSOLUTE_SEED = 9_007_199_254_740_991L;
     public static final int MAX_MESSAGE_LENGTH = 128;
-    private static final Pattern JOB_ID = Pattern.compile("[a-z][a-z0-9-]{0,31}");
-    private static final List<String> ASSUMPTIONS = List.of(
+    public static final String JOB_ID_PATTERN = "^[a-z][a-z0-9-]{0,31}$";
+    private static final Pattern JOB_ID = Pattern.compile(JOB_ID_PATTERN);
+    public static final List<String> ASSUMPTIONS = List.of(
             "One shared FIFO waiting queue feeds identical workers; service time belongs to each job.",
             "Waiting capacity excludes running jobs. A full waiting queue rejects arrivals without retry.",
             "All completions at a timestamp precede queued starts and new arrivals.",

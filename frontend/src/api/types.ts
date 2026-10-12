@@ -55,3 +55,16 @@ export type SearchHit = components["schemas"]["SearchHit"];
 
 export type LearningPath = components["schemas"]["LearningPath"];
 export type LearningPathStep = components["schemas"]["LearningPathStep"];
+
+export type QueueCapacityInput = components["schemas"]["QueueCapacityInput"];
+export type QueueCapacityResult = components["schemas"]["QueueCapacityResult"];
+export type QueueCapacityEvent = components["schemas"]["QueueCapacityEvent"];
+export type QueueCapacityState = components["schemas"]["QueueCapacityState"];
+export type QueueCapacityOutcome =
+  components["schemas"]["QueueCapacityOutcome"];
+export type QueueCapacityMetrics =
+  components["schemas"]["QueueCapacityMetrics"];
+export type QueueCapacityDescriptor =
+  components["schemas"]["QueueCapacityDescriptor"];
+export type QueueCapacityLimits = components["schemas"]["QueueCapacityLimits"];
+export type QueueCapacityPreset = components["schemas"]["QueueCapacityPreset"];

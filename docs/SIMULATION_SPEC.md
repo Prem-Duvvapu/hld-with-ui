@@ -2,25 +2,27 @@
 
 Status: authoring contract with an implemented subset. The machine-readable contracts in [`contracts/openapi.json`](../contracts/openapi.json) are authoritative for what the API returns today. Sections below label **implemented** behavior separately from **proposed** extensions; a proposed field or interface is not available until its schema, Java model, and renderer ship together. The first load-balancing module is the reference implementation; later models must not bypass its execution and validation boundaries.
 
-### Implemented baseline (checked 2026-09-29)
+### Implemented baseline (checked 2026-10-12)
 
 | Model | Accepted `modelVersion` | Shared runner | Result `status` values |
 | --- | --- | --- | --- |
 | `request-flow` | `1.0.0` (no failure schedule) and `1.1.1` (current, failure schedules) | `SimulationContext` | `completed`, `limited` |
 | `cache-aside` | `1.0.1` only | `SimulationContext` | `completed`, `limited` |
+| `queues-tail-latency` (draft topic) | `1.0.0` only | `SimulationContext` with typed queue collector | `completed`, `limited` |
 | `distributed-rate-limiter` | `1.0.0` only | none; bounded by its own `maxRequests` input limit | `completed` |
 
 Rejected versions (`request-flow` `1.1.0`, `cache-aside` `1.0.0`) and their reasons are recorded in [decision 0004](decisions/0004-simulation-causality-corrections.md). The estimator `capacity-estimation` is not an event simulation and has no trace.
 
-### Unregistered queue-capacity development model
+### Registered draft queue-capacity model
 
 `queues-tail-latency` now has a pure Java domain model (schema `1.0`, model `1.0.0`) with
 finite workers, one FIFO waiting queue, per-job service times and typed post-event snapshots.
-It is not one of the registered API models in the table above. Its queue-local collector
+Its descriptor/run API supports the direct draft learning route, not published discovery. Its queue-local collector
 admits events before state mutation and charges bounded structured state against the same
 default `SimulationBudget`; cooperative deadline checks remain external guards. It uses no
-random choices. Standalone model schemas/examples precede draft API/React delivery; see
-[decision 0023](decisions/0023-queue-capacity-model.md) and [HLD-13A](work-items/HLD-13A.md).
+random choices. Canonical standalone schemas/examples export into OpenAPI and generated React types. The
+UI selects returned snapshots and separates scheduled completion from actual outcomes. See
+[decision 0024](decisions/0024-draft-queue-experience.md) and [HLD-13B](work-items/HLD-13B.md).
 
 ## 1. What an experiment promises
 
@@ -30,9 +32,9 @@ Distinguish three modes in the UI: **simulation** (modeled behavior), **estimato
 
 ## 2. Deterministic execution
 
-- Run a discrete-event queue ordered by `(virtual time, insertion sequence)`. **Implemented models use integer virtual milliseconds** (`timeMs`, `lastVirtualTimeMs`, `…Ms` inputs). A finer unit such as microseconds is a possible future envelope change, not a current contract; introducing it requires a schema and model version change. Guard overflow in every time calculation.
+- Use an explicit deterministic order at each virtual time. Request flow/cache use a discrete-event queue with stable insertion order; queue capacity completes due workers, dispatches FIFO waiters, then admits arrivals in input order. **Implemented models use integer virtual milliseconds** (`timeMs`, `lastVirtualTimeMs`, `…Ms` inputs). A finer unit such as microseconds is a possible future envelope change, not a current contract; introducing it requires a schema and model version change. Guard overflow in every time calculation.
 - Same model version, normalized inputs, seed, and scheduled actions produce the same semantic trace. Exclude correlation IDs and wall-time metadata from equality.
-- Assign the sequence when scheduling. Events may schedule additional events at the same time; all tie rules are documented and tested.
+- Distinguish internal scheduling order from the sequence in the returned trace. Queue capacity assigns emitted sequence numbers when an event is admitted, after the event/byte checks. Equal-time tie rules must be documented and tested for each model.
 - Use a versioned seeded PRNG abstraction; do not depend on unspecified iteration order. Separate workload randomness from failure randomness so a comparison can retain the same arrivals.
 - Models are request-local. Two simultaneous runs must not affect each other. Java thread scheduling must not decide simulated behavior.
 - Nodes have finite workers, queues, service times, and explicit failure/recovery rules when those mechanisms are relevant. Merely coloring a node red is not failure simulation.

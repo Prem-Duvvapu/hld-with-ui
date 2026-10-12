@@ -164,5 +164,34 @@
       "sre-service-objectives",
       "owasp-rest-security"
     ]
+  },
+  {
+    "id": "queues-tail-latency",
+    "kind": "topic",
+    "title": "Queues & Tail Latency",
+    "summary": "Explore finite workers, waiting limits, rejection and slow jobs. Explain queue time and successful latency from an authoritative Java trace.",
+    "category": "Messaging & Reliability",
+    "level": "Intermediate",
+    "order": 6,
+    "status": "draft",
+    "prerequisites": ["capacity-estimation", "request-flow"],
+    "outcomes": [
+      "Separate waiting, service and total latency for a completed job.",
+      "Compare buffering and worker capacity while reporting rejected and unfinished work.",
+      "Explain FIFO waiting and limits using a changed job duration."
+    ],
+    "capabilities": ["study", "simulation", "practice"],
+    "lessonPath": "topics/queues-tail-latency/lesson.md",
+    "questionsPath": "topics/queues-tail-latency/questions.json",
+    "resourcesPath": "topics/queues-tail-latency/resources.json",
+    "simulationIds": ["queues-tail-latency"],
+    "estimatorIds": [],
+    "contentVersion": "1.0.0",
+    "reviewedAt": "2026-10-12",
+    "sourceIds": [
+      "google-sre-overload",
+      "aws-load-shedding",
+      "java-thread-pool-executor"
+    ]
   }
 ]

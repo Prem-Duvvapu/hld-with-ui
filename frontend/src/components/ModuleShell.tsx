@@ -163,7 +163,9 @@ export function ModuleShell<T extends string>({
               tabIndex={active === tab.id ? 0 : -1}
               onClick={() => select(tab.id)}
             >
-              <span>{String(index + 1).padStart(2, "0")}</span>
+              <span aria-hidden="true">
+                {String(index + 1).padStart(2, "0")}
+              </span>
               {tab.label}
             </button>
           ))}

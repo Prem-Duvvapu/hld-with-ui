@@ -58,7 +58,7 @@ The root launcher is for Linux/WSL and accepts `BACKEND_PORT` and `FRONTEND_PORT
 
 After packaging the backend, use Python 3 to exercise the jar from an empty temporary working
 directory. The check copies only the executable jar into that directory, compares delivered
-content with the canonical checkout, runs each published simulation/estimator baseline,
+content with the canonical checkout, runs each published simulation/estimator baseline and the explicitly scoped draft queue baseline,
 checks draft visibility and the learning path, then stops its own process and checks port cleanup.
 
 ```bash
@@ -93,8 +93,10 @@ After the package/frontend gates, run the opt-in evidence suites sequentially:
 (cd frontend && npm run perf:browser)
 ```
 
-Default Maven verification discovers 183 tests: 182 execute and this performance test is
-intentionally skipped. The explicit command executes the additional test over eleven
+Default Maven verification runs the ordinary model/API suites and intentionally skips this
+opt-in performance test. Current test counts are recorded in each contribution's work item
+and CI run; the HLD-13A baseline had 229 executed plus this skipped case. The explicit command
+executes the additional test over eleven
 workloads with one untimed reference run, three warmups and ten samples each. Generation
 and configured JSON serialization are separate intervals; semantic replay and existing byte
 ceilings are checked without arbitrary time assertions.

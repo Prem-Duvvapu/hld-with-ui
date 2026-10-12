@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hld-with-ui.dev/schemas/queue-capacity.result.schema.json",
-  "title": "Unpublished queue capacity model result",
-  "description": "Pure Java result including authoritative typed post-event state; no current HTTP response/capability is added. Nullable values may be omitted by the application mapper.",
+  "title": "Queue capacity simulation result",
+  "description": "Authoritative typed post-event state for the illustrative worker-queue model. Nullable unavailable values may be omitted by the application mapper. Publication status belongs to the topic catalog.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -134,7 +134,10 @@
           "uniqueItems": true,
           "items": {
             "type": "string",
-            "pattern": "^[a-z][a-z0-9-]{0,31}$"
+            "pattern": "^[a-z][a-z0-9-]{0,31}$",
+            "not": {
+              "pattern": "\\s"
+            }
           }
         },
         "workers": {
@@ -148,13 +151,19 @@
             "properties": {
               "id": {
                 "type": "string",
-                "pattern": "^worker-[1-8]$"
+                "pattern": "^worker-[1-8]$",
+                "not": {
+                  "pattern": "\\s"
+                }
               },
               "jobId": {
                 "anyOf": [
                   {
                     "type": "string",
-                    "pattern": "^[a-z][a-z0-9-]{0,31}$"
+                    "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                    "not": {
+                      "pattern": "\\s"
+                    }
                   },
                   {
                     "type": "null"
@@ -247,13 +256,19 @@
         },
         "jobId": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9-]{0,31}$"
+          "pattern": "^[a-z][a-z0-9-]{0,31}$",
+          "not": {
+            "pattern": "\\s"
+          }
         },
         "workerId": {
           "anyOf": [
             {
               "type": "string",
-              "pattern": "^worker-[1-8]$"
+              "pattern": "^worker-[1-8]$",
+              "not": {
+                "pattern": "\\s"
+              }
             },
             {
               "type": "null"
@@ -282,7 +297,10 @@
             "properties": {
               "workerId": {
                 "type": "string",
-                "pattern": "^worker-[1-8]$"
+                "pattern": "^worker-[1-8]$",
+                "not": {
+                  "pattern": "\\s"
+                }
               }
             }
           }
@@ -312,7 +330,10 @@
       "properties": {
         "jobId": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9-]{0,31}$"
+          "pattern": "^[a-z][a-z0-9-]{0,31}$",
+          "not": {
+            "pattern": "\\s"
+          }
         },
         "status": {
           "enum": ["NOT_ARRIVED", "QUEUED", "RUNNING", "COMPLETED", "REJECTED"]
@@ -331,7 +352,10 @@
           "anyOf": [
             {
               "type": "string",
-              "pattern": "^worker-[1-8]$"
+              "pattern": "^worker-[1-8]$",
+              "not": {
+                "pattern": "\\s"
+              }
             },
             {
               "type": "null"
@@ -400,7 +424,10 @@
             "properties": {
               "workerId": {
                 "type": "string",
-                "pattern": "^worker-[1-8]$"
+                "pattern": "^worker-[1-8]$",
+                "not": {
+                  "pattern": "\\s"
+                }
               },
               "startTimeMs": {
                 "type": "integer",
@@ -444,7 +471,10 @@
             "properties": {
               "workerId": {
                 "type": "string",
-                "pattern": "^worker-[1-8]$"
+                "pattern": "^worker-[1-8]$",
+                "not": {
+                  "pattern": "\\s"
+                }
               },
               "startTimeMs": {
                 "type": "integer",

@@ -1,0 +1,93 @@
+[
+  {
+    "id": "queue-buffer-tradeoff",
+    "topicId": "queues-tail-latency",
+    "level": "beginner",
+    "kind": "prediction",
+    "prompt": "Four jobs arrive together, each takes 10 ms, one worker is available and one job can wait. Which jobs finish, which are rejected, and what changes with three waiting slots?",
+    "explanation": "One waiting slot admits job-1 and job-2; job-3 and job-4 are rejected. Completions at 10/20 ms give mean successful latency 15 ms over two samples. Three waiting slots admit all four, completing at 10/20/30/40 ms with mean 25 ms over four samples. Buffering changes admission and waiting, not service capacity.",
+    "modelAnswer": "One waiting slot admits job-1 and job-2; job-3 and job-4 are rejected. Completions at 10/20 ms give mean successful latency 15 ms over two samples. Three waiting slots admit all four, completing at 10/20/30/40 ms with mean 25 ms over four samples. Buffering changes admission and waiting, not service capacity.",
+    "rubric": [
+      "Counts running and waiting capacity separately",
+      "Gives the two different completed/rejected populations",
+      "Explains why more space increases waiting in this burst"
+    ],
+    "followUp": "What if there are two workers but still only one waiting slot?"
+  },
+  {
+    "id": "queue-workers-and-slots",
+    "topicId": "queues-tail-latency",
+    "level": "beginner",
+    "kind": "calculation",
+    "prompt": "The four 10 ms jobs arrive at 0 ms with two workers and one waiting slot. How many are admitted, and when do they complete?",
+    "explanation": "Two start immediately and one waits, so three complete and one is rejected. The first two finish at 10 ms; the waiter uses worker-1 and finishes at 20 ms. Successful mean latency is 40/3 ms, about 13.33 ms; p95 is 20 ms over three completed samples.",
+    "modelAnswer": "Two start immediately and one waits, so three complete and one is rejected. The first two finish at 10 ms; the waiter uses worker-1 and finishes at 20 ms. Successful mean latency is 40/3 ms, about 13.33 ms; p95 is 20 ms over three completed samples.",
+    "rubric": [
+      "Uses two active slots plus one waiting slot",
+      "Gives completion times 10,10,20 ms",
+      "Keeps the rejected job out of successful latency"
+    ],
+    "followUp": "Why is queue capacity zero still able to admit an idle worker\u2019s job?"
+  },
+  {
+    "id": "queue-slow-service",
+    "topicId": "queues-tail-latency",
+    "level": "intermediate",
+    "kind": "diagnosis",
+    "prompt": "On one FIFO worker, four jobs arrive together. The first needs 100 ms and the others need 1 ms each; three can wait. A short job takes 103 ms end to end. Is its service code necessarily slow?",
+    "explanation": "No. The last job waits 102 ms and spends 1 ms in service. It completes at 103 ms because FIFO retains the earlier jobs. Inspect waiting versus service time before blaming the short job\u2019s code.",
+    "modelAnswer": "No. The last job waits 102 ms and spends 1 ms in service. It completes at 103 ms because FIFO retains the earlier jobs. Inspect waiting versus service time before blaming the short job\u2019s code.",
+    "rubric": [
+      "Separates 102 ms wait and 1 ms service",
+      "Names the FIFO order and first slow job",
+      "Suggests an evidence-based capacity or scheduling investigation"
+    ],
+    "followUp": "How might two workers change waiting, and what real dependency could limit that change?"
+  },
+  {
+    "id": "queue-limited-population",
+    "topicId": "queues-tail-latency",
+    "level": "intermediate",
+    "kind": "diagnosis",
+    "prompt": "A job arrives at 60,000 ms and needs 10,000 ms service. The model stops at its virtual-time ceiling. What can you say about its outcome and p95?",
+    "explanation": "The job is running with a scheduled completion at 70,000 ms, but no completion was observed. The run is limited, not completed. With zero completed samples, successful p95/mean are unavailable. Do not turn the scheduled time into a result or count the outstanding job as a failure.",
+    "modelAnswer": "The job is running with a scheduled completion at 70,000 ms, but no completion was observed. The run is limited, not completed. With zero completed samples, successful p95/mean are unavailable. Do not turn the scheduled time into a result or count the outstanding job as a failure.",
+    "rubric": [
+      "Distinguishes scheduled from observed completion",
+      "Keeps running and completed populations separate",
+      "Treats zero-sample successful metrics as unavailable"
+    ],
+    "followUp": "What evidence would you need before comparing this prefix with a fully settled run?"
+  },
+  {
+    "id": "queue-same-time-order",
+    "topicId": "queues-tail-latency",
+    "level": "intermediate",
+    "kind": "prediction",
+    "prompt": "One job finishes at 10 ms, an older waiter is already queued and a new job arrives at 10 ms. Who gets the free worker?",
+    "explanation": "This model completes due work first, dispatches existing FIFO waiters next, then handles new arrivals. The older waiter starts at 10 ms. The arrival can occupy the newly freed waiting slot; it does not jump ahead. This is a declared model tie rule, not wall-clock scheduling behavior.",
+    "modelAnswer": "This model completes due work first, dispatches existing FIFO waiters next, then handles new arrivals. The older waiter starts at 10 ms. The arrival can occupy the newly freed waiting slot; it does not jump ahead. This is a declared model tie rule, not wall-clock scheduling behavior.",
+    "rubric": [
+      "Names completion before dispatch before arrival",
+      "Preserves the older waiter\u2019s order",
+      "Explains the new arrival\u2019s waiting-slot decision"
+    ],
+    "followUp": "What should a limited trace show if its event budget stops between completion and queued start?"
+  },
+  {
+    "id": "queue-export-design",
+    "topicId": "queues-tail-latency",
+    "level": "intermediate",
+    "kind": "design-decision",
+    "prompt": "A report-export service sees short bursts and occasional expensive jobs. Product asks you to increase the waiting queue tenfold because some jobs are rejected. What do you measure and propose?",
+    "explanation": "Measure arrival bursts, job service durations, waiting age, successful latency and rejected/outstanding counts. Choose a waiting budget from the product deadline. Increase buffer only if bursts can drain usefully; evaluate worker capacity with real CPU/dependency measurements. Keep explicit admission/fallback behavior. A larger queue alone does not create processing capacity.",
+    "modelAnswer": "Measure arrival bursts, job service durations, waiting age, successful latency and rejected/outstanding counts. Choose a waiting budget from the product deadline. Increase buffer only if bursts can drain usefully; evaluate worker capacity with real CPU/dependency measurements. Keep explicit admission/fallback behavior. A larger queue alone does not create processing capacity.",
+    "rubric": [
+      "States latency and rejection requirements",
+      "Separates burst absorption from sustained overload",
+      "Names real resource/dependency constraints when adding workers",
+      "Uses the trace as a model and seeks production evidence"
+    ],
+    "followUp": "How would the choice change if jobs remain useful for hours rather than seconds?"
+  }
+]
