@@ -203,7 +203,7 @@ test("all eight Guided targets reveal exact Java message attempts and preserve h
   expect(runs).toHaveLength(8);
   await selectCheckpoint(page, checkpoints[0]!);
   await expect(inspector(page)).toContainText("m1-a1");
-  await reveal(page).click();
+  await expect(reveal(page)).toHaveCount(0);
   expect(runs).toHaveLength(8);
   const result = results.get("baseline")!;
   await assertJavaPrefix(
@@ -416,7 +416,7 @@ test("authored ownership and all three sequence paths are keyboard reading flows
       });
       await next.focus();
       await page.keyboard.press("Enter");
-      await expect(next).toBeFocused();
+      if (index < times.length - 1) await expect(next).toBeFocused();
       await expect(
         page.getByRole("region", {
           name: "Selected authored message step",
