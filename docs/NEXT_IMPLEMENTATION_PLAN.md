@@ -12,7 +12,14 @@ Deliver an excellent first learning path:
 
 Keep the existing distributed rate limiter working and bring its explanations to the same standard. A learner should be able to predict behavior, run an experiment, explain the evidence simply, and defend a design decision in an SDE-2 interview or team discussion.
 
-The immediate assignment is HLD-05 through HLD-11, one bounded contribution at a time. HLD-12 onward is a later expansion, not part of this assignment. Follow the full [implementation plan](IMPLEMENTATION_PLAN.md) for detailed contracts, fixtures, and prerequisites and the [roadmap](ROADMAP.md) for authoritative status. This document updates the starting point and provides the execution checklist; it does not waive any release gate.
+The owner has resumed the broader assignment: complete URL Shortener; Queues, Retries and
+Idempotency; Distributed Rate Limiter; Notification Service; Chat; News Feed; and Booking,
+including their prerequisites. HLD-12 onward is now authorized scope, one bounded contribution
+at a time. [Decision 0022](decisions/0022-development-and-publication-gates.md) allows unpublished
+development against the verified technical baseline while human/hosted first-release reviews
+remain open. Publication still requires P2-05, module reviews and published prerequisite closure.
+Follow the full [implementation plan](IMPLEMENTATION_PLAN.md) and [roadmap](ROADMAP.md) for
+contracts, dependencies and authoritative status; this scope update does not pass a release gate.
 
 ## 2. Establish the starting point
 
@@ -22,7 +29,9 @@ Before editing:
 2. Inspect `git status`, current branch, remote changes, catalog, work items, and nearby code/tests. Preserve unrelated work. Fetch GitHub and reconcile changes after the baseline.
 3. Inspect the LLD project's module experience when available. Use it as the product reference while preserving HLD's established visual identity and repository rules.
 4. Create a fresh branch from current `main` for the first implementation task. If this documentation handoff is still uncommitted, preserve it on its own branch; do not mix it into a feature PR or discard it.
-5. Write the task's acceptance criteria in `docs/work-items/HLD-05.md` using the work-item template. Do the same for subsequent tasks.
+5. Use the roadmap and actual code to choose the current task; HLD-05 is already implemented.
+   Write its acceptance criteria in a new work item using the work-item template. Do not
+   overwrite completed evidence or reuse an old work-item ID for a different contribution.
 
 ### Already implemented: preserve and reuse
 
@@ -53,7 +62,18 @@ Those counts are historical, not a target or a substitute for rerunning applicab
 | 10 | HLD-10 | Search, bookmarks, resume, first learning path | Search first, then navigation/progress |
 | 11 | HLD-11 | First-release verification and honest release report | Fixes and evidence in focused PRs |
 
-Finish the current task before starting another. If a manual gate is unavailable, record exactly what remains, continue only independent work, and keep the affected release/publication status incomplete.
+Finish the current task before starting another. If a manual gate is unavailable, record
+exactly what remains and keep the affected release/publication status incomplete. Independent
+draft development follows decision 0022 and the curriculum's prerequisite order.
+
+### Current expansion starting point
+
+The [queue-delivery handoff](QUEUE_DELIVERY_IMPLEMENTATION_PLAN.md) specifies the future
+delivery/effect/ACK experiment, exact fixtures, typed state, UI and checks. It is preparation,
+not a shipped module. Its first missing prerequisite, `queues-tail-latency`, is the next
+implementation: bounded Java contract/model, explicit draft preview delivery, then React
+learning flow and teaching review. The existing topic API does not serve draft topics;
+adding a draft catalog entry alone cannot provide a usable preview.
 
 ## 4. HLD-05: cache visual playback — implement first
 
@@ -195,6 +215,10 @@ For a clean environment, first use `npm ci --prefix frontend` and install the pi
 
 Each distinct task gets a fresh branch from updated `main`, a focused PR, actual local checks, and passing required CI before squash merge. Never bypass a failed check. Update the relevant work item and roadmap in the same contribution. Report: changes, learning outcome, checks/results, limitations, PR/commit, and exact next task. User publishing authorization governs execution; the copyable prompt supplies explicit authorization when used.
 
-## 11. Deferred expansion
+## 11. Authorized expansion and publication order
 
-After first-release gates pass and the owner requests the next scope, follow HLD-12 onward: storage/replication/partitioning foundations; queues, retries, idempotency and backpressure; then Notification, integrated Rate Limiter, Chat, News Feed, Booking and other design cases in prerequisite order. Do not add shallow cards for these during the first-release assignment.
+The owner has requested this scope. Follow HLD-12 onward: storage/replication/partitioning
+foundations; queues, retries, idempotency and backpressure; then Notification, integrated Rate
+Limiter, Chat, News Feed and Booking in prerequisite order. Develop unpublished modules under
+decision 0022 without postponing the remaining first-release reviews. Publish only after
+the relevant release and prerequisite gates pass. Do not add shallow cards for absent modules.

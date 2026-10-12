@@ -48,14 +48,19 @@ Use [the first release blueprint](RELEASE_ONE_BLUEPRINT.md) for worked fixtures 
 
 ## Phase 3: core HLD breadth
 
-All entries depend on `P2-05` and the prerequisite closure in the curriculum. Build one complete module at a time within each wave.
+Publication of all entries depends on `P2-05` and published prerequisite closure in the
+curriculum. [Decision 0022](decisions/0022-development-and-publication-gates.md) permits bounded
+unpublished development against the verified technical baseline and implemented/reviewed
+prerequisite artifacts while first-release human/hosted reviews remain open. An absent
+prerequisite still prevents dependent implementation. Build one complete module at a time
+within each wave; draft work does not close a release gate.
 
 | ID | Wave | Required outcome | Status |
 | --- | --- | --- | --- |
 | `P3-01` | Requirements, edge networking, APIs, scaling, data models and indexes | Learner can derive a baseline architecture and access patterns | planned |
 | `P3-02` | Replication, partitioning, consistent hashing, transactions | Learner can explain read/write placement and preserve a stated invariant | planned |
 | `P3-03` | Cache policies/failures, CDN, saturation | Learner diagnoses origin overload, skew, and queue growth | planned |
-| `P3-04` | Queues/streams, idempotency, retries, breakers, rate limiting | Learner traces duplicates, retries, backpressure, and recovery | **in-progress** — a standalone distributed-rate-limiter topic now compares fixed window/token bucket, shared/local counter scope, overshoot, and backend failure policy; [HLD-07C](work-items/HLD-07C.md) corrects the unrelated RFC 9331 citation, scopes primary references, adds Java-verified boundary/refill/outage examples and practice, and clarifies window/burst allowance versus run totals and unknown quota on counter failure (content 1.1.0); manual zoom/screen-reader and newcomer review remain; queue, stream, retry, idempotency, and breaker modules plus the Phase 3 wave gate remain |
+| `P3-04` | Queues/streams, idempotency, retries, breakers, rate limiting | Learner traces duplicates, retries, backpressure, and recovery | **in-progress** — a standalone distributed-rate-limiter topic now compares fixed window/token bucket, shared/local counter scope, overshoot, and backend failure policy; [HLD-07C](work-items/HLD-07C.md) corrects the unrelated RFC 9331 citation, scopes primary references, adds Java-verified boundary/refill/outage examples and practice, and clarifies window/burst allowance versus run totals and unknown quota on counter failure (content 1.1.0). [HLD-13-PREP-A](work-items/HLD-13-PREP-A.md) specifies proposed queue delivery and reconciles development/publication sequencing; it implements no queue module. Next implementation: `queues-tail-latency`, then delivery. Manual zoom/screen-reader and newcomer review remain; queue, stream, retry, idempotency, and breaker modules plus the Phase 3 publication gate remain |
 | `P3-05` | Architecture boundaries, observability, security/tenancy | Learner defends boundaries and diagnoses an incident with evidence | planned |
 | `P3-06` | Notification, rate limiter (`rate-limiter-workshop`), chat, feed cases; timed practice | Four integrated cases plus 45-minute configurable interview flow and self-assessment | planned |
 
