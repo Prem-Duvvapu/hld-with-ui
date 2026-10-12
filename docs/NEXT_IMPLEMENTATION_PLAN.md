@@ -68,15 +68,15 @@ draft development follows decision 0022 and the curriculum's prerequisite order.
 
 ### Current expansion starting point
 
-The [queue-delivery handoff](QUEUE_DELIVERY_IMPLEMENTATION_PLAN.md) specifies the future
-delivery/effect/ACK experiment, exact fixtures, typed state, UI and checks. It is preparation,
-not a shipped module. Its prerequisite `queues-tail-latency` has a bounded Java model in
+The [queue-delivery handoff](QUEUE_DELIVERY_IMPLEMENTATION_PLAN.md) specifies the
+delivery/effect/ACK experiment, exact fixtures, typed state, UI and checks. HLD-14A now
+implements its standalone Java model and contracts; API/UI integration remains pending. Its prerequisite `queues-tail-latency` has a bounded Java model in
 [HLD-13A](work-items/HLD-13A.md) and a first accessible draft learning experience in
 [HLD-13B](work-items/HLD-13B.md): explicit draft delivery, Playground, Study and Practice.
 [HLD-13C](work-items/HLD-13C.md) adds eight Java-verified Guided checkpoints, original
 architecture/job-path views and draft checkpoint resume using a typed shared guided flow.
-Review this prerequisite's completed teaching artifacts, then implement dependent queue
-delivery from the handoff. Publication and human review
+The prerequisite's teaching artifacts are technically reviewed. [HLD-14A](work-items/HLD-14A.md) supplies
+the dependent domain behavior; next register descriptor/API and deliberate draft integration. Publication and human review
 remain separate gates. The published topic API still rejects drafts; preview uses the explicit
 `/api/v1/draft/topics/{id}` endpoint and `/draft/topics/queues-tail-latency` route.
 
@@ -227,3 +227,11 @@ foundations; queues, retries, idempotency and backpressure; then Notification, i
 Limiter, Chat, News Feed and Booking in prerequisite order. Develop unpublished modules under
 decision 0022 without postponing the remaining first-release reviews. Publish only after
 the relevant release and prerequisite gates pass. Do not add shallow cards for absent modules.
+
+### Delivery domain follow-up (HLD-14A)
+
+The capacity prerequisite has its complete core draft teaching flow. [HLD-14A](work-items/HLD-14A.md)
+implements standalone Java delivery semantics and contracts. The next bounded contribution adds
+a descriptor/run API, strict parsing, complete-response/admission/recovery/isolation evidence and
+canonical draft lesson/questions/resources; it must not advertise a React capability before the
+renderer and real browser journey exist. Follow the [delivery handoff](QUEUE_DELIVERY_IMPLEMENTATION_PLAN.md).

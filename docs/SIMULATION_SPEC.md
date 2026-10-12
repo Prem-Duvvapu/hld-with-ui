@@ -157,3 +157,16 @@ Consensus simulations additionally require protocol-specific safety tests, not j
 ### HTTP resource guards (2026-10-10)
 
 [HLD-11A](work-items/HLD-11A.md) caps raw API POST bodies (including chunked/unknown-length streams) and complete serialized simulation JSON independently of the events-array budget. The HTTP filter rejects excess simultaneous runs with 503 before parsing; controller serialization rejects oversized results with 422 before writing success bytes; oversized bodies return 413. Error timestamps are external metadata. These failures return no simulation result, and React requires an explicit retry with the retained inputs. They do not change virtual-time behavior, model/schema versions, or replay for admitted runs not censored by the cooperative wall-clock guard. Hosted network/thread/heap budgets and human release review remain separate gates.
+
+### Delivery transition batches
+
+The standalone `queues-delivery` model now implements explicit effect/expiry/ACK/crash/recovery
+and dispatch phases. ACK send/disposition, expiry/requeue-or-dead-letter and crash/cancellations
+are admitted as complete batches before any durable or scheduler mutation. Events contain typed
+post-event changes; playback reconstruction must apply every preceding delta. Each changed entity is its complete post-event record: replace it by stable
+ID rather than shallow-merging. With the configured omitted-null JSON representation, an absent
+nullable field clears its former value; it must not preserve an earlier processing pointer. The local guarded
+collector preserves partial-prefix populations and reports `no_future_progress` only after all
+valid pending actions drain. This adds no shared scheduler or HTTP registry. See
+[HLD-14A](work-items/HLD-14A.md) and [decision 0026](decisions/0026-atomic-delivery-transition-batches.md)
+for independent state axes, input/tie policies and actual checks.

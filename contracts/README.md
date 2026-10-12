@@ -15,7 +15,7 @@ npm run contracts:validate
 npm run contracts:check
 ```
 
-`contracts:check` exports canonical queue schemas into OpenAPI, regenerates the committed TypeScript output and fails when either differs, then validates content shape and semantics. Semantic checks cover unique IDs, prerequisite references and cycles, content paths, lesson heading order, question ownership and answers, source references, capability-to-model references, and guided checkpoints (the `guided` capability requires `checkpointsPath`; each target's event kind must exist in its simulation's event contract). Java tests run each checkpoint's preset and resolve its target event. Workshop checks validate stable stage/answer identities, versions, source references, published experiment links, and the full-journey publication guard. Isolated negative fixtures run as part of `contracts:validate`; Java separately validates packaged case resources and catalog prerequisite references, publication closure and cycles at startup, including Java-only builds. These checks do not establish manual release readiness.
+`contracts:check` exports canonical queue-capacity schemas into OpenAPI, regenerates the committed TypeScript output and fails when either differs, then validates content shape and semantics. Semantic checks cover unique IDs, prerequisite references and cycles, content paths, lesson heading order, question ownership and answers, source references, capability-to-model references, and guided checkpoints (the `guided` capability requires `checkpointsPath`; each target's event kind must exist in its simulation's event contract). Java tests run each checkpoint's preset and resolve its target event. Workshop checks validate stable stage/answer identities, versions, source references, published experiment links, and the full-journey publication guard. Isolated negative fixtures run as part of `contracts:validate`; Java separately validates packaged case resources and catalog prerequisite references, publication closure and cycles at startup, including Java-only builds. These checks do not establish manual release readiness.
 
 ## Case discovery
 
@@ -59,6 +59,33 @@ path/module IDs, existing catalog references, and every prerequisite earlier in 
 order. Java repeats these checks at startup. The API resolves published entries and current answer
 identities, hiding entry/activity metadata for draft/planned steps. Browser tests validate the
 actual Java response against OpenAPI and separately assert the draft publication boundary.
+
+## Standalone queue delivery domain contract
+
+`queue-delivery.input.schema.json` and `queue-delivery.result.schema.json` describe the
+illustrative `queues-delivery` domain model (`1.0` schema, `1.0.0` model). These standalone
+schemas do not register an HTTP endpoint, catalog capability, generated frontend type or UI.
+The existing exporter continues to export only the implemented HTTP model and guided contracts.
+
+Inputs use bounded ASCII identities, explicit enqueue/failure/lost-ACK schedules and signed
+JavaScript-safe seeds. JSON Schema checks closed fields, types and bounds. Java additionally
+checks unique identities, referenced schedule subjects, loss selectors, chronological
+alternating crash/recovery actions and the ACK-before timing inequality. The schema accepts
+parsed JSON values; it does not claim to detect duplicate raw JSON keys or token spellings.
+
+Result events carry typed post-event entity changes. Each kind requires its applicable
+message/attempt/consumer identities; only `effect.committed` carries a ledger append. Lease,
+effect and ACK states remain separate, including transient crash and expiry states inside
+atomic event batches. Java tests reconcile these changes with final state, outcomes and metrics.
+Unavailable nullable fields may be omitted by the configured mapper. Limited runs require a
+stop reason and leave `acknowledgedWithoutEffect` unavailable; empty ACK/effect populations
+leave latency statistics unavailable. Neither ACK policy promises exactly-once business effects.
+
+The baseline input and actual Java-serialized result in `examples/` are checked by
+`contracts:validate`; the delivery fixture suite adds positive boundary and meaningful negative
+checks. Its derived limited structural fixture is explicitly distinguished from an executed
+limited simulation. Serialization comparison and causal semantics remain Java test responsibilities.
+See the [delivery implementation handoff](../docs/QUEUE_DELIVERY_IMPLEMENTATION_PLAN.md).
 
 ## HTTP resource failures
 

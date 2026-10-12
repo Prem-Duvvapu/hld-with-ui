@@ -73,14 +73,16 @@ for (const example of ["request-flow-baseline", "request-flow-overload"]) {
   }
 }
 
-// Canonical queue schemas validate model examples; editorial publication stays independent.
-for (const kind of ["input", "result"]) {
-  const example = `queue-capacity-baseline-${kind}`;
-  validateSchema(
-    `contracts/queue-capacity.${kind}.schema.json`,
-    readJson(`contracts/examples/${example}.json`),
-    example,
-  );
+// Standalone model examples do not register endpoints or publication capabilities.
+for (const model of ["queue-capacity", "queue-delivery"]) {
+  for (const kind of ["input", "result"]) {
+    const example = `${model}-baseline-${kind}`;
+    validateSchema(
+      `contracts/${model}.${kind}.schema.json`,
+      readJson(`contracts/examples/${example}.json`),
+      example,
+    );
+  }
 }
 
 unique(

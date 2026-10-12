@@ -16,7 +16,9 @@ A draft **Queues & Tail Latency** module is available at
 controls, real snapshot playback, eight Guided checkpoints, Architecture and Job sequence
 views, a worked lesson and six Practice questions. It models
 in-memory waiting and rejection; durable delivery, retries and acknowledgments remain future
-work. See [HLD-13C](docs/work-items/HLD-13C.md). There are still four published modules.
+work. See [HLD-13C](docs/work-items/HLD-13C.md). A separate pure Java delivery model and standalone
+contracts now provide the ACK/effect/crash experiment in [HLD-14A](docs/work-items/HLD-14A.md);
+its API and React experience are not yet registered. There are still four published modules.
 
 ## Record your learning
 
