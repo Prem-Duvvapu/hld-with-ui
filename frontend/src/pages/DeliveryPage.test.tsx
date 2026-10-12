@@ -1,4 +1,5 @@
 import catalog from "../../../content/catalog.json";
+import checkpoints from "../../../content/topics/queues-delivery/checkpoints.json";
 import questions from "../../../content/topics/queues-delivery/questions.json";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
@@ -22,7 +23,7 @@ const topic: TopicDetail = {
   lessonMarkdown:
     "# Separate facts\n\nA committed effect does not confirm an ACK.",
   questions: questions as TopicDetail["questions"],
-  checkpoints: [],
+  checkpoints: checkpoints as TopicDetail["checkpoints"],
 };
 beforeEach(() => {
   vi.resetAllMocks();
@@ -36,12 +37,12 @@ function view(route = "/draft/topics/queues-delivery") {
     </MemoryRouter>,
   );
 }
-it("offers exactly three implemented draft tabs, with no run or bookmark on load, and keeps edited inputs across tabs", async () => {
+it("offers exactly six implemented draft tabs, with no run or bookmark on load, and keeps edited inputs across tabs", async () => {
   view("/draft/topics/queues-delivery?view=study");
   expect(
     await screen.findByRole("region", { name: "Draft delivery module" }),
   ).toBeVisible();
-  expect(screen.getAllByRole("tab")).toHaveLength(3);
+  expect(screen.getAllByRole("tab")).toHaveLength(6);
   expect(screen.getByRole("tab", { name: /Study/ })).toHaveAttribute(
     "aria-selected",
     "true",
@@ -93,4 +94,24 @@ it("rejects a published payload instead of silently exposing it as this draft", 
   view();
   expect(await screen.findByRole("alert")).toHaveTextContent("incompatible");
   expect(screen.queryByRole("tab")).not.toBeInTheDocument();
+});
+
+it("does not expose a nonfunctional Guided tab when its advertised checkpoints are missing", async () => {
+  vi.mocked(api.draftTopic).mockResolvedValue({ ...topic, checkpoints: [] });
+  view();
+  expect(await screen.findByRole("alert")).toHaveTextContent("incompatible");
+  expect(screen.queryByRole("tab", { name: /Guided/ })).toBeNull();
+});
+it("honors a direct Guided checkpoint link without automatically running or revealing its explanation", async () => {
+  const checkpoint = topic.checkpoints[0]!;
+  view(`/draft/topics/queues-delivery?view=guided&checkpoint=${checkpoint.id}`);
+  expect(
+    await screen.findByRole("heading", { name: checkpoint.title, level: 2 }),
+  ).toBeVisible();
+  expect(screen.getByRole("tab", { name: /Guided/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  expect(screen.queryByText(checkpoint.explanation)).toBeNull();
+  expect(api.runDelivery).not.toHaveBeenCalled();
 });

@@ -38,7 +38,7 @@
         "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
       },
       "target": {
-        "description": "Select exactly one semantic subject: a cache operation or a queue job ID, plus event kind and 1-based occurrence.",
+        "description": "Select exactly one group: a cache operation, a capacity job ID, or a paired delivery messageId/attemptId. Then select its event kind and 1-based occurrence.",
         "oneOf": [
           {
             "type": "object",
@@ -82,6 +82,52 @@
                 "minimum": 1
               }
             }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["messageId", "attemptId", "kind", "occurrence"],
+            "properties": {
+              "messageId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32,
+                "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                "not": {
+                  "pattern": "\\s"
+                }
+              },
+              "attemptId": {
+                "type": "string",
+                "minLength": 4,
+                "maxLength": 35,
+                "pattern": "^[a-z][a-z0-9-]{0,31}-a[1-5]$",
+                "not": {
+                  "pattern": "\\s"
+                }
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "delivery.started",
+                  "effect.committed",
+                  "ack.sent",
+                  "ack.accepted",
+                  "ack.lost",
+                  "ack.stale",
+                  "lease.expired",
+                  "message.requeued",
+                  "message.dead-lettered",
+                  "attempt.cancelled"
+                ]
+              },
+              "occurrence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10000
+              }
+            },
+            "description": "Delivery target requires a semantic message/attempt pair. Attempt identity must equal messageId followed by -a1 through -a5; content and Java validators enforce this association. Its closed kind vocabulary is checked against actual delivery event selector capabilities during generation."
           }
         ]
       },
@@ -136,6 +182,6 @@
         }
       }
     },
-    "description": "One predict -> reveal -> explain -> choose step. Its target selects a supported event in the real preset trace by stable operation or job identity, kind and occurrence."
+    "description": "One predict -> reveal -> explain -> choose step. Its target selects supported Java evidence by operation, job, or paired message/attempt identity, kind and occurrence; never by narration or event array index."
   }
 }

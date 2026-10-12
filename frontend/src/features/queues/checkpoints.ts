@@ -4,7 +4,15 @@ export function resolveQueueCheckpoint(
   events: readonly QueueCapacityEvent[],
   target: GuidedCheckpoint["target"],
 ): number {
-  if (!("jobId" in target) || "operation" in target) return -1;
+  if (
+    !target ||
+    typeof target !== "object" ||
+    !("jobId" in target) ||
+    "operation" in target ||
+    "messageId" in target ||
+    "attemptId" in target
+  )
+    return -1;
   let occurrence = 0;
   for (let index = 0; index < events.length; index++) {
     const event = events[index]!;

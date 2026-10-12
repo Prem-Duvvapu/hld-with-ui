@@ -172,3 +172,13 @@ without changing this model, its versions or scheduler. The canonical schemas ar
 lazily in React before presentation; state projection applies all prior deltas by full replacement. See
 [HLD-14A](work-items/HLD-14A.md) and [decision 0026](decisions/0026-atomic-delivery-transition-batches.md)
 for independent state axes, input/tie policies and actual checks.
+
+
+### Delivery Guided evidence
+
+HLD-14C targets a returned event by the paired semantic `messageId`/`attemptId`, kind and
+1-based occurrence. It reconstructs every preceding full replacement and emitted ledger record.
+Canonical validation checks the selected kind actually supports both non-null identities;
+consumer-only and enqueue events cannot claim an attempt pair. Java fixtures verify all eight
+checkpoint facts and three authored sequence timelines. Model/schema remain 1.0.0/1.0;
+illustration selection is not a simulation run. See [decision 0028](decisions/0028-delivery-guided-message-attempt-targets.md).

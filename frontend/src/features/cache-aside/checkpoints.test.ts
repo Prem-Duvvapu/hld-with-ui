@@ -52,3 +52,19 @@ describe("resolveCheckpoint", () => {
     ).toBe(-1);
   });
 });
+
+it("refuses delivery fields attached to an otherwise matching legacy operation", () => {
+  const target = {
+    operation: 4,
+    kind: "cache.hit",
+    occurrence: 1,
+    messageId: "m1",
+    attemptId: "m1-a1",
+  };
+  expect(
+    resolveCheckpoint(
+      orderedEvents(baseline.result.events),
+      target as Parameters<typeof resolveCheckpoint>[1],
+    ),
+  ).toBe(-1);
+});

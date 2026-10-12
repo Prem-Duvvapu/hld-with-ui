@@ -183,5 +183,8 @@ endpoints and one canonical draft topic with a lazy React Playground/Study/Pract
 Canonical input/result/descriptor validation loads through the delivery API compatibility chunk.
 Java remains authoritative; complete changed records replace prior records during playback,
 including omitted nullable pointers. [Decision 0027](decisions/0027-delivery-draft-experience.md)
-records this boundary. Published discovery and learning paths remain unchanged; Guided and
-authored Architecture/sequence views remain a separate next contribution.
+records this boundary. [HLD-14C](work-items/HLD-14C.md) adds a paired message/attempt Guided
+target family and a delivery adapter over the shared saved-answer lifecycle. Eight checkpoints
+select actual Java evidence; authored Architecture/Message sequence views explain ownership
+and three causal paths without running the model. [Decision 0028](decisions/0028-delivery-guided-message-attempt-targets.md)
+records selector compatibility. Published discovery and learning paths remain unchanged.

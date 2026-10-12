@@ -3,6 +3,7 @@ import { dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
+import { eventSupportsSelector } from "./event-selector-capabilities.mjs";
 
 const frontendRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const root = resolve(frontendRoot, "..");
@@ -354,11 +355,12 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
         errors.push(
           `${checkpoint.id}: ${checkpoint.simulationId} never emits ${checkpoint.target?.kind}`,
         );
-      for (const selector of ["operation", "jobId"]) {
+      for (const selector of ["operation", "jobId", "messageId", "attemptId"]) {
         if (
           Object.hasOwn(checkpoint.target ?? {}, selector) &&
-          !Object.hasOwn(
-            eventSchema(checkpoint.simulationId)?.properties ?? {},
+          !eventSupportsSelector(
+            eventSchema(checkpoint.simulationId),
+            checkpoint.target?.kind,
             selector,
           )
         )
@@ -366,6 +368,18 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
             `${checkpoint.id}: ${checkpoint.simulationId} events do not support target selector ${selector}`,
           );
       }
+      if (
+        typeof checkpoint.target?.messageId === "string" &&
+        typeof checkpoint.target?.attemptId === "string" &&
+        ![1, 2, 3, 4, 5].some(
+          (attempt) =>
+            checkpoint.target.attemptId ===
+            `${checkpoint.target.messageId}-a${attempt}`,
+        )
+      )
+        errors.push(
+          `${checkpoint.id}: attemptId must belong to the selected messageId and supported attempt range`,
+        );
       const optionIds = (checkpoint.tradeoff?.options ?? []).map(
         (option) => option.id,
       );

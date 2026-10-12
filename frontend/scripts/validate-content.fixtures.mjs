@@ -14,15 +14,17 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import "./validate-delivery-contract.fixtures.mjs";
+import "./event-selector-capabilities.test.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const workshopPath = "content/case-studies/url-shortener/workshop.json";
 
-function rejectChange(
+function checkChange(
   change,
   expected,
   changePaths = () => {},
   changeContracts = () => {},
+  expectedStatus = 1,
 ) {
   const fixture = mkdtempSync(join(tmpdir(), "hld-content-"));
   try {
@@ -32,10 +34,14 @@ function rejectChange(
       });
     changeContracts(fixture);
     mkdirSync(join(fixture, "frontend/scripts"), { recursive: true });
-    cpSync(
-      join(root, "frontend/scripts/validate-content.mjs"),
-      join(fixture, "frontend/scripts/validate-content.mjs"),
-    );
+    for (const script of [
+      "validate-content.mjs",
+      "event-selector-capabilities.mjs",
+    ])
+      cpSync(
+        join(root, `frontend/scripts/${script}`),
+        join(fixture, `frontend/scripts/${script}`),
+      );
     symlinkSync(
       join(root, "frontend/node_modules"),
       join(fixture, "frontend/node_modules"),
@@ -62,11 +68,18 @@ function rejectChange(
       [join(fixture, "frontend/scripts/validate-content.mjs")],
       { encoding: "utf8" },
     );
-    assert.equal(result.status, 1, result.stdout + result.stderr);
-    assert.match(result.stderr, expected);
+    assert.equal(result.status, expectedStatus, result.stdout + result.stderr);
+    assert.match(
+      expectedStatus === 0 ? result.stdout : result.stderr,
+      expected,
+    );
   } finally {
     rmSync(fixture, { recursive: true, force: true });
   }
+}
+
+function rejectChange(...args) {
+  checkChange(...args);
 }
 
 function rejectQueueExample(kind, change, expected) {
@@ -418,6 +431,135 @@ test("reject mixed operation and job selectors", () => {
     "queues-tail-latency",
     { operation: 1, jobId: "job-1", kind: "job.started", occurrence: 1 },
     /must NOT have additional properties/,
+  );
+});
+
+const deliveryTarget = {
+  messageId: "m1",
+  attemptId: "m1-a1",
+  kind: "effect.committed",
+  occurrence: 1,
+};
+for (const [name, target, expected] of [
+  [
+    "mixed operation and delivery selectors",
+    { ...deliveryTarget, operation: 1 },
+    /additional properties/,
+  ],
+  [
+    "mixed job and delivery selectors",
+    { ...deliveryTarget, jobId: "job-1" },
+    /additional properties/,
+  ],
+  [
+    "delivery target missing its attempt",
+    { messageId: "m1", kind: "effect.committed", occurrence: 1 },
+    /required property 'attemptId'/,
+  ],
+  [
+    "delivery target missing its message",
+    { attemptId: "m1-a1", kind: "effect.committed", occurrence: 1 },
+    /required property 'messageId'/,
+  ],
+  [
+    "delivery message ID with a newline",
+    { ...deliveryTarget, messageId: "m1\n" },
+    /must NOT be valid/,
+  ],
+  [
+    "delivery attempt ID with a newline",
+    { ...deliveryTarget, attemptId: "m1-a1\n" },
+    /must NOT be valid/,
+  ],
+  [
+    "mismatched delivery message and attempt",
+    { ...deliveryTarget, attemptId: "other-a1" },
+    /attemptId must belong to the selected messageId/,
+  ],
+  [
+    "delivery attempt above the modeled maximum",
+    { ...deliveryTarget, attemptId: "m1-a6" },
+    /must match pattern/,
+  ],
+  [
+    "delivery occurrence below one",
+    { ...deliveryTarget, occurrence: 0 },
+    /must be >= 1/,
+  ],
+  [
+    "delivery occurrence beyond trace ceiling",
+    { ...deliveryTarget, occurrence: 10001 },
+    /must be <= 10000/,
+  ],
+  [
+    "unsupported delivery event kind",
+    { ...deliveryTarget, kind: "message.fabricated" },
+    /never emits message.fabricated/,
+  ],
+  [
+    "message enqueue used as an attempt target",
+    { ...deliveryTarget, kind: "message.enqueued" },
+    /events do not support target selector attemptId/,
+  ],
+  [
+    "consumer crash used as a paired message target",
+    { ...deliveryTarget, kind: "consumer.crashed" },
+    /events do not support target selector messageId/,
+  ],
+  [
+    "consumer recovery used as a paired message target",
+    { ...deliveryTarget, kind: "consumer.recovered" },
+    /events do not support target selector messageId/,
+  ],
+  [
+    "delivery target using a cache operation",
+    { operation: 1, kind: "ack.accepted", occurrence: 1 },
+    /events do not support target selector operation/,
+  ],
+  [
+    "delivery target using a capacity job",
+    { jobId: "job-1", kind: "ack.accepted", occurrence: 1 },
+    /events do not support target selector jobId/,
+  ],
+]) {
+  test(`reject checkpoint ${name}`, () =>
+    rejectCheckpointTarget("queues-delivery", target, expected));
+}
+
+test("reject a cache checkpoint with paired delivery identities", () => {
+  rejectCheckpointTarget(
+    "cache-aside",
+    deliveryTarget,
+    /cache-aside events do not support target selector messageId/,
+  );
+});
+test("reject a capacity checkpoint with paired delivery identities", () => {
+  rejectCheckpointTarget(
+    "queues-tail-latency",
+    deliveryTarget,
+    /queues-tail-latency events do not support target selector messageId/,
+  );
+});
+test("accept a paired dead-letter checkpoint kind without widening legacy grammars", () => {
+  checkChange(
+    () => {},
+    /Validated/,
+    () => {},
+    (fixture) => {
+      const path = join(
+        fixture,
+        "content/topics/queues-delivery/checkpoints.json",
+      );
+      const checkpoints = JSON.parse(readFileSync(path, "utf8"));
+      checkpoints[0].presetId = "overlapping-attempts";
+      checkpoints[0].target = {
+        ...deliveryTarget,
+        attemptId: "m1-a2",
+        kind: "message.dead-lettered",
+      };
+      writeFileSync(path, JSON.stringify(checkpoints));
+    },
+    0,
   );
 });
 test("reject a queue checkpoint with an operation selector", () => {

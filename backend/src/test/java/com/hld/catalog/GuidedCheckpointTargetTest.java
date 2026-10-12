@@ -6,35 +6,160 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 import org.junit.jupiter.api.Test;
 
 class GuidedCheckpointTargetTest {
-    @Test void selectsExactlyOneCacheOperationOrQueueJob() {
+    @Test
+    void selectsExactlyOneCacheOperationOrQueueJob() {
         var cache = new GuidedCheckpoint.Target(1, null, "cache.fill", 1);
         assertThat(cache.operation()).isEqualTo(1);
         assertThat(cache.jobId()).isNull();
         var queue = new GuidedCheckpoint.Target(null, "job-1", "job.started", 1);
         assertThat(queue.operation()).isNull();
         assertThat(queue.jobId()).isEqualTo("job-1");
-        assertThatIllegalArgumentException().isThrownBy(() ->
-                new GuidedCheckpoint.Target(null, null, "job.started", 1));
-        assertThatIllegalArgumentException().isThrownBy(() ->
-                new GuidedCheckpoint.Target(1, "job-1", "job.started", 1));
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> new GuidedCheckpoint.Target(null, null, "job.started", 1));
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> new GuidedCheckpoint.Target(1, "job-1", "job.started", 1));
     }
 
-    @Test void rejectsSelectorsThatCannotResolveToSupportedIdentitiesOrOccurrences() {
+    @Test
+    void rejectsSelectorsThatCannotResolveToSupportedIdentitiesOrOccurrences() {
         for (int operation : new int[] {0, -1}) {
-            assertThatIllegalArgumentException().isThrownBy(() ->
-                    new GuidedCheckpoint.Target(operation, null, "cache.fill", 1));
+            assertThatIllegalArgumentException()
+                    .isThrownBy(
+                            () -> new GuidedCheckpoint.Target(operation, null, "cache.fill", 1));
         }
         for (String jobId : new String[] {"", "Job-1", "job!1", "x".repeat(33), "job-1\n"}) {
-            assertThatIllegalArgumentException().isThrownBy(() ->
-                    new GuidedCheckpoint.Target(null, jobId, "job.started", 1));
+            assertThatIllegalArgumentException()
+                    .isThrownBy(() -> new GuidedCheckpoint.Target(null, jobId, "job.started", 1));
         }
-        for (String kind : new String[] {null, "", " ", "job", "JOB.started", "job.started!", "job.started\n"}) {
-            assertThatIllegalArgumentException().isThrownBy(() ->
-                    new GuidedCheckpoint.Target(null, "job-1", kind, 1));
+        for (String kind :
+                new String[] {
+                    null, "", " ", "job", "JOB.started", "job.started!", "job.started\n"
+                }) {
+            assertThatIllegalArgumentException()
+                    .isThrownBy(() -> new GuidedCheckpoint.Target(null, "job-1", kind, 1));
         }
         for (int occurrence : new int[] {0, -1}) {
-            assertThatIllegalArgumentException().isThrownBy(() ->
-                    new GuidedCheckpoint.Target(null, "job-1", "job.started", occurrence));
+            assertThatIllegalArgumentException()
+                    .isThrownBy(
+                            () ->
+                                    new GuidedCheckpoint.Target(
+                                            null, "job-1", "job.started", occurrence));
         }
+    }
+
+    @Test
+    void deliveryTargetsRequireAMatchingPairAndOneSelectorGroup() {
+        var target = new GuidedCheckpoint.Target(null, null, "m1", "m1-a1", "effect.committed", 1);
+        assertThat(target.operation()).isNull();
+        assertThat(target.jobId()).isNull();
+        assertThat(target.messageId()).isEqualTo("m1");
+        assertThat(target.attemptId()).isEqualTo("m1-a1");
+        for (String[] pair :
+                new String[][] {
+                    {"m1", null},
+                    {null, "m1-a1"},
+                    {"m1", "m10-a1"},
+                    {"m1", "m1-a0"},
+                    {"m1", "m1-a6"},
+                    {"m1", "m1-a10"},
+                    {"m1", "m1-a1\n"},
+                    {"M1", "M1-a1"},
+                    {"m1\n", "m1\n-a1"}
+                }) {
+            assertThatIllegalArgumentException()
+                    .isThrownBy(
+                            () ->
+                                    new GuidedCheckpoint.Target(
+                                            null, null, pair[0], pair[1], "effect.committed", 1));
+        }
+        assertThatIllegalArgumentException()
+                .isThrownBy(
+                        () ->
+                                new GuidedCheckpoint.Target(
+                                        1, null, "m1", "m1-a1", "effect.committed", 1));
+        assertThatIllegalArgumentException()
+                .isThrownBy(
+                        () ->
+                                new GuidedCheckpoint.Target(
+                                        null, "job-1", "m1", "m1-a1", "effect.committed", 1));
+        String longest = "m" + "x".repeat(31);
+        assertThat(
+                        new GuidedCheckpoint.Target(
+                                        null, null, longest, longest + "-a5", "delivery.started", 1)
+                                .messageId())
+                .isEqualTo(longest);
+        String tooLong = longest + "x";
+        assertThatIllegalArgumentException()
+                .isThrownBy(
+                        () ->
+                                new GuidedCheckpoint.Target(
+                                        null,
+                                        null,
+                                        tooLong,
+                                        tooLong + "-a1",
+                                        "delivery.started",
+                                        1));
+    }
+
+    @Test
+    void deliveryKindsAreAttemptBearingAndSupportTheDeadLetterHyphen() {
+        for (String kind :
+                new String[] {
+                    "delivery.started",
+                    "effect.committed",
+                    "ack.sent",
+                    "ack.accepted",
+                    "ack.lost",
+                    "ack.stale",
+                    "lease.expired",
+                    "message.requeued",
+                    "message.dead-lettered",
+                    "attempt.cancelled"
+                }) {
+            assertThat(new GuidedCheckpoint.Target(null, null, "m1", "m1-a1", kind, 1).kind())
+                    .isEqualTo(kind);
+        }
+        for (String kind :
+                new String[] {
+                    null,
+                    "",
+                    "message.enqueued",
+                    "consumer.crashed",
+                    "consumer.recovered",
+                    "job.started",
+                    "cache.fill",
+                    "message.unknown",
+                    "message.dead-lettered\n"
+                }) {
+            assertThatIllegalArgumentException()
+                    .isThrownBy(
+                            () -> new GuidedCheckpoint.Target(null, null, "m1", "m1-a1", kind, 1));
+        }
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> new GuidedCheckpoint.Target(1, null, "message.dead-lettered", 1));
+        assertThatIllegalArgumentException()
+                .isThrownBy(
+                        () ->
+                                new GuidedCheckpoint.Target(
+                                        null, "job-1", "message.dead-lettered", 1));
+    }
+
+    @Test
+    void deliveryOccurrenceUsesTheDefaultEventCeilingWhileLegacyRulesRemainPositive() {
+        assertThat(
+                        new GuidedCheckpoint.Target(null, null, "m1", "m1-a1", "ack.stale", 10_000)
+                                .occurrence())
+                .isEqualTo(10_000);
+        for (int occurrence : new int[] {-1, 0, 10_001}) {
+            assertThatIllegalArgumentException()
+                    .isThrownBy(
+                            () ->
+                                    new GuidedCheckpoint.Target(
+                                            null, null, "m1", "m1-a1", "ack.stale", occurrence));
+        }
+        assertThat(new GuidedCheckpoint.Target(1, null, "cache.fill", 10_001).occurrence())
+                .isEqualTo(10_001);
+        assertThat(new GuidedCheckpoint.Target(null, "job-1", "job.started", 10_001).occurrence())
+                .isEqualTo(10_001);
     }
 }

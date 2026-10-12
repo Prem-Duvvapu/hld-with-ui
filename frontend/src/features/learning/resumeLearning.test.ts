@@ -3,6 +3,7 @@ import catalog from "../../../../content/catalog.json";
 import questions from "../../../../content/topics/request-flow/questions.json";
 import checkpoints from "../../../../content/topics/cache-aside/checkpoints.json";
 import queueCheckpoints from "../../../../content/topics/queues-tail-latency/checkpoints.json";
+import deliveryCheckpoints from "../../../../content/topics/queues-delivery/checkpoints.json";
 import deliveryQuestions from "../../../../content/topics/queues-delivery/questions.json";
 import queueQuestions from "../../../../content/topics/queues-tail-latency/questions.json";
 import workshop from "../../../../content/case-studies/url-shortener/workshop.json";
@@ -195,6 +196,43 @@ describe("resume recorded learning work", () => {
     ).toMatchObject({ path: "/draft/topics/queues-delivery", removed: true });
     expect(() => topicResumeTarget(record, delivery)).toThrow(/unavailable/);
   });
+  it.each(["prediction", "tradeoff"])(
+    "resumes exact delivery checkpoint %s records without treating unknown suffixes as authored work",
+    (suffix) => {
+      const delivery = {
+        topic: entries.find((entry) => entry.id === "queues-delivery")!,
+        questions: deliveryQuestions,
+        checkpoints: deliveryCheckpoints,
+        lessonMarkdown: "Separate broker and ledger boundaries.",
+      } as TopicDetail;
+      const checkpoint = delivery.checkpoints[0]!;
+      const record = {
+        ...saved,
+        topicId: delivery.topic.id,
+        activityId: `${checkpoint.id}-${suffix}`,
+      };
+      expect(draftTopicResumeTarget(record, delivery)).toMatchObject({
+        path: `/draft/topics/queues-delivery?view=guided&checkpoint=${checkpoint.id}`,
+        activity: checkpoint.title,
+        removed: false,
+      });
+      expect(
+        draftTopicResumeTarget(
+          { ...record, activityId: `${checkpoint.id}-extra-${suffix}` },
+          delivery,
+        ),
+      ).toMatchObject({ path: "/draft/topics/queues-delivery", removed: true });
+      expect(
+        draftTopicResumeTarget(record, {
+          ...delivery,
+          topic: {
+            ...delivery.topic,
+            capabilities: ["study", "simulation", "practice"],
+          },
+        }),
+      ).toMatchObject({ removed: true });
+    },
+  );
   it.each(["prediction", "tradeoff"])(
     "resumes the supported draft queue checkpoint from its %s record",
     (suffix) => {

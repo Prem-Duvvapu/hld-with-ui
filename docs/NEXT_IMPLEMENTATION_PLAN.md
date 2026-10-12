@@ -9,8 +9,9 @@ Prepared 2026-10-05 for Opus 5.5 or another coding agent. Baseline: `add46a4` (P
 [HLD-14B](work-items/HLD-14B.md) integrates the verified delivery model with strict APIs,
 canonical lazy compatibility checks, explicit React Playground/Study/Practice and eight
 original questions. The module remains draft at `/draft/topics/queues-delivery`; four published
-topics remain unchanged. Next bounded contribution: HLD-14C, Guided checkpoints verified
-against Java presets plus authored Architecture/message sequence views. Transactions and
+topics remain unchanged. [HLD-14C](work-items/HLD-14C.md) adds eight Java-verified paired
+message/attempt checkpoints and authored Architecture/message sequence views. Its core draft
+has six views. Next follow the required data-access/transaction foundation before idempotency. Transactions and
 idempotency follow their recorded prerequisites; this model has no deduplication.
 
 ## 1. Objective and scope
@@ -88,7 +89,7 @@ descriptor/run APIs and an explicit three-tab draft React experience. Its prereq
 architecture/job-path views and draft checkpoint resume using a typed shared guided flow.
 The prerequisite's teaching artifacts are technically reviewed. [HLD-14A](work-items/HLD-14A.md) supplies
 the dependent domain behavior; HLD-14B integrates its first vertical learning experience.
-Next add delivery Guided/Architecture/sequence teaching in HLD-14C. Publication and human
+HLD-14C completes its core Guided/Architecture/sequence draft teaching. Publication and human
 review remain separate gates. The published topic API still rejects drafts; preview uses
 `/api/v1/draft/topics/{id}` and the explicit capacity/delivery draft routes.
 
@@ -245,6 +246,7 @@ the relevant release and prerequisite gates pass. Do not add shallow cards for a
 The capacity prerequisite has its complete core draft teaching flow. [HLD-14A](work-items/HLD-14A.md)
 implements Java delivery semantics and contracts. [HLD-14B](work-items/HLD-14B.md) adds
 strict APIs, guards/isolation evidence, canonical lesson/eight questions and a real
-Playground/Study/Practice renderer. Next add HLD-14C Guided checkpoints, semantic message
-selectors, Java teaching fixtures and authored Architecture/message sequence views. Keep
+Playground/Study/Practice renderer. HLD-14C adds Guided checkpoints, paired semantic message/attempt
+selectors, Java teaching fixtures and authored Architecture/message sequence views. Next follow
+the data-access-models prerequisite for transactions-isolation before executable idempotency. Keep
 publication separate from draft development; follow the [delivery handoff](QUEUE_DELIVERY_IMPLEMENTATION_PLAN.md).

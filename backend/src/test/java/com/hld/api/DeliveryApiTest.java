@@ -571,14 +571,27 @@ class DeliveryApiTest {
         var draft = successful(get("/api/v1/draft/topics/queues-delivery"));
         Path content = Path.of("../content/topics/queues-delivery");
         assertThat(draft.at("/topic/status").asString()).isEqualTo("draft");
-        assertThat(draft.at("/topic/contentVersion").asString()).isEqualTo("1.0.0");
+        assertThat(draft.at("/topic/contentVersion").asString()).isEqualTo("1.1.0");
         assertThat(draft.at("/topic/prerequisites/0").asString()).isEqualTo("queues-tail-latency");
         assertThat(draft.path("lessonMarkdown").asString())
                 .isEqualTo(Files.readString(content.resolve("lesson.md")));
         assertThat(draft.path("questions"))
                 .isEqualTo(mapper.readTree(Files.readAllBytes(content.resolve("questions.json"))));
         assertThat(draft.path("questions").size()).isEqualTo(8);
-        assertThat(draft.path("checkpoints")).isEmpty();
+        var capabilities = new ArrayList<String>();
+        for (JsonNode capability : draft.at("/topic/capabilities"))
+            capabilities.add(capability.asString());
+        assertThat(capabilities).containsExactly("study", "simulation", "guided", "practice");
+        assertThat(draft.at("/topic/checkpointsPath").asString())
+                .isEqualTo("topics/queues-delivery/checkpoints.json");
+        assertThat(draft.path("checkpoints"))
+                .isEqualTo(
+                        mapper.readTree(Files.readAllBytes(content.resolve("checkpoints.json"))));
+        assertThat(draft.path("checkpoints").size()).isEqualTo(8);
+        for (JsonNode checkpoint : draft.path("checkpoints")) {
+            assertThat(checkpoint.path("target").propertyNames())
+                    .containsExactlyInAnyOrder("messageId", "attemptId", "kind", "occurrence");
+        }
         Set<String> draftIds = Set.of("queues-delivery", "queues-tail-latency");
         for (String id : draftIds)
             assertThat(get("/api/v1/topics/" + id).statusCode()).isEqualTo(404);

@@ -29,6 +29,13 @@ it("distinguishes repeated occurrences and refuses another model's selector or a
     { operation: 1, kind: "job.started", occurrence: 1 },
     { jobId: "job-1", operation: 1, kind: "job.started", occurrence: 1 },
     { jobId: "missing", kind: "job.started", occurrence: 1 },
+    {
+      jobId: "job-2",
+      kind: "job.queued",
+      occurrence: 1,
+      messageId: "m1",
+      attemptId: "m1-a1",
+    },
     { jobId: "job-2", kind: "job.queued", occurrence: 2 },
   ] as GuidedCheckpoint["target"][])
     expect(resolveQueueCheckpoint(baselineResult.events, target)).toBe(-1);

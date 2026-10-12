@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { kindsSupportingSelectors } from "./event-selector-capabilities.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const read = (path) => JSON.parse(readFileSync(resolve(root, path), "utf8"));
@@ -52,11 +53,26 @@ for (const [definition, name] of Object.entries(names)) {
   if (!result.$defs[definition]) throw new Error(`Missing ${definition}`);
   openapi.components.schemas[name] = exportSchema(result.$defs[definition]);
 }
-openapi.components.schemas.GuidedCheckpoint = exportSchema(
-  read("contracts/checkpoints.schema.json").items,
-);
+const checkpoints = read("contracts/checkpoints.schema.json");
+openapi.components.schemas.GuidedCheckpoint = exportSchema(checkpoints.items);
 const deliveryInput = read("contracts/queue-delivery.input.schema.json");
 const deliveryResult = read("contracts/queue-delivery.result.schema.json");
+const deliveryTarget = checkpoints.items.properties.target.oneOf.find(
+  (branch) =>
+    branch.required.includes("messageId") &&
+    branch.required.includes("attemptId"),
+);
+const deliveryKinds = kindsSupportingSelectors(deliveryResult.$defs.event, [
+  "messageId",
+  "attemptId",
+]);
+if (
+  JSON.stringify(deliveryTarget?.properties.kind.enum) !==
+  JSON.stringify(deliveryKinds)
+)
+  throw new Error(
+    "Delivery checkpoint kinds differ from the actual event selector capabilities.",
+  );
 openapi.components.schemas.DeliveryInput = exportSchema(
   deliveryInput,
   deliveryNames,

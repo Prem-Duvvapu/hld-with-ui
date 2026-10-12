@@ -68,7 +68,7 @@ guards apply with explicit recovery and no automatic retry.
 | Runtime failure/ownership checks                      | PASS: six actual failure cases                                                                                                                    | `/tmp/hld-delivery-ui-runtime-failures.log`                                                                        |
 | Independent semantics/content/contracts review        | PASS after timing-response correlation and scheduled enqueue labeling fixes                                                                       | Separate read-only agent reviews; all numeric lesson/question claims checked                                       |
 | Plan/launcher/whitespace                              | PASS: 95 docs, 494 links, 59 curriculum IDs, seven catalog entries; launcher syntax and diff clean                                                | `node scripts/validate-plan.mjs`; `bash -n start.sh`; `git diff --check`                                           |
-| Required final-head CI                                | Required before squash; actual head/run/results retained on the PR                                                                                | Quality, Browser journeys, Packaged runtime                                                                        |
+| Required final-head CI                                | PASS: final head `713e680` on tested merge `3335f2f`; Quality, Browser journeys and Packaged runtime all succeeded                                | [CI run 38297670595](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/38297670595)                         |
 
 Production output separates the delivery page (33.39 kB raw / 9.97 kB gzip at this build) and
 canonical compatibility chunk (169.06 kB / 47.09 kB). The real network check verifies lazy
@@ -92,3 +92,13 @@ published module. Next: HLD-14C, Java-verified Guided checkpoints and authored A
 message sequence views, then technical review and the outstanding human/prerequisite gates.
 Transactions, idempotency, retry amplification, notifications, chat, feed and booking remain
 future contributions in their dependency order.
+
+## Final delivery record
+
+[PR #67](https://github.com/Prem-Duvvapu/hld-with-ui/pull/67) merged on 2026-10-12 at 19:35:17 UTC
+as `1363cc6b24084c6957a461a12b17896e2486172c`. Final head was
+`713e6805d59ca62449d50d4e031df314563cbdff`; all CI jobs checked merge
+`3335f2fd8e63033c493ca40e4515ad92a9a5bd69`. Final CI passed 179 browser journeys,
+20 UI performance groups, 20 lesson-loading groups, Java/frontend/contracts gates, launcher,
+copied jar/deployment image and bounded memory/failure checks. The owner main checkout was
+updated, merged branch removed and unrelated output preserved. HLD-14C is a separate successor.
