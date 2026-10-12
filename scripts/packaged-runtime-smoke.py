@@ -58,6 +58,7 @@ def normalized(value):
 
 def verify(base):
     catalog = source_json("catalog.json")
+    draft_topic_ids = {entry["id"] for entry in catalog if entry["kind"] == "topic" and entry["status"] == "draft"}
     published = [entry for entry in catalog if entry["status"] == "published"]
     topics = sorted((entry for entry in published if entry["kind"] == "topic"), key=lambda entry: (entry["order"], entry["id"]))
     cases = sorted((entry for entry in published if entry["kind"] == "case-study"), key=lambda entry: (entry["order"], entry["id"]))
@@ -99,19 +100,21 @@ def verify(base):
         checkpoints = source_json(entry["checkpointsPath"]) if "checkpointsPath" in entry else []
         check(normalized(detail["checkpoints"]) == normalized(checkpoints), f"Draft checkpoints differ: {entry['id']}")
         print(f"PASS packaged draft topic {entry['id']} content={entry['contentVersion']}", flush=True)
-        if entry["id"] == "queues-tail-latency":
-            path = "/api/v1/simulations/queues-tail-latency"
+        if entry["id"] in {"queues-tail-latency", "queues-delivery"}:
+            path = f"/api/v1/simulations/{identifier}"
             descriptor = api(base, path)
             baseline = next(preset for preset in descriptor["presets"] if preset["id"] == "baseline")
-            expected_input = json.loads((ROOT / "contracts/examples/queue-capacity-baseline-input.json").read_text())
-            expected_result = json.loads((ROOT / "contracts/examples/queue-capacity-baseline-result.json").read_text())
-            check(baseline["input"] == expected_input, "Packaged queue baseline input differs")
+            fixture = "queue-capacity" if entry["id"] == "queues-tail-latency" else "queue-delivery"
+            expected_input = json.loads((ROOT / f"contracts/examples/{fixture}-baseline-input.json").read_text(encoding="utf-8"))
+            expected_result = json.loads((ROOT / f"contracts/examples/{fixture}-baseline-result.json").read_text(encoding="utf-8"))
+            check(baseline["input"] == expected_input, f"Packaged {fixture} baseline input differs")
             result = api(base, path + "/runs", baseline["input"])
-            check(normalized(result) == normalized(expected_result), "Packaged queue baseline full result differs")
+            check(result == expected_result, f"Packaged {fixture} baseline full result differs")
             api(base, "/api/v1/draft/topics/request-flow", expected=404)
-            check(all(hit["entry"]["status"] == "published" and hit["entry"]["id"] != entry["id"]
-                      for hit in api(base, "/api/v1/search?q=queues")["results"]), "Draft queue leaked into published search")
-            print("PASS packaged draft queue model and publication boundary", flush=True)
+            for query in ("queues", "delivery", "ACK"):
+                check(all(hit["entry"]["status"] == "published" and hit["entry"]["id"] not in draft_topic_ids
+                          for hit in api(base, f"/api/v1/search?q={query}")["results"]), "Draft queue leaked into published search")
+            print(f"PASS packaged draft {fixture} model and publication boundary", flush=True)
     check([entry["id"] for entry in api(base, "/api/v1/case-studies")] == [entry["id"] for entry in cases], "Case publication differs from catalog")
     for entry in catalog:
         if entry["kind"] != "case-study" or entry["status"] == "planned":
@@ -130,7 +133,10 @@ def verify(base):
         check([step["moduleId"] for step in path["steps"]] == [step["moduleId"] for step in authored["steps"]], "Path steps differ")
         for step in path["steps"]:
             check(step["available"] == (by_id[step["moduleId"]]["status"] == "published"), "Unavailable path step advertised")
+            if step["moduleId"] in draft_topic_ids:
+                check(not step["available"] and "entry" not in step and not step["activities"], "Draft queue has a runnable path destination")
         check([entry["id"] for entry in path["optionalModules"]] == [module_id for module_id in authored["optionalModuleIds"] if by_id[module_id]["status"] == "published"], "Optional path modules differ")
+        check(all(entry["id"] not in draft_topic_ids for entry in path["optionalModules"]), "Draft queue leaked into optional path modules")
         print(f"PASS packaged learning path {authored['id']}", flush=True)
     search = api(base, "/api/v1/search?q=cache")
     check(search["results"] and all(hit["entry"]["status"] == "published" for hit in search["results"]), "Published search missing or leaked a draft")

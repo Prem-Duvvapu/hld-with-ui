@@ -171,12 +171,17 @@ reading-load evidence and a bounded real-HTTP process-memory exercise with compl
 and ownership/failure checks ([methods](LOADING_AND_MEMORY_REVIEW.md)). Used-heap peaks,
 sustained/hosted load, network/thread budgets and measured rendering changes remain release work.
 
-### Delivery model before registration
+### Delivery model and explicit draft registration
 
 [HLD-14A](work-items/HLD-14A.md) adds a pure `com.hld.delivery` model with independent
 broker, consumer, lease, effect and ACK state; typed event changes reconstruct the presentation
 from immutable initial state. A local phased scheduler stages complete transition batches before
 committing state, ledger, future actions or reached faults. Shared `SimulationContext` supplies
 only its external cooperative guard. [Decision 0026](decisions/0026-atomic-delivery-transition-batches.md)
-records the rules. Standalone schemas and direct Java evidence do not register an HTTP route,
-bean, catalog entry or React renderer. Add those in the next explicit draft contribution.
+records the rules. [HLD-14B](work-items/HLD-14B.md) registers the bean, strict descriptor/run
+endpoints and one canonical draft topic with a lazy React Playground/Study/Practice renderer.
+Canonical input/result/descriptor validation loads through the delivery API compatibility chunk.
+Java remains authoritative; complete changed records replace prior records during playback,
+including omitted nullable pointers. [Decision 0027](decisions/0027-delivery-draft-experience.md)
+records this boundary. Published discovery and learning paths remain unchanged; Guided and
+authored Architecture/sequence views remain a separate next contribution.

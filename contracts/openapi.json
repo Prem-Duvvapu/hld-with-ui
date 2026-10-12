@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "HLD with UI API",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "description": "Versioned contract for the HLD learning application. Simulation results are illustrative modeled runs."
   },
   "servers": [
@@ -738,6 +738,103 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/QueueCapacityResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Retry hint in seconds. Capacity may remain occupied.",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[0-9]+$",
+                  "examples": ["1"]
+                }
+              }
+            }
+          }
+        },
+        "description": "Simulation delivery uses process-local admission before body parsing (default two active requests across models), a bounded raw body, and bounded serialization of the entire result (default 4 MiB). These HTTP safeguards are outside modeled behavior. No queued or automatic retry is added; an admitted run keeps its existing model/schema semantics. Required properties, exact JSON token types, duplicate keys and nested job fields are checked before domain execution."
+      }
+    },
+    "/api/v1/simulations/queues-delivery": {
+      "get": {
+        "operationId": "getDeliverySimulation",
+        "summary": "Read the broker/consumer/ledger descriptor used by the draft delivery module",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryDescriptor"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/queues-delivery/runs": {
+      "post": {
+        "operationId": "runDeliverySimulation",
+        "summary": "Run the deterministic delivery, acknowledgment and durable-effect model",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeliveryInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryResult"
                 }
               }
             }
@@ -4201,6 +4298,2318 @@
             }
           }
         ]
+      },
+      "DeliveryLimits": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "minMessages",
+          "maxMessages",
+          "minConsumers",
+          "maxConsumers",
+          "maxFailures",
+          "maxLostAcknowledgments",
+          "minTimeMs",
+          "maxTimeMs",
+          "minProcessingTimeMs",
+          "maxProcessingTimeMs",
+          "minAcknowledgmentDelayMs",
+          "maxAcknowledgmentDelayMs",
+          "minVisibilityTimeoutMs",
+          "maxVisibilityTimeoutMs",
+          "minDeliveryAttempts",
+          "maxDeliveryAttempts",
+          "minSeed",
+          "maxSeed",
+          "idPattern",
+          "maxVirtualTimeMs",
+          "maxEvents",
+          "maxTraceBytes"
+        ],
+        "properties": {
+          "minMessages": {
+            "type": "integer",
+            "const": 1
+          },
+          "maxMessages": {
+            "type": "integer",
+            "const": 20
+          },
+          "minConsumers": {
+            "type": "integer",
+            "const": 1
+          },
+          "maxConsumers": {
+            "type": "integer",
+            "const": 3
+          },
+          "maxFailures": {
+            "type": "integer",
+            "const": 8
+          },
+          "maxLostAcknowledgments": {
+            "type": "integer",
+            "const": 20
+          },
+          "minTimeMs": {
+            "type": "integer",
+            "const": 0
+          },
+          "maxTimeMs": {
+            "type": "integer",
+            "const": 60000
+          },
+          "minProcessingTimeMs": {
+            "type": "integer",
+            "const": 1
+          },
+          "maxProcessingTimeMs": {
+            "type": "integer",
+            "const": 1000
+          },
+          "minAcknowledgmentDelayMs": {
+            "type": "integer",
+            "const": 1
+          },
+          "maxAcknowledgmentDelayMs": {
+            "type": "integer",
+            "const": 1000
+          },
+          "minVisibilityTimeoutMs": {
+            "type": "integer",
+            "const": 1
+          },
+          "maxVisibilityTimeoutMs": {
+            "type": "integer",
+            "const": 60000
+          },
+          "minDeliveryAttempts": {
+            "type": "integer",
+            "const": 1
+          },
+          "maxDeliveryAttempts": {
+            "type": "integer",
+            "const": 5
+          },
+          "minSeed": {
+            "type": "integer",
+            "const": -9007199254740991
+          },
+          "maxSeed": {
+            "type": "integer",
+            "const": 9007199254740991
+          },
+          "idPattern": {
+            "type": "string",
+            "const": "^[a-z][a-z0-9-]{0,31}$"
+          },
+          "maxVirtualTimeMs": {
+            "type": "integer",
+            "const": 60000
+          },
+          "maxEvents": {
+            "type": "integer",
+            "const": 10000
+          },
+          "maxTraceBytes": {
+            "type": "integer",
+            "const": 2097152
+          }
+        }
+      },
+      "DeliveryPreset": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "question", "input"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "maxLength": 64,
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "input": {
+            "$ref": "#/components/schemas/DeliveryInput"
+          }
+        }
+      },
+      "DeliveryDescriptor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "modelVersion",
+          "description",
+          "limits",
+          "presets",
+          "assumptions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "const": "queues-delivery"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "kind": {
+            "type": "string",
+            "const": "simulation"
+          },
+          "modelVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "limits": {
+            "$ref": "#/components/schemas/DeliveryLimits"
+          },
+          "presets": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/DeliveryPreset"
+            }
+          },
+          "assumptions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 30,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            }
+          }
+        }
+      },
+      "DeliveryInput": {
+        "title": "Queue delivery domain input",
+        "description": "Canonical input for the illustrative queues-delivery model, schema 1.0/model 1.0.0. Its OpenAPI component derives from this schema; topic publication belongs to the catalog. Arrays retain authored input order. Java additionally validates unique message/consumer IDs, referenced fault identities, unique loss selectors, alternating chronological failure schedules and ACK-before delay strictly less than processing time. JSON Schema validates parsed JSON values, not token spellings or duplicate JSON keys. The delivery HTTP controller separately rejects duplicate keys, trailing roots and nonintegral or coerced JSON tokens.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "modelVersion",
+          "messages",
+          "consumers",
+          "processingTimeMs",
+          "acknowledgmentDelayMs",
+          "visibilityTimeoutMs",
+          "maxDeliveryAttempts",
+          "acknowledgmentPolicy",
+          "failures",
+          "lostAcknowledgments",
+          "seed"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "const": "1.0.0"
+          },
+          "messages": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "enqueueTimeMs"],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32,
+                  "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                  "not": {
+                    "pattern": "\\s"
+                  }
+                },
+                "enqueueTimeMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 60000
+                }
+              }
+            }
+          },
+          "consumers": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id"],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32,
+                  "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                  "not": {
+                    "pattern": "\\s"
+                  }
+                }
+              }
+            }
+          },
+          "processingTimeMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "acknowledgmentDelayMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "visibilityTimeoutMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 60000
+          },
+          "maxDeliveryAttempts": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "acknowledgmentPolicy": {
+            "enum": ["ACK_BEFORE_EFFECT", "ACK_AFTER_EFFECT"]
+          },
+          "failures": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["consumerId", "action", "timeMs"],
+              "properties": {
+                "consumerId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32,
+                  "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                  "not": {
+                    "pattern": "\\s"
+                  }
+                },
+                "action": {
+                  "enum": ["CRASH", "RECOVER"]
+                },
+                "timeMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 60000
+                }
+              }
+            }
+          },
+          "lostAcknowledgments": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["messageId", "attempt"],
+              "properties": {
+                "messageId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32,
+                  "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                  "not": {
+                    "pattern": "\\s"
+                  }
+                },
+                "attempt": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5
+                }
+              }
+            }
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "DeliveryResult": {
+        "title": "Queue delivery domain result",
+        "description": "Canonical authoritative result for the illustrative queues-delivery model. Events contain typed post-event entity changes and optional committed ledger appends. Nullable unavailable fields may be omitted by the configured Java mapper. Independent lease/effect/ACK states do not imply exactly-once effects or vendor-specific broker behavior. Java checks causal identity equality, ordering, entity reconstruction, counter reconciliation and whole-batch prefix admission; JSON Schema checks shape and declared local conditions. OpenAPI and the lazy delivery client derive their shape validation from this canonical schema; catalog publication remains independent. Result observed/scheduled times use the conservative finite-input ceiling 60,000 + 100 deliveries × (60,000 lease + 1,000 processing + 1,000 ACK) = 6,260,000 ms; custom budgets may exceed the default 60,000 ms guard.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "simulationId",
+          "modelVersion",
+          "seed",
+          "status",
+          "lastVirtualTimeMs",
+          "assumptions",
+          "initialState",
+          "events",
+          "finalState",
+          "messageOutcomes",
+          "attemptOutcomes",
+          "ledger",
+          "metrics",
+          "failureOutcomes",
+          "lostAcknowledgmentOutcomes"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": "1.0"
+          },
+          "simulationId": {
+            "const": "queues-delivery"
+          },
+          "modelVersion": {
+            "const": "1.0.0"
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "status": {
+            "enum": ["completed", "limited"]
+          },
+          "truncationReason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "event_limit",
+                  "trace_size_limit",
+                  "virtual_time_limit",
+                  "wall_time_limit",
+                  "no_future_progress"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastVirtualTimeMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6260000
+          },
+          "assumptions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 30,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            }
+          },
+          "initialState": {
+            "$ref": "#/components/schemas/DeliveryState"
+          },
+          "events": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 10000,
+            "items": {
+              "$ref": "#/components/schemas/DeliveryEvent"
+            }
+          },
+          "finalState": {
+            "$ref": "#/components/schemas/DeliveryState"
+          },
+          "messageOutcomes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/DeliveryMessageOutcome"
+            }
+          },
+          "attemptOutcomes": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/DeliveryAttempt"
+            }
+          },
+          "ledger": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/DeliveryLedgerEntry"
+            }
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/DeliveryMetrics"
+          },
+          "failureOutcomes": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/components/schemas/DeliveryFailureOutcome"
+            }
+          },
+          "lostAcknowledgmentOutcomes": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/DeliveryLostAcknowledgmentOutcome"
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "completed"
+                }
+              },
+              "required": ["status"]
+            },
+            "then": {
+              "properties": {
+                "truncationReason": {
+                  "type": "null"
+                },
+                "metrics": {
+                  "required": ["acknowledgedWithoutEffect"],
+                  "properties": {
+                    "acknowledgedWithoutEffect": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 20
+                    },
+                    "notEnqueued": {
+                      "const": 0
+                    },
+                    "ready": {
+                      "const": 0
+                    },
+                    "leased": {
+                      "const": 0
+                    },
+                    "runningEffects": {
+                      "const": 0
+                    },
+                    "pendingAcknowledgments": {
+                      "const": 0
+                    },
+                    "pendingFailureActions": {
+                      "const": 0
+                    },
+                    "pendingEnqueues": {
+                      "const": 0
+                    }
+                  },
+                  "type": "object"
+                },
+                "failureOutcomes": {
+                  "items": {
+                    "properties": {
+                      "status": {
+                        "const": "REACHED"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "lostAcknowledgmentOutcomes": {
+                  "items": {
+                    "properties": {
+                      "status": {
+                        "enum": [
+                          "REACHED",
+                          "ACK_CANCELLED",
+                          "ATTEMPT_NOT_DELIVERED"
+                        ]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "else": {
+              "required": ["truncationReason"],
+              "properties": {
+                "truncationReason": {
+                  "enum": [
+                    "event_limit",
+                    "trace_size_limit",
+                    "virtual_time_limit",
+                    "wall_time_limit",
+                    "no_future_progress"
+                  ]
+                },
+                "metrics": {
+                  "properties": {
+                    "acknowledgedWithoutEffect": {
+                      "type": "null"
+                    }
+                  },
+                  "type": "object"
+                },
+                "lostAcknowledgmentOutcomes": {
+                  "items": {
+                    "properties": {
+                      "status": {
+                        "enum": ["REACHED", "ACK_CANCELLED", "UNOBSERVED"]
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DeliveryMessage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "enqueueTimeMs", "deliveryCount"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[a-z][a-z0-9-]{0,31}$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "status": {
+            "enum": [
+              "NOT_ENQUEUED",
+              "READY",
+              "LEASED",
+              "ACKNOWLEDGED",
+              "DEAD_LETTERED"
+            ]
+          },
+          "enqueueTimeMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 60000
+          },
+          "availableSinceMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6260000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deliveryCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5
+          },
+          "currentAttemptId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 35,
+                "pattern": "^[a-z][a-z0-9-]{0,31}-a[1-5]$",
+                "not": {
+                  "pattern": "\\s"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "acknowledgedAtMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6260000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "enum": ["NOT_ENQUEUED"]
+                }
+              },
+              "required": ["status"]
+            },
+            "then": {
+              "properties": {
+                "availableSinceMs": {
+                  "type": "null"
+                },
+                "deliveryCount": {
+                  "const": 0
+                },
+                "currentAttemptId": {
+                  "type": "null"
+                },
+                "acknowledgedAtMs": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "enum": ["READY", "LEASED", "ACKNOWLEDGED", "DEAD_LETTERED"]
+                }
+              },
+              "required": ["status"]
+            },
+            "then": {
+              "properties": {
+                "availableSinceMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6260000
+                }
+              },
+              "required": ["availableSinceMs"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "enum": ["LEASED"]
+                }
+              },
+              "required": ["status"]
+            },
+            "then": {
+              "properties": {
+                "currentAttemptId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 35,
+                  "pattern": "^[a-z][a-z0-9-]{0,31}-a[1-5]$",
+                  "not": {
+                    "pattern": "\\s"
+                  }
+                },
+                "deliveryCount": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5
+                }
+              },
+              "required": ["currentAttemptId"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "NOT_ENQUEUED",
+                    "READY",
+                    "ACKNOWLEDGED",
+                    "DEAD_LETTERED"
+                  ]
+                }
+              },
+              "required": ["status"]
+            },
+            "then": {
+              "properties": {
+                "currentAttemptId": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "enum": ["ACKNOWLEDGED"]
+                }
+              },
+              "required": ["status"]
+            },
+            "then": {
+              "properties": {
+                "acknowledgedAtMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6260000
+                },
+                "deliveryCount": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5
+                }
+              },
+              "required": ["acknowledgedAtMs"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "enum": ["NOT_ENQUEUED", "READY", "LEASED", "DEAD_LETTERED"]
+                }
+              },
+              "required": ["status"]
+            },
+            "then": {
+              "properties": {
+                "acknowledgedAtMs": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DeliveryConsumer": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[a-z][a-z0-9-]{0,31}$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "status": {
+            "enum": ["READY", "DOWN"]
+          },
+          "currentAttemptId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 35,
+                "pattern": "^[a-z][a-z0-9-]{0,31}-a[1-5]$",
+                "not": {
+                  "pattern": "\\s"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "DeliveryAttempt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "messageId",
+          "attempt",
+          "consumerId",
+          "leaseToken",
+          "leaseDeadlineMs",
+          "startedAtMs",
+          "scheduledEffectAtMs",
+          "scheduledAckAtMs",
+          "leaseStatus",
+          "effectStatus",
+          "ackStatus"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 35,
+            "pattern": "^[a-z][a-z0-9-]{0,31}-a[1-5]$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "messageId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[a-z][a-z0-9-]{0,31}$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "attempt": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "consumerId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[a-z][a-z0-9-]{0,31}$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "leaseToken": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 41,
+            "pattern": "^[a-z][a-z0-9-]{0,31}-a[1-5]-lease$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "leaseDeadlineMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 6260000
+          },
+          "startedAtMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6260000
+          },
+          "scheduledEffectAtMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 6260000
+          },
+          "scheduledAckAtMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 6260000
+          },
+          "leaseStatus": {
+            "enum": ["ACTIVE", "EXPIRED", "ACKNOWLEDGED"]
+          },
+          "effectStatus": {
+            "enum": ["PROCESSING", "COMMITTED", "CANCELLED"]
+          },
+          "ackStatus": {
+            "enum": [
+              "PENDING",
+              "SENT",
+              "ACCEPTED",
+              "LOST",
+              "STALE",
+              "CANCELLED"
+            ]
+          },
+          "effectCommittedAtMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6260000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ackSentAtMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6260000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ackResolvedAtMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6260000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cancelledAtMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6260000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "effectStatus": {
+                  "enum": ["COMMITTED"]
+                }
+              },
+              "required": ["effectStatus"]
+            },
+            "then": {
+              "properties": {
+                "effectCommittedAtMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6260000
+                }
+              },
+              "required": ["effectCommittedAtMs"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "effectStatus": {
+                  "enum": ["PROCESSING", "CANCELLED"]
+                }
+              },
+              "required": ["effectStatus"]
+            },
+            "then": {
+              "properties": {
+                "effectCommittedAtMs": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "effectStatus": {
+                  "enum": ["CANCELLED"]
+                }
+              },
+              "required": ["effectStatus"]
+            },
+            "then": {
+              "properties": {
+                "cancelledAtMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6260000
+                }
+              },
+              "required": ["cancelledAtMs"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "ackStatus": {
+                  "enum": ["PENDING"]
+                }
+              },
+              "required": ["ackStatus"]
+            },
+            "then": {
+              "properties": {
+                "ackSentAtMs": {
+                  "type": "null"
+                },
+                "ackResolvedAtMs": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "ackStatus": {
+                  "enum": ["SENT"]
+                }
+              },
+              "required": ["ackStatus"]
+            },
+            "then": {
+              "properties": {
+                "ackSentAtMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6260000
+                },
+                "ackResolvedAtMs": {
+                  "type": "null"
+                }
+              },
+              "required": ["ackSentAtMs"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "ackStatus": {
+                  "enum": ["ACCEPTED", "LOST", "STALE"]
+                }
+              },
+              "required": ["ackStatus"]
+            },
+            "then": {
+              "properties": {
+                "ackSentAtMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6260000
+                },
+                "ackResolvedAtMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6260000
+                }
+              },
+              "required": ["ackSentAtMs", "ackResolvedAtMs"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "ackStatus": {
+                  "enum": ["CANCELLED"]
+                }
+              },
+              "required": ["ackStatus"]
+            },
+            "then": {
+              "properties": {
+                "ackSentAtMs": {
+                  "type": "null"
+                },
+                "ackResolvedAtMs": {
+                  "type": "null"
+                },
+                "cancelledAtMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6260000
+                }
+              },
+              "required": ["cancelledAtMs"]
+            }
+          }
+        ]
+      },
+      "DeliveryLedgerEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "messageId",
+          "attemptId",
+          "consumerId",
+          "committedAtMs"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 42,
+            "pattern": "^[a-z][a-z0-9-]{0,31}-a[1-5]-effect$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "messageId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[a-z][a-z0-9-]{0,31}$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "attemptId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 35,
+            "pattern": "^[a-z][a-z0-9-]{0,31}-a[1-5]$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "consumerId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[a-z][a-z0-9-]{0,31}$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "committedAtMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6260000
+          }
+        }
+      },
+      "DeliveryState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["messages", "consumers", "attempts"],
+        "properties": {
+          "messages": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/DeliveryMessage"
+            }
+          },
+          "consumers": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/components/schemas/DeliveryConsumer"
+            }
+          },
+          "attempts": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/DeliveryAttempt"
+            }
+          }
+        }
+      },
+      "DeliveryChanges": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["messages", "consumers", "attempts"],
+        "properties": {
+          "messages": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/DeliveryMessage"
+            }
+          },
+          "consumers": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/components/schemas/DeliveryConsumer"
+            }
+          },
+          "attempts": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/DeliveryAttempt"
+            }
+          }
+        }
+      },
+      "DeliveryEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sequence", "timeMs", "kind", "message", "changes"],
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "timeMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6260000
+          },
+          "kind": {
+            "enum": [
+              "message.enqueued",
+              "delivery.started",
+              "effect.committed",
+              "ack.sent",
+              "ack.accepted",
+              "ack.lost",
+              "ack.stale",
+              "lease.expired",
+              "message.requeued",
+              "message.dead-lettered",
+              "consumer.crashed",
+              "consumer.recovered",
+              "attempt.cancelled"
+            ]
+          },
+          "messageId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32,
+                "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                "not": {
+                  "pattern": "\\s"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attemptId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 35,
+                "pattern": "^[a-z][a-z0-9-]{0,31}-a[1-5]$",
+                "not": {
+                  "pattern": "\\s"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "consumerId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32,
+                "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                "not": {
+                  "pattern": "\\s"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "changes": {
+            "$ref": "#/components/schemas/DeliveryChanges"
+          },
+          "ledgerEntry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeliveryLedgerEntry"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["message.enqueued"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "messageId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32,
+                  "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                  "not": {
+                    "pattern": "\\s"
+                  }
+                },
+                "attemptId": {
+                  "type": "null"
+                },
+                "consumerId": {
+                  "type": "null"
+                }
+              },
+              "required": ["messageId"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["consumer.crashed", "consumer.recovered"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "messageId": {
+                  "type": "null"
+                },
+                "attemptId": {
+                  "type": "null"
+                },
+                "consumerId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32,
+                  "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                  "not": {
+                    "pattern": "\\s"
+                  }
+                }
+              },
+              "required": ["consumerId"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "delivery.started",
+                    "effect.committed",
+                    "ack.sent",
+                    "ack.accepted",
+                    "ack.lost",
+                    "ack.stale",
+                    "lease.expired",
+                    "message.requeued",
+                    "message.dead-lettered",
+                    "attempt.cancelled"
+                  ]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "messageId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32,
+                  "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                  "not": {
+                    "pattern": "\\s"
+                  }
+                },
+                "attemptId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 35,
+                  "pattern": "^[a-z][a-z0-9-]{0,31}-a[1-5]$",
+                  "not": {
+                    "pattern": "\\s"
+                  }
+                },
+                "consumerId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 32,
+                  "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                  "not": {
+                    "pattern": "\\s"
+                  }
+                }
+              },
+              "required": ["messageId", "attemptId", "consumerId"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["effect.committed"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "ledgerEntry": {
+                  "$ref": "#/components/schemas/DeliveryLedgerEntry"
+                }
+              },
+              "required": ["ledgerEntry"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "message.enqueued",
+                    "delivery.started",
+                    "ack.sent",
+                    "ack.accepted",
+                    "ack.lost",
+                    "ack.stale",
+                    "lease.expired",
+                    "message.requeued",
+                    "message.dead-lettered",
+                    "consumer.crashed",
+                    "consumer.recovered",
+                    "attempt.cancelled"
+                  ]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "ledgerEntry": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["message.enqueued"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "changes": {
+                  "properties": {
+                    "messages": {
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["delivery.started"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "changes": {
+                  "properties": {
+                    "messages": {
+                      "minItems": 1,
+                      "type": "array"
+                    },
+                    "consumers": {
+                      "minItems": 1,
+                      "type": "array"
+                    },
+                    "attempts": {
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["effect.committed"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "changes": {
+                  "properties": {
+                    "consumers": {
+                      "minItems": 1,
+                      "type": "array"
+                    },
+                    "attempts": {
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["ack.sent"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "changes": {
+                  "properties": {
+                    "attempts": {
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["ack.accepted"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "changes": {
+                  "properties": {
+                    "messages": {
+                      "minItems": 1,
+                      "type": "array"
+                    },
+                    "attempts": {
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["ack.lost"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "changes": {
+                  "properties": {
+                    "attempts": {
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["ack.stale"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "changes": {
+                  "properties": {
+                    "attempts": {
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["lease.expired"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "changes": {
+                  "properties": {
+                    "attempts": {
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["message.requeued"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "changes": {
+                  "properties": {
+                    "messages": {
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["message.dead-lettered"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "changes": {
+                  "properties": {
+                    "messages": {
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["consumer.crashed"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "changes": {
+                  "properties": {
+                    "consumers": {
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["consumer.recovered"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "changes": {
+                  "properties": {
+                    "consumers": {
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["attempt.cancelled"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "properties": {
+                "changes": {
+                  "properties": {
+                    "attempts": {
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DeliveryMessageOutcome": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["messageId", "status", "deliveries", "committedEffects"],
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[a-z][a-z0-9-]{0,31}$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "status": {
+            "enum": [
+              "NOT_ENQUEUED",
+              "READY",
+              "LEASED",
+              "ACKNOWLEDGED",
+              "DEAD_LETTERED"
+            ]
+          },
+          "deliveries": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5
+          },
+          "committedEffects": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5
+          },
+          "acknowledgedAtMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6260000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "firstEffectAtMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6260000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ackLatencyMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6260000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "firstEffectLatencyMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6260000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "enum": ["ACKNOWLEDGED"]
+                }
+              },
+              "required": ["status"]
+            },
+            "then": {
+              "properties": {
+                "acknowledgedAtMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6260000
+                },
+                "ackLatencyMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6260000
+                }
+              },
+              "required": ["acknowledgedAtMs", "ackLatencyMs"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "enum": ["NOT_ENQUEUED", "READY", "LEASED", "DEAD_LETTERED"]
+                }
+              },
+              "required": ["status"]
+            },
+            "then": {
+              "properties": {
+                "acknowledgedAtMs": {
+                  "type": "null"
+                },
+                "ackLatencyMs": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "committedEffects": {
+                  "const": 0
+                }
+              },
+              "required": ["committedEffects"]
+            },
+            "then": {
+              "properties": {
+                "firstEffectAtMs": {
+                  "type": "null"
+                },
+                "firstEffectLatencyMs": {
+                  "type": "null"
+                }
+              }
+            },
+            "else": {
+              "required": ["firstEffectAtMs", "firstEffectLatencyMs"],
+              "properties": {
+                "firstEffectAtMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6260000
+                },
+                "firstEffectLatencyMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6260000
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DeliveryMetrics": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "deliveryAttempts",
+          "redeliveries",
+          "committedEffects",
+          "messagesWithEffect",
+          "extraEffects",
+          "acknowledgedMessages",
+          "deadLetteredMessages",
+          "notEnqueued",
+          "ready",
+          "leased",
+          "runningEffects",
+          "pendingAcknowledgments",
+          "pendingFailureActions",
+          "pendingEnqueues",
+          "ackLatencySamples",
+          "effectLatencySamples"
+        ],
+        "properties": {
+          "deliveryAttempts": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "redeliveries": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 80
+          },
+          "committedEffects": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "messagesWithEffect": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "extraEffects": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 80
+          },
+          "acknowledgedMessages": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "deadLetteredMessages": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "notEnqueued": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "ready": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "leased": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "runningEffects": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "pendingAcknowledgments": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "pendingFailureActions": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 8
+          },
+          "pendingEnqueues": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "ackLatencySamples": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "effectLatencySamples": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "acknowledgedWithoutEffect": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 20
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meanAckLatencyMs": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 6260000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "p95AckLatencyMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6260000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meanFirstEffectLatencyMs": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 6260000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "p95FirstEffectLatencyMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6260000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "ackLatencySamples": {
+                  "const": 0
+                }
+              },
+              "required": ["ackLatencySamples"]
+            },
+            "then": {
+              "properties": {
+                "meanAckLatencyMs": {
+                  "type": "null"
+                },
+                "p95AckLatencyMs": {
+                  "type": "null"
+                }
+              }
+            },
+            "else": {
+              "required": ["meanAckLatencyMs", "p95AckLatencyMs"],
+              "properties": {
+                "meanAckLatencyMs": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 6260000
+                },
+                "p95AckLatencyMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6260000
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "effectLatencySamples": {
+                  "const": 0
+                }
+              },
+              "required": ["effectLatencySamples"]
+            },
+            "then": {
+              "properties": {
+                "meanFirstEffectLatencyMs": {
+                  "type": "null"
+                },
+                "p95FirstEffectLatencyMs": {
+                  "type": "null"
+                }
+              }
+            },
+            "else": {
+              "required": [
+                "meanFirstEffectLatencyMs",
+                "p95FirstEffectLatencyMs"
+              ],
+              "properties": {
+                "meanFirstEffectLatencyMs": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 6260000
+                },
+                "p95FirstEffectLatencyMs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6260000
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DeliveryFailureOutcome": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["index", "consumerId", "action", "timeMs", "status"],
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 7
+          },
+          "consumerId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[a-z][a-z0-9-]{0,31}$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "action": {
+            "enum": ["CRASH", "RECOVER"]
+          },
+          "timeMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 60000
+          },
+          "status": {
+            "enum": ["REACHED", "UNOBSERVED"]
+          }
+        }
+      },
+      "DeliveryLostAcknowledgmentOutcome": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["messageId", "attempt", "status"],
+        "properties": {
+          "messageId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32,
+            "pattern": "^[a-z][a-z0-9-]{0,31}$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "attempt": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "status": {
+            "enum": [
+              "REACHED",
+              "ACK_CANCELLED",
+              "ATTEMPT_NOT_DELIVERED",
+              "UNOBSERVED"
+            ]
+          }
+        }
       }
     }
   }

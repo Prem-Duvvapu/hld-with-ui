@@ -194,5 +194,36 @@
       "java-thread-pool-executor"
     ],
     "checkpointsPath": "topics/queues-tail-latency/checkpoints.json"
+  },
+  {
+    "id": "queues-delivery",
+    "kind": "topic",
+    "title": "Delivery, ACKs & Duplicate Work",
+    "summary": "Trace independent delivery attempts, durable effects and acknowledgments. Explain crash windows, lease expiry and repeated work from Java evidence.",
+    "category": "Messaging & Reliability",
+    "level": "Intermediate",
+    "order": 7,
+    "status": "draft",
+    "prerequisites": ["queues-tail-latency"],
+    "outcomes": [
+      "Distinguish delivery attempts, durable effects and accepted acknowledgments.",
+      "Predict how acknowledgment order, crashes and lost receipts change repeated or missing work.",
+      "Explain lease deadlines, stale tokens, dead letters and limited observation without inventing guarantees.",
+      "Choose the application boundary that later needs idempotency protection."
+    ],
+    "capabilities": ["study", "simulation", "practice"],
+    "lessonPath": "topics/queues-delivery/lesson.md",
+    "questionsPath": "topics/queues-delivery/questions.json",
+    "resourcesPath": "topics/queues-delivery/resources.json",
+    "simulationIds": ["queues-delivery"],
+    "estimatorIds": [],
+    "contentVersion": "1.0.0",
+    "reviewedAt": "2026-10-12",
+    "sourceIds": [
+      "aws-sqs-visibility",
+      "aws-sqs-delete-message",
+      "rabbitmq-consumer-acks",
+      "aws-idempotent-apis"
+    ]
   }
 ]

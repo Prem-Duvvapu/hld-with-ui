@@ -1,0 +1,42 @@
+[
+  {
+    "id": "aws-sqs-visibility",
+    "title": "Amazon SQS visibility timeout",
+    "organization": "AWS",
+    "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html",
+    "sourceType": "documentation",
+    "relevantSections": "Setting and adjusting visibility timeout; standard and FIFO queues",
+    "supports": "Visibility controls broker eligibility; standard queues can still deliver duplicates during visibility. This illustrative model excludes that replication failure mode.",
+    "reviewedAt": "2026-10-12"
+  },
+  {
+    "id": "aws-sqs-delete-message",
+    "title": "DeleteMessage",
+    "organization": "AWS",
+    "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_DeleteMessage.html",
+    "sourceType": "documentation",
+    "relevantSections": "ReceiptHandle note",
+    "supports": "A receipt changes on receive. The model strictly rejects stale tokens; SQS may accept an old handle without deleting, so this is not an SQS emulator.",
+    "reviewedAt": "2026-10-12"
+  },
+  {
+    "id": "rabbitmq-consumer-acks",
+    "title": "Consumer Acknowledgements and Publisher Confirms",
+    "organization": "RabbitMQ",
+    "url": "https://www.rabbitmq.com/docs/confirms",
+    "sourceType": "documentation",
+    "relevantSections": "Consumer acknowledgements; automatic requeueing on connection loss",
+    "supports": "Consumer acknowledgment differs from publisher confirmation. RabbitMQ channel/connection requeue differs from the illustrative lease schedule.",
+    "reviewedAt": "2026-10-12"
+  },
+  {
+    "id": "aws-idempotent-apis",
+    "title": "Making retries safe with idempotent APIs",
+    "organization": "AWS",
+    "url": "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/",
+    "sourceType": "engineering-article",
+    "relevantSections": "Reducing client complexity with idempotent API design; atomic operations",
+    "supports": "A request identity and its local mutation need a protected atomic boundary. External provider effects need separate coordination; this model deliberately contains no deduplication.",
+    "reviewedAt": "2026-10-12"
+  }
+]

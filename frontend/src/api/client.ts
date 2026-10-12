@@ -8,6 +8,9 @@ import {
   CacheCompatibilityError,
 } from "./cacheCompatibility";
 import type {
+  DeliveryDescriptor,
+  DeliveryInput,
+  DeliveryResult,
   QueueCapacityDescriptor,
   QueueCapacityInput,
   QueueCapacityResult,
@@ -29,6 +32,21 @@ import type {
   SimulationDescriptor,
   TopicDetail,
 } from "./types";
+
+function deliveryValidation(validate: (body: unknown) => void) {
+  return (body: unknown) => {
+    try {
+      validate(body);
+    } catch (error) {
+      // Convert inside the validation boundary so lazy compatibility errors retain their explanation.
+      throw new ApiClientError(
+        error instanceof Error
+          ? error.message
+          : "This delivery response is incompatible with this app.",
+      );
+    }
+  };
+}
 
 export class ApiClientError extends Error {
   constructor(
@@ -84,6 +102,36 @@ async function request<T>(
 }
 
 export const api = {
+  deliveryDescriptor: async () => {
+    const { assertDeliveryCompatibility } =
+      await import("./deliveryCompatibility");
+    return request<DeliveryDescriptor>(
+      "/api/v1/simulations/queues-delivery",
+      undefined,
+      deliveryValidation((body) =>
+        assertDeliveryCompatibility(body, "descriptor"),
+      ),
+    );
+  },
+  runDelivery: async (input: DeliveryInput) => {
+    // Capture before the lazy import yields; edits to a caller's draft cannot change this request.
+    const payload = JSON.stringify(input);
+    const submitted: DeliveryInput = JSON.parse(payload);
+    const { assertDeliveryCompatibility, assertDeliveryRunInput } =
+      await import("./deliveryCompatibility");
+    return request<DeliveryResult>(
+      "/api/v1/simulations/queues-delivery/runs",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      },
+      deliveryValidation((body) => {
+        assertDeliveryCompatibility(body, "result");
+        assertDeliveryRunInput(body as DeliveryResult, submitted);
+      }),
+    );
+  },
   learningPath: (id: string) =>
     request<LearningPath>(`/api/v1/learning-paths/${encodeURIComponent(id)}`),
   search: (query: string, level = "", capability = "") => {

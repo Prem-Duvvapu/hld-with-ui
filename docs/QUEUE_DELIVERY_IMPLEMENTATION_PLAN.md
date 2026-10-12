@@ -2,7 +2,9 @@
 
 Prepared 2026-10-12 against `7a214d7` (PR #61). **Original handoff, with implementation progress below.**
 [HLD-14A](work-items/HLD-14A.md) implements the pure Java delivery model and standalone
-contracts. Descriptor/API and React learning coverage remain pending. Use this with the [implementation plan](IMPLEMENTATION_PLAN.md),
+contracts. [HLD-14B](work-items/HLD-14B.md) adds strict HTTP delivery and a direct draft
+Playground/Study/Practice experience with eight questions. Guided and authored
+Architecture/sequence coverage remain pending. Use this with the [implementation plan](IMPLEMENTATION_PLAN.md),
 [curriculum](CURRICULUM.md), [simulation contract](SIMULATION_SPEC.md),
 [content contract](../content/CONTENT_SPEC.md) and [learning standard](LEARNING_STANDARD.md).
 
@@ -19,7 +21,8 @@ capacity/waiting prerequisite now has a Java model and explicit draft API/UI in
 [HLD-13A](work-items/HLD-13A.md) and [HLD-13B](work-items/HLD-13B.md).
 [HLD-13C](work-items/HLD-13C.md) adds its complete core Guided/architecture/job-path teaching
 flow; consult that contribution's actual verification evidence before dependent development.
-The pure delivery model and standalone schemas are now implemented in HLD-14A; its descriptor/API and learning module remain pending. The prerequisite's
+The pure delivery model and standalone schemas are implemented in HLD-14A; HLD-14B
+adds descriptor/run APIs and the first three-tab draft learning module. The prerequisite's
 finite in-memory worker queue and the proposed durable broker are different boundaries;
 explain the distinction explicitly.
 
@@ -151,7 +154,7 @@ Drain valid scheduled actions within budgets before classifying a stall: a remai
 enqueue or lease expiry can still change broker state even when no consumer can recover.
 After no valid scheduled actions remain, if ready work still exists and every consumer
 is down, return `limited` with the proposed reason `no_future_progress` and truthful pending counts.
-The new reason is implemented in the standalone domain model; no delivery HTTP route is registered yet. Existing event/byte/virtual-time/wall-time limits
+The new reason is implemented in the domain model and returned by the HLD-14B draft HTTP route. Existing event/byte/virtual-time/wall-time limits
 remain distinct. A limited run is an observed prefix, not proof that an ACKed message will
 never receive its still-pending effect.
 
@@ -196,9 +199,9 @@ or a plausible animation is insufficient evidence.
 
 ## 5. Proposed inputs, events and metrics
 
-The standalone input/result schemas and Java records now implement these targets. They are not registered in OpenAPI.
-The implemented model uses version `1.0.0` and schema version `1.0`; align HTTP representations
-with actual current API conventions when implementing and reject unsupported versions.
+Canonical input/result schemas and Java records implement these targets. HLD-14B exports
+them into OpenAPI 1.3.0. Model/schema remain `1.0.0`/`1.0`; strict HTTP parsing rejects
+unsupported versions, duplicate/trailing JSON and coerced input.
 
 | Input | Inclusive proposed bounds / rule |
 | --- | --- |

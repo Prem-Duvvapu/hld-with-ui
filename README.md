@@ -9,16 +9,20 @@ Learn high-level system design by reading, experimenting, diagnosing failures, a
 
 The idea is simple: **see a system work, change one condition, explain what happened, then choose a design.** Each module will help you answer both “How does this work?” and “How would I explain it to my team or in an interview?”
 
-**Status: four working learning modules.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers ten authored stages from Requirements through Defense by direct link; publication checks and later roadmap modules remain pending.
+**Status: four published modules, two draft topics and one draft workshop.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers ten authored stages from Requirements through Defense by direct link; publication checks and later roadmap modules remain pending.
 
 A draft **Queues & Tail Latency** module is available at
 `/draft/topics/queues-tail-latency`. It connects a strict Java API to editable worker/buffer/job
 controls, real snapshot playback, eight Guided checkpoints, Architecture and Job sequence
 views, a worked lesson and six Practice questions. It models
-in-memory waiting and rejection; durable delivery, retries and acknowledgments remain future
-work. See [HLD-13C](docs/work-items/HLD-13C.md). A separate pure Java delivery model and standalone
-contracts now provide the ACK/effect/crash experiment in [HLD-14A](docs/work-items/HLD-14A.md);
-its API and React experience are not yet registered. There are still four published modules.
+in-memory waiting and rejection; durable delivery is a separate model. See [HLD-13C](docs/work-items/HLD-13C.md).
+
+The draft **Delivery, ACKs & Duplicate Work** topic at `/draft/topics/queues-delivery`
+connects that separate Java model to strict APIs, editable timing/fault controls, broker-consumer-ledger
+playback, Study and eight Practice questions. Nine presets distinguish lost ACKs, crash windows,
+lease deadlines, overlapping effects and limited observation. It contains no deduplication or
+transaction implementation. Guided and authored Architecture/sequence tabs remain next; see
+[HLD-14B](docs/work-items/HLD-14B.md). There are still four published modules.
 
 ## Record your learning
 
@@ -102,7 +106,7 @@ bash -n start.sh
 The [CI workflow](.github/workflows/ci.yaml) runs these gates on pull requests and `main`.
 
 CI also builds the existing deployment Docker image and exercises packaged content, each
-published model/estimator baseline, the draft workshop, draft queue module, learning path and cleanup with no
+published model/estimator baseline, the draft workshop, both draft queue modules, learning path and cleanup with no
 checkout mounted at runtime. See [packaged runtime checks](CONTRIBUTING.md#packaged-runtime-checks)
 for the jar-only command and local Docker command. CI also records bounded Java generation/
 serialization and real production-browser cost evidence; see [performance review](docs/PERFORMANCE_REVIEW.md)

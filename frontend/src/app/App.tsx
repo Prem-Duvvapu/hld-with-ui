@@ -43,6 +43,11 @@ const CacheAsidePage = lazy(() =>
     default: module.CacheAsidePage,
   })),
 );
+const DeliveryPage = lazy(() =>
+  import("../pages/DeliveryPage").then((module) => ({
+    default: module.DeliveryPage,
+  })),
+);
 const QueueCapacityPage = lazy(() =>
   import("../pages/QueueCapacityPage").then((module) => ({
     default: module.QueueCapacityPage,
@@ -110,6 +115,10 @@ export function App() {
             <Route
               path="/draft/topics/queues-tail-latency"
               element={<QueueCapacityPage />}
+            />
+            <Route
+              path="/draft/topics/queues-delivery"
+              element={<DeliveryPage />}
             />
             <Route path="/case-studies/:id" element={<WorkshopPage />} />
             <Route path="*" element={<NotFoundPage />} />

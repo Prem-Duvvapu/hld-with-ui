@@ -4,6 +4,15 @@ Prepared 2026-10-05 for Opus 5.5 or another coding agent. Baseline: `add46a4` (P
 
 **Progress since the baseline (2026-10-05):** HLD-05 cache playback (#32), HLD-06A guided checkpoints (#34), HLD-06B cache architecture/sequence and lesson (#35), and HLD-07A request-flow failure teaching are merged; see their work items in `docs/work-items/`. HLD-07B capacity review and HLD-07C rate-limiter source/learning review are also implemented; see their work items. HLD-08A implements shared Practice answer persistence and recovery; see [its work item](work-items/HLD-08A.md). HLD-08B adds Guided answer persistence and validated import/reset/recovery; see [its work item](work-items/HLD-08B.md). HLD-09A implemented the initial draft URL-shortener Requirements stage with contract/API/route and saved answers; see [its work item](work-items/HLD-09A.md). HLD-09B1 adds Estimates/API and stage navigation with Java-checked examples; see [its work item](work-items/HLD-09B1.md). HLD-09B2 adds Data/Baseline/Flows and typed illustrative walkthroughs; see [its work item](work-items/HLD-09B2.md). HLD-09B3 adds Evolution/Failures with strict eligibility paths and Java-checked transfer exercises; see [its work item](work-items/HLD-09B3.md). HLD-09B4 adds Operations/Defense, completing ten authored draft stages; see [its work item](work-items/HLD-09B4.md). [HLD-09C-B](work-items/HLD-09C-B.md) implements published-case discovery without publishing the draft. **HLD-09C-D completes technical stage/source review; manual publication gates remain open. HLD-10A implements published search. HLD-10B adds Continue learning from saved reasoning; HLD-10C adds bookmarks; HLD-10D adds the first learning path. HLD-10E adds explicit reading and exact-answer practice reviews with completion-only backups/import/recovery. [HLD-11A](work-items/HLD-11A.md) implements HTTP request/result byte limits and process-local admission with actual failure/retry evidence. [HLD-11B](work-items/HLD-11B.md) verifies a fresh source-only checkout and adds copied-jar/container runtime gates. [HLD-11C](work-items/HLD-11C.md) measures Java generation/serialization and production-browser HTTP/render/seek costs; [HLD-11D](work-items/HLD-11D.md) adds initial fresh/primed reading-load and bounded real-HTTP process-memory evidence; sustained/hosted load and networking/thread policies remain release work; hosted backend recovery, resource sizing and networking limits remain open.** Manual zoom, screen-reader, and newcomer teach-back gates remain open for every module.
 
+## Current delivery draft
+
+[HLD-14B](work-items/HLD-14B.md) integrates the verified delivery model with strict APIs,
+canonical lazy compatibility checks, explicit React Playground/Study/Practice and eight
+original questions. The module remains draft at `/draft/topics/queues-delivery`; four published
+topics remain unchanged. Next bounded contribution: HLD-14C, Guided checkpoints verified
+against Java presets plus authored Architecture/message sequence views. Transactions and
+idempotency follow their recorded prerequisites; this model has no deduplication.
+
 ## 1. Objective and scope
 
 Deliver an excellent first learning path:
@@ -70,15 +79,18 @@ draft development follows decision 0022 and the curriculum's prerequisite order.
 
 The [queue-delivery handoff](QUEUE_DELIVERY_IMPLEMENTATION_PLAN.md) specifies the
 delivery/effect/ACK experiment, exact fixtures, typed state, UI and checks. HLD-14A now
-implements its standalone Java model and contracts; API/UI integration remains pending. Its prerequisite `queues-tail-latency` has a bounded Java model in
+implements its Java model and contracts. [HLD-14B](work-items/HLD-14B.md) adds strict
+descriptor/run APIs and an explicit three-tab draft React experience. Its prerequisite
+`queues-tail-latency` has a bounded Java model in
 [HLD-13A](work-items/HLD-13A.md) and a first accessible draft learning experience in
 [HLD-13B](work-items/HLD-13B.md): explicit draft delivery, Playground, Study and Practice.
 [HLD-13C](work-items/HLD-13C.md) adds eight Java-verified Guided checkpoints, original
 architecture/job-path views and draft checkpoint resume using a typed shared guided flow.
 The prerequisite's teaching artifacts are technically reviewed. [HLD-14A](work-items/HLD-14A.md) supplies
-the dependent domain behavior; next register descriptor/API and deliberate draft integration. Publication and human review
-remain separate gates. The published topic API still rejects drafts; preview uses the explicit
-`/api/v1/draft/topics/{id}` endpoint and `/draft/topics/queues-tail-latency` route.
+the dependent domain behavior; HLD-14B integrates its first vertical learning experience.
+Next add delivery Guided/Architecture/sequence teaching in HLD-14C. Publication and human
+review remain separate gates. The published topic API still rejects drafts; preview uses
+`/api/v1/draft/topics/{id}` and the explicit capacity/delivery draft routes.
 
 ## 4. HLD-05: cache visual playback — implement first
 
@@ -228,10 +240,11 @@ Limiter, Chat, News Feed and Booking in prerequisite order. Develop unpublished 
 decision 0022 without postponing the remaining first-release reviews. Publish only after
 the relevant release and prerequisite gates pass. Do not add shallow cards for absent modules.
 
-### Delivery domain follow-up (HLD-14A)
+### Delivery teaching follow-up (HLD-14C)
 
 The capacity prerequisite has its complete core draft teaching flow. [HLD-14A](work-items/HLD-14A.md)
-implements standalone Java delivery semantics and contracts. The next bounded contribution adds
-a descriptor/run API, strict parsing, complete-response/admission/recovery/isolation evidence and
-canonical draft lesson/questions/resources; it must not advertise a React capability before the
-renderer and real browser journey exist. Follow the [delivery handoff](QUEUE_DELIVERY_IMPLEMENTATION_PLAN.md).
+implements Java delivery semantics and contracts. [HLD-14B](work-items/HLD-14B.md) adds
+strict APIs, guards/isolation evidence, canonical lesson/eight questions and a real
+Playground/Study/Practice renderer. Next add HLD-14C Guided checkpoints, semantic message
+selectors, Java teaching fixtures and authored Architecture/message sequence views. Keep
+publication separate from draft development; follow the [delivery handoff](QUEUE_DELIVERY_IMPLEMENTATION_PLAN.md).

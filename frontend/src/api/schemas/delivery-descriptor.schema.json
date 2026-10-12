@@ -1,0 +1,241 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "kind",
+    "modelVersion",
+    "description",
+    "limits",
+    "presets",
+    "assumptions"
+  ],
+  "properties": {
+    "id": { "type": "string", "const": "queues-delivery" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "kind": { "type": "string", "const": "simulation" },
+    "modelVersion": { "type": "string", "const": "1.0.0" },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "limits": { "$ref": "#/$defs/DeliveryLimits" },
+    "presets": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20,
+      "items": { "$ref": "#/$defs/DeliveryPreset" }
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 30,
+      "items": { "type": "string", "minLength": 1, "maxLength": 2000 }
+    }
+  },
+  "$defs": {
+    "DeliveryLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minMessages",
+        "maxMessages",
+        "minConsumers",
+        "maxConsumers",
+        "maxFailures",
+        "maxLostAcknowledgments",
+        "minTimeMs",
+        "maxTimeMs",
+        "minProcessingTimeMs",
+        "maxProcessingTimeMs",
+        "minAcknowledgmentDelayMs",
+        "maxAcknowledgmentDelayMs",
+        "minVisibilityTimeoutMs",
+        "maxVisibilityTimeoutMs",
+        "minDeliveryAttempts",
+        "maxDeliveryAttempts",
+        "minSeed",
+        "maxSeed",
+        "idPattern",
+        "maxVirtualTimeMs",
+        "maxEvents",
+        "maxTraceBytes"
+      ],
+      "properties": {
+        "minMessages": { "type": "integer", "const": 1 },
+        "maxMessages": { "type": "integer", "const": 20 },
+        "minConsumers": { "type": "integer", "const": 1 },
+        "maxConsumers": { "type": "integer", "const": 3 },
+        "maxFailures": { "type": "integer", "const": 8 },
+        "maxLostAcknowledgments": { "type": "integer", "const": 20 },
+        "minTimeMs": { "type": "integer", "const": 0 },
+        "maxTimeMs": { "type": "integer", "const": 60000 },
+        "minProcessingTimeMs": { "type": "integer", "const": 1 },
+        "maxProcessingTimeMs": { "type": "integer", "const": 1000 },
+        "minAcknowledgmentDelayMs": { "type": "integer", "const": 1 },
+        "maxAcknowledgmentDelayMs": { "type": "integer", "const": 1000 },
+        "minVisibilityTimeoutMs": { "type": "integer", "const": 1 },
+        "maxVisibilityTimeoutMs": { "type": "integer", "const": 60000 },
+        "minDeliveryAttempts": { "type": "integer", "const": 1 },
+        "maxDeliveryAttempts": { "type": "integer", "const": 5 },
+        "minSeed": { "type": "integer", "const": -9007199254740991 },
+        "maxSeed": { "type": "integer", "const": 9007199254740991 },
+        "idPattern": { "type": "string", "const": "^[a-z][a-z0-9-]{0,31}$" },
+        "maxVirtualTimeMs": { "type": "integer", "const": 60000 },
+        "maxEvents": { "type": "integer", "const": 10000 },
+        "maxTraceBytes": { "type": "integer", "const": 2097152 }
+      }
+    },
+    "DeliveryPreset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "question", "input"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "maxLength": 64,
+          "not": { "pattern": "\\s" }
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "question": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "input": { "$ref": "#/$defs/DeliveryInput" }
+      }
+    },
+    "DeliveryInput": {
+      "title": "Queue delivery domain input",
+      "description": "Canonical input for the illustrative queues-delivery model, schema 1.0/model 1.0.0. Its OpenAPI component derives from this schema; topic publication belongs to the catalog. Arrays retain authored input order. Java additionally validates unique message/consumer IDs, referenced fault identities, unique loss selectors, alternating chronological failure schedules and ACK-before delay strictly less than processing time. JSON Schema validates parsed JSON values, not token spellings or duplicate JSON keys. The delivery HTTP controller separately rejects duplicate keys, trailing roots and nonintegral or coerced JSON tokens.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "modelVersion",
+        "messages",
+        "consumers",
+        "processingTimeMs",
+        "acknowledgmentDelayMs",
+        "visibilityTimeoutMs",
+        "maxDeliveryAttempts",
+        "acknowledgmentPolicy",
+        "failures",
+        "lostAcknowledgments",
+        "seed"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "1.0" },
+        "modelVersion": { "const": "1.0.0" },
+        "messages": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "enqueueTimeMs"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32,
+                "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                "not": { "pattern": "\\s" }
+              },
+              "enqueueTimeMs": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 60000
+              }
+            }
+          }
+        },
+        "consumers": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32,
+                "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                "not": { "pattern": "\\s" }
+              }
+            }
+          }
+        },
+        "processingTimeMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "acknowledgmentDelayMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "visibilityTimeoutMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60000
+        },
+        "maxDeliveryAttempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "acknowledgmentPolicy": {
+          "enum": ["ACK_BEFORE_EFFECT", "ACK_AFTER_EFFECT"]
+        },
+        "failures": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["consumerId", "action", "timeMs"],
+            "properties": {
+              "consumerId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32,
+                "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                "not": { "pattern": "\\s" }
+              },
+              "action": { "enum": ["CRASH", "RECOVER"] },
+              "timeMs": { "type": "integer", "minimum": 0, "maximum": 60000 }
+            }
+          }
+        },
+        "lostAcknowledgments": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["messageId", "attempt"],
+            "properties": {
+              "messageId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 32,
+                "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                "not": { "pattern": "\\s" }
+              },
+              "attempt": { "type": "integer", "minimum": 1, "maximum": 5 }
+            }
+          }
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        }
+      }
+    }
+  }
+}
