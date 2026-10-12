@@ -397,3 +397,53 @@ for (const [name, change, expected] of [
   test(`reject learning path ${name}`, () =>
     rejectChange(() => {}, expected, change));
 }
+
+function rejectCheckpointTarget(topic, target, expected) {
+  rejectChange(
+    () => {},
+    expected,
+    () => {},
+    (fixture) => {
+      const path = join(fixture, `content/topics/${topic}/checkpoints.json`);
+      const checkpoints = JSON.parse(readFileSync(path, "utf8"));
+      checkpoints[0].target = target;
+      writeFileSync(path, JSON.stringify(checkpoints));
+    },
+  );
+}
+
+test("reject mixed operation and job selectors", () => {
+  rejectCheckpointTarget(
+    "queues-tail-latency",
+    { operation: 1, jobId: "job-1", kind: "job.started", occurrence: 1 },
+    /must NOT have additional properties/,
+  );
+});
+test("reject a queue checkpoint with an operation selector", () => {
+  rejectCheckpointTarget(
+    "queues-tail-latency",
+    { operation: 1, kind: "job.started", occurrence: 1 },
+    /queues-tail-latency events do not support target selector operation/,
+  );
+});
+test("reject a cache checkpoint with a job selector", () => {
+  rejectCheckpointTarget(
+    "cache-aside",
+    { jobId: "job-1", kind: "cache.fill", occurrence: 1 },
+    /cache-aside events do not support target selector jobId/,
+  );
+});
+test("reject a checkpoint without a semantic selector", () => {
+  rejectCheckpointTarget(
+    "queues-tail-latency",
+    { kind: "job.started", occurrence: 1 },
+    /must match exactly one schema in oneOf/,
+  );
+});
+test("reject a checkpoint job selector ending in a newline", () => {
+  rejectCheckpointTarget(
+    "queues-tail-latency",
+    { jobId: "job-1\n", kind: "job.started", occurrence: 1 },
+    /must NOT be valid/,
+  );
+});

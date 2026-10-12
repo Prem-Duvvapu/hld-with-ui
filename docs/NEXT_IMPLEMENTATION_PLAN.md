@@ -73,8 +73,10 @@ delivery/effect/ACK experiment, exact fixtures, typed state, UI and checks. It i
 not a shipped module. Its prerequisite `queues-tail-latency` has a bounded Java model in
 [HLD-13A](work-items/HLD-13A.md) and a first accessible draft learning experience in
 [HLD-13B](work-items/HLD-13B.md): explicit draft delivery, Playground, Study and Practice.
-Review this prerequisite's teaching artifacts, add missing guided/architecture/sequence
-views, then implement dependent queue delivery from the handoff. Publication and human review
+[HLD-13C](work-items/HLD-13C.md) adds eight Java-verified Guided checkpoints, original
+architecture/job-path views and draft checkpoint resume using a typed shared guided flow.
+Review this prerequisite's completed teaching artifacts, then implement dependent queue
+delivery from the handoff. Publication and human review
 remain separate gates. The published topic API still rejects drafts; preview uses the explicit
 `/api/v1/draft/topics/{id}` endpoint and `/draft/topics/queues-tail-latency` route.
 

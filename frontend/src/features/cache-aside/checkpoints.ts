@@ -10,6 +10,7 @@ export function resolveCheckpoint(
   events: readonly CacheAsideEvent[],
   target: GuidedCheckpoint["target"],
 ): number {
+  if (!("operation" in target) || "jobId" in target) return -1;
   let seen = 0;
   for (let index = 0; index < events.length; index++) {
     const event = events[index]!;

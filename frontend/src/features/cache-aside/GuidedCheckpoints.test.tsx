@@ -329,6 +329,8 @@ describe("GuidedCheckpoints", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "This checkpoint no longer matches the Java trace",
     );
+    expect(screen.queryByText("Explanation for Missing.")).toBeNull();
+    expect(screen.queryByText("4. Choose a tradeoff")).toBeNull();
   });
 });
 

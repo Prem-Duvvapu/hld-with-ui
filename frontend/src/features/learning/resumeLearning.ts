@@ -77,7 +77,6 @@ function resolveTopicTarget(
       removed: false,
     };
   const checkpoint =
-    !draft &&
     entry.capabilities.includes("guided") &&
     detail.checkpoints.find((item) =>
       ["prediction", "tradeoff"].some(

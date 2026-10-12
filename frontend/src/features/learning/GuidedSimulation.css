@@ -13,6 +13,8 @@
   list-style: none;
 }
 .guided-steps button {
+  /* Keep the hidden reveal label inside the scrolling checkpoint button. */
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;

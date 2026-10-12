@@ -13,9 +13,10 @@ The idea is simple: **see a system work, change one condition, explain what happ
 
 A draft **Queues & Tail Latency** module is available at
 `/draft/topics/queues-tail-latency`. It connects a strict Java API to editable worker/buffer/job
-controls, real snapshot playback, a worked lesson and six Practice questions. It models
+controls, real snapshot playback, eight Guided checkpoints, Architecture and Job sequence
+views, a worked lesson and six Practice questions. It models
 in-memory waiting and rejection; durable delivery, retries and acknowledgments remain future
-work. See [HLD-13B](docs/work-items/HLD-13B.md). There are still four published modules.
+work. See [HLD-13C](docs/work-items/HLD-13C.md). There are still four published modules.
 
 ## Record your learning
 

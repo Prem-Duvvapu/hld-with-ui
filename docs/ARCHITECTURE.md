@@ -9,7 +9,7 @@ Status: the foundation and four published modules (`request-flow`, `capacity-est
 | Frontend | React, TypeScript, Vite, React Router | Familiar repository family; typed UI contracts; browser application with separate Java API |
 | Styling | CSS with semantic tokens and scoped component styles | Consistent themes, visible focus, controlled dependencies |
 | Server data | Typed fetch client initially; add a cache library if repeated data flows justify it | Keep first slice small; centralize errors and cancellation |
-| Static content | Markdown, structured JSON metadata/questions, build-rendered diagrams | Reviewable content and validation without a CMS |
+| Static content | Markdown with pinned GFM table support, structured JSON metadata/questions, code-native diagrams | Reviewable content and validation without a CMS |
 | Topology | SVG for initial fixed topology; evaluate React Flow for later editing | Playback does not initially require a graph editor |
 | Backend | Java 17 bytecode, Spring Boot 4, Maven Wrapper; CI on Java 21 | Works with the owner's local Java 17 and remains tested on the newer CI LTS |
 | Execution | Plain Java domain modules and deterministic discrete-event engine | Testable without Spring or external infrastructure |
@@ -73,7 +73,12 @@ and a queue-local admission collector, registered through a small Spring configu
 standard descriptor/run API supports the explicitly requested draft topic at
 `/draft/topics/queues-tail-latency`. React selects returned snapshots without a second queue
 engine. Standalone model schemas export deterministically into OpenAPI and generated types;
-see [decision 0024](decisions/0024-draft-queue-experience.md).
+see [decision 0024](decisions/0024-draft-queue-experience.md). The queue draft now adds eight
+Guided checkpoints and authored architecture/job-path views. Cache and queue adapters use
+a small shared `GuidedSimulation` component for storage/reset/version/pending behavior;
+concrete adapters own Java requests, semantic target selection and playback. Its target
+union is cache-operation or queue-job ID, never array position; see
+[decision 0025](decisions/0025-shared-guided-simulation.md).
 
 ## 3. Catalog and content
 

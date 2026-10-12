@@ -13,10 +13,14 @@ protection belong. One sentence: **a queue can retry delivery; your application 
 what repeating the work means.**
 
 Use the existing curriculum ID `queues-delivery`. Its prerequisite is `queues-tail-latency`,
-which depends on the already implemented capacity and request-flow modules. Neither new
-queue module exists in the catalog or API today. Implement and review queue capacity/waiting
-first. Its finite in-memory worker queue and this modeled durable broker are different
-boundaries; explain the distinction explicitly.
+which depends on the already implemented capacity and request-flow modules. The
+capacity/waiting prerequisite now has a Java model and explicit draft API/UI in
+[HLD-13A](work-items/HLD-13A.md) and [HLD-13B](work-items/HLD-13B.md).
+[HLD-13C](work-items/HLD-13C.md) adds its complete core Guided/architecture/job-path teaching
+flow; consult that contribution's actual verification evidence before dependent development.
+The delivery model and learning module described here remain proposed. The prerequisite's
+finite in-memory worker queue and the proposed durable broker are different boundaries;
+explain the distinction explicitly.
 
 [Decision 0022](decisions/0022-development-and-publication-gates.md) allows unpublished
 development before first-release human/hosted reviews finish. Publication still requires
@@ -298,12 +302,13 @@ coordination example, not the broker semantics to copy here.
    risks confirmed delivery without work. Neither policy alone protects an external effect.
 
 Guided targets should identify preset, message, attempt, event kind and occurrence.
-The current guided-checkpoint schema targets cache operation fields; extend it only with
-an explicit discriminated queue selector and backward-compatible validation/tests. Never
-fit queue attempts into invented cache operation numbers or array indexes.
-Its current kind pattern excludes the hyphen in `message.dead-lettered`: the queue selector
-must validate against its own closed event vocabulary while retaining the existing cache
-selector's validation. Updating only the selector IDs would leave this checkpoint invalid.
+The current guided-checkpoint schema supports cache operation and queue-capacity job selectors
+(HLD-13C). Delivery needs its own explicit message/attempt selector with backward-compatible
+validation/tests for both existing models. Never fit delivery attempts into invented cache
+operation numbers, capacity job IDs or event array indexes.
+The existing kind pattern excludes the hyphen in `message.dead-lettered`: the delivery selector
+must validate against its own closed event vocabulary while retaining the existing cache and
+capacity selectors' validation. Updating only the selector IDs would leave this checkpoint invalid.
 
 Practice should cover lost ACK, crash-before/after effect, expiry-boundary comparison,
 two-worker overlapping attempts, retry exhaustion and a transfer to an order-processing
@@ -361,7 +366,7 @@ per-job service durations to teach a concrete difference from request-flow's per
 | 6 | Release review and publication | P2-05, published prerequisites, all declared capabilities, human learning/accessibility evidence and complete module checks |
 | 7 | Timeouts/retries; storage/transactions prerequisites; idempotency; integrated cases | Respect curriculum closure and independently verify each new guarantee |
 
-Proposed verification commands, **not executed for an absent queue model**:
+Proposed verification commands, **not executed for the absent queue-delivery model**:
 
 ```bash
 node scripts/validate-plan.mjs

@@ -5,6 +5,11 @@ import { LoadingState, ErrorState } from "../components/AsyncState";
 import { ModuleShell } from "../components/ModuleShell";
 import { StudyView } from "../features/learning/StudyView";
 import { PracticeView } from "../features/learning/PracticeView";
+import { QueueGuided } from "../features/queues/QueueGuided";
+import {
+  QueueArchitectureView,
+  QueueSequenceView,
+} from "../features/queues/QueueConceptViews";
 import { QueuePlayground } from "../features/queues/QueuePlayground";
 import { NotFoundPage } from "./NotFoundPage";
 const id = "queues-tail-latency";
@@ -77,6 +82,9 @@ export function QueueCapacityPage() {
         <LoadingState label="Loading the draft queue module" />
       </div>
     );
+  const guided =
+    data.topic.topic.capabilities.includes("guided") &&
+    data.topic.checkpoints.length > 0;
   return (
     <>
       <section
@@ -94,12 +102,25 @@ export function QueueCapacityPage() {
         topic={data.topic.topic}
         tabs={[
           { id: "playground", label: "Playground" },
+          ...(guided ? [{ id: "guided", label: "Guided" }] : []),
           { id: "study", label: "Study" },
+          { id: "architecture", label: "Architecture" },
+          { id: "sequence", label: "Job sequence" },
           { id: "practice", label: "Practice" },
         ]}
         defaultView="playground"
         panels={{
           playground: <QueuePlayground descriptor={data.descriptor} />,
+          guided: guided && (
+            <QueueGuided
+              checkpoints={data.topic.checkpoints}
+              descriptor={data.descriptor}
+              topicId={id}
+              contentVersion={data.topic.topic.contentVersion}
+            />
+          ),
+          architecture: <QueueArchitectureView />,
+          sequence: <QueueSequenceView />,
           study: (
             <StudyView
               markdown={data.topic.lessonMarkdown}

@@ -35,8 +35,9 @@ OpenAPI describes what the running server returns. JSON Schema establishes struc
 
 `queue-capacity.input.schema.json` and `queue-capacity.result.schema.json` own the
 `queues-tail-latency` shape (`1.0` schema, `1.0.0` model). The deterministic exporter in
-`frontend/scripts/sync-queue-contract.mjs` derives its OpenAPI components with internal refs;
-generated frontend types derive from OpenAPI. HTTP contract version `1.1.0` adds explicit
+`frontend/scripts/sync-simulation-contracts.mjs` derives its OpenAPI components with internal refs; the same exporter derives `GuidedCheckpoint` from
+`checkpoints.schema.json`, with exactly one cache-operation or queue-job selector;
+generated frontend types derive from OpenAPI. HTTP contract version `1.1.0` added explicit
 `GET /api/v1/draft/topics/{id}` and queue descriptor/run endpoints. Draft topic lookup rejects
 published/planned/case IDs; published collections and search exclude the queue topic.
 
@@ -47,7 +48,10 @@ or coerced values cannot silently become defaults. Seed metadata uses signed Jav
 integers. Queue capacity counts waiting jobs only. Typed snapshots drive playback, and
 completed metrics exclude rejected/unfinished jobs. The two baseline examples are validated
 by the content gate and compared with actual Java serialization and packaged HTTP output.
-See [decision 0024](../docs/decisions/0024-draft-queue-experience.md).
+See [decision 0024](../docs/decisions/0024-draft-queue-experience.md). HTTP version `1.2.0` adds
+job-based guided targets without changing simulation versions; queue content `1.1.0` supplies
+eight checkpoints. [Decision 0025](../docs/decisions/0025-shared-guided-simulation.md) records
+selector narrowing and evidence/lifecycle boundaries.
 
 Learning paths contain ordered canonical module references and purposes, with optional deeper
 references. Shape/size/schema checks reject unsupported fields; semantic checks require unique

@@ -1,0 +1,282 @@
+[
+  {
+    "id": "workers-before-wait",
+    "title": "Worker slots come before waiting slots",
+    "simulationId": "queues-tail-latency",
+    "presetId": "baseline",
+    "target": {
+      "jobId": "job-1",
+      "kind": "job.started",
+      "occurrence": 1
+    },
+    "prompt": "Four jobs arrive at 0 ms. There is one idle worker and one waiting slot. Does job-1 need a waiting slot before it can start?",
+    "lookFor": "The first event assigns job-1 to worker-1 at 0 ms. The shared queue remains empty: running work uses the worker, not the waiting slot.",
+    "explanation": "At 0 ms job-1 immediately starts on worker-1 because the worker is idle. Its scheduled completion is 10 ms. The waiting slot remains available for job-2. A worker slot and a waiting slot are separate resources; a queue capacity of zero still allows an idle worker to start work. A schedule is a plan until a completion event is observed.",
+    "tradeoff": {
+      "prompt": "For a small service that cannot tolerate waiting, which admission boundary lets useful work start immediately?",
+      "options": [
+        {
+          "id": "no-wait",
+          "label": "Allow free workers to start jobs; reject when none are free",
+          "feedback": "A zero-waiting policy can accept work on an idle worker. It trades burst absorption for a short admission boundary; it does not eliminate service time."
+        },
+        {
+          "id": "queue-only",
+          "label": "Require every job to enter the queue first",
+          "feedback": "Waiting is unnecessary when a worker is free. This model assigns an arriving job directly to an idle worker."
+        },
+        {
+          "id": "unlimited",
+          "label": "Keep every arrival in an unlimited queue",
+          "feedback": "This avoids immediate rejection by accumulating work, but it cannot provide a bounded waiting promise when processing falls behind."
+        }
+      ],
+      "recommendedOptionId": "no-wait"
+    }
+  },
+  {
+    "id": "shared-waiting",
+    "title": "Waiting adds time before service",
+    "simulationId": "queues-tail-latency",
+    "presetId": "baseline",
+    "target": {
+      "jobId": "job-2",
+      "kind": "job.queued",
+      "occurrence": 1
+    },
+    "prompt": "Job-1 is running at 0 ms. What happens to job-2, and what are its eventual waiting time, service time and total latency?",
+    "lookFor": "At 0 ms job-2 occupies the shared queue while worker-1 still holds job-1. Step forward to 10 ms and 20 ms to separate its waiting from its service.",
+    "explanation": "Job-2 enters the waiting queue at 0 ms because worker-1 is busy and one waiting slot is free. It starts at 10 ms and completes at 20 ms. Waiting is 10 - 0 = 10 ms, service is 20 - 10 = 10 ms, and successful latency is 20 - 0 = 20 ms. Its service did not become slower; waiting added the extra 10 ms.",
+    "tradeoff": {
+      "prompt": "A real service shows growing request latency while service duration stays steady. What should you inspect first?",
+      "options": [
+        {
+          "id": "waiting",
+          "label": "Inspect waiting age, arrival load and worker occupancy",
+          "feedback": "Separate waiting from service before changing code. A growing buffer can explain slower responses even when the work itself takes the same time."
+        },
+        {
+          "id": "code",
+          "label": "Assume the service code doubled in execution time",
+          "feedback": "That explanation conflicts with unchanged service duration. Check the waiting population before attributing total latency to execution."
+        },
+        {
+          "id": "hide-wait",
+          "label": "Report only service time as user latency",
+          "feedback": "Service time omits the time callers spent waiting. Measure the full operation boundary and report the components separately."
+        }
+      ],
+      "recommendedOptionId": "waiting"
+    }
+  },
+  {
+    "id": "full-buffer-rejection",
+    "title": "A full buffer rejects the next job",
+    "simulationId": "queues-tail-latency",
+    "presetId": "baseline",
+    "target": {
+      "jobId": "job-3",
+      "kind": "job.rejected",
+      "occurrence": 1
+    },
+    "prompt": "Job-1 is running and job-2 occupies the only waiting slot at 0 ms. Is job-3 admitted? Does it have a successful latency?",
+    "lookFor": "The rejection event leaves worker-1 and the queue unchanged. In final outcomes job-3 has a rejection time, with no worker, start time or successful latency.",
+    "explanation": "At 0 ms job-3 is rejected because the worker is busy and the waiting slot is full. Job-4 is rejected too. The finite run finishes with 2 completed jobs and 2 rejected jobs. Successful latency uses only the completed latencies of 10 ms and 20 ms: mean 15 ms, nearest-rank p95 20 ms, and 2 samples. Rejection is not a zero-latency success.",
+    "tradeoff": {
+      "prompt": "The successful mean looks fast but half of this burst was rejected. What is an honest report?",
+      "options": [
+        {
+          "id": "populations",
+          "label": "Report successful latency, sample count and rejection separately",
+          "feedback": "The two completed jobs have mean 15 ms, while two other jobs were rejected. The reader needs both populations to judge the design."
+        },
+        {
+          "id": "zero",
+          "label": "Include rejected jobs as zero-latency completions",
+          "feedback": "Rejected jobs never performed the requested work. Treating them as zero-latency successes produces a misleading average."
+        },
+        {
+          "id": "retry-all",
+          "label": "Claim immediate retries will admit every rejected job",
+          "feedback": "Retries are not modeled here and add arrivals to the same constrained workers. A real retry policy needs deadlines, backoff and a budget."
+        }
+      ],
+      "recommendedOptionId": "populations"
+    }
+  },
+  {
+    "id": "completion-before-dispatch",
+    "title": "A completion frees the worker first",
+    "simulationId": "queues-tail-latency",
+    "presetId": "baseline",
+    "target": {
+      "jobId": "job-2",
+      "kind": "job.started",
+      "occurrence": 1
+    },
+    "prompt": "At 10 ms job-1 completes while job-2 is waiting. Which event happens first, and can a new arrival jump ahead of that waiter?",
+    "lookFor": "Step back from job-2 starting to the preceding job-1 completion. Both have time 10 ms, but sequence numbers show two distinct transitions.",
+    "explanation": "At 10 ms Java first emits job-1 completed, with worker-1 idle and job-2 still waiting. It then emits job-2 started on worker-1 at the same 10 ms, and the queue becomes empty. Equal time does not mean one indistinguishable event. All due completions precede FIFO dispatch, and existing waiters are dispatched before new arrivals at that timestamp.",
+    "tradeoff": {
+      "prompt": "In this model, a new job arrives exactly when a worker frees up and an older job is waiting. Which ordering preserves the chosen FIFO policy?",
+      "options": [
+        {
+          "id": "waiter-first",
+          "label": "Dispatch the older waiter before processing the new arrival",
+          "feedback": "That is this model's explicit ordering. It preserves queued order; another policy would need a different documented and tested guarantee."
+        },
+        {
+          "id": "arrival-first",
+          "label": "Always give the slot to the new arrival",
+          "feedback": "That can bypass older waiting work and does not match this model's FIFO admission phases."
+        },
+        {
+          "id": "random",
+          "label": "Let thread scheduling choose the winner",
+          "feedback": "Host thread timing must not decide virtual outcomes. Reproducible experiments need a stated tie rule."
+        }
+      ],
+      "recommendedOptionId": "waiter-first"
+    }
+  },
+  {
+    "id": "larger-buffer-population",
+    "title": "More waiting space changes the population",
+    "simulationId": "queues-tail-latency",
+    "presetId": "larger-buffer",
+    "target": {
+      "jobId": "job-4",
+      "kind": "job.completed",
+      "occurrence": 1
+    },
+    "prompt": "Keep one worker and the same four 10 ms jobs, but increase waiting slots from one to three. Predict completion count and mean successful latency.",
+    "lookFor": "At the final completion, all four jobs finished. Inspect their wait times and compare the successful sample count with the one-slot run.",
+    "explanation": "With 3 waiting slots, job-1 starts and the other 3 jobs wait at 0 ms. Completions are 10, 20, 30 and 40 ms. All 4 jobs complete and none are rejected. Mean successful latency is (10 + 20 + 30 + 40) / 4 = 25 ms; nearest-rank p95 is 40 ms over 4 samples. More buffering admits this burst but creates no extra worker capacity. The earlier mean 15 ms used a different, smaller population.",
+    "tradeoff": {
+      "prompt": "A product can tolerate brief buffering but has a waiting deadline. How should you choose the buffer?",
+      "options": [
+        {
+          "id": "deadline",
+          "label": "Choose a finite buffer from the waiting budget and measured drain capacity",
+          "feedback": "The buffer can absorb a burst that drains in time. Track waiting age and rejection; sustained arrivals above actual processing capacity will still accumulate work."
+        },
+        {
+          "id": "always-larger",
+          "label": "Always increase the buffer because all jobs finish",
+          "feedback": "Admitting more work can violate useful deadlines. This finite model has no caller deadline or resource-contention cost."
+        },
+        {
+          "id": "mean-only",
+          "label": "Prefer the one-slot run solely because its mean is 15 ms",
+          "feedback": "The mean excludes two rejected jobs. Compare sample count, waiting and rejection before selecting an admission policy."
+        }
+      ],
+      "recommendedOptionId": "deadline"
+    }
+  },
+  {
+    "id": "more-workers",
+    "title": "Workers and waiting slots do different jobs",
+    "simulationId": "queues-tail-latency",
+    "presetId": "more-workers",
+    "target": {
+      "jobId": "job-2",
+      "kind": "job.started",
+      "occurrence": 1
+    },
+    "prompt": "Two workers are free at 0 ms and only one job can wait. How many of the four jobs are admitted, and when does job-2 start?",
+    "lookFor": "Job-2 starts on worker-2 at 0 ms while worker-1 already holds job-1. The waiting slot is still separate from both running jobs.",
+    "explanation": "At 0 ms job-1 starts on worker-1 and job-2 starts on worker-2. Job-3 waits and job-4 is rejected. The run completes 3 jobs at 10, 10 and 20 ms, with 1 rejection. Mean successful latency is 40 / 3 ms (about 13.33 ms), and nearest-rank p95 is 20 ms over 3 samples. Extra workers reduce waiting in this illustrative workload; a real dependency may not support the added concurrency.",
+    "tradeoff": {
+      "prompt": "Before increasing workers in a real image-processing service, what should you establish?",
+      "options": [
+        {
+          "id": "budget",
+          "label": "Measure CPU, memory and dependency headroom for added concurrency",
+          "feedback": "More workers help only within actual resource limits. This model assigns fixed service durations and does not represent contention or downstream saturation."
+        },
+        {
+          "id": "buffer",
+          "label": "Increase waiting slots and describe that as more processing capacity",
+          "feedback": "Waiting slots store work that has not started. They do not perform that work."
+        },
+        {
+          "id": "unlimited-workers",
+          "label": "Use unlimited workers because the simulated latency improved",
+          "feedback": "The example omits resource contention. It provides a reason to measure and test concurrency, not a safe production worker count."
+        }
+      ],
+      "recommendedOptionId": "budget"
+    }
+  },
+  {
+    "id": "slow-head",
+    "title": "One slow job delays short jobs behind it",
+    "simulationId": "queues-tail-latency",
+    "presetId": "slow-job",
+    "target": {
+      "jobId": "job-4",
+      "kind": "job.started",
+      "occurrence": 1
+    },
+    "prompt": "One worker handles a 100 ms job followed by three 1 ms jobs, all arriving at 0 ms. When does job-4 start, and what part of its latency is waiting?",
+    "lookFor": "At job-4 starting, the earlier three jobs have completed at 100, 101 and 102 ms. The worker schedules job-4 completion at 103 ms.",
+    "explanation": "Job-1 occupies the only worker until 100 ms. Job-2 completes at 101 ms and job-3 at 102 ms. Job-4 therefore starts at 102 ms and completes at 103 ms: 102 ms waiting plus 1 ms service equals 103 ms successful latency. Its short service time does not protect it from FIFO waiting behind earlier work.",
+    "tradeoff": {
+      "prompt": "Short tasks need a tighter waiting objective than long batch jobs. Which next design question addresses that difference?",
+      "options": [
+        {
+          "id": "separate",
+          "label": "Consider separate bounded worker pools with explicit fairness and resource budgets",
+          "feedback": "Separating workloads can reduce interference, but needs capacity allocation and starvation safeguards. This model has only one FIFO queue and does not execute that alternative."
+        },
+        {
+          "id": "rename",
+          "label": "Rename the queue without changing scheduling or capacity",
+          "feedback": "A new label does not change the observed waiting. Define the actual scheduling or capacity policy."
+        },
+        {
+          "id": "ignore-wait",
+          "label": "Use the 1 ms service duration as the total latency objective",
+          "feedback": "The observed job waited 102 ms. A useful objective must include the operation boundary the caller experiences."
+        }
+      ],
+      "recommendedOptionId": "separate"
+    }
+  },
+  {
+    "id": "censored-completion",
+    "title": "A future schedule is not a completion",
+    "simulationId": "queues-tail-latency",
+    "presetId": "virtual-limit",
+    "target": {
+      "jobId": "last-job",
+      "kind": "job.started",
+      "occurrence": 1
+    },
+    "prompt": "The job arrives at 60,000 ms and needs 10,000 ms of service. The model cannot advance beyond 60,000 ms. Is its scheduled finish an observed completion?",
+    "lookFor": "The worker card says scheduled completion 70,000 ms. Final outcome remains RUNNING, the run is limited, and successful latency statistics are unavailable.",
+    "explanation": "At 60,000 ms last-job starts. Its scheduled completion is 70,000 ms, but the virtual-time guard stops before that transition. The result has 0 completed jobs, 1 running job and 0 successful samples. A scheduled time is not an observed completion. Successful latency and p95 remain unavailable rather than becoming zero or the hoped-for 10,000 ms. This is a censored prefix of the finite experiment.",
+    "tradeoff": {
+      "prompt": "How should you explain a run that stopped while work was still running?",
+      "options": [
+        {
+          "id": "prefix",
+          "label": "Report the observed prefix, stop reason and unfinished population",
+          "feedback": "State what was observed and what remains unknown. A bounded run cannot prove that unobserved work later succeeded or met a deadline."
+        },
+        {
+          "id": "schedule",
+          "label": "Report every scheduled finish as a completed job",
+          "feedback": "The schedule does not prove the completion event occurred. The guard deliberately preserves the running outcome."
+        },
+        {
+          "id": "zero-mean",
+          "label": "Report mean successful latency as zero",
+          "feedback": "There are no completed samples. Zero would describe a measured value, while this statistic is unavailable."
+        }
+      ],
+      "recommendedOptionId": "prefix"
+    }
+  }
+]
