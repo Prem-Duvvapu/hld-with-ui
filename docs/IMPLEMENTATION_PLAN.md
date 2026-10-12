@@ -161,12 +161,17 @@ The `HLD-*` IDs below are implementation-plan tasks, not new topic IDs. Their st
 | 9 | HLD-09: URL shortener workshop | HLD-06, HLD-07, HLD-08; initial concept release gates | P2-03 | Three slices listed below |
 | 10 | HLD-10: search, bookmarks, and resume | HLD-08, HLD-09 | P2-04 | Search, then navigation/progress |
 | 11 | HLD-11: first-release verification and packaging | HLD-01 through HLD-10 | P2-05 | Hardening PRs plus release evidence |
-| 12 | HLD-12: storage and distribution foundations | HLD-11 | P3-01, P3-02 | One module per contribution |
-| 13 | HLD-13: asynchronous work and reliability | HLD-11 plus prerequisite closure | P3-03, P3-04 | One module per contribution |
+| 12 | HLD-12: storage and distribution foundations | Verified technical baseline for draft development; HLD-11 for publication | P3-01, P3-02 | One module per contribution |
+| 13 | HLD-13: asynchronous work and reliability | Verified technical baseline plus implemented/reviewed prerequisite closure for drafts; HLD-11 and published prerequisites for publication | P3-03, P3-04 | One module per contribution |
 | 14 | HLD-14: integrated SDE-2 design cases | Full concept prerequisites, including HLD-15 for advanced cases | P3-05, P3-06 and later gates | One workshop at a time |
 | 15 | HLD-15: advanced topics and maintenance | Corresponding curriculum prerequisites | P4/P5 | Separately scoped work |
 
-A missing manual accessibility tool does not justify pretending a gate passed. Record the blocked check and continue independent preparation work; do not label the affected release complete. Follow the official roadmap prerequisites when publishing dependent modules.
+A missing manual accessibility tool does not justify pretending a gate passed. Record the
+missing check; do not label the affected release complete. The owner's resumed broader scope
+and [decision 0022](decisions/0022-development-and-publication-gates.md) allow independent
+unpublished development against the verified technical baseline, with implemented/reviewed
+prerequisite artifacts. Absent prerequisites still prevent dependent implementation. Follow
+the official roadmap release gates and published prerequisite closure when publishing.
 
 ## 6. Detailed first-release work
 
@@ -352,11 +357,16 @@ This is an educational design workshop, not a public URL-shortening service. Use
 9. Deploy only within the owner's authorization and verify the actual deployed API/frontend model-version combination. A successful hosting build is not proof that a simulation request works.
 10. Ask a newcomer to predict, run, and explain one cache scenario and one URL-shortener decision. Record confusing steps and fix them before claiming the learning release complete.
 
-**Acceptance:** all applicable release gates have evidence. Any remaining gate is named with its reason and keeps the affected roadmap status incomplete. Then begin core expansion.
+**Acceptance:** all applicable release gates have evidence. Any remaining gate is named with
+its reason and keeps the affected roadmap status incomplete. This acceptance gates publication
+of the core expansion; unpublished development follows decision 0022.
 
-## 7. Expansion after the first release
+## 7. Core expansion and its publication gates
 
-The long-term curriculum remains in CURRICULUM.md. Implement one concept or workshop fully before starting the next. The ordering below emphasizes useful SDE-2/backend reasoning; it is not a measured ranking of interview frequency.
+The long-term curriculum remains in CURRICULUM.md. Implement one concept or workshop fully
+before starting the next. Draft development and publication have separate gates in decision
+0022; first-release status remains incomplete until its own evidence is recorded. The ordering
+below emphasizes useful SDE-2/backend reasoning; it is not a measured ranking of interview frequency.
 
 ### HLD-12 — Storage and distribution foundations
 
@@ -376,6 +386,11 @@ For each module: define a tiny fixture → write contract/model tests → implem
 ### HLD-13 — Messaging and reliability
 
 Respect the existing prerequisite graph. Implement missing `network-edge` and `api-communication` before dependent realtime cases.
+
+Start with `queues-tail-latency`, whose request-flow/capacity prerequisites exist. Its dependent
+`queues-delivery` has a [detailed proposed implementation handoff](QUEUE_DELIVERY_IMPLEMENTATION_PLAN.md)
+with exact crash/ACK/lease fixtures, metric definitions and UI acceptance. Neither new queue
+module is implemented by that preparation document.
 
 | Module | First scenario | Required evidence |
 | --- | --- | --- |

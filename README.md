@@ -50,6 +50,7 @@ Read the [project plan](docs/PROJECT_PLAN.md) for the product vision, learning e
 | [Contributing](CONTRIBUTING.md) | Branch, PR, CI, and local-check workflow |
 | [Implementation plan](docs/IMPLEMENTATION_PLAN.md) | Step-by-step tasks, dependencies, acceptance fixtures, and release gates |
 | [Current execution plan](docs/NEXT_IMPLEMENTATION_PLAN.md) | Current baseline, next contributions, acceptance fixtures, and first-release checklist |
+| [Queue delivery handoff](docs/QUEUE_DELIVERY_IMPLEMENTATION_PLAN.md) | Proposed delivery/effect/ACK model, exact fixtures and UI plan; queue prerequisite implementation comes first |
 | [Opus handoff](docs/OPUS_START_HERE.md) | Copy-and-paste prompt for the implementing agent |
 | [Project plan](docs/PROJECT_PLAN.md) | What we are building and why |
 | [Experience and quality](docs/EXPERIENCE_AND_QUALITY.md) | UI/UX and frontend/backend engineering standards |
