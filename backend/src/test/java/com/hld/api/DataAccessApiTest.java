@@ -184,4 +184,27 @@ class DataAccessApiTest {
         assertThat(get("/api/v1/topics/data-access-models").statusCode()).isEqualTo(404);
         assertThat(mapper.writeValueAsString(success(get("/api/v1/topics")))).doesNotContain("data-access-models");
     }
+
+    @Test void draftGuidedResourceReturnsEightClosedUntimedTargetsAndKeepsTheModelContractUnchanged() throws Exception {
+        var draft = success(get("/api/v1/draft/topics/data-access-models"));
+        assertThat(draft.at("/topic/contentVersion").asString()).isEqualTo("1.1.0");
+        List<String> capabilities = new ArrayList<>();
+        for (JsonNode capability : draft.at("/topic/capabilities")) capabilities.add(capability.asString());
+        assertThat(capabilities).containsExactlyInAnyOrder("study", "simulation", "guided", "practice");
+        assertThat(draft.at("/topic/checkpointsPath").asString()).isEqualTo("topics/data-access-models/checkpoints.json");
+        assertThat(draft.path("checkpoints").size()).isEqualTo(8);
+        for (JsonNode checkpoint : draft.path("checkpoints")) {
+            assertThat(checkpoint.path("simulationId").asString()).isEqualTo("data-access-models");
+            assertThat(checkpoint.path("target").propertyNames()).containsExactlyInAnyOrder("operationId", "kind", "occurrence");
+            assertThat(checkpoint.at("/target/occurrence").asInt()).isEqualTo(1);
+            assertThat(checkpoint.at("/target/kind").asString()).isIn("TENANT_RANGE", "ALL_RANGE", "INSERT");
+        }
+        assertThat(controller.descriptor().modelVersion()).isEqualTo("1.0.0");
+        assertThat(controller.descriptor().presets()).hasSize(7);
+        var baseline = success(post(mapper.writeValueAsBytes(DataAccessPresets.baseline())));
+        assertThat(baseline.path("kind").asString()).isEqualTo("analysis");
+        assertThat(baseline.path("schemaVersion").asString()).isEqualTo("1.0");
+        assertThat(baseline.has("events")).isFalse();
+        assertThat(baseline.has("lastVirtualTimeMs")).isFalse();
+    }
 }

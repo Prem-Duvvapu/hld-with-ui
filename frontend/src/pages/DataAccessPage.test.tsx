@@ -1,5 +1,6 @@
 import catalog from "../../../content/catalog.json";
 import questions from "../../../content/topics/data-access-models/questions.json";
+import checkpoints from "../../../content/topics/data-access-models/checkpoints.json";
 import {
   act,
   fireEvent,
@@ -29,7 +30,7 @@ const topic: TopicDetail = {
   lessonMarkdown:
     "# Access patterns\n\nA query needs an access path; a write needs a rule.",
   questions: questions as TopicDetail["questions"],
-  checkpoints: [],
+  checkpoints: checkpoints as TopicDetail["checkpoints"],
 };
 beforeEach(() => {
   vi.resetAllMocks();
@@ -45,12 +46,15 @@ function view(route = "/draft/topics/data-access-models") {
   return router;
 }
 
-it("loads exactly three working draft views without running Java or exposing a bookmark", async () => {
+it("loads exactly six working draft views without running Java or exposing a bookmark", async () => {
   view("/draft/topics/data-access-models?view=study");
   expect(
     await screen.findByRole("region", { name: "Draft data-access module" }),
   ).toBeVisible();
-  expect(screen.getAllByRole("tab")).toHaveLength(3);
+  expect(screen.getAllByRole("tab")).toHaveLength(6);
+  expect(screen.getByRole("tab", { name: /Architecture/ })).toBeVisible();
+  expect(screen.getByRole("tab", { name: /Operation sequence/ })).toBeVisible();
+  expect(screen.getByRole("tab", { name: /Guided/ })).toBeVisible();
   expect(screen.getByRole("tab", { name: /Playground/ })).toBeVisible();
   expect(screen.getByRole("tab", { name: /Practice/ })).toBeVisible();
   expect(screen.getByRole("tab", { name: /Study/ })).toHaveAttribute(
@@ -160,14 +164,8 @@ it.each([
     },
   },
   {
-    name: "unsupported Guided capability",
-    value: {
-      ...topic,
-      topic: {
-        ...topic.topic,
-        capabilities: [...topic.topic.capabilities, "guided"],
-      },
-    },
+    name: "missing advertised Guided checkpoints",
+    value: { ...topic, checkpoints: [] },
   },
   { name: "empty lesson", value: { ...topic, lessonMarkdown: " " } },
 ])(
@@ -185,6 +183,16 @@ it.each([
 );
 
 it("normalizes an unavailable Guided deep link to Playground without running a model", async () => {
+  vi.mocked(api.draftTopic).mockResolvedValue({
+    ...topic,
+    topic: {
+      ...topic.topic,
+      capabilities: topic.topic.capabilities.filter(
+        (capability) => capability !== "guided",
+      ),
+    },
+    checkpoints: [],
+  });
   const router = view("/draft/topics/data-access-models?view=guided");
   await screen.findByRole("region", { name: "Draft data-access module" });
   expect(screen.getByRole("tab", { name: /Playground/ })).toHaveAttribute(
@@ -193,5 +201,21 @@ it("normalizes an unavailable Guided deep link to Playground without running a m
   );
   await waitFor(() => expect(router.state.location.search).toBe(""));
   expect(screen.queryByRole("tab", { name: /Guided/ })).not.toBeInTheDocument();
+  expect(api.runDataAccess).not.toHaveBeenCalled();
+});
+
+it("opens an authored Guided deep link without running or revealing Java evidence", async () => {
+  const checkpoint = topic.checkpoints[0]!;
+  view(
+    `/draft/topics/data-access-models?view=guided&checkpoint=${checkpoint.id}`,
+  );
+  expect(
+    await screen.findByRole("heading", { name: checkpoint.title, level: 2 }),
+  ).toBeVisible();
+  expect(screen.getByRole("tab", { name: /Guided/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  expect(screen.queryByText(checkpoint.explanation)).not.toBeInTheDocument();
   expect(api.runDataAccess).not.toHaveBeenCalled();
 });

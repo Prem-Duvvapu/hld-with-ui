@@ -481,13 +481,13 @@ export interface components {
       /** @description Guided simulation checkpoints; empty unless the topic has the guided capability. */
       checkpoints: components["schemas"]["GuidedCheckpoint"][];
     };
-    /** @description One predict -> reveal -> explain -> choose step. Its target selects supported Java evidence by operation, job, or paired message/attempt identity, kind and occurrence; never by narration or event array index. */
+    /** @description One predict -> reveal -> explain -> choose step. Its target selects actual Java evidence by exactly one identity family, kind and occurrence; never by narration or authored array index. */
     GuidedCheckpoint: {
       id: string;
       title: string;
       simulationId: string;
       presetId: string;
-      /** @description Select exactly one group: a cache operation, a capacity job ID, or a paired delivery messageId/attemptId. Then select its event kind and 1-based occurrence. */
+      /** @description Select exactly one identity family: cache operation, capacity job ID, delivery messageId/attemptId, or data-access operationId. Kind and occurrence select actual Java evidence; data-access operations have one outcome each. */
       target:
         | {
             operation: number;
@@ -515,6 +515,13 @@ export interface components {
               | "message.dead-lettered"
               | "attempt.cancelled";
             occurrence: number;
+          }
+        | {
+            operationId: string;
+            /** @enum {string} */
+            kind: "LOOKUP_ID" | "TENANT_RANGE" | "ALL_RANGE" | "INSERT";
+            /** @constant */
+            occurrence: 1;
           };
       prompt: string;
       lookFor: string;

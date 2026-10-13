@@ -10,7 +10,8 @@ export function resolveQueueCheckpoint(
     !("jobId" in target) ||
     "operation" in target ||
     "messageId" in target ||
-    "attemptId" in target
+    "attemptId" in target ||
+    "operationId" in target
   )
     return -1;
   let occurrence = 0;

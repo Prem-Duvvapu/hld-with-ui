@@ -327,7 +327,7 @@ describe("GuidedCheckpoints", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Run and reveal" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "This checkpoint no longer matches the Java trace",
+      "This checkpoint no longer matches the Java evidence",
     );
     expect(screen.queryByText("Explanation for Missing.")).toBeNull();
     expect(screen.queryByText("4. Choose a tradeoff")).toBeNull();

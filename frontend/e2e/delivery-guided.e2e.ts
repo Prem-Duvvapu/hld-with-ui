@@ -315,7 +315,7 @@ test("explicitly mocked unmatched occurrence preserves prediction and cannot rev
   await prediction(page).fill("The first effect precedes the ACK.");
   await runJava(page);
   await expect(panel(page).getByRole("alert")).toContainText(
-    "This checkpoint no longer matches the Java trace",
+    "This checkpoint no longer matches the Java evidence",
   );
   await expect(inspector(page)).toHaveCount(0);
   await expect(

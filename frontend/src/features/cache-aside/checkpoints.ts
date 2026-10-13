@@ -16,7 +16,8 @@ export function resolveCheckpoint(
     !("operation" in target) ||
     "jobId" in target ||
     "messageId" in target ||
-    "attemptId" in target
+    "attemptId" in target ||
+    "operationId" in target
   )
     return -1;
   let seen = 0;

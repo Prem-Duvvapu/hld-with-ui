@@ -4,6 +4,11 @@ import type { DataAccessDescriptor, TopicDetail } from "../api/types";
 import { ErrorState, LoadingState } from "../components/AsyncState";
 import { ModuleShell } from "../components/ModuleShell";
 import { DataAccessPlayground } from "../features/data-access/DataAccessPlayground";
+import { DataAccessGuided } from "../features/data-access/DataAccessGuided";
+import {
+  DataAccessArchitectureView,
+  DataAccessSequenceView,
+} from "../features/data-access/DataAccessConceptViews";
 import { PracticeView } from "../features/learning/PracticeView";
 import { StudyView } from "../features/learning/StudyView";
 import { NotFoundPage } from "./NotFoundPage";
@@ -29,13 +34,14 @@ export function DataAccessPage() {
           !(["study", "simulation", "practice"] as const).every((capability) =>
             topic.topic.capabilities.includes(capability),
           ) ||
-          topic.topic.capabilities.includes("guided") ||
           !topic.topic.simulationIds?.includes(id) ||
           typeof topic.lessonMarkdown !== "string" ||
           !topic.lessonMarkdown.trim() ||
           !Array.isArray(topic.questions) ||
           !Array.isArray(topic.checkpoints) ||
-          topic.checkpoints.length
+          (topic.topic.capabilities.includes("guided")
+            ? !topic.checkpoints.length
+            : topic.checkpoints.length > 0)
         ) {
           setError(
             "This draft data-access module is incompatible with this app. Refresh and try again.",
@@ -90,13 +96,20 @@ export function DataAccessPage() {
         <p>
           Choose keys from your reads and rules from your writes. Explore a
           simplified access-path model and compare storage choices in Study.
-          Guided and authored diagram views are still pending.
+          Guided checkpoints use returned Java operation evidence. Architecture
+          and Operation sequence are authored illustrations. Publication review
+          remains pending.
         </p>
       </section>
       <ModuleShell
         topic={data.topic.topic}
         tabs={[
           { id: "playground", label: "Playground" },
+          ...(data.topic.topic.capabilities.includes("guided")
+            ? [{ id: "guided", label: "Guided" }]
+            : []),
+          { id: "architecture", label: "Architecture" },
+          { id: "sequence", label: "Operation sequence" },
           { id: "study", label: "Study" },
           { id: "practice", label: "Practice" },
         ]}
@@ -108,6 +121,15 @@ export function DataAccessPage() {
               descriptor={data.descriptor}
             />
           ),
+          guided: data.topic.topic.capabilities.includes("guided") && (
+            <DataAccessGuided
+              checkpoints={data.topic.checkpoints}
+              descriptor={data.descriptor}
+              contentVersion={data.topic.topic.contentVersion}
+            />
+          ),
+          architecture: <DataAccessArchitectureView />,
+          sequence: <DataAccessSequenceView />,
           study: (
             <StudyView
               markdown={data.topic.lessonMarkdown}

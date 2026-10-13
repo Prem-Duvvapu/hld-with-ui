@@ -1,0 +1,242 @@
+[
+  {
+    "id": "tenant-groups-match",
+    "title": "Group the reads by tenant",
+    "simulationId": "data-access-models",
+    "presetId": "baseline",
+    "target": {
+      "operationId": "q1",
+      "kind": "TENANT_RANGE",
+      "occurrence": 1
+    },
+    "prompt": "For beta, creation orders 20–30, predict the returned IDs and how many index entries and base records Java examines.",
+    "lookFor": "The tenant-first path has candidates b2 and b3. It examines two index entries, fetches two base records, and returns both.",
+    "explanation": "The tenant equality identifies one group. The inclusive creation range narrows that group to b2 and b3. Java reports two examined entries, two fetched records and two returned records, with twelve records before and after the query. These counts describe this ordered-list model; they are not database latency.",
+    "tradeoff": {
+      "prompt": "Most reads ask for one tenant within a creation range. Which first access path would you defend?",
+      "options": [
+        {
+          "id": "tenant-first",
+          "label": "Group this access path by tenant, then creation order",
+          "feedback": "This query supplies tenant equality and a creation range, so the modeled tenant-first interval contains just its two matches."
+        },
+        {
+          "id": "creation-for-all",
+          "label": "Use creation order first for every query",
+          "feedback": "Creation-first can support other queries, but this tenant-specific fixture considers six entries while returning the same two records."
+        }
+      ],
+      "recommendedOptionId": "tenant-first"
+    }
+  },
+  {
+    "id": "scan-still-answers",
+    "title": "A scan still answers the question",
+    "simulationId": "data-access-models",
+    "presetId": "table-scan",
+    "target": {
+      "operationId": "q1",
+      "kind": "TENANT_RANGE",
+      "occurrence": 1
+    },
+    "prompt": "Remove the secondary index. Do the returned records change? Predict the base records examined.",
+    "lookFor": "The result is still b2,b3. Index work is zero, while all twelve base records are examined.",
+    "explanation": "Primary IDs remain available, but this range query has no secondary path. Java examines all twelve base records, filters to beta and the inclusive range, then returns b2,b3. A scan can be correct while doing more logical read work. An index is an access choice, and it also adds maintenance on accepted inserts.",
+    "tradeoff": {
+      "prompt": "A small write-heavy table receives rare range queries. What would you consider before adding an index?",
+      "options": [
+        {
+          "id": "measure-workload",
+          "label": "Compare read needs and write maintenance with real evidence",
+          "feedback": "The model exposes twelve scanned records and zero secondary maintenance. Real query frequency, plans and write load guide whether another access structure is justified."
+        },
+        {
+          "id": "scan-wrong",
+          "label": "Treat every scanned query as an incorrect design",
+          "feedback": "The query returns the correct records. Whether its work is acceptable depends on scale, frequency and the actual service objective."
+        }
+      ],
+      "recommendedOptionId": "measure-workload"
+    }
+  },
+  {
+    "id": "creation-first-extra-candidates",
+    "title": "Column order changes candidate work",
+    "simulationId": "data-access-models",
+    "presetId": "time-first",
+    "target": {
+      "operationId": "q1",
+      "kind": "TENANT_RANGE",
+      "occurrence": 1
+    },
+    "prompt": "With creation order first, which other tenants enter the candidate interval? Does Java fetch every candidate record?",
+    "lookFor": "Candidates are a2,b2,g2,a3,b3,g3. Six entries are examined; index-covered tenant filtering leaves two base fetches and b2,b3 returned.",
+    "explanation": "Creation orders 20–30 identify a contiguous interval across tenants. Its six entries already contain tenant values, so the beta condition filters there before Java fetches base records. The answer stays b2,b3: six examined index entries, two examined base records and two returns. This model excludes optimizer shortcuts such as skip scan; it does not claim a real optimizer always follows this path.",
+    "tradeoff": {
+      "prompt": "A teammate sees six examined entries and assumes six base records were fetched. How should the review explain the result?",
+      "options": [
+        {
+          "id": "separate-counts",
+          "label": "Keep index examination and base-record fetches separate",
+          "feedback": "The residual tenant condition is checked in the modeled index entries. Only its two matches are fetched."
+        },
+        {
+          "id": "sum-is-latency",
+          "label": "Add both counts and describe the sum as latency",
+          "feedback": "Entries and records are separate logical work units. The model supplies no time per unit and computes no latency."
+        }
+      ],
+      "recommendedOptionId": "separate-counts"
+    }
+  },
+  {
+    "id": "global-query-changes-prefix",
+    "title": "A new query changes the useful prefix",
+    "simulationId": "data-access-models",
+    "presetId": "global-range",
+    "target": {
+      "operationId": "q1",
+      "kind": "ALL_RANGE",
+      "occurrence": 1
+    },
+    "prompt": "Ask for every tenant in creation orders 20–30 using the tenant-first index. Predict the examined entries and returned IDs.",
+    "lookFor": "All twelve tenant-first entries are candidates. Six records match and are fetched: a2,b2,g2,a3,b3,g3 in creation-order/ID order.",
+    "explanation": "This query has no tenant equality. Under the single-traversal rule, the tenant-first path examines its full twelve-entry view, applies the range inside the entries, and fetches six matches. The returned IDs are a2,b2,g2,a3,b3,g3. The opening seek count is an abstract traversal start, so one seek does not imply a narrow lookup. Playground can compare creation-first for this changed query.",
+    "tradeoff": {
+      "prompt": "The operations dashboard frequently spans every tenant. Which follow-up fits the observed requirement?",
+      "options": [
+        {
+          "id": "query-specific",
+          "label": "Evaluate a creation-first path for that query",
+          "feedback": "Creation-first can narrow this fixture to six entries for the creation range. Consider both query families and maintenance before choosing one or more real access structures."
+        },
+        {
+          "id": "same-universal",
+          "label": "Keep the tenant-first design as the universal answer",
+          "feedback": "The changed query removes its useful leading equality. The twelve-entry evidence gives a reason to reconsider the access path."
+        }
+      ],
+      "recommendedOptionId": "query-specific"
+    }
+  },
+  {
+    "id": "new-id-old-business-key",
+    "title": "A new ID can violate a business rule",
+    "simulationId": "data-access-models",
+    "presetId": "duplicate-key",
+    "target": {
+      "operationId": "op1",
+      "kind": "INSERT",
+      "occurrence": 1
+    },
+    "prompt": "Insert b5 for beta with business key k2 and creation order 25. The record ID is new. Will the enabled tenant-scoped rule accept it?",
+    "lookFor": "The insert is rejected against existing b2. There is one primary-ID check and one business-key check, zero committed writes, and twelve records remain.",
+    "explanation": "The new primary ID passes its check. The enabled (tenant,businessKey) rule finds beta/k2 on b2, so Java reports DUPLICATE_BUSINESS_KEY and rejects the insert before changing any access structure. The record count stays twelve. A distinct row ID does not preserve a different business invariant. This sequential rejection does not establish concurrent transaction or idempotency behavior.",
+    "tradeoff": {
+      "prompt": "A caller retries an uncertain order creation under a new primary ID. What must the design review identify?",
+      "options": [
+        {
+          "id": "business-boundary",
+          "label": "Name the business identity and its enforcement boundary",
+          "feedback": "This fixture protects the beta/k2 combination despite a new row ID. A real retry protocol also needs request comparison, result retention and an atomic boundary."
+        },
+        {
+          "id": "fresh-id-enough",
+          "label": "Assume a fresh row ID makes retried business work safe",
+          "feedback": "Primary identity and business identity answer different questions. The scoped conflict against b2 is direct evidence of that distinction."
+        }
+      ],
+      "recommendedOptionId": "business-boundary"
+    }
+  },
+  {
+    "id": "removed-business-rule",
+    "title": "Removing protection changes the promise",
+    "simulationId": "data-access-models",
+    "presetId": "no-unique",
+    "target": {
+      "operationId": "op1",
+      "kind": "INSERT",
+      "occurrence": 1
+    },
+    "prompt": "Run the same b5/beta/k2/25 insert with business-key enforcement disabled. What changes, and what stays protected?",
+    "lookFor": "The insert is accepted and the record count becomes thirteen. Primary-ID checks stay at one; business-key checks/writes are zero; base and secondary writes are one each.",
+    "explanation": "Java accepts b5 because its primary ID is new and the scoped business rule is disabled. It appends one base record and counts one secondary entry maintained. Beta now has two records using k2, although all primary IDs remain unique. This is an intentional change to the promised invariant, rather than evidence that adding an index makes duplicates safe.",
+    "tradeoff": {
+      "prompt": "The product requires one order per tenant/business key. Is disabling this rule an equivalent design?",
+      "options": [
+        {
+          "id": "retain-invariant",
+          "label": "Keep enforcement until an equivalent real boundary is proved",
+          "feedback": "The accepted duplicate shows that the required business promise disappeared. A replacement needs an explicitly defined, tested enforcement mechanism."
+        },
+        {
+          "id": "identity-equivalent",
+          "label": "Treat primary uniqueness as equivalent protection",
+          "feedback": "b2 and b5 have different primary IDs while both use beta/k2. Primary uniqueness permits this business duplicate."
+        }
+      ],
+      "recommendedOptionId": "retain-invariant"
+    }
+  },
+  {
+    "id": "accepted-maintenance",
+    "title": "A useful access path has write work",
+    "simulationId": "data-access-models",
+    "presetId": "insert-order",
+    "target": {
+      "operationId": "op1",
+      "kind": "INSERT",
+      "occurrence": 1
+    },
+    "prompt": "Insert b5/beta/k5/25 with both the secondary path and scoped uniqueness enabled. Which checks and maintenance counts do you expect?",
+    "lookFor": "One primary and one business-key check precede acceptance. The count becomes thirteen, with one base write, one secondary-entry write and one business-key-entry write.",
+    "explanation": "Both identities are available, so Java appends b5. It reports three separate logical maintenance categories: one base record, one secondary entry and one business-key entry. Primary-index maintenance is included in the modeled base write. These categories describe the model, not three measured disk writes or a physical write-amplification ratio.",
+    "tradeoff": {
+      "prompt": "Range reads are frequent and writes are growing. How should you defend the extra access structure?",
+      "options": [
+        {
+          "id": "read-write-evidence",
+          "label": "Explain the read benefit and measure actual write cost",
+          "feedback": "The earlier range needs only two entries; accepted inserts also maintain the secondary path. Real query distribution and physical costs determine the tradeoff."
+        },
+        {
+          "id": "free-index",
+          "label": "Describe the secondary index as free because reads improve",
+          "feedback": "The selected outcome explicitly counts secondary maintenance. Physical costs require evidence beyond these logical counts."
+        }
+      ],
+      "recommendedOptionId": "read-write-evidence"
+    }
+  },
+  {
+    "id": "read-after-insert",
+    "title": "A later query sees the accepted record",
+    "simulationId": "data-access-models",
+    "presetId": "insert-order",
+    "target": {
+      "operationId": "q1",
+      "kind": "TENANT_RANGE",
+      "occurrence": 1
+    },
+    "prompt": "After accepting b5/beta/k5/25, run beta’s range 20–30. Where does b5 appear, and how much work does this query report?",
+    "lookFor": "The following query returns b2,b5,b3. Three entries and three base records are examined; thirteen records remain before and after this read.",
+    "explanation": "The accepted record has creation order 25, so the tenant-first candidate interval now contains b2 at 20, b5 at 25 and b3 at 30. Java reports three candidates, three matches, three fetches and three returns. The insert and read are sequential operations within one run. This observation is not a guarantee about other clients, replicas or concurrent isolation.",
+    "tradeoff": {
+      "prompt": "A teammate extends this result to concurrent clients reading replicas. Which evidence is missing?",
+      "options": [
+        {
+          "id": "state-boundary",
+          "label": "Identify transaction, replication and visibility guarantees",
+          "feedback": "The model only establishes this sequential read after its reported acceptance. Concurrent visibility and replica behavior require their own model and real-system guarantees."
+        },
+        {
+          "id": "all-readers-now",
+          "label": "Assume all readers everywhere immediately see b5",
+          "feedback": "There are no replicas, network delay or concurrent operations here. The evidence supports the modeled sequential query only."
+        }
+      ],
+      "recommendedOptionId": "state-boundary"
+    }
+  }
+]

@@ -30,7 +30,9 @@ The draft **Data Models & Access Patterns** topic at `/draft/topics/data-access-
 adds a Java access-path workbench, Study and eight Practice questions. Compare scans and
 index order, change the query, and inspect accepted or rejected inserts. It counts logical
 work without modeling database latency, physical storage engines or concurrent transactions.
-Guided and authored diagram views remain pending; see [HLD-15A](docs/work-items/HLD-15A.md).
+Eight Guided checkpoints, inspectable Architecture and three authored Operation sequence paths
+complete its six draft views; see [HLD-15B](docs/work-items/HLD-15B.md). Human/hosted
+review and publication remain pending.
 
 ## Record your learning
 

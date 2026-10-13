@@ -202,6 +202,11 @@ Canonical standalone input/result schemas export to OpenAPI and generated TypeSc
 descriptor validation subset is generated from reachable OpenAPI definitions and drift-checked.
 The lazy client validates closed shapes, captured inputs and evidence identity/invariants;
 React selects Java outcomes and displays counts without evaluating queries or producing metrics.
-Study and Practice explain storage-family decisions. Guided and authored diagrams remain pending.
+Study and Practice explain storage-family decisions. Eight Guided checkpoints select actual
+Java outcomes by stable operation ID and kind, with no fabricated event timing. Their adapter
+reuses the shared saved-answer lifecycle and selected-operation evidence. Authored Architecture
+and three Operation sequence paths have complete text equivalents and make no simulation call.
+[Decision 0030](decisions/0030-guided-data-access-outcome-targets.md) records the fourth
+selector family; [HLD-15B](work-items/HLD-15B.md) records verification.
 See [decision 0029](decisions/0029-finite-data-access-analysis.md) and
 [HLD-15A](work-items/HLD-15A.md).

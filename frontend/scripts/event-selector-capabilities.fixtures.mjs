@@ -161,3 +161,136 @@ test("checkpoint schema accepts delivery dead-letter hyphen while preserving leg
     false,
   );
 });
+
+test("data-access kinds derive from required non-null canonical outcome operation identities", () => {
+  const target = checkpoints.items.properties.target.oneOf.find((branch) =>
+    branch.required.includes("operationId"),
+  );
+  const references = {
+    "#/components/schemas/DataAccessIdentifier": schemas.DataAccessIdentifier,
+  };
+  assert.deepEqual(
+    kindsSupportingSelectors(
+      schemas.DataAccessOutcome,
+      ["operationId"],
+      references,
+    ),
+    target.properties.kind.enum,
+  );
+  assert.equal(target.properties.kind.enum.length, 4);
+  assert.equal(
+    eventSupportsSelector(
+      schemas.DataAccessOutcome,
+      "TENANT_RANGE",
+      "operationId",
+    ),
+    false,
+  );
+  assert.equal(
+    eventSupportsSelector(
+      schemas.DataAccessOutcome,
+      "TENANT_RANGE",
+      "operationId",
+      references,
+    ),
+    true,
+  );
+  assert.equal(
+    eventSupportsSelector(
+      schemas.DataAccessOutcome,
+      "INSERT",
+      "messageId",
+      references,
+    ),
+    false,
+  );
+  const optional = structuredClone(schemas.DataAccessOutcome);
+  optional.required = optional.required.filter(
+    (field) => field !== "operationId",
+  );
+  assert.equal(
+    eventSupportsSelector(optional, "INSERT", "operationId", references),
+    false,
+  );
+});
+
+test("unsupported reference chains, nullable owners, remote references and ref siblings fail closed", () => {
+  const evidence = {
+    required: ["operationId"],
+    properties: {
+      kind: { enum: ["INSERT"] },
+      operationId: { $ref: "#/$defs/identifier" },
+    },
+  };
+  assert.equal(
+    eventSupportsSelector(evidence, "INSERT", "operationId", {
+      "#/$defs/identifier": { type: "string" },
+    }),
+    true,
+  );
+  for (const owner of [
+    { $ref: "#/$defs/second" },
+    { type: ["string", "null"] },
+    { anyOf: [{ type: "string" }, { type: "null" }] },
+    { type: "string", allOf: [{ type: "null" }] },
+    { type: "object" },
+    null,
+  ])
+    assert.equal(
+      eventSupportsSelector(evidence, "INSERT", "operationId", {
+        "#/$defs/identifier": owner,
+        "#/$defs/second": { type: "string" },
+      }),
+      false,
+    );
+  const unknown = structuredClone(evidence);
+  unknown.properties.operationId.$ref =
+    "https://unregistered.invalid/identifier";
+  assert.equal(
+    eventSupportsSelector(unknown, "INSERT", "operationId", {}),
+    false,
+  );
+  const intersection = structuredClone(evidence);
+  intersection.properties.operationId.type = "null";
+  assert.equal(
+    eventSupportsSelector(intersection, "INSERT", "operationId", {
+      "#/$defs/identifier": { type: "string" },
+    }),
+    false,
+  );
+});
+
+test("data-access target requires its closed operation family and exactly one outcome occurrence", () => {
+  const ajv = new Ajv2020({ strict: true, strictRequired: false });
+  const validatesTarget = ajv.compile(checkpoints.items.properties.target);
+  for (const kind of ["LOOKUP_ID", "TENANT_RANGE", "ALL_RANGE", "INSERT"])
+    assert.equal(
+      validatesTarget({ operationId: "q1", kind, occurrence: 1 }),
+      true,
+    );
+  for (const value of [
+    null,
+    [],
+    true,
+    "q1",
+    { operationId: "q1", kind: "TENANT_RANGE", occurrence: 2 },
+    { operationId: "q1", kind: "TENANT_RANGE", occurrence: 0 },
+    { operationId: "q1", kind: "TENANT_RANGE", occurrence: 1.5 },
+    { operationId: "q1", kind: "TENANT_RANGE" },
+    { operationId: "q1", kind: "cache.fill", occurrence: 1 },
+    { operationId: "q1\n", kind: "TENANT_RANGE", occurrence: 1 },
+    { operationId: "a".repeat(33), kind: "TENANT_RANGE", occurrence: 1 },
+    { operationId: null, kind: "TENANT_RANGE", occurrence: 1 },
+    { operationId: "q1", operation: 1, kind: "TENANT_RANGE", occurrence: 1 },
+    { operationId: "q1", jobId: "job-1", kind: "TENANT_RANGE", occurrence: 1 },
+    {
+      operationId: "q1",
+      messageId: "m1",
+      attemptId: "m1-a1",
+      kind: "TENANT_RANGE",
+      occurrence: 1,
+    },
+    { operationId: "q1", extra: true, kind: "TENANT_RANGE", occurrence: 1 },
+  ])
+    assert.equal(validatesTarget(value), false, JSON.stringify(value));
+});

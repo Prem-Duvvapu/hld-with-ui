@@ -78,3 +78,22 @@ it("keeps malformed wire selectors unavailable instead of throwing or accepting 
       ),
     ).toBe(-1);
 });
+
+it("refuses a data-access identity mixed into a matching delivery pair", () => {
+  const legacy: GuidedCheckpoint["target"] = {
+    messageId: "m1",
+    attemptId: "m1-a1",
+    kind: "effect.committed",
+    occurrence: 1,
+  };
+  expect(
+    resolveDeliveryCheckpoint(baselineResult.events, legacy),
+  ).toBeGreaterThanOrEqual(0);
+  for (const operationId of ["q1", null])
+    expect(
+      resolveDeliveryCheckpoint(baselineResult.events, {
+        ...legacy,
+        operationId,
+      } as GuidedCheckpoint["target"]),
+    ).toBe(-1);
+});

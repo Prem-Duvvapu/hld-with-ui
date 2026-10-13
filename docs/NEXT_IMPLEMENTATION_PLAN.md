@@ -18,9 +18,11 @@ idempotency follow their recorded prerequisites; this model has no deduplication
 
 [HLD-15A](work-items/HLD-15A.md) adds a bounded Java access analysis, strict APIs,
 seven scenarios and an explicit Playground/Study/Practice experience at
-`/draft/topics/data-access-models`. Its first slice remains draft. Complete Guided and
-authored Architecture/sequence views plus technical teaching review before treating this
-prerequisite as a complete core module. Transactions and idempotency remain pending.
+`/draft/topics/data-access-models`. [HLD-15B](work-items/HLD-15B.md) completes its six
+core draft views with eight Java-verified checkpoints, inspectable Architecture and three
+authored Operation sequence paths. Review its recorded technical evidence before the next
+bounded transaction-foundation work item. Human/hosted review and publication remain open.
+Transactions and idempotency remain pending.
 
 ## 1. Objective and scope
 

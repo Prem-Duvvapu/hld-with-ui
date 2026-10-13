@@ -308,7 +308,7 @@ test("explicitly mocked target mismatch preserves the prediction and never inven
   await prediction(page).fill("Start the first job immediately.");
   await runJava(page);
   await expect(page.getByRole("alert")).toContainText(
-    "This checkpoint no longer matches the Java trace",
+    "This checkpoint no longer matches the Java evidence",
   );
   await expect(inspector(page)).toHaveCount(0);
   await expect(

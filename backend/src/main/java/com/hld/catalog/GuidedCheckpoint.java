@@ -1,5 +1,6 @@
 package com.hld.catalog;
 
+import com.hld.dataaccess.DataAccessInput;
 import com.hld.delivery.DeliveryEvent.Kind;
 import com.hld.delivery.DeliveryInput;
 import com.hld.simulation.engine.SimulationBudget;
@@ -9,9 +10,9 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * One guided step: predict, run a Java preset, reveal the target event, explain, then choose a
- * tradeoff. The target names an event by cache operation, queue job, or message/attempt pair, kind,
- * and occurrence, so it survives narration changes and never depends on an array index.
+ * One guided step: predict, run a Java preset, reveal the target evidence, explain, then choose a
+ * tradeoff. Stable model identities select an event or an untimed operation outcome; narration
+ * and array positions are never identities.
  */
 public record GuidedCheckpoint(
         String id,
@@ -24,12 +25,13 @@ public record GuidedCheckpoint(
         String explanation,
         Tradeoff tradeoff) {
 
-    /** Select an event for exactly one operation, job, or message/attempt identity. */
+    /** Select exactly one event identity family or one stable operation-outcome identity. */
     public record Target(
             Integer operation,
             String jobId,
             String messageId,
             String attemptId,
+            String operationId,
             String kind,
             int occurrence) {
         private static final Set<Kind> DELIVERY_KINDS =
@@ -47,16 +49,23 @@ public record GuidedCheckpoint(
 
         /** Existing cache and capacity callers retain their source and wire shape. */
         public Target(Integer operation, String jobId, String kind, int occurrence) {
-            this(operation, jobId, null, null, kind, occurrence);
+            this(operation, jobId, null, null, null, kind, occurrence);
+        }
+
+        /** Existing delivery callers retain their source and wire shape. */
+        public Target(Integer operation, String jobId, String messageId, String attemptId,
+                String kind, int occurrence) {
+            this(operation, jobId, messageId, attemptId, null, kind, occurrence);
         }
 
         public Target {
             boolean delivery = messageId != null || attemptId != null;
-            int groups = (operation == null ? 0 : 1) + (jobId == null ? 0 : 1) + (delivery ? 1 : 0);
+            int groups = (operation == null ? 0 : 1) + (jobId == null ? 0 : 1)
+                    + (delivery ? 1 : 0) + (operationId == null ? 0 : 1);
             if (groups != 1) {
                 throw new IllegalArgumentException(
-                        "A checkpoint requires exactly one operation, jobId, or messageId/attemptId"
-                            + " pair");
+                        "A checkpoint requires exactly one operation, jobId, messageId/attemptId"
+                            + " pair, or operationId");
             }
             if (operation != null && operation < 1) {
                 throw new IllegalArgumentException("A checkpoint operation must be 1-based");
@@ -65,7 +74,17 @@ public record GuidedCheckpoint(
                 throw new IllegalArgumentException(
                         "A checkpoint jobId must be a supported job identity");
             }
-            if (delivery) {
+            if (operationId != null) {
+                if (!Pattern.matches(DataAccessInput.ID_PATTERN, operationId)
+                        || kind == null
+                        || java.util.Arrays.stream(DataAccessInput.Kind.values())
+                                .noneMatch(candidate -> candidate.name().equals(kind))
+                        || occurrence != 1) {
+                    throw new IllegalArgumentException(
+                            "An analysis checkpoint requires a supported operationId, operation kind"
+                                    + " and occurrence 1");
+                }
+            } else if (delivery) {
                 if (messageId == null
                         || !messageId.matches(DeliveryInput.ID_PATTERN)
                         || attemptId == null

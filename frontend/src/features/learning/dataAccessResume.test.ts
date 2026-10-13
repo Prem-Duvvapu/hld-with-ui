@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 import catalog from "../../../../content/catalog.json";
+import checkpoints from "../../../../content/topics/data-access-models/checkpoints.json";
 import questions from "../../../../content/topics/data-access-models/questions.json";
 import type { CatalogEntry, TopicDetail } from "../../api/types";
 import {
@@ -33,4 +34,35 @@ it("resumes an actual data-access draft Practice answer at its authored question
   );
   expect(target.entry.status).toBe("draft");
   expect(target.removed).toBe(false);
+});
+
+it("resumes an actual Guided prediction at its semantic checkpoint", () => {
+  const topic: TopicDetail = {
+    topic: catalog.find(
+      (entry) => entry.id === "data-access-models",
+    )! as CatalogEntry,
+    lessonMarkdown: "Access evidence",
+    questions: questions as TopicDetail["questions"],
+    checkpoints: checkpoints as TopicDetail["checkpoints"],
+  };
+  const checkpoint = topic.checkpoints[4]!;
+  const target = draftTopicResumeTarget(
+    {
+      topicId: topic.topic.id,
+      activityId: `${checkpoint.id}-prediction`,
+      contentVersion: topic.topic.contentVersion,
+      updatedAt: "2026-10-13T19:00:00.000Z",
+      answer: {
+        kind: "text",
+        text: "A primary ID differs from a business identity.",
+      },
+      referenceViewed: false,
+    },
+    topic,
+  );
+  expect(target.path).toBe(
+    `/draft/topics/data-access-models?view=guided&checkpoint=${checkpoint.id}`,
+  );
+  expect(target.removed).toBe(false);
+  expect(target.entry.status).toBe("draft");
 });

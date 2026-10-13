@@ -208,3 +208,10 @@ This analysis has no concurrency, crash, durable transaction, retained idempoten
 exactly-once effect model. The HTTP result remains subject to the existing complete-response
 ceiling. [Decision 0029](decisions/0029-finite-data-access-analysis.md) records its boundaries;
 [HLD-15A](work-items/HLD-15A.md) records actual semantic and integration evidence.
+
+HLD-15B selects an actual outcome by stable `operationId`, operation `kind` and occurrence
+one. Eight checkpoints reuse seven presets; the final insert/query checkpoints reuse the
+same immutable Java result. Guided shows only selected-operation counts, captured operation
+and before/after populations. Whole-workload totals and later outcomes are not presented as
+selected state. Authored Architecture/Operation sequence views are explicit untimed
+illustrations and send no Java run. See [decision 0030](decisions/0030-guided-data-access-outcome-targets.md).

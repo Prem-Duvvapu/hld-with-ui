@@ -134,7 +134,7 @@ it("does not expose reference explanation or tradeoffs for a missing message/att
   );
   reveal();
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "no longer matches the Java trace",
+    "no longer matches the Java evidence",
   );
   expect(screen.queryByText(first.explanation)).toBeNull();
   expect(screen.queryByText("4. Choose a tradeoff")).toBeNull();
