@@ -53,9 +53,44 @@ selection is a reading interaction; no Java POST or fabricated outcome follows i
 
 ## Verification evidence
 
-Pending until actual commands and reviews complete. A planned check is not passing evidence.
+| Check actually run                            | Result                                                                                                                        | Evidence                                                                 |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Baseline/branch/open PR inspection            | PASS: fresh branch from `1363cc6`, no open PR, owner output preserved                                                         | Git / GitHub at start                                                    |
+| Java verify                                   | PASS: 332 discovered, 331 executed, one existing opt-in performance skip; 14 new methods                                      | `/tmp/hld-delivery-guided-java.log`                                      |
+| Final Java package                            | PASS after prompt/lesson formatting                                                                                           | `/tmp/hld-delivery-guided-package.log`                                   |
+| Contracts/content                             | PASS: 99 cases; seven canonical entries, 35 questions, 24 checkpoints, ten workshop stages                                    | `/tmp/hld-delivery-guided-contracts-final.log`                           |
+| Full frontend gate                            | PASS: typecheck, ESLint, Prettier, 407 units and production build                                                             | Actual terminal gate; `/tmp/hld-delivery-guided-build-final.log`         |
+| Real Java browser journeys                    | PASS: 25 cases, seven new Guided/concept journeys plus 18 retained delivery regressions                                       | `/tmp/hld-delivery-guided-browser.log`                                   |
+| Copied jar                                    | PASS: exact delivered metadata/lesson/questions/checkpoints and both queue baselines, exclusions and cleanup                  | `/tmp/hld-delivery-guided-packaged.log`                                  |
+| Independent semantic/content/lifecycle review | PASS: all eight selected states/numbers and three authored paths agree; null/malformed and legacy mixed-selector guards added | Read-only cross-reviews; actual guard regressions                        |
+| Plan/launcher/whitespace                      | PASS: 97 docs, 507 links, 59 curriculum IDs, seven catalog entries including screenshot links                                 | `node scripts/validate-plan.mjs`; `bash -n start.sh`; `git diff --check` |
+| Required final-head CI                        | Required before squash; actual head, checkout and results retained on the PR                                                  | Quality, Browser journeys and Packaged runtime                           |
+
+The first full frontend run exposed a Node `node:test` fixture accidentally discovered by
+Vitest. It was renamed to the repository's `.fixtures.mjs` convention while remaining imported
+by the 99-case Node contract gate; the actual frontend gate then passed all 407 app tests.
+This fixes runner classification without skipping the capability checks. The first contract
+drift attempt preceded staging intentional generated artifacts; staging resolved that check.
+
+## Screenshots and limits
+
+All three new views were checked at 320/768/1440 in both themes, with reduced motion,
+keyboard operation and bounded page width. Representative actual screenshots were visually
+inspected across desktop/mobile and both themes:
+
+- [Guided desktop light](assets/hld-14c/delivery-guided-1440-light.png) and [mobile dark](assets/hld-14c/delivery-guided-320-dark.png).
+- [Architecture desktop light](assets/hld-14c/delivery-architecture-1440-light.png) and [mobile dark](assets/hld-14c/delivery-architecture-320-dark.png).
+- [Message sequence desktop light](assets/hld-14c/delivery-sequence-1440-light.png) and [mobile dark](assets/hld-14c/delivery-sequence-320-dark.png).
+
+The other size/theme captures are retained alongside these. These checks are not human
+screen-reader/newcomer review, real-device measurements or new-module native zoom evidence.
+Hosted backend freshness and production capacity are not established by the local/CI artifact.
 
 ## Handoff
+
+The implementation head `4f9befe` passed [CI run 38301128473](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/38301128473),
+including Quality, Browser journeys and Packaged runtime. Local `/tmp` logs are transient;
+[PR #68](https://github.com/Prem-Duvvapu/hld-with-ui/pull/68) retains final-head CI and delivery evidence.
 
 Publication still requires human reviews, the first-release gate and published prerequisite
 closure. Next: technical completion review of the delivery core, then the earliest required
