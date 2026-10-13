@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "HLD with UI API",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "description": "Versioned contract for the HLD learning application. Simulation results are illustrative modeled runs."
   },
   "servers": [
@@ -891,6 +891,103 @@
           }
         },
         "description": "Simulation delivery uses process-local admission before body parsing (default two active requests across models), a bounded raw body, and bounded serialization of the entire result (default 4 MiB). These HTTP safeguards are outside modeled behavior. No queued or automatic retry is added; an admitted run keeps its existing model/schema semantics. Required properties, exact JSON token types, duplicate keys and nested job fields are checked before domain execution."
+      }
+    },
+    "/api/v1/simulations/data-access-models": {
+      "get": {
+        "operationId": "getDataAccessAnalysis",
+        "summary": "Read the finite access-path descriptor used by the draft data models module",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataAccessDescriptor"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/data-access-models/runs": {
+      "post": {
+        "operationId": "runDataAccessAnalysis",
+        "summary": "Analyze access paths and tenant-scoped insertion invariants without modeled latency",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataAccessInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataAccessResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Retry hint in seconds. Capacity may remain occupied.",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[0-9]+$",
+                  "examples": ["1"]
+                }
+              }
+            }
+          }
+        },
+        "description": "Finite sequential analysis with strict closed variant fields and exact token types. Existing HTTP admission, body and complete-result limits apply independently of model work counts. No physical database, optimizer, concurrent transaction, production latency or automatic retry is modeled."
       }
     }
   },
@@ -6654,6 +6751,734 @@
               "ATTEMPT_NOT_DELIVERED",
               "UNOBSERVED"
             ]
+          }
+        }
+      },
+      "DataAccessLimits": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "maxInitialRows",
+          "maxOperations",
+          "maxCreatedOrder",
+          "maxResultRows",
+          "maxQueryLimit",
+          "maxIdLength"
+        ],
+        "properties": {
+          "maxInitialRows": {
+            "type": "integer",
+            "const": 20
+          },
+          "maxOperations": {
+            "type": "integer",
+            "const": 10
+          },
+          "maxCreatedOrder": {
+            "type": "integer",
+            "const": 1000000
+          },
+          "maxResultRows": {
+            "type": "integer",
+            "const": 30
+          },
+          "maxQueryLimit": {
+            "type": "integer",
+            "const": 20
+          },
+          "maxIdLength": {
+            "type": "integer",
+            "const": 32
+          }
+        }
+      },
+      "DataAccessPreset": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "question", "input"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "maxLength": 64,
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "input": {
+            "$ref": "#/components/schemas/DataAccessInput"
+          }
+        }
+      },
+      "DataAccessDescriptor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "modelVersion",
+          "description",
+          "limits",
+          "presets",
+          "assumptions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "const": "data-access-models"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "kind": {
+            "type": "string",
+            "const": "simulation"
+          },
+          "modelVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "limits": {
+            "$ref": "#/components/schemas/DataAccessLimits"
+          },
+          "presets": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/DataAccessPreset"
+            }
+          },
+          "assumptions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 30,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            }
+          }
+        }
+      },
+      "DataAccessInput": {
+        "title": "Data access analysis input",
+        "description": "Canonical finite sequential access-path model. createdOrder is an ordering key, not time. Java additionally checks unique row/operation identities, enabled tenant-scoped business-key uniqueness and inclusive range order. JSON Schema validates parsed values; HTTP additionally rejects duplicate keys, trailing roots and coerced/nonintegral token spellings.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "modelVersion",
+          "indexOrder",
+          "enforceBusinessKey",
+          "rows",
+          "operations"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "const": "1.0.0"
+          },
+          "indexOrder": {
+            "enum": ["NONE", "TENANT_CREATED", "CREATED_TENANT"]
+          },
+          "enforceBusinessKey": {
+            "type": "boolean"
+          },
+          "rows": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/DataAccessRow"
+            }
+          },
+          "operations": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {
+              "$ref": "#/components/schemas/DataAccessOperation"
+            }
+          }
+        }
+      },
+      "DataAccessIdentifier": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 32,
+        "pattern": "^[a-z][a-z0-9-]{0,31}$",
+        "not": {
+          "pattern": "\\s"
+        }
+      },
+      "DataAccessRow": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "tenant", "businessKey", "createdOrder"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/DataAccessIdentifier"
+          },
+          "tenant": {
+            "$ref": "#/components/schemas/DataAccessIdentifier"
+          },
+          "businessKey": {
+            "$ref": "#/components/schemas/DataAccessIdentifier"
+          },
+          "createdOrder": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          }
+        }
+      },
+      "DataAccessOperation": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "kind", "rowId"],
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/DataAccessIdentifier"
+              },
+              "kind": {
+                "const": "LOOKUP_ID"
+              },
+              "rowId": {
+                "$ref": "#/components/schemas/DataAccessIdentifier"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind",
+              "tenant",
+              "fromCreatedOrder",
+              "toCreatedOrder",
+              "limit"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/DataAccessIdentifier"
+              },
+              "kind": {
+                "const": "TENANT_RANGE"
+              },
+              "tenant": {
+                "$ref": "#/components/schemas/DataAccessIdentifier"
+              },
+              "fromCreatedOrder": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "toCreatedOrder": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind",
+              "fromCreatedOrder",
+              "toCreatedOrder",
+              "limit"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/DataAccessIdentifier"
+              },
+              "kind": {
+                "const": "ALL_RANGE"
+              },
+              "fromCreatedOrder": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "toCreatedOrder": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "kind", "row"],
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/DataAccessIdentifier"
+              },
+              "kind": {
+                "const": "INSERT"
+              },
+              "row": {
+                "$ref": "#/components/schemas/DataAccessRow"
+              }
+            }
+          }
+        ]
+      },
+      "DataAccessResult": {
+        "title": "Data access analysis result",
+        "description": "Complete authoritative finite analysis, without modeled latency or production benchmark claims. input references its canonical schema. Java owns evolving table state, access-path candidates, filtering before result limit, conflict precedence and work totals. JSON Schema enforces closed shape and local outcome discriminants; Java tests and frontend compatibility checks separately enforce semantic identities and captured-request correlation.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "simulationId",
+          "schemaVersion",
+          "modelVersion",
+          "kind",
+          "status",
+          "input",
+          "outcomes",
+          "finalRows",
+          "totals",
+          "assumptions"
+        ],
+        "properties": {
+          "simulationId": {
+            "const": "data-access-models"
+          },
+          "schemaVersion": {
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "const": "1.0.0"
+          },
+          "kind": {
+            "const": "analysis"
+          },
+          "status": {
+            "const": "completed"
+          },
+          "input": {
+            "$ref": "#/components/schemas/DataAccessInput"
+          },
+          "outcomes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {
+              "$ref": "#/components/schemas/DataAccessOutcome"
+            }
+          },
+          "finalRows": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 30,
+            "items": {
+              "$ref": "#/components/schemas/DataAccessRow"
+            }
+          },
+          "totals": {
+            "$ref": "#/components/schemas/DataAccessTotals"
+          },
+          "assumptions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 30,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            }
+          }
+        }
+      },
+      "DataAccessOutcome": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "kind",
+          "accessPath",
+          "candidateIds",
+          "matchedIds",
+          "returnedIds",
+          "recordCountBefore",
+          "recordCountAfter",
+          "work",
+          "explanation"
+        ],
+        "properties": {
+          "operationId": {
+            "$ref": "#/components/schemas/DataAccessIdentifier"
+          },
+          "kind": {
+            "enum": ["LOOKUP_ID", "TENANT_RANGE", "ALL_RANGE", "INSERT"]
+          },
+          "accessPath": {
+            "enum": [
+              "PRIMARY_KEY",
+              "TABLE_SCAN",
+              "TENANT_CREATED_INDEX",
+              "CREATED_TENANT_INDEX",
+              "INSERT"
+            ]
+          },
+          "candidateIds": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 30,
+            "items": {
+              "$ref": "#/components/schemas/DataAccessIdentifier"
+            },
+            "uniqueItems": true
+          },
+          "matchedIds": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 30,
+            "items": {
+              "$ref": "#/components/schemas/DataAccessIdentifier"
+            },
+            "uniqueItems": true
+          },
+          "returnedIds": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/DataAccessIdentifier"
+            },
+            "uniqueItems": true
+          },
+          "recordCountBefore": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "recordCountAfter": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "work": {
+            "$ref": "#/components/schemas/DataAccessWork"
+          },
+          "explanation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "accepted": {
+            "type": "boolean"
+          },
+          "conflict": {
+            "$ref": "#/components/schemas/DataAccessConflict"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "INSERT"
+                }
+              }
+            },
+            "then": {
+              "required": ["accepted"],
+              "properties": {
+                "accessPath": {
+                  "const": "INSERT"
+                },
+                "candidateIds": {
+                  "maxItems": 0,
+                  "type": "array"
+                },
+                "matchedIds": {
+                  "maxItems": 0,
+                  "type": "array"
+                },
+                "returnedIds": {
+                  "maxItems": 0,
+                  "type": "array"
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "accepted": {
+                        "const": true
+                      }
+                    },
+                    "required": ["accepted"]
+                  },
+                  "then": {
+                    "not": {
+                      "required": ["conflict"]
+                    }
+                  },
+                  "else": {
+                    "required": ["conflict"]
+                  }
+                }
+              ]
+            },
+            "else": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["accepted"]
+                  },
+                  {
+                    "required": ["conflict"]
+                  }
+                ]
+              },
+              "properties": {
+                "accessPath": {
+                  "enum": [
+                    "PRIMARY_KEY",
+                    "TABLE_SCAN",
+                    "TENANT_CREATED_INDEX",
+                    "CREATED_TENANT_INDEX"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "LOOKUP_ID"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "accessPath": {
+                  "const": "PRIMARY_KEY"
+                },
+                "candidateIds": {
+                  "maxItems": 1,
+                  "type": "array"
+                },
+                "matchedIds": {
+                  "maxItems": 1,
+                  "type": "array"
+                },
+                "returnedIds": {
+                  "maxItems": 1,
+                  "type": "array"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["TENANT_RANGE", "ALL_RANGE"]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "accessPath": {
+                  "enum": [
+                    "TABLE_SCAN",
+                    "TENANT_CREATED_INDEX",
+                    "CREATED_TENANT_INDEX"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DataAccessWork": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "primaryKeyLookups",
+          "indexSeeks",
+          "indexEntriesExamined",
+          "baseRowsExamined",
+          "matchedRows",
+          "returnedRows",
+          "baseWrites",
+          "secondaryIndexWrites",
+          "businessKeyChecks",
+          "businessKeyWrites"
+        ],
+        "properties": {
+          "primaryKeyLookups": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "indexSeeks": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "indexEntriesExamined": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "baseRowsExamined": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "matchedRows": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "returnedRows": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "baseWrites": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "secondaryIndexWrites": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "businessKeyChecks": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "businessKeyWrites": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "DataAccessTotals": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "primaryKeyLookups",
+          "indexSeeks",
+          "indexEntriesExamined",
+          "baseRowsExamined",
+          "matchedRows",
+          "returnedRows",
+          "baseWrites",
+          "secondaryIndexWrites",
+          "businessKeyChecks",
+          "businessKeyWrites"
+        ],
+        "properties": {
+          "primaryKeyLookups": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "indexSeeks": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "indexEntriesExamined": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 300
+          },
+          "baseRowsExamined": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 300
+          },
+          "matchedRows": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 300
+          },
+          "returnedRows": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200
+          },
+          "baseWrites": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "secondaryIndexWrites": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "businessKeyChecks": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "businessKeyWrites": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10
+          }
+        }
+      },
+      "DataAccessConflict": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reason", "recordId"],
+        "properties": {
+          "reason": {
+            "enum": ["DUPLICATE_ID", "DUPLICATE_BUSINESS_KEY"]
+          },
+          "recordId": {
+            "$ref": "#/components/schemas/DataAccessIdentifier"
           }
         }
       }

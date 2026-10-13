@@ -15,7 +15,7 @@ npm run contracts:validate
 npm run contracts:check
 ```
 
-`contracts:check` exports canonical queue-capacity and delivery schemas into OpenAPI, regenerates the committed TypeScript and delivery descriptor schema output and fails when these differ, then validates content shape and semantics. Semantic checks cover unique IDs, prerequisite references and cycles, content paths, lesson heading order, question ownership and answers, source references, capability-to-model references, and guided checkpoints (the `guided` capability requires `checkpointsPath`; each target's event kind must exist in its simulation's event contract). Java tests run each checkpoint's preset and resolve its target event. Workshop checks validate stable stage/answer identities, versions, source references, published experiment links, and the full-journey publication guard. Isolated negative fixtures run as part of `contracts:validate`; Java separately validates packaged case resources and catalog prerequisite references, publication closure and cycles at startup, including Java-only builds. These checks do not establish manual release readiness.
+`contracts:check` exports canonical queue-capacity, delivery and data-access schemas into OpenAPI, regenerates the committed TypeScript and both delivery/data-access descriptor schema outputs and fails when these differ, then validates content shape and semantics. Semantic checks cover unique IDs, prerequisite references and cycles, content paths, lesson heading order, question ownership and answers, source references, capability-to-model references, and guided checkpoints (the `guided` capability requires `checkpointsPath`; each target's event kind must exist in its simulation's event contract). Java tests run each checkpoint's preset and resolve its target event. Workshop checks validate stable stage/answer identities, versions, source references, published experiment links, and the full-journey publication guard. Isolated negative fixtures run as part of `contracts:validate`; Java separately validates packaged case resources and catalog prerequisite references, publication closure and cycles at startup, including Java-only builds. These checks do not establish manual release readiness.
 
 ## Case discovery
 
@@ -127,3 +127,25 @@ The exporter verifies the delivery kind union against the actual event schema
 required/non-null conditional capabilities, including `message.dead-lettered`; pure consumer
 and enqueue events cannot claim an attempt selector. Java teaching fixtures resolve all eight
 authored targets and source timelines. Model/schema remain 1.0.0/1.0.
+
+## Draft data-access contract
+
+HTTP `1.5.0` adds `data-access-models` descriptor/run delivery. Its canonical
+`data-access.input.schema.json` and `data-access.result.schema.json` describe finite sequential
+access analysis, schema `1.0`/model `1.0.0`. The result references the canonical input owner
+for captured inputs and record identities; the exporter maps these references to normal
+OpenAPI components. The descriptor validation subset is generated, lazy-loaded and drift-checked.
+
+Inputs have four closed operation variants, inclusive ordering-key ranges, bounded ASCII IDs
+and collections, and no seed or time field. Java checks initial ID/scoped-key uniqueness,
+operation identity and range ordering; the strict controller also rejects duplicate keys,
+trailing roots, mixed/unknown fields and coerced/nonintegral tokens. Results distinguish query
+and insert outcomes, omit inapplicable nullable fields and keep index/base work separate.
+The frontend validates captured-request and ID/invariant correlations, without computing
+query matches or work counters. Actual Java baseline artifacts are checked by Node schemas,
+Java serialization and copied-jar/container smoke. Every draft simulation needs an explicit
+golden-fixture mapping; packaged checks fail rather than silently skip missing evidence.
+
+The topic remains draft with Playground, Study and Practice. Published collections, search
+and learning-path destinations exclude it. [HLD-15A](../docs/work-items/HLD-15A.md) records
+applicable checks and remaining teaching/publication gates.

@@ -1,6 +1,7 @@
 """Real jar/port integration checks plus mocked Docker harness failure checks."""
 
 import argparse
+import copy
 import json
 import importlib.util
 import io
@@ -30,6 +31,35 @@ def free_port():
 
 
 class PackagedRuntimeFailures(unittest.TestCase):
+    def test_draft_data_access_executes_and_compares_the_full_canonical_baseline(self):
+        fixture = ROOT / "contracts/examples"
+        baseline_input = json.loads((fixture / "data-access-baseline-input.json").read_text())
+        baseline_result = json.loads((fixture / "data-access-baseline-result.json").read_text())
+        descriptor = {"presets": [{"id": "baseline", "input": baseline_input}]}
+        with patch.object(smoke, "api", side_effect=[descriptor, baseline_result]) as api:
+            smoke.verify_draft_model("http://example.invalid", "data-access-models")
+        self.assertEqual(api.call_args_list[1].args, (
+            "http://example.invalid", "/api/v1/simulations/data-access-models/runs", baseline_input))
+        wrong = copy.deepcopy(baseline_result)
+        wrong["totals"]["indexEntriesExamined"] += 1
+        with patch.object(smoke, "api", side_effect=[descriptor, wrong]):
+            with self.assertRaisesRegex(RuntimeError, "baseline full result differs"):
+                smoke.verify_draft_model("http://example.invalid", "data-access-models")
+
+    def test_draft_model_cannot_silently_skip_missing_evidence_or_run_changed_presets(self):
+        with patch.object(smoke, "api") as api:
+            with self.assertRaisesRegex(RuntimeError, "no packaged baseline evidence"):
+                smoke.verify_draft_model("http://example.invalid", "unregistered-model")
+            api.assert_not_called()
+        for descriptor, message in [
+            ({"presets": []}, "descriptor has no baseline"),
+            ({"presets": [{"id": "baseline", "input": {}}]}, "baseline input differs"),
+        ]:
+            with self.subTest(message=message), patch.object(smoke, "api", return_value=descriptor) as api:
+                with self.assertRaisesRegex(RuntimeError, message):
+                    smoke.verify_draft_model("http://example.invalid", "data-access-models")
+                self.assertEqual(api.call_count, 1)
+
     def test_readiness_retries_transient_connection_failures_then_cleans_its_container(self):
         for failure in (ConnectionResetError("starting"), TimeoutError("starting"), URLError("starting")):
             args = argparse.Namespace(jar=None, image="hld-test-image", port=free_port())

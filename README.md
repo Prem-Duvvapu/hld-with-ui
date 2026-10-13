@@ -9,7 +9,7 @@ Learn high-level system design by reading, experimenting, diagnosing failures, a
 
 The idea is simple: **see a system work, change one condition, explain what happened, then choose a design.** Each module will help you answer both “How does this work?” and “How would I explain it to my team or in an interview?”
 
-**Status: four published modules, two draft topics and one draft workshop.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers ten authored stages from Requirements through Defense by direct link; publication checks and later roadmap modules remain pending.
+**Status: four published modules, three draft topics and one draft workshop.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers ten authored stages from Requirements through Defense by direct link; publication checks and later roadmap modules remain pending.
 
 A draft **Queues & Tail Latency** module is available at
 `/draft/topics/queues-tail-latency`. It connects a strict Java API to editable worker/buffer/job
@@ -25,6 +25,12 @@ lease deadlines, overlapping effects and limited observation. It contains no ded
 transaction implementation. [HLD-14C](docs/work-items/HLD-14C.md) completes its core draft
 teaching views; human review, prerequisite release gates and publication remain. There are
 still four published modules.
+
+The draft **Data Models & Access Patterns** topic at `/draft/topics/data-access-models`
+adds a Java access-path workbench, Study and eight Practice questions. Compare scans and
+index order, change the query, and inspect accepted or rejected inserts. It counts logical
+work without modeling database latency, physical storage engines or concurrent transactions.
+Guided and authored diagram views remain pending; see [HLD-15A](docs/work-items/HLD-15A.md).
 
 ## Record your learning
 
@@ -58,26 +64,26 @@ prevent learning or navigation. Live visitor totals require dashboard verificati
 
 Read the [project plan](docs/PROJECT_PLAN.md) for the product vision, learning experience, first release, and success criteria.
 
-| Document | Purpose |
-| --- | --- |
-| [Agent instructions](AGENTS.md) | How to start, contribute, validate, and hand off work |
-| [Contributing](CONTRIBUTING.md) | Branch, PR, CI, and local-check workflow |
-| [Implementation plan](docs/IMPLEMENTATION_PLAN.md) | Step-by-step tasks, dependencies, acceptance fixtures, and release gates |
-| [Current execution plan](docs/NEXT_IMPLEMENTATION_PLAN.md) | Current baseline, next contributions, acceptance fixtures, and first-release checklist |
+| Document                                                             | Purpose                                                                                                       |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| [Agent instructions](AGENTS.md)                                      | How to start, contribute, validate, and hand off work                                                         |
+| [Contributing](CONTRIBUTING.md)                                      | Branch, PR, CI, and local-check workflow                                                                      |
+| [Implementation plan](docs/IMPLEMENTATION_PLAN.md)                   | Step-by-step tasks, dependencies, acceptance fixtures, and release gates                                      |
+| [Current execution plan](docs/NEXT_IMPLEMENTATION_PLAN.md)           | Current baseline, next contributions, acceptance fixtures, and first-release checklist                        |
 | [Queue delivery handoff](docs/QUEUE_DELIVERY_IMPLEMENTATION_PLAN.md) | Proposed delivery/effect/ACK model, exact fixtures and UI plan; queue prerequisite implementation comes first |
-| [Opus handoff](docs/OPUS_START_HERE.md) | Copy-and-paste prompt for the implementing agent |
-| [Project plan](docs/PROJECT_PLAN.md) | What we are building and why |
-| [Experience and quality](docs/EXPERIENCE_AND_QUALITY.md) | UI/UX and frontend/backend engineering standards |
-| [Learning standard](docs/LEARNING_STANDARD.md) | Make every concept simple to understand and explain |
-| [Curriculum](docs/CURRICULUM.md) | Ordered concepts, experiments, case studies, and learning paths |
-| [SDE-2 interview priority](docs/SDE2_INTERVIEW_PRIORITY.md) | Evidence-based case order and recurring backend follow-ups |
-| [First release blueprint](docs/RELEASE_ONE_BLUEPRINT.md) | Exact learning flows and worked fixtures for the first four modules |
-| [Architecture](docs/ARCHITECTURE.md) | Proposed stack, modules, storage, and API boundaries |
-| [Simulation specification](docs/SIMULATION_SPEC.md) | Deterministic execution, event contracts, metrics, and correctness |
-| [Content specification](content/CONTENT_SPEC.md) | Lesson and case-study authoring requirements |
-| [Delivery roadmap](docs/ROADMAP.md) | Work packages, dependencies, acceptance criteria, and current status |
-| [Research and sources](docs/RESOURCES.md) | Related projects, primary references, and source policy |
-| [Contribution template](docs/templates/WORK_ITEM.md) | A bounded task and evidence-based handoff |
+| [Opus handoff](docs/OPUS_START_HERE.md)                              | Copy-and-paste prompt for the implementing agent                                                              |
+| [Project plan](docs/PROJECT_PLAN.md)                                 | What we are building and why                                                                                  |
+| [Experience and quality](docs/EXPERIENCE_AND_QUALITY.md)             | UI/UX and frontend/backend engineering standards                                                              |
+| [Learning standard](docs/LEARNING_STANDARD.md)                       | Make every concept simple to understand and explain                                                           |
+| [Curriculum](docs/CURRICULUM.md)                                     | Ordered concepts, experiments, case studies, and learning paths                                               |
+| [SDE-2 interview priority](docs/SDE2_INTERVIEW_PRIORITY.md)          | Evidence-based case order and recurring backend follow-ups                                                    |
+| [First release blueprint](docs/RELEASE_ONE_BLUEPRINT.md)             | Exact learning flows and worked fixtures for the first four modules                                           |
+| [Architecture](docs/ARCHITECTURE.md)                                 | Proposed stack, modules, storage, and API boundaries                                                          |
+| [Simulation specification](docs/SIMULATION_SPEC.md)                  | Deterministic execution, event contracts, metrics, and correctness                                            |
+| [Content specification](content/CONTENT_SPEC.md)                     | Lesson and case-study authoring requirements                                                                  |
+| [Delivery roadmap](docs/ROADMAP.md)                                  | Work packages, dependencies, acceptance criteria, and current status                                          |
+| [Research and sources](docs/RESOURCES.md)                            | Related projects, primary references, and source policy                                                       |
+| [Contribution template](docs/templates/WORK_ITEM.md)                 | A bounded task and evidence-based handoff                                                                     |
 
 The learning loop is **understand → predict → experiment → observe → explain → apply**. Every released module must make a learner better at making a concrete engineering decision.
 
@@ -122,11 +128,11 @@ API and content contracts live in [contracts](contracts/README.md). React API ty
 Java bounds API POST bodies and complete simulation responses, and admits a small number of
 simulations at once. Limits are inclusive and can be set with environment variables:
 
-| Variable | Default | Accepted range |
-| --- | --- | --- |
-| `HLD_MAX_REQUEST_BYTES` | 262,144 (256 KiB) | 512–1,048,576 bytes |
-| `HLD_MAX_SIMULATION_RESPONSE_BYTES` | 4,194,304 (4 MiB) | 512–16,777,216 bytes |
-| `HLD_MAX_CONCURRENT_SIMULATIONS` | 2 per Java process | 1–32 |
+| Variable                            | Default            | Accepted range       |
+| ----------------------------------- | ------------------ | -------------------- |
+| `HLD_MAX_REQUEST_BYTES`             | 262,144 (256 KiB)  | 512–1,048,576 bytes  |
+| `HLD_MAX_SIMULATION_RESPONSE_BYTES` | 4,194,304 (4 MiB)  | 512–16,777,216 bytes |
+| `HLD_MAX_CONCURRENT_SIMULATIONS`    | 2 per Java process | 1–32                 |
 
 Invalid values fail startup. Too-large bodies return 413; too-large simulation results return
 422; busy simulation requests return 503 with `Retry-After: 1`. The app keeps your inputs and

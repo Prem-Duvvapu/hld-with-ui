@@ -4,12 +4,12 @@ Status: authoring contract with an implemented subset. The machine-readable cont
 
 ### Implemented baseline (checked 2026-10-12)
 
-| Model | Accepted `modelVersion` | Shared runner | Result `status` values |
-| --- | --- | --- | --- |
-| `request-flow` | `1.0.0` (no failure schedule) and `1.1.1` (current, failure schedules) | `SimulationContext` | `completed`, `limited` |
-| `cache-aside` | `1.0.1` only | `SimulationContext` | `completed`, `limited` |
-| `queues-tail-latency` (draft topic) | `1.0.0` only | `SimulationContext` with typed queue collector | `completed`, `limited` |
-| `distributed-rate-limiter` | `1.0.0` only | none; bounded by its own `maxRequests` input limit | `completed` |
+| Model                               | Accepted `modelVersion`                                                | Shared runner                                      | Result `status` values |
+| ----------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------- | ---------------------- |
+| `request-flow`                      | `1.0.0` (no failure schedule) and `1.1.1` (current, failure schedules) | `SimulationContext`                                | `completed`, `limited` |
+| `cache-aside`                       | `1.0.1` only                                                           | `SimulationContext`                                | `completed`, `limited` |
+| `queues-tail-latency` (draft topic) | `1.0.0` only                                                           | `SimulationContext` with typed queue collector     | `completed`, `limited` |
+| `distributed-rate-limiter`          | `1.0.0` only                                                           | none; bounded by its own `maxRequests` input limit | `completed`            |
 
 Rejected versions (`request-flow` `1.1.0`, `cache-aside` `1.0.0`) and their reasons are recorded in [decision 0004](decisions/0004-simulation-causality-corrections.md). The estimator `capacity-estimation` is not an event simulation and has no trace.
 
@@ -64,29 +64,29 @@ The context supplies virtual scheduler, seeded randomness, bounded event emissio
 
 **Implemented envelope.** Every current trace event has exactly these fields; OpenAPI defines one event schema per model (`SimulationEvent`, `RateLimitEvent`, `CacheAsideEvent`) with its own closed `kind` enum:
 
-| Field | Meaning |
-| --- | --- |
-| `sequence` | Strictly increasing within a trace, starting at 1 |
-| `timeMs` | Nondecreasing integer virtual time in milliseconds |
-| `kind` | Closed, versioned event type such as `request.queued` or `cache.fill` |
+| Field       | Meaning                                                                                                                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sequence`  | Strictly increasing within a trace, starting at 1                                                                                                             |
+| `timeMs`    | Nondecreasing integer virtual time in milliseconds                                                                                                            |
+| `kind`      | Closed, versioned event type such as `request.queued` or `cache.fill`                                                                                         |
 | `requestId` | Logical request or operation identity (`cache-aside` uses `Operation N`, numbered in input order). The cache key is not a structured event field yet (HLD-04) |
-| `nodeId` | The node, cache, or origin the event applies to |
-| `message` | English narration for display only. Never parse it to reconstruct state |
+| `nodeId`    | The node, cache, or origin the event applies to                                                                                                               |
+| `message`   | English narration for display only. Never parse it to reconstruct state                                                                                       |
 
 Implemented results contain versions, seed, `status`, assumptions, events, per-request outcomes, and metrics; `limited` results add `truncationReason`, `lastVirtualTimeMs`, and incomplete counts. `cache-aside` additionally returns `initialState`, and each of its events carries `operation`, `key`, and that key's post-event `cacheEntry`/`originValue`; applying them in order reconstructs the full state at any event ([decision 0006](decisions/0006-cache-event-key-state.md)). Request flow and the rate limiter do not carry state snapshots yet.
 
 **Proposed target envelope** for structured playback (not implemented; see HLD-04 in [the implementation plan](IMPLEMENTATION_PLAN.md#6-detailed-first-release-work)):
 
-| Field | Meaning |
-| --- | --- |
-| `sequence` | Strictly increasing emitted event number |
-| `timeMs` | Nondecreasing virtual timestamp |
-| `kind` | Closed, versioned event type such as `request.queued` |
-| `entityId` | A node, queue, cache, replica, or other defined entity |
-| `requestId` | Optional logical request identity; attempts have a separate ID |
-| `causedBySequence` | Optional earlier event that explains this event |
-| `payload` | Typed state change or bounded snapshot |
-| `explanationKey` / `explanationArgs` | Rule and actual values used for narration |
+| Field                                | Meaning                                                        |
+| ------------------------------------ | -------------------------------------------------------------- |
+| `sequence`                           | Strictly increasing emitted event number                       |
+| `timeMs`                             | Nondecreasing virtual timestamp                                |
+| `kind`                               | Closed, versioned event type such as `request.queued`          |
+| `entityId`                           | A node, queue, cache, replica, or other defined entity         |
+| `requestId`                          | Optional logical request identity; attempts have a separate ID |
+| `causedBySequence`                   | Optional earlier event that explains this event                |
+| `payload`                            | Typed state change or bounded snapshot                         |
+| `explanationKey` / `explanationArgs` | Rule and actual values used for narration                      |
 
 A target result contains initial state, events, final state, summary metrics, completion status, and model assumptions. Only `completed` and `limited` are implemented statuses; an internal failure is an HTTP error, not a `failed` result. `limited` results carry `truncationReason`, last virtual time, and incomplete-request counts. Internal failures return an explicit error; do not present corrupted partial output as a successful lesson.
 
@@ -173,7 +173,6 @@ lazily in React before presentation; state projection applies all prior deltas b
 [HLD-14A](work-items/HLD-14A.md) and [decision 0026](decisions/0026-atomic-delivery-transition-batches.md)
 for independent state axes, input/tie policies and actual checks.
 
-
 ### Delivery Guided evidence
 
 HLD-14C targets a returned event by the paired semantic `messageId`/`attemptId`, kind and
@@ -182,3 +181,30 @@ Canonical validation checks the selected kind actually supports both non-null id
 consumer-only and enqueue events cannot claim an attempt pair. Java fixtures verify all eight
 checkpoint facts and three authored sequence timelines. Model/schema remain 1.0.0/1.0;
 illustration selection is not a simulation run. See [decision 0028](decisions/0028-delivery-guided-message-attempt-targets.md).
+
+## Draft finite access analysis
+
+The `data-access-models` model (`1.0.0`, schema `1.0`) executes a bounded sequential list of
+ID lookups, tenant ranges, all-tenant ranges and inserts. It has no scheduler, seed or timing.
+`createdOrder` is an ordering key, never elapsed milliseconds. Immutable captured inputs and
+ordered outcomes reproduce exactly within this version. Initial records are bounded to twenty,
+operations to ten, final records to thirty and returned query records to twenty.
+
+The optional ordered-list secondary path groups `(tenant, createdOrder, id)` or
+`(createdOrder, tenant, id)`. A single candidate interval is examined, index-covered residual
+filters run before base-record fetch, and all matches are fetched before the result limit.
+No optimizer, skip scan, covering index or physical pages are modeled. Returned records sort
+by creation order then ID regardless of access traversal order. A full traversal still has
+one abstract path-opening count; this does not imply an efficient bounded seek.
+
+Primary IDs always stay unique. Optional `(tenant, businessKey)` uniqueness is a separate
+sequential write rule. Duplicate ID takes precedence over business-key conflict; rejection
+changes no records or indexes. Successful inserts append a base record and count one logical
+entry maintained per configured structure. These counters are not physical disk writes.
+Counts separately describe entries examined, base records examined, matched/returned records
+and maintained entries. No latency or generic efficiency score is computed.
+
+This analysis has no concurrency, crash, durable transaction, retained idempotency result or
+exactly-once effect model. The HTTP result remains subject to the existing complete-response
+ceiling. [Decision 0029](decisions/0029-finite-data-access-analysis.md) records its boundaries;
+[HLD-15A](work-items/HLD-15A.md) records actual semantic and integration evidence.

@@ -4,18 +4,18 @@ Status: the foundation and four published modules (`request-flow`, `capacity-est
 
 ## 1. Stack and boundaries
 
-| Area | Default | Reason |
-| --- | --- | --- |
-| Frontend | React, TypeScript, Vite, React Router | Familiar repository family; typed UI contracts; browser application with separate Java API |
-| Styling | CSS with semantic tokens and scoped component styles | Consistent themes, visible focus, controlled dependencies |
-| Server data | Typed fetch client initially; add a cache library if repeated data flows justify it | Keep first slice small; centralize errors and cancellation |
-| Static content | Markdown with pinned GFM table support, structured JSON metadata/questions, code-native diagrams | Reviewable content and validation without a CMS |
-| Topology | SVG for initial fixed topology; evaluate React Flow for later editing | Playback does not initially require a graph editor |
-| Backend | Java 17 bytecode, Spring Boot 4, Maven Wrapper; CI on Java 21 | Works with the owner's local Java 17 and remains tested on the newer CI LTS |
-| Execution | Plain Java domain modules and deterministic discrete-event engine | Testable without Spring or external infrastructure |
-| Contracts | OpenAPI 3.1 for HTTP/events; JSON Schema 2020-12 for authored data | Shared validation and generated TypeScript types; see [decision 0002](decisions/0002-contracts-generate-frontend-types.md) |
-| Tests | JUnit, Spring API tests; Vitest and React Testing Library; Playwright browser journeys against the packaged backend and production build (`npm run e2e`; real API journeys and explicitly mocked failure/retry cases) | Verify model semantics, integration, and actual learning journeys |
-| Delivery | One frontend build and one backend image; optional Docker Compose | Simple local and hosted deployment |
+| Area           | Default                                                                                                                                                                                                               | Reason                                                                                                                     |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Frontend       | React, TypeScript, Vite, React Router                                                                                                                                                                                 | Familiar repository family; typed UI contracts; browser application with separate Java API                                 |
+| Styling        | CSS with semantic tokens and scoped component styles                                                                                                                                                                  | Consistent themes, visible focus, controlled dependencies                                                                  |
+| Server data    | Typed fetch client initially; add a cache library if repeated data flows justify it                                                                                                                                   | Keep first slice small; centralize errors and cancellation                                                                 |
+| Static content | Markdown with pinned GFM table support, structured JSON metadata/questions, code-native diagrams                                                                                                                      | Reviewable content and validation without a CMS                                                                            |
+| Topology       | SVG for initial fixed topology; evaluate React Flow for later editing                                                                                                                                                 | Playback does not initially require a graph editor                                                                         |
+| Backend        | Java 17 bytecode, Spring Boot 4, Maven Wrapper; CI on Java 21                                                                                                                                                         | Works with the owner's local Java 17 and remains tested on the newer CI LTS                                                |
+| Execution      | Plain Java domain modules and deterministic discrete-event engine                                                                                                                                                     | Testable without Spring or external infrastructure                                                                         |
+| Contracts      | OpenAPI 3.1 for HTTP/events; JSON Schema 2020-12 for authored data                                                                                                                                                    | Shared validation and generated TypeScript types; see [decision 0002](decisions/0002-contracts-generate-frontend-types.md) |
+| Tests          | JUnit, Spring API tests; Vitest and React Testing Library; Playwright browser journeys against the packaged backend and production build (`npm run e2e`; real API journeys and explicitly mocked failure/retry cases) | Verify model semantics, integration, and actual learning journeys                                                          |
+| Delivery       | One frontend build and one backend image; optional Docker Compose                                                                                                                                                     | Simple local and hosted deployment                                                                                         |
 
 React's documentation describes Vite-based setups and their routing/data-fetching responsibilities. Spring Boot 4 supports the selected Java 17 baseline. See [official sources](RESOURCES.md#implementation-references) and [decision 0001](decisions/0001-java-runtime-baseline.md). Dependencies are pinned in the Maven build and npm lockfile.
 
@@ -96,20 +96,20 @@ Authored learning paths reference canonical module IDs rather than copying title
 
 The topic endpoints serve all four published topics. Simulation endpoints are implemented for `request-flow`, `distributed-rate-limiter`, `cache-aside`, and the draft `queues-tail-latency`; estimator endpoints for `capacity-estimation`. Case-study delivery serves the draft URL-shortener resource (Requirements through Defense) by explicit ID. Search is implemented over packaged published content; catalog stats remain **planned**.
 
-| Endpoint | Purpose and behavior |
-| --- | --- |
-| `GET /api/v1/topics` | Published metadata with capabilities and prerequisite IDs |
-| `GET /api/v1/topics/{id}` | Lesson, structured questions/resources, declared experiment or estimator references |
-| `GET /api/v1/draft/topics/{id}` | Explicit draft topic lesson/questions; published, planned and case IDs return 404; no discovery collection |
-| `GET /api/v1/simulations/{id}` | Version, input schema, defaults, presets, limits, model assumptions |
-| `POST /api/v1/simulations/{id}/runs` | Validate and execute one bounded simulation, returning a complete trace |
-| `GET /api/v1/estimators/{id}` | Read estimator defaults, presets, limits, and assumptions |
-| `POST /api/v1/estimators/{id}/calculations` | Return unit-aware calculations, intermediate values, assumptions, and sensitivity range |
-| `GET /api/v1/search?q=...` | Implemented: literal term search over published titles, summaries, lessons and workshop stage narratives; optional level/capability filters, 100-unit query bound, 20 results plus total match count |
-| `GET /api/v1/case-studies` | Published validated case metadata, ordered by catalog order then ID; draft/planned entries omitted, empty array when none are published |
-| `GET /api/v1/case-studies/{id}` | Implemented: authored draft/published case metadata and versioned stages/rubrics; unknown/planned/topic IDs return 404 |
-| `GET /api/v1/learning-paths/{id}` | Ordered guidance with canonical published metadata and current answer identities; unavailable steps have no destination/activity metadata |
-| `GET /api/v1/catalog/stats` | Generated counts by publication state and available capability |
+| Endpoint                                    | Purpose and behavior                                                                                                                                                                                 |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/topics`                        | Published metadata with capabilities and prerequisite IDs                                                                                                                                            |
+| `GET /api/v1/topics/{id}`                   | Lesson, structured questions/resources, declared experiment or estimator references                                                                                                                  |
+| `GET /api/v1/draft/topics/{id}`             | Explicit draft topic lesson/questions; published, planned and case IDs return 404; no discovery collection                                                                                           |
+| `GET /api/v1/simulations/{id}`              | Version, input schema, defaults, presets, limits, model assumptions                                                                                                                                  |
+| `POST /api/v1/simulations/{id}/runs`        | Validate and execute one bounded simulation, returning a complete trace                                                                                                                              |
+| `GET /api/v1/estimators/{id}`               | Read estimator defaults, presets, limits, and assumptions                                                                                                                                            |
+| `POST /api/v1/estimators/{id}/calculations` | Return unit-aware calculations, intermediate values, assumptions, and sensitivity range                                                                                                              |
+| `GET /api/v1/search?q=...`                  | Implemented: literal term search over published titles, summaries, lessons and workshop stage narratives; optional level/capability filters, 100-unit query bound, 20 results plus total match count |
+| `GET /api/v1/case-studies`                  | Published validated case metadata, ordered by catalog order then ID; draft/planned entries omitted, empty array when none are published                                                              |
+| `GET /api/v1/case-studies/{id}`             | Implemented: authored draft/published case metadata and versioned stages/rubrics; unknown/planned/topic IDs return 404                                                                               |
+| `GET /api/v1/learning-paths/{id}`           | Ordered guidance with canonical published metadata and current answer identities; unavailable steps have no destination/activity metadata                                                            |
+| `GET /api/v1/catalog/stats`                 | Generated counts by publication state and available capability                                                                                                                                       |
 
 Unknown IDs and unknown routes return 404. Invalid parameters return 400 with field paths and readable explanations. HLD-11A adds request-byte errors (413), oversized simulation-result errors (422), and process-local simulation admission errors (503 with `Retry-After: 1`). Invalid model fields remain 400. These HTTP guards are separate from a modeled rate-limiter rejection, which is an outcome inside a successful simulation response. Responses use one structured problem format with `code`, `message`, `fieldErrors`, and `timestamp`. No stack traces in client errors.
 
@@ -188,3 +188,20 @@ target family and a delivery adapter over the shared saved-answer lifecycle. Eig
 select actual Java evidence; authored Architecture/Message sequence views explain ownership
 and three causal paths without running the model. [Decision 0028](decisions/0028-delivery-guided-message-attempt-targets.md)
 records selector compatibility. Published discovery and learning paths remain unchanged.
+
+## Draft access-pattern analysis
+
+`com.hld.dataaccess` contains a finite, request-local Java analysis of sequential reads and
+inserts over at most twenty initial records and ten operations. The explicitly scoped draft
+`data-access-models` topic uses strict descriptor/run endpoints under the existing simulation
+namespace. Its result is labeled `analysis` and has ordered operation outcomes rather than
+invented timed events. Input bounds constrain all work; existing HTTP body, admission and
+serialized-response guards remain applicable. No new service or dependency is required.
+
+Canonical standalone input/result schemas export to OpenAPI and generated TypeScript. The
+descriptor validation subset is generated from reachable OpenAPI definitions and drift-checked.
+The lazy client validates closed shapes, captured inputs and evidence identity/invariants;
+React selects Java outcomes and displays counts without evaluating queries or producing metrics.
+Study and Practice explain storage-family decisions. Guided and authored diagrams remain pending.
+See [decision 0029](decisions/0029-finite-data-access-analysis.md) and
+[HLD-15A](work-items/HLD-15A.md).

@@ -53,18 +53,18 @@ selection is a reading interaction; no Java POST or fabricated outcome follows i
 
 ## Verification evidence
 
-| Check actually run                            | Result                                                                                                                        | Evidence                                                                 |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Baseline/branch/open PR inspection            | PASS: fresh branch from `1363cc6`, no open PR, owner output preserved                                                         | Git / GitHub at start                                                    |
-| Java verify                                   | PASS: 332 discovered, 331 executed, one existing opt-in performance skip; 14 new methods                                      | `/tmp/hld-delivery-guided-java.log`                                      |
-| Final Java package                            | PASS after prompt/lesson formatting                                                                                           | `/tmp/hld-delivery-guided-package.log`                                   |
-| Contracts/content                             | PASS: 99 cases; seven canonical entries, 35 questions, 24 checkpoints, ten workshop stages                                    | `/tmp/hld-delivery-guided-contracts-final.log`                           |
-| Full frontend gate                            | PASS: typecheck, ESLint, Prettier, 407 units and production build                                                             | Actual terminal gate; `/tmp/hld-delivery-guided-build-final.log`         |
-| Real Java browser journeys                    | PASS: 25 cases, seven new Guided/concept journeys plus 18 retained delivery regressions                                       | `/tmp/hld-delivery-guided-browser.log`                                   |
-| Copied jar                                    | PASS: exact delivered metadata/lesson/questions/checkpoints and both queue baselines, exclusions and cleanup                  | `/tmp/hld-delivery-guided-packaged.log`                                  |
-| Independent semantic/content/lifecycle review | PASS: all eight selected states/numbers and three authored paths agree; null/malformed and legacy mixed-selector guards added | Read-only cross-reviews; actual guard regressions                        |
-| Plan/launcher/whitespace                      | PASS: 97 docs, 507 links, 59 curriculum IDs, seven catalog entries including screenshot links                                 | `node scripts/validate-plan.mjs`; `bash -n start.sh`; `git diff --check` |
-| Required final-head CI                        | Required before squash; actual head, checkout and results retained on the PR                                                  | Quality, Browser journeys and Packaged runtime                           |
+| Check actually run                            | Result                                                                                                                           | Evidence                                                                 |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Baseline/branch/open PR inspection            | PASS: fresh branch from `1363cc6`, no open PR, owner output preserved                                                            | Git / GitHub at start                                                    |
+| Java verify                                   | PASS: 332 discovered, 331 executed, one existing opt-in performance skip; 14 new methods                                         | `/tmp/hld-delivery-guided-java.log`                                      |
+| Final Java package                            | PASS after prompt/lesson formatting                                                                                              | `/tmp/hld-delivery-guided-package.log`                                   |
+| Contracts/content                             | PASS: 99 cases; seven canonical entries, 35 questions, 24 checkpoints, ten workshop stages                                       | `/tmp/hld-delivery-guided-contracts-final.log`                           |
+| Full frontend gate                            | PASS: typecheck, ESLint, Prettier, 407 units and production build                                                                | Actual terminal gate; `/tmp/hld-delivery-guided-build-final.log`         |
+| Real Java browser journeys                    | PASS: 25 cases, seven new Guided/concept journeys plus 18 retained delivery regressions                                          | `/tmp/hld-delivery-guided-browser.log`                                   |
+| Copied jar                                    | PASS: exact delivered metadata/lesson/questions/checkpoints and both queue baselines, exclusions and cleanup                     | `/tmp/hld-delivery-guided-packaged.log`                                  |
+| Independent semantic/content/lifecycle review | PASS: all eight selected states/numbers and three authored paths agree; null/malformed and legacy mixed-selector guards added    | Read-only cross-reviews; actual guard regressions                        |
+| Plan/launcher/whitespace                      | PASS: 97 docs, 507 links, 59 curriculum IDs, seven catalog entries including screenshot links                                    | `node scripts/validate-plan.mjs`; `bash -n start.sh`; `git diff --check` |
+| Required final-head CI                        | PASS: final head `e90e254`, tested merge `90011ae`, CI `38442615491`; 186 browser journeys plus 20 UI and 20 reading-load groups | [PR #68](https://github.com/Prem-Duvvapu/hld-with-ui/pull/68)            |
 
 The first full frontend run exposed a Node `node:test` fixture accidentally discovered by
 Vitest. It was renamed to the repository's `.fixtures.mjs` convention while remaining imported
@@ -89,7 +89,9 @@ Hosted backend freshness and production capacity are not established by the loca
 ## Handoff
 
 The implementation head `4f9befe` passed [CI run 38301128473](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/38301128473),
-including Quality, Browser journeys and Packaged runtime. Local `/tmp` logs are transient;
+including Quality, Browser journeys and Packaged runtime. Final evidence head `e90e254`
+also passed CI `38442615491` on tested merge `90011ae`. PR #68 was squash merged as
+`dc75e17` on 2026-10-13; its branch was deleted and owner main fast-forwarded. Local `/tmp` logs are transient;
 [PR #68](https://github.com/Prem-Duvvapu/hld-with-ui/pull/68) retains final-head CI and delivery evidence.
 
 Publication still requires human reviews, the first-release gate and published prerequisite

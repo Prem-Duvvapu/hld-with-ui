@@ -1,0 +1,446 @@
+.access-draft {
+  margin-block: 20px 0;
+  padding: 14px 18px;
+  border: 1px solid var(--orange);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--orange) 6%, var(--surface));
+}
+.access-draft p {
+  margin: 0;
+}
+.access-draft .eyebrow {
+  margin-bottom: 5px;
+  color: var(--orange);
+}
+.access-experience {
+  padding-block: 24px;
+  min-width: 0;
+}
+.access-experience :is(h2, h3, h4, p, li, dd, label, small, code) {
+  overflow-wrap: anywhere;
+}
+.access-prediction {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 24px;
+  padding: 22px;
+  margin-bottom: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.access-prediction h2 {
+  margin: 6px 0 12px;
+  font-size: 1.35rem;
+}
+.access-prediction p {
+  margin-bottom: 10px;
+}
+.access-workbench {
+  display: grid;
+  grid-template-columns: minmax(290px, 0.85fr) minmax(0, 1.65fr);
+  gap: 24px;
+  align-items: start;
+}
+.access-controls,
+.access-results,
+.access-empty {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.access-controls h2,
+.access-empty h2,
+.access-results h2 {
+  margin: 4px 0 12px;
+  font-size: 1.3rem;
+}
+.access-control-set {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.access-muted {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.access-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 20px;
+}
+.access-presets button,
+.access-small-button,
+.access-outcomes button,
+.access-step-controls button {
+  max-width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-2);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+.access-presets button[aria-pressed="true"],
+.access-outcomes button[aria-pressed="true"] {
+  border-color: var(--green);
+  background: color-mix(in srgb, var(--green) 10%, var(--surface));
+}
+.access-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  margin-bottom: 14px;
+}
+.access-field label,
+.access-dataset label {
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+.access-field :is(input, select, textarea),
+.access-dataset textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.access-field textarea,
+.access-dataset textarea {
+  resize: vertical;
+}
+.access-field [aria-invalid="true"],
+.access-dataset [aria-invalid="true"] {
+  border-color: var(--red);
+}
+.access-checkbox {
+  display: flex;
+  gap: 10px;
+  align-items: start;
+  font-size: 0.88rem;
+}
+.access-checkbox input {
+  margin-top: 5px;
+  accent-color: var(--green);
+}
+.access-two-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.access-operation-card {
+  min-width: 0;
+  margin: 20px 0 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.access-operation-card legend {
+  padding-inline: 6px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+.access-operation-card .access-field:last-child {
+  margin-bottom: 0;
+}
+.access-dataset,
+.access-final,
+.access-assumptions {
+  padding-block: 16px;
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.access-experience summary {
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+.access-dataset textarea {
+  margin-top: 7px;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+.access-run {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  padding: 13px 16px;
+  border: 1px solid var(--green);
+  border-radius: 7px;
+  background: var(--green);
+  color: var(--surface);
+  font-weight: 700;
+  cursor: pointer;
+}
+:root[data-theme="dark"] .access-run {
+  color: var(--paper);
+}
+.access-experience button:disabled,
+.access-control-set:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+.access-error {
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  border: 1px solid var(--red);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--red) 6%, var(--surface));
+}
+.access-error p {
+  margin: 6px 0 0;
+}
+.access-error-text {
+  color: var(--red);
+  font-size: 0.85rem;
+}
+.access-results-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.access-version {
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-family: var(--mono);
+}
+.access-run-status {
+  padding: 10px 12px;
+  border-left: 3px solid var(--orange);
+  background: var(--surface-2);
+  font-size: 0.85rem;
+}
+.access-submitted {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 14px;
+  margin-block: 18px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.access-submitted strong {
+  color: var(--ink);
+}
+.access-outcomes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 18px;
+}
+.access-step-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.access-evidence {
+  padding-block: 20px;
+}
+.access-evidence h3 {
+  margin: 6px 0 12px;
+  font-size: 1.1rem;
+}
+.access-explanation {
+  font-size: 0.9rem;
+}
+.access-counts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-block: 18px;
+}
+.access-counts div {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.access-counts dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.access-counts dd {
+  margin: 4px 0 0;
+  font-size: 1.65rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.access-flow {
+  display: grid;
+  gap: 12px;
+  padding-block: 10px;
+}
+.access-flow section {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.access-flow-number {
+  color: var(--green);
+  font: 0.8rem var(--mono);
+}
+.access-flow h4 {
+  display: inline;
+  margin-left: 10px;
+  font-size: 0.9rem;
+}
+.access-flow small {
+  display: block;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.access-ids {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.access-ids code {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface-2);
+  font: 0.78rem var(--mono);
+}
+.access-table-scroll {
+  max-width: 100%;
+  overflow: auto;
+  margin-block: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.access-table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.access-table-scroll caption {
+  text-align: left;
+  padding: 10px 12px;
+  color: var(--muted);
+  font-weight: 650;
+}
+.access-table-scroll :is(th, td) {
+  padding: 9px 12px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.access-table-scroll thead {
+  background: var(--surface-2);
+}
+.access-table-scroll code {
+  font-family: var(--mono);
+}
+.access-write-outcome {
+  padding: 14px;
+  border: 1px solid var(--green);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--green) 6%, var(--surface));
+}
+.access-write-outcome.rejected {
+  border-color: var(--orange);
+  background: color-mix(in srgb, var(--orange) 6%, var(--surface));
+}
+.access-write-outcome p {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+}
+.access-detail-counts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  font-size: 0.8rem;
+}
+.access-detail-counts dt {
+  color: var(--muted);
+}
+.access-detail-counts dd {
+  margin: 4px 0 0;
+  font-weight: 700;
+}
+.access-total,
+.access-transfer {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+}
+.access-transfer {
+  margin-top: 18px;
+}
+.access-transfer h3,
+.access-total h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+.access-transfer p {
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+.access-assumptions ul {
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.access-empty li {
+  margin-block: 14px;
+}
+.access-empty-path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-block: 25px;
+}
+.access-empty-path span:nth-child(odd) {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font: 0.85rem var(--mono);
+}
+@media (min-width: 1100px) {
+  .access-counts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .access-workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 650px) {
+  .access-prediction {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .access-controls,
+  .access-results,
+  .access-empty,
+  .access-prediction {
+    padding: 16px;
+  }
+  .access-flow h4 {
+    display: block;
+    margin: 5px 0 0;
+  }
+}

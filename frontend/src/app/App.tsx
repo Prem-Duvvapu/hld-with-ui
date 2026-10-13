@@ -48,6 +48,11 @@ const DeliveryPage = lazy(() =>
     default: module.DeliveryPage,
   })),
 );
+const DataAccessPage = lazy(() =>
+  import("../pages/DataAccessPage").then((module) => ({
+    default: module.DataAccessPage,
+  })),
+);
 const QueueCapacityPage = lazy(() =>
   import("../pages/QueueCapacityPage").then((module) => ({
     default: module.QueueCapacityPage,
@@ -121,6 +126,10 @@ export function App() {
               element={<DeliveryPage />}
             />
             <Route path="/case-studies/:id" element={<WorkshopPage />} />
+            <Route
+              path="/draft/topics/data-access-models"
+              element={<DataAccessPage />}
+            />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>

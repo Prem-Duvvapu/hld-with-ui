@@ -75,7 +75,7 @@ for (const example of ["request-flow-baseline", "request-flow-overload"]) {
 }
 
 // Standalone model examples do not register endpoints or publication capabilities.
-for (const model of ["queue-capacity", "queue-delivery"]) {
+for (const model of ["queue-capacity", "queue-delivery", "data-access"]) {
   for (const kind of ["input", "result"]) {
     const example = `${model}-baseline-${kind}`;
     validateSchema(
