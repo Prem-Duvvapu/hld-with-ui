@@ -5,6 +5,11 @@ import { LoadingState, ErrorState } from "../components/AsyncState";
 import { ModuleShell } from "../components/ModuleShell";
 import { StudyView } from "../features/learning/StudyView";
 import { PracticeView } from "../features/learning/PracticeView";
+import { DeliveryGuided } from "../features/delivery/DeliveryGuided";
+import {
+  DeliveryArchitectureView,
+  DeliverySequenceView,
+} from "../features/delivery/DeliveryConceptViews";
 import { DeliveryPlayground } from "../features/delivery/DeliveryPlayground";
 import { NotFoundPage } from "./NotFoundPage";
 const id = "queues-delivery";
@@ -33,7 +38,9 @@ export function DeliveryPage() {
           typeof topic.lessonMarkdown !== "string" ||
           !topic.lessonMarkdown.trim() ||
           !Array.isArray(topic.questions) ||
-          !Array.isArray(topic.checkpoints)
+          !Array.isArray(topic.checkpoints) ||
+          (topic.topic.capabilities.includes("guided") &&
+            !topic.checkpoints.length)
         ) {
           setError(
             "This draft delivery module is incompatible with this app. Refresh and try again.",
@@ -95,6 +102,11 @@ export function DeliveryPage() {
         topic={data.topic.topic}
         tabs={[
           { id: "playground", label: "Playground" },
+          ...(data.topic.topic.capabilities.includes("guided")
+            ? [{ id: "guided", label: "Guided" }]
+            : []),
+          { id: "architecture", label: "Architecture" },
+          { id: "sequence", label: "Message sequence" },
           { id: "study", label: "Study" },
           { id: "practice", label: "Practice" },
         ]}
@@ -106,6 +118,15 @@ export function DeliveryPage() {
               descriptor={data.descriptor}
             />
           ),
+          guided: data.topic.topic.capabilities.includes("guided") && (
+            <DeliveryGuided
+              checkpoints={data.topic.checkpoints}
+              descriptor={data.descriptor}
+              contentVersion={data.topic.topic.contentVersion}
+            />
+          ),
+          architecture: <DeliveryArchitectureView />,
+          sequence: <DeliverySequenceView />,
           study: (
             <StudyView
               markdown={data.topic.lessonMarkdown}

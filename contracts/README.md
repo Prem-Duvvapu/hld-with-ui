@@ -66,7 +66,8 @@ actual Java response against OpenAPI and separately assert the draft publication
 illustrative `queues-delivery` model (`1.0` schema, `1.0.0` model). HLD-14A supplied the
 standalone Java model and schemas. HTTP version `1.3.0` adds its descriptor/run endpoints and
 an explicit draft learning route with Playground, Study and Practice. Published topic/search
-collections and learning paths continue to exclude the draft. Guided coverage is not advertised.
+collections and learning paths continue to exclude the draft. HLD-14C adds eight Guided
+checkpoints plus authored Architecture/Message sequence views under HTTP 1.4.0.
 The deterministic exporter derives delivery components and generated frontend aliases from
 these canonical schemas. It also generates the descriptor validation schema from only the
 reachable OpenAPI components, with its own drift check.
@@ -115,3 +116,14 @@ All use the closed `ApiError` shape: `code`, `message`, `fieldErrors`, and requi
 from OpenAPI. No successful-response shape, model/schema version, or answer backup changes.
 An HTTP overload failure is distinct from a rate-limiter decision inside a simulated run.
 See [decision 0021](../docs/decisions/0021-http-simulation-resource-guards.md) for configuration and limits.
+
+## Delivery Guided targets
+
+HTTP 1.4.0 extends canonical Guided targets with exactly one new closed family:
+`messageId`, `attemptId`, `kind`, `occurrence`. IDs must agree with the bounded modeled attempt;
+both fields are required together. New delivery occurrence is 1–10,000. Existing `operation`
+and `jobId` targets preserve their JSON, kind grammar and positive occurrence rules.
+The exporter verifies the delivery kind union against the actual event schema
+required/non-null conditional capabilities, including `message.dead-lettered`; pure consumer
+and enqueue events cannot claim an attempt selector. Java teaching fixtures resolve all eight
+authored targets and source timelines. Model/schema remain 1.0.0/1.0.

@@ -3,8 +3,9 @@
 Prepared 2026-10-12 against `7a214d7` (PR #61). **Original handoff, with implementation progress below.**
 [HLD-14A](work-items/HLD-14A.md) implements the pure Java delivery model and standalone
 contracts. [HLD-14B](work-items/HLD-14B.md) adds strict HTTP delivery and a direct draft
-Playground/Study/Practice experience with eight questions. Guided and authored
-Architecture/sequence coverage remain pending. Use this with the [implementation plan](IMPLEMENTATION_PLAN.md),
+Playground/Study/Practice experience with eight questions. [HLD-14C](work-items/HLD-14C.md)
+adds eight paired message/attempt Guided checkpoints and authored Architecture/message sequence
+views, completing the core draft teaching surfaces. Human reviews and publication remain. Use this with the [implementation plan](IMPLEMENTATION_PLAN.md),
 [curriculum](CURRICULUM.md), [simulation contract](SIMULATION_SPEC.md),
 [content contract](../content/CONTENT_SPEC.md) and [learning standard](LEARNING_STANDARD.md).
 
@@ -305,14 +306,15 @@ coordination example, not the broker semantics to copy here.
    Teach ACK-after as a useful baseline with a remaining duplicate window. ACK-before
    risks confirmed delivery without work. Neither policy alone protects an external effect.
 
-Guided targets should identify preset, message, attempt, event kind and occurrence.
-The current guided-checkpoint schema supports cache operation and queue-capacity job selectors
-(HLD-13C). Delivery needs its own explicit message/attempt selector with backward-compatible
-validation/tests for both existing models. Never fit delivery attempts into invented cache
-operation numbers, capacity job IDs or event array indexes.
-The existing kind pattern excludes the hyphen in `message.dead-lettered`: the delivery selector
-must validate against its own closed event vocabulary while retaining the existing cache and
-capacity selectors' validation. Updating only the selector IDs would leave this checkpoint invalid.
+HLD-14C Guided targets identify preset plus the required semantic message/attempt pair,
+event kind and occurrence. Canonical closed targets and Java fixtures verify that identity;
+only actual attempt-bearing event kinds may use it.
+The canonical guided-checkpoint schema now supports cache operation, capacity job and paired
+delivery message/attempt selectors. HLD-14C preserves legacy JSON, grammar and occurrence
+rules while checking the new family against actual attempt-bearing event capabilities.
+Its closed vocabulary includes `message.dead-lettered`; the older cache/capacity kind patterns
+remain unchanged. No invented operation numbers, capacity job IDs or event array indexes
+identify delivery teaching.
 
 Practice should cover lost ACK, crash-before/after effect, expiry-boundary comparison,
 two-worker overlapping attempts, retry exhaustion and a transfer to an order-processing

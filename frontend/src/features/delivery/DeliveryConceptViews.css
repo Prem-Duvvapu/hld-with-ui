@@ -1,0 +1,197 @@
+.delivery-concepts {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+.delivery-concept-intro {
+  max-width: 72ch;
+}
+.delivery-concept-intro h2 {
+  margin: 8px 0 12px;
+}
+.delivery-concept-intro p {
+  line-height: 1.7;
+}
+.delivery-concept-scope {
+  font-size: 0.85rem;
+  color: var(--muted);
+  border-left: 3px solid var(--green);
+  padding-left: 14px;
+}
+.delivery-boundary-diagram {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 20px;
+  border-radius: 18px;
+}
+.delivery-boundary-part {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+.delivery-boundary {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px;
+  color: var(--ink);
+  background: var(--surface);
+  min-width: 0;
+  flex: 1;
+  height: 100%;
+  font: inherit;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.delivery-boundary.selected {
+  border-color: var(--green);
+  background: color-mix(in srgb, var(--green) 8%, var(--surface));
+}
+.delivery-boundary strong {
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+.delivery-boundary > span:not(.eyebrow) {
+  line-height: 1.65;
+  font-size: 0.85rem;
+}
+.delivery-inspect-hint {
+  color: var(--green);
+}
+.delivery-boundary-edge {
+  width: 48px;
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  line-height: 1.7;
+  color: var(--green);
+  text-align: center;
+}
+.delivery-edge-vertical {
+  display: none;
+}
+.delivery-concept-inspector,
+.delivery-concept-text,
+.delivery-authored-path,
+.delivery-concept-notes > section {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.delivery-concept-inspector p,
+.delivery-concept-text p,
+.delivery-authored-path p,
+.delivery-concept-notes p {
+  line-height: 1.75;
+}
+.delivery-concept-takeaway {
+  border-left: 3px solid var(--green);
+  padding: 10px 0 10px 16px;
+  background: color-mix(in srgb, var(--green) 8%, var(--surface));
+}
+.delivery-concept-text ol {
+  display: grid;
+  gap: 14px;
+  padding-left: 24px;
+  line-height: 1.75;
+}
+.delivery-concept-text li[aria-current="step"] {
+  color: var(--green);
+}
+.delivery-concept-text li p {
+  color: var(--ink);
+  margin-bottom: 0;
+}
+.delivery-concept-notes {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.delivery-path-choice {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+}
+.delivery-path-choice legend {
+  padding: 0 8px;
+}
+.delivery-path-choice label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 200px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  line-height: 1.5;
+  cursor: pointer;
+}
+.delivery-path-choice input {
+  margin: 0;
+  accent-color: var(--green);
+  flex-shrink: 0;
+}
+.delivery-path-edge {
+  font-weight: 600;
+  color: var(--green);
+  overflow-wrap: anywhere;
+}
+.delivery-path-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+@media (max-width: 900px) {
+  .delivery-boundary-diagram {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .delivery-boundary-part {
+    flex-direction: column;
+  }
+  .delivery-boundary {
+    width: 100%;
+  }
+  .delivery-boundary-edge {
+    width: auto;
+  }
+  .delivery-edge-horizontal {
+    display: none;
+  }
+  .delivery-edge-vertical {
+    display: inline;
+  }
+}
+@media (max-width: 600px) {
+  .delivery-concept-notes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .delivery-boundary-diagram,
+  .delivery-concept-inspector,
+  .delivery-concept-text,
+  .delivery-authored-path,
+  .delivery-concept-notes > section {
+    padding: 16px;
+  }
+  .delivery-path-choice {
+    padding: 14px;
+  }
+  .delivery-path-controls .button {
+    flex: 1 1 140px;
+  }
+}

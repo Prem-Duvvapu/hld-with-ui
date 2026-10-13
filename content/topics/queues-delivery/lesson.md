@@ -85,7 +85,7 @@ Compare the baseline with no loss: one effect at 50 ms, one accepted ACK at 55 m
 
 ## Explore in the playground
 
-The direct draft route is `/draft/topics/queues-delivery`. Use **Playground**, **Study** and **Practice**. Guided checkpoints and authored Architecture/sequence tabs are not available in this slice.
+The direct draft route is `/draft/topics/queues-delivery`. Use **Playground**, **Guided**, **Architecture**, **Message sequence**, **Study** and **Practice**. Guided has eight checkpoints over eight presets. The no-recovery preset remains covered in Playground and Practice. Architecture and Message sequence are original authored explanations; their controls do not run Java or manufacture simulation outcomes.
 
 1. Select a preset and make a short prediction before running. Predictions in the Playground stay only while this page is mounted; Practice answers use the existing browser backup tools.
 2. Run explicitly. The model does not run just because you open the lesson or change an input.
@@ -103,6 +103,8 @@ Try these contrasts:
 Advanced inputs let you change message/consumer IDs, enqueue times, fault schedules, lost-ACK selectors and seed within the descriptor's limits. Faults must alternate crash/recovery chronologically per consumer; arrays need not be entered in chronological order. Seed is recorded for replay within this model version; these schedules contain no probabilistic outcome to invent.
 
 Returned metrics describe the whole observed run or prefix, even when playback is at an earlier event. Playback position changes the inspected state; it does not recalculate final statistics.
+
+In **Guided**, predict, select **Run and reveal**, inspect the exact returned message/attempt event, explain the evidence and choose a tradeoff. Predictions and choices use the existing local answer backup tools. Reload restores reasoning; generating evidence again requires an explicit run. Use **Architecture** to inspect broker, consumer and ledger ownership. **Message sequence** has authored baseline, lost-ACK and early-ACK/crash paths with a complete text list: compare their causal order with actual Playground traces.
 
 ## Failures and tradeoffs
 

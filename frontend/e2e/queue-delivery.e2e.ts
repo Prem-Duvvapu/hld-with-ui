@@ -142,7 +142,12 @@ test("delivery draft descriptors, all nine presets and publication boundaries ag
   expect(topicResponse.status()).toBe(200);
   const topic = await topicResponse.json();
   expect(topic.topic.status).toBe("draft");
-  expect(topic.topic.capabilities).toEqual(["study", "simulation", "practice"]);
+  expect(topic.topic.capabilities).toEqual([
+    "study",
+    "simulation",
+    "guided",
+    "practice",
+  ]);
   expect(topic.questions).toEqual(questions);
   expect((await request.get(`/api/v1/topics/${id}`)).status()).toBe(404);
   for (const path of [

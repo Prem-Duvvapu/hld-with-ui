@@ -211,19 +211,20 @@
       "Explain lease deadlines, stale tokens, dead letters and limited observation without inventing guarantees.",
       "Choose the application boundary that later needs idempotency protection."
     ],
-    "capabilities": ["study", "simulation", "practice"],
+    "capabilities": ["study", "simulation", "guided", "practice"],
     "lessonPath": "topics/queues-delivery/lesson.md",
     "questionsPath": "topics/queues-delivery/questions.json",
     "resourcesPath": "topics/queues-delivery/resources.json",
     "simulationIds": ["queues-delivery"],
     "estimatorIds": [],
-    "contentVersion": "1.0.0",
+    "contentVersion": "1.1.0",
     "reviewedAt": "2026-10-12",
     "sourceIds": [
       "aws-sqs-visibility",
       "aws-sqs-delete-message",
       "rabbitmq-consumer-acks",
       "aws-idempotent-apis"
-    ]
+    ],
+    "checkpointsPath": "topics/queues-delivery/checkpoints.json"
   }
 ]

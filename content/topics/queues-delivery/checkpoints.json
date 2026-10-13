@@ -1,0 +1,290 @@
+[
+  {
+    "id": "effect-before-confirmation",
+    "title": "Work can commit before confirmation",
+    "simulationId": "queues-delivery",
+    "presetId": "baseline",
+    "target": {
+      "messageId": "m1",
+      "attemptId": "m1-a1",
+      "kind": "effect.committed",
+      "occurrence": 1
+    },
+    "prompt": "At 50 ms in the baseline, is the message acknowledged just because its effect has committed?",
+    "lookFor": "The ledger has one record at 50 ms. The broker still has a lease and the ACK is pending until 55 ms. The consumer has finished processing and its slot is free.",
+    "explanation": "At 50 ms the durable effect commits. The consumer processing pointer clears, but the broker still leases m1 to attempt m1-a1 and its ACK remains pending. The confirmation is accepted at 55 ms in the settled baseline. Java final-run metrics include that later ACK even when the playback cursor is at 50 ms. Committed work and broker confirmation are independent facts.",
+    "tradeoff": {
+      "prompt": "A teammate proposes treating a committed local update as proof that the broker stopped offering the message. Which evidence should the review require?",
+      "options": [
+        {
+          "id": "separate-evidence",
+          "label": "Inspect both the durable result and the broker confirmation",
+          "feedback": "The ledger proves work happened; the accepted ACK proves this broker stopped ordinary redelivery. Keep the two observations separate."
+        },
+        {
+          "id": "effect-is-ack",
+          "label": "Treat any ledger entry as an accepted ACK",
+          "feedback": "The selected event shows a durable record while the ACK is still pending. The broker does not inspect the ledger."
+        },
+        {
+          "id": "ack-is-effect",
+          "label": "Treat an ACK as the durable business result",
+          "feedback": "An ACK records broker confirmation. The early-ACK crash contrast shows it can exist without a ledger effect."
+        }
+      ],
+      "recommendedOptionId": "separate-evidence"
+    }
+  },
+  {
+    "id": "lost-confirmation-repeats-work",
+    "title": "A lost ACK can repeat durable work",
+    "simulationId": "queues-delivery",
+    "presetId": "lost-ack",
+    "target": {
+      "messageId": "m1",
+      "attemptId": "m1-a2",
+      "kind": "effect.committed",
+      "occurrence": 1
+    },
+    "prompt": "The first effect committed at 50 ms, but its ACK was lost at 55 ms. What will the second effect at 150 ms mean for repeated work?",
+    "lookFor": "Seek to m1-a2 at 150 ms: the ledger contains two records. The second ACK is still pending at this position and is accepted at 155 ms later.",
+    "explanation": "Attempt 1 commits at 50 ms and loses its ACK at 55 ms. Expiry at 100 ms permits delivery 2, which commits at 150 ms and confirms at 155 ms. The settled run has two deliveries, two effects and one extra effect. First-effect latency remains 50 ms over one message; accepted-ACK latency is 155 ms over one message. The first committed record survived the missing confirmation.",
+    "tradeoff": {
+      "prompt": "An order operation must keep the same business result when a confirmation is lost. Which next design requirement addresses the observed extra effect?",
+      "options": [
+        {
+          "id": "atomic-identity",
+          "label": "Protect logical request identity and local mutation atomically",
+          "feedback": "Define the local atomic boundary before implementing idempotency. The current model has no duplicate protection; the ledger proves why one is needed."
+        },
+        {
+          "id": "ack-after-only",
+          "label": "Use ACK-after and assume duplicate work is impossible",
+          "feedback": "This ACK-after run already produced two effects. The policy preserves retry eligibility without deduplicating the mutation."
+        },
+        {
+          "id": "long-lease",
+          "label": "Increase the lease and claim the first effect disappears",
+          "feedback": "A longer lease may delay retry but cannot erase an already committed record or establish a duplicate-free business invariant."
+        }
+      ],
+      "recommendedOptionId": "atomic-identity"
+    }
+  },
+  {
+    "id": "crash-cancels-processing",
+    "title": "A crash cancels work that has not committed",
+    "simulationId": "queues-delivery",
+    "presetId": "crash-before",
+    "target": {
+      "messageId": "m1",
+      "attemptId": "m1-a1",
+      "kind": "attempt.cancelled",
+      "occurrence": 1
+    },
+    "prompt": "Crash c1 at 25 ms and recover at 75 ms with ACK-after. Does redelivery necessarily mean the ledger gets two records?",
+    "lookFor": "At cancellation time 25 ms, the consumer is down, its slot is clear and the ledger is empty. The lease remains active until 100 ms.",
+    "explanation": "The crash at 25 ms cancels the effect scheduled at 50 ms and the unsent ACK at 55 ms. Recovery at 75 ms does not revive the cancelled attempt. Lease expiry at 100 ms permits delivery 2; its effect commits at 150 ms and ACK is accepted at 155 ms. Two deliveries produce only one effect, with zero extra effects. Delivery count alone does not prove duplicate business work.",
+    "tradeoff": {
+      "prompt": "A metric shows two deliveries of a job. What should you check before reporting duplicate order updates?",
+      "options": [
+        {
+          "id": "ledger-evidence",
+          "label": "Inspect the durable effects and each attempt outcome",
+          "feedback": "The first attempt was cancelled before its effect. Correlate attempts with committed records instead of equating counts."
+        },
+        {
+          "id": "deliveries-equal-effects",
+          "label": "Count each delivery as one committed effect",
+          "feedback": "A delivery creates a processing plan, not a completed result. The first cancelled attempt appended nothing."
+        },
+        {
+          "id": "recover-old",
+          "label": "Assume recovery completes the cancelled attempt",
+          "feedback": "Recovery makes the consumer available. It does not restore the cancelled local processing or unsent ACK."
+        }
+      ],
+      "recommendedOptionId": "ledger-evidence"
+    }
+  },
+  {
+    "id": "committed-work-survives",
+    "title": "A crash cannot erase a committed effect",
+    "simulationId": "queues-delivery",
+    "presetId": "crash-after",
+    "target": {
+      "messageId": "m1",
+      "attemptId": "m1-a1",
+      "kind": "attempt.cancelled",
+      "occurrence": 1
+    },
+    "prompt": "An effect commits at 50 ms. Crash at 52 ms cancels the pending ACK and recover at 102 ms. Does the ledger lose the first record?",
+    "lookFor": "At 52 ms the first record is still visible. The attempt effect is committed while its pending acknowledgment is cancelled.",
+    "explanation": "The first effect committed at 50 ms and survives the crash at 52 ms. Only the unsent ACK due at 55 ms is cancelled. Expiry at 100 ms makes the message ready, but the consumer remains down until recovery at 102 ms. Retry starts at 102 ms, commits another record at 152 ms and confirms at 157 ms. The settled run has two effects and one extra effect; first-effect latency is still 50 ms.",
+    "tradeoff": {
+      "prompt": "A worker dies between database commit and queue confirmation. What should an incident explanation say?",
+      "options": [
+        {
+          "id": "ambiguous-confirmation",
+          "label": "Preserve the durable result and treat confirmation as separate uncertainty",
+          "feedback": "The committed record remains. Inspect retry identity and durable evidence before applying another mutation."
+        },
+        {
+          "id": "rollback-crash",
+          "label": "Assume the consumer crash rolled back every earlier commit",
+          "feedback": "The ledger survives consumer crashes in this model. Crash cancellation affects work that is still pending."
+        },
+        {
+          "id": "expiry-start",
+          "label": "Claim retry starts at expiry despite the consumer remaining down",
+          "feedback": "At 100 ms the message is ready but c1 is down. Dispatch waits until recovery at 102 ms."
+        }
+      ],
+      "recommendedOptionId": "ambiguous-confirmation"
+    }
+  },
+  {
+    "id": "early-confirmation-loses-work",
+    "title": "Early confirmation can leave no effect",
+    "simulationId": "queues-delivery",
+    "presetId": "early-ack-crash",
+    "target": {
+      "messageId": "m1",
+      "attemptId": "m1-a1",
+      "kind": "attempt.cancelled",
+      "occurrence": 1
+    },
+    "prompt": "ACK-before is accepted at 5 ms, then c1 crashes at 25 ms before its scheduled effect at 50 ms. Will the broker retry m1?",
+    "lookFor": "The broker is already acknowledged. At 25 ms the pending effect is cancelled and the ledger is empty. Recovery at 75 ms still runs in the final trace.",
+    "explanation": "The accepted ACK at 5 ms ends ordinary broker retry eligibility. Crash at 25 ms cancels the uncommitted effect, leaving no ledger record. Recovery at 75 ms cannot make an acknowledged message eligible again. Only after full settlement can Java report one acknowledged-without-effect message: one delivery, one accepted acknowledgment and zero effects. A limited prefix would keep this loss count unknown.",
+    "tradeoff": {
+      "prompt": "An order update must eventually be attempted after a crash before commit. Which ACK order fits that requirement while leaving another risk to handle?",
+      "options": [
+        {
+          "id": "after-and-protect",
+          "label": "ACK after the effect, then protect repeated effects separately",
+          "feedback": "ACK-after retains retry eligibility when no effect committed. A lost ACK after commit can still repeat work, so application protection remains necessary."
+        },
+        {
+          "id": "before-guarantee",
+          "label": "ACK before processing and promise no missing order updates",
+          "feedback": "Confirmation can succeed before the business result exists. The crash contrast shows the missing-effect window."
+        },
+        {
+          "id": "consumer-recovery",
+          "label": "Rely on recovery to reopen every acknowledged message",
+          "feedback": "Recovery changes consumer availability. It does not undo broker acceptance of the early confirmation."
+        }
+      ],
+      "recommendedOptionId": "after-and-protect"
+    }
+  },
+  {
+    "id": "deadline-equality-is-stale",
+    "title": "At the exact lease deadline the ACK is stale",
+    "simulationId": "queues-delivery",
+    "presetId": "lease-boundary",
+    "target": {
+      "messageId": "m1",
+      "attemptId": "m1-a1",
+      "kind": "ack.stale",
+      "occurrence": 1
+    },
+    "prompt": "Processing is 95 ms, ACK delay 5 ms, lease 100 ms and maximum attempts two. Is an ACK received at exactly 100 ms accepted?",
+    "lookFor": "At 100 ms expiry and requeue precede the stale ACK. The broker is ready before the next dispatch; the first ledger record committed at 95 ms.",
+    "explanation": "This model requires current-token receipt strictly before its deadline. Expiry/requeue runs before ACK at 100 ms, so the ACK is stale. Attempt 2 commits at 195 ms; its ACK at 200 ms is stale too and the message is dead-lettered at 200 ms. Two effects occur with zero accepted-ACK samples. Changing only the lease to 101 ms accepts the first ACK at 100 ms: one delivery, one effect, no expiry event at 101 ms. This strict deadline policy does not emulate SQS old receipt-handle behavior.",
+    "tradeoff": {
+      "prompt": "A known processing-plus-ACK schedule equals the lease deadline. Which interpretation is justified by this experiment?",
+      "options": [
+        {
+          "id": "strict-boundary",
+          "label": "Treat equality as too late under this stated model rule",
+          "feedback": "Increase the modeled lease to 101 ms to observe the contrast. Real configuration needs measured timing variability and actual broker semantics."
+        },
+        {
+          "id": "equal-is-safe",
+          "label": "Claim equality guarantees acceptance in every broker",
+          "feedback": "The model expires first and real brokers have their own semantics. Do not generalize this tie policy into a vendor guarantee."
+        },
+        {
+          "id": "no-effect",
+          "label": "Treat dead-letter status as evidence that no effect occurred",
+          "feedback": "The ledger has effects at 95 and 195 ms despite the broker dead-lettering the message."
+        }
+      ],
+      "recommendedOptionId": "strict-boundary"
+    }
+  },
+  {
+    "id": "dead-letter-does-not-fence",
+    "title": "Dead-lettering does not stop a running effect",
+    "simulationId": "queues-delivery",
+    "presetId": "overlapping-attempts",
+    "target": {
+      "messageId": "m1",
+      "attemptId": "m1-a2",
+      "kind": "effect.committed",
+      "occurrence": 1
+    },
+    "prompt": "Two consumers process for 150 ms with a 100 ms lease, ACK delay 5 ms and maximum attempts two. Can attempt 2 append at 250 ms after dead-lettering at 200 ms?",
+    "lookFor": "At 250 ms the broker is dead-lettered while the ledger gains its second record. Attempt 2 has an expired lease, a committed effect and a pending ACK.",
+    "explanation": "Attempt 1 starts at 0 ms and expires at 100 ms, allowing attempt 2 on c2. Their effects commit at 150 and 250 ms. The second lease expires and the message is dead-lettered at 200 ms, but expiry does not cancel or fence the consumer. ACKs at 155 and 255 ms are stale. The settled run has two effects, one extra effect and no accepted ACK samples. Broker disposition is separate from protected-resource write permission.",
+    "tradeoff": {
+      "prompt": "The application must prevent an expired writer from changing a protected resource. What boundary needs an actual enforcement mechanism?",
+      "options": [
+        {
+          "id": "resource-check",
+          "label": "Enforce the required identity or fencing rule at the protected resource",
+          "feedback": "A broker token alone only protects the modeled ACK check. Define what the resource must reject and implement the appropriate atomic protection later."
+        },
+        {
+          "id": "dlq-cancels",
+          "label": "Assume dead-lettering cancels every in-flight consumer",
+          "feedback": "The effect at 250 ms disproves that assumption. The model leaves processing independent from broker retry disposition."
+        },
+        {
+          "id": "more-consumers",
+          "label": "Add consumers and claim that resolves duplicate effects",
+          "feedback": "More slots let retries overlap sooner. They do not add a duplicate-protection or stale-writer check."
+        }
+      ],
+      "recommendedOptionId": "resource-check"
+    }
+  },
+  {
+    "id": "censored-effect-is-unobserved",
+    "title": "Scheduled work is not an observed result",
+    "simulationId": "queues-delivery",
+    "presetId": "virtual-limit",
+    "target": {
+      "messageId": "m1",
+      "attemptId": "m1-a1",
+      "kind": "delivery.started",
+      "occurrence": 1
+    },
+    "prompt": "A message is delivered at the default observation ceiling of 60,000 ms. Its effect is scheduled for 60,050 ms. Can you report permanent missing work?",
+    "lookFor": "At 60,000 ms the message is leased and the consumer is processing. The ledger is empty; the returned envelope explicitly says the run is limited.",
+    "explanation": "The run stops before the next event because of the virtual-time ceiling. Effect at 60,050 ms, ACK at 60,055 ms and lease expiry at 60,100 ms are scheduled but unobserved. Java reports one running effect and one pending ACK, zero observed effect/ACK samples, unavailable latency statistics and unknown acknowledged-without-effect count. Do not turn zero observed records into confirmed permanent loss, or a future planned timestamp into a completion.",
+    "tradeoff": {
+      "prompt": "How should you compare this limited trace with a settled baseline?",
+      "options": [
+        {
+          "id": "prefix-populations",
+          "label": "State the observation boundary and keep unfinished populations separate",
+          "feedback": "Report what the prefix actually observed, then collect settled evidence before comparing eventual business outcomes."
+        },
+        {
+          "id": "planned-success",
+          "label": "Count the scheduled effect as already committed",
+          "feedback": "The event was never observed. A plan cannot establish that the ledger contains a record."
+        },
+        {
+          "id": "zero-loss",
+          "label": "Report zero acknowledged-without-effect as a confirmed guarantee",
+          "feedback": "This count is unknown on every limited run. Use unavailable/unknown values instead of inventing a settled result."
+        }
+      ],
+      "recommendedOptionId": "prefix-populations"
+    }
+  }
+]

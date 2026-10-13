@@ -5,9 +5,21 @@ import { deliveryAt } from "./deliveryProjection";
 import { deliveryEventLabels } from "./deliveryLabels";
 import { DeliveryStateView } from "./DeliveryStateView";
 import "./Delivery.css";
-export function DeliveryPlayback({ result }: { result: DeliveryResult }) {
+export function DeliveryPlayback({
+  result,
+  initialPosition = -1,
+  title = "Broker knowledge, processing and committed work",
+  showTrace = true,
+}: {
+  result: DeliveryResult;
+  initialPosition?: number;
+  title?: string;
+  showTrace?: boolean;
+}) {
   const titleId = useId();
-  const [position, setPosition] = useState(-1);
+  const [position, setPosition] = useState(() =>
+    Math.max(-1, Math.min(initialPosition, result.events.length - 1)),
+  );
   const [playing, setPlaying] = useState(false);
   const [intervalMs, setIntervalMs] = useState(600);
   const [messageFilter, setMessageFilter] = useState("");
@@ -46,7 +58,7 @@ export function DeliveryPlayback({ result }: { result: DeliveryResult }) {
       <div className="delivery-section-heading">
         <div>
           <p className="eyebrow">Observe three separate facts</p>
-          <h3 id={titleId}>Broker knowledge, processing and committed work</h3>
+          <h3 id={titleId}>{title}</h3>
         </div>
         <span className="delivery-model-tag">
           Model v{result.modelVersion} · Virtual time
@@ -148,84 +160,86 @@ export function DeliveryPlayback({ result }: { result: DeliveryResult }) {
           </p>
         )}
       </section>
-      <details className="delivery-trace">
-        <summary>
-          Inspect the full event trace ({result.events.length} events)
-        </summary>
-        <label className="delivery-field delivery-filter">
-          <span>Focus trace rows on a message</span>
-          <select
-            aria-label="Message filter"
-            value={messageFilter}
-            onChange={(e) => {
-              setPlaying(false);
-              setMessageFilter(e.target.value);
-            }}
-          >
-            <option value="">All messages and consumer events</option>
-            {result.initialState.messages.map((message) => (
-              <option key={message.id} value={message.id}>
-                {message.id}
-              </option>
-            ))}
-          </select>
-        </label>
-        <p className="delivery-muted">
-          Filtering changes the visible rows only. Broker, consumers and ledger
-          always include every preceding event.
-        </p>
-        <div
-          className="delivery-table-wrap"
-          tabIndex={0}
-          role="region"
-          aria-label="Scrollable delivery event trace"
-        >
-          <table aria-label="Delivery simulation event trace">
-            <thead>
-              <tr>
-                <th scope="col">Event</th>
-                <th scope="col">Time (ms)</th>
-                <th scope="col">Kind</th>
-                <th scope="col">Message / attempt</th>
-                <th scope="col">Explanation</th>
-              </tr>
-            </thead>
-            <tbody>
-              {shown.map(({ event: item, index }) => (
-                <tr
-                  key={item.sequence}
-                  className={position === index ? "selected" : ""}
-                >
-                  <td>
-                    <button
-                      type="button"
-                      className="delivery-event-button"
-                      aria-label={`View event ${item.sequence}`}
-                      aria-pressed={position === index}
-                      onClick={() => seek(index)}
-                    >
-                      {item.sequence}
-                    </button>
-                  </td>
-                  <td>{item.timeMs}</td>
-                  <td>{item.kind}</td>
-                  <td>
-                    {item.messageId ?? "—"}
-                    <br />
-                    {item.attemptId ?? "—"}
-                  </td>
-                  <td>{item.message}</td>
-                </tr>
+      {showTrace && (
+        <details className="delivery-trace">
+          <summary>
+            Inspect the full event trace ({result.events.length} events)
+          </summary>
+          <label className="delivery-field delivery-filter">
+            <span>Focus trace rows on a message</span>
+            <select
+              aria-label="Message filter"
+              value={messageFilter}
+              onChange={(e) => {
+                setPlaying(false);
+                setMessageFilter(e.target.value);
+              }}
+            >
+              <option value="">All messages and consumer events</option>
+              {result.initialState.messages.map((message) => (
+                <option key={message.id} value={message.id}>
+                  {message.id}
+                </option>
               ))}
-            </tbody>
-          </table>
-          {!shown.length && (
-            <p className="delivery-empty-line">
-              No emitted events match this filter.
-            </p>
-          )}
-        </div>
-      </details>
+            </select>
+          </label>
+          <p className="delivery-muted">
+            Filtering changes the visible rows only. Broker, consumers and
+            ledger always include every preceding event.
+          </p>
+          <div
+            className="delivery-table-wrap"
+            tabIndex={0}
+            role="region"
+            aria-label="Scrollable delivery event trace"
+          >
+            <table aria-label="Delivery simulation event trace">
+              <thead>
+                <tr>
+                  <th scope="col">Event</th>
+                  <th scope="col">Time (ms)</th>
+                  <th scope="col">Kind</th>
+                  <th scope="col">Message / attempt</th>
+                  <th scope="col">Explanation</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map(({ event: item, index }) => (
+                  <tr
+                    key={item.sequence}
+                    className={position === index ? "selected" : ""}
+                  >
+                    <td>
+                      <button
+                        type="button"
+                        className="delivery-event-button"
+                        aria-label={`View event ${item.sequence}`}
+                        aria-pressed={position === index}
+                        onClick={() => seek(index)}
+                      >
+                        {item.sequence}
+                      </button>
+                    </td>
+                    <td>{item.timeMs}</td>
+                    <td>{item.kind}</td>
+                    <td>
+                      {item.messageId ?? "—"}
+                      <br />
+                      {item.attemptId ?? "—"}
+                    </td>
+                    <td>{item.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!shown.length && (
+              <p className="delivery-empty-line">
+                No emitted events match this filter.
+              </p>
+            )}
+          </div>
+        </details>
+      )}
     </section>
   );
 }

@@ -104,3 +104,40 @@ it("pauses retained playback in a hidden tab and keeps its cursor", () => {
   expect(screen.getByLabelText("Trace position")).toHaveValue("0");
   expect(screen.getByRole("button", { name: "Play trace" })).toBeVisible();
 });
+
+it("opens a Guided checkpoint at its authoritative prefix without the large trace table, and clamps invalid initial positions", () => {
+  const view = render(
+    <DeliveryPlayback
+      result={baselineResult}
+      initialPosition={2}
+      title="Java trace at this checkpoint"
+      showTrace={false}
+    />,
+  );
+  expect(
+    screen.getByRole("heading", { name: "Java trace at this checkpoint" }),
+  ).toBeVisible();
+  expect(screen.getByLabelText("Trace position")).toHaveValue("2");
+  expect(
+    screen.getByRole("listitem", { name: "Consumer c1" }),
+  ).toHaveTextContent("Current processing attempt: None");
+  expect(
+    screen.getByRole("region", {
+      name: "Committed ledger at the selected position",
+    }),
+  ).toHaveTextContent("m1-a1-effect");
+  expect(
+    screen.queryByRole("table", { name: "Delivery simulation event trace" }),
+  ).toBeNull();
+  view.unmount();
+  render(
+    <DeliveryPlayback
+      result={baselineResult}
+      initialPosition={999}
+      showTrace={false}
+    />,
+  );
+  expect(screen.getByLabelText("Trace position")).toHaveValue(
+    String(baselineResult.events.length - 1),
+  );
+});

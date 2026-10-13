@@ -15,7 +15,7 @@ content/topics/<topic-id>/resources.json
 content/topics/<topic-id>/checkpoints.json   # only with the guided capability
 ```
 
-Guided checkpoints (`contracts/checkpoints.schema.json`) follow predict → reveal → explain → choose. Each one names a Java preset and a target event by a supported semantic selector (cache operation or queue job ID), event kind, and occurrence. Exactly one selector is required; array indexes and narration are not identifiers. A Java test runs every preset and checks that the target exists and that the numbers in the explanation match the trace.
+Guided checkpoints (`contracts/checkpoints.schema.json`) follow predict → reveal → explain → choose. Each one names a Java preset and a target event by a supported semantic selector family (cache operation, capacity job ID, or paired delivery message/attempt IDs), event kind, and occurrence. Exactly one family is required; both delivery IDs must agree. Delivery targets use actual attempt-bearing event capabilities, so pure consumer/enqueue events cannot claim this pair. Array indexes and narration are not identifiers. A Java test runs every preset and checks that the target exists and that the numbers in the explanation match the trace.
 
 Case studies use `content/case-studies/<case-id>/workshop.json` and `resources.json`. A draft can contain one working stage; its full design journey remains unpublished. `contracts/workshop.schema.json` and OpenAPI define the typed resource. Each ordered stage contains `id`, `title`, `prompt`, `reference`, `rubric`, `experimentLinks`, and `sourceIds`; links name a published experiment topic and explicit input instructions. Case metadata uses `workshopPath`, not placeholder lesson/question paths.
 

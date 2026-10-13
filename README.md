@@ -19,10 +19,12 @@ in-memory waiting and rejection; durable delivery is a separate model. See [HLD-
 
 The draft **Delivery, ACKs & Duplicate Work** topic at `/draft/topics/queues-delivery`
 connects that separate Java model to strict APIs, editable timing/fault controls, broker-consumer-ledger
-playback, Study and eight Practice questions. Nine presets distinguish lost ACKs, crash windows,
+playback, eight Guided checkpoints, Architecture, Message sequence, Study and eight Practice questions.
+Nine presets distinguish lost ACKs, crash windows,
 lease deadlines, overlapping effects and limited observation. It contains no deduplication or
-transaction implementation. Guided and authored Architecture/sequence tabs remain next; see
-[HLD-14B](docs/work-items/HLD-14B.md). There are still four published modules.
+transaction implementation. [HLD-14C](docs/work-items/HLD-14C.md) completes its core draft
+teaching views; human review, prerequisite release gates and publication remain. There are
+still four published modules.
 
 ## Record your learning
 
