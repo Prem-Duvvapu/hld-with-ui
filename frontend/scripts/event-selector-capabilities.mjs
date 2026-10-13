@@ -1,11 +1,36 @@
 /**
- * Read the event contracts' declared kind conditions, not an independent selector/kind registry.
+ * Read evidence contracts' declared kind conditions, not an independent selector/kind registry.
  * This supports the actual inline type + kind-only allOf/if/then shapes in current contracts;
  * an unfamiliar selector constraint fails closed rather than guessing its nullability.
  */
-export function eventSupportsSelector(schema, kind, selector) {
+function selectorConstraint(value, references) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  if (!Object.hasOwn(value, "$ref")) return value;
+  // Resolve only an explicitly supplied scalar owner. No remote loading, ref chains or
+  // guessed nullable/intersection semantics; unfamiliar reference shapes fail closed.
+  if (
+    typeof value.$ref !== "string" ||
+    Object.keys(value).some(
+      (key) => !["$ref", "title", "description"].includes(key),
+    ) ||
+    !Object.hasOwn(references, value.$ref)
+  )
+    return null;
+  const resolved = references[value.$ref];
+  if (
+    !resolved ||
+    !["string", "integer", "number", "boolean"].includes(resolved.type) ||
+    ["$ref", "anyOf", "oneOf", "allOf"].some((key) =>
+      Object.hasOwn(resolved, key),
+    )
+  )
+    return null;
+  return resolved;
+}
+
+export function eventSupportsSelector(schema, kind, selector, references = {}) {
   if (!schema?.properties?.kind?.enum?.includes(kind)) return false;
-  const base = schema.properties[selector];
+  const base = selectorConstraint(schema.properties[selector], references);
   if (!base) return false;
   let required = schema.required?.includes(selector) ?? false;
   const constraints = [base];
@@ -31,7 +56,11 @@ export function eventSupportsSelector(schema, kind, selector) {
       return false;
     const applies = condition.enum?.includes(kind) ?? condition.const === kind;
     if (!applies) continue;
-    if (constraint) constraints.push(constraint);
+    if (constraint) {
+      const resolved = selectorConstraint(constraint, references);
+      if (!resolved) return false;
+      constraints.push(resolved);
+    }
     required ||= requires;
   }
   if (constraints.some((constraint) => constraint.type === "null"))
@@ -45,10 +74,10 @@ export function eventSupportsSelector(schema, kind, selector) {
   );
 }
 
-export function kindsSupportingSelectors(schema, selectors) {
+export function kindsSupportingSelectors(schema, selectors, references = {}) {
   return (schema?.properties?.kind?.enum ?? []).filter((kind) =>
     selectors.every((selector) =>
-      eventSupportsSelector(schema, kind, selector),
+      eventSupportsSelector(schema, kind, selector, references),
     ),
   );
 }

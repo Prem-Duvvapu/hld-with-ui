@@ -15,7 +15,7 @@ npm run contracts:validate
 npm run contracts:check
 ```
 
-`contracts:check` exports canonical queue-capacity, delivery and data-access schemas into OpenAPI, regenerates the committed TypeScript and both delivery/data-access descriptor schema outputs and fails when these differ, then validates content shape and semantics. Semantic checks cover unique IDs, prerequisite references and cycles, content paths, lesson heading order, question ownership and answers, source references, capability-to-model references, and guided checkpoints (the `guided` capability requires `checkpointsPath`; each target's event kind must exist in its simulation's event contract). Java tests run each checkpoint's preset and resolve its target event. Workshop checks validate stable stage/answer identities, versions, source references, published experiment links, and the full-journey publication guard. Isolated negative fixtures run as part of `contracts:validate`; Java separately validates packaged case resources and catalog prerequisite references, publication closure and cycles at startup, including Java-only builds. These checks do not establish manual release readiness.
+`contracts:check` exports canonical queue-capacity, delivery and data-access schemas into OpenAPI, regenerates the committed TypeScript and both delivery/data-access descriptor schema outputs and fails when these differ, then validates content shape and semantics. Semantic checks cover unique IDs, prerequisite references and cycles, content paths, lesson heading order, question ownership and answers, source references, capability-to-model references, and guided checkpoints (the `guided` capability requires `checkpointsPath`; each target's kind and semantic selector must exist in its simulation's actual event or outcome contract). Java tests run each checkpoint's preset and resolve its actual target evidence. Workshop checks validate stable stage/answer identities, versions, source references, published experiment links, and the full-journey publication guard. Isolated negative fixtures run as part of `contracts:validate`; Java separately validates packaged case resources and catalog prerequisite references, publication closure and cycles at startup, including Java-only builds. These checks do not establish manual release readiness.
 
 ## Case discovery
 
@@ -149,3 +149,14 @@ golden-fixture mapping; packaged checks fail rather than silently skip missing e
 The topic remains draft with Playground, Study and Practice. Published collections, search
 and learning-path destinations exclude it. [HLD-15A](../docs/work-items/HLD-15A.md) records
 applicable checks and remaining teaching/publication gates.
+
+## Data-access Guided outcomes
+
+HTTP `1.6.0` adds the fourth closed target family
+`{operationId, kind, occurrence: 1}`. It selects an actual ordered data-access outcome,
+with the canonical identifier grammar and four operation kinds. Unique operation IDs mean
+occurrence two is invalid. Legacy event families and constructors preserve their behavior;
+mixed families reject. Content checks resolve supported canonical scalar references and
+validate against actual `outcomes`, rather than introducing an artificial `events` array.
+Content `1.1.0` authors eight checkpoints over seven unchanged presets. Schema/model stay
+`1.0`/`1.0.0`. See [decision 0030](../docs/decisions/0030-guided-data-access-outcome-targets.md).

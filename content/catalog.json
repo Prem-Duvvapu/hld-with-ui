@@ -243,13 +243,13 @@
       "Distinguish primary identity, scoped business-key uniqueness and index maintenance.",
       "Defend a storage family from queries and invariants while stating unmodeled guarantees."
     ],
-    "capabilities": ["study", "simulation", "practice"],
+    "capabilities": ["study", "simulation", "guided", "practice"],
     "lessonPath": "topics/data-access-models/lesson.md",
     "questionsPath": "topics/data-access-models/questions.json",
     "resourcesPath": "topics/data-access-models/resources.json",
     "simulationIds": ["data-access-models"],
     "estimatorIds": [],
-    "contentVersion": "1.0.0",
+    "contentVersion": "1.1.0",
     "reviewedAt": "2026-10-13",
     "sourceIds": [
       "postgres-18-multicolumn-indexes",
@@ -259,6 +259,7 @@
       "redis-key-value-strings",
       "cassandra-query-driven-modeling",
       "neo4j-property-graph-modeling"
-    ]
+    ],
+    "checkpointsPath": "topics/data-access-models/checkpoints.json"
   }
 ]

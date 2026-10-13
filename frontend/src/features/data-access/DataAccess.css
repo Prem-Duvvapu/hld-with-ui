@@ -330,6 +330,7 @@
 }
 .access-table-scroll table {
   width: 100%;
+  min-width: 28rem;
   border-collapse: collapse;
   font-size: 0.8rem;
 }

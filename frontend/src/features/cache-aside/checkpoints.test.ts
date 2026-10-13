@@ -68,3 +68,15 @@ it("refuses delivery fields attached to an otherwise matching legacy operation",
     ),
   ).toBe(-1);
 });
+
+it("refuses a data-access identity mixed into a matching cache operation", () => {
+  const events = orderedEvents(baseline.result.events);
+  const legacy = { operation: 4, kind: "cache.hit", occurrence: 1 };
+  expect(resolveCheckpoint(events, legacy)).toBeGreaterThanOrEqual(0);
+  for (const operationId of ["q1", null])
+    expect(
+      resolveCheckpoint(events, { ...legacy, operationId } as Parameters<
+        typeof resolveCheckpoint
+      >[1]),
+    ).toBe(-1);
+});

@@ -15,7 +15,10 @@ content/topics/<topic-id>/resources.json
 content/topics/<topic-id>/checkpoints.json   # only with the guided capability
 ```
 
-Guided checkpoints (`contracts/checkpoints.schema.json`) follow predict → reveal → explain → choose. Each one names a Java preset and a target event by a supported semantic selector family (cache operation, capacity job ID, or paired delivery message/attempt IDs), event kind, and occurrence. Exactly one family is required; both delivery IDs must agree. Delivery targets use actual attempt-bearing event capabilities, so pure consumer/enqueue events cannot claim this pair. Array indexes and narration are not identifiers. A Java test runs every preset and checks that the target exists and that the numbers in the explanation match the trace.
+Guided checkpoints (`contracts/checkpoints.schema.json`) follow predict → reveal → explain → choose. Each one names a Java preset and a target using exactly one supported semantic selector
+family: cache operation, capacity job ID, paired delivery message/attempt IDs, or data-access
+operation ID. Legacy families select actual events; data-access selects actual ordered outcomes
+by operation ID and kind with occurrence exactly one. No timed event is invented for analysis. Exactly one family is required; both delivery IDs must agree. Delivery targets use actual attempt-bearing event capabilities, so pure consumer/enqueue events cannot claim this pair. Array indexes and narration are not identifiers. A Java test runs every preset and checks that the target exists and that the numbers in the explanation match the returned Java evidence.
 
 Case studies use `content/case-studies/<case-id>/workshop.json` and `resources.json`. A draft can contain one working stage; its full design journey remains unpublished. `contracts/workshop.schema.json` and OpenAPI define the typed resource. Each ordered stage contains `id`, `title`, `prompt`, `reference`, `rubric`, `experimentLinks`, and `sourceIds`; links name a published experiment topic and explicit input instructions. Case metadata uses `workshopPath`, not placeholder lesson/question paths.
 
@@ -33,16 +36,27 @@ Use these headings in this order. The future validator will check exact headings
 <A concrete problem, why it matters, and what the learner will be able to decide.>
 
 ## Learning outcomes
+
 ## Explain it simply
+
 ## Prerequisites
+
 ## Mental model
+
 ## How it works
+
 ## Worked example
+
 ## Explore in the playground
+
 ## Failures and tradeoffs
+
 ## In a real project
+
 ## Interview practice
+
 ## Teach it back
+
 ## Further reading
 ```
 
@@ -67,18 +81,31 @@ For an estimator, “Explore in the playground” describes editable assumptions
 # <System design case>
 
 ## Problem and scope
+
 ## Requirements and non-goals
+
 ## Scale assumptions and estimates
+
 ## APIs and data model
+
 ## Baseline architecture
+
 ## Request and data flows
+
 ## Experiments and bottlenecks
+
 ## Design evolution and alternatives
+
 ## Failures and recovery
+
 ## Security and abuse
+
 ## Operations, rollout, and cost
+
 ## Interview walkthrough
+
 ## Decision record and exercises
+
 ## Further reading
 ```
 
@@ -93,20 +120,20 @@ Architecture diagrams label protocols, ownership, synchronous/asynchronous edges
 
 Finalize JSON Schemas in `P0-02`. Required conceptual fields:
 
-| Field | Rule |
-| --- | --- |
-| `id` | Stable lowercase kebab-case; unique across topic and case-study entries |
-| `kind` | `topic` or `case-study` |
-| `title`, `summary` | Reader-facing text with no implementation jargon |
-| `category`, `order`, `level` | Controlled category/level values and deterministic order |
-| `prerequisites` | Existing canonical IDs; no self-reference or cycles |
-| `outcomes` | Observable learning outcomes |
-| `status` | `planned`, `draft`, or `published` |
-| `capabilities` | Only implemented, checked capabilities may be advertised as available |
-| `lessonPath` | Present for authored lessons; cannot escape the content root |
-| `contentVersion` | Changes when a material learning claim or exercise changes |
-| `simulationIds`, `estimatorIds` | Explicit references, each resolved against its registry |
-| `reviewedAt`, `sourceIds` | Review date and corresponding resource entries |
+| Field                           | Rule                                                                    |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| `id`                            | Stable lowercase kebab-case; unique across topic and case-study entries |
+| `kind`                          | `topic` or `case-study`                                                 |
+| `title`, `summary`              | Reader-facing text with no implementation jargon                        |
+| `category`, `order`, `level`    | Controlled category/level values and deterministic order                |
+| `prerequisites`                 | Existing canonical IDs; no self-reference or cycles                     |
+| `outcomes`                      | Observable learning outcomes                                            |
+| `status`                        | `planned`, `draft`, or `published`                                      |
+| `capabilities`                  | Only implemented, checked capabilities may be advertised as available   |
+| `lessonPath`                    | Present for authored lessons; cannot escape the content root            |
+| `contentVersion`                | Changes when a material learning claim or exercise changes              |
+| `simulationIds`, `estimatorIds` | Explicit references, each resolved against its registry                 |
+| `reviewedAt`, `sourceIds`       | Review date and corresponding resource entries                          |
 
 Future catalog generation may include all planned entries, but app navigation cannot present a planned module as usable. Required lesson files apply to draft/published entries; placeholder file paths are not allowed for planned entries.
 

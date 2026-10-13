@@ -591,3 +591,89 @@ test("reject a checkpoint job selector ending in a newline", () => {
     /must NOT be valid/,
   );
 });
+
+const dataTarget = { operationId: "q1", kind: "TENANT_RANGE", occurrence: 1 };
+for (const [name, target, expected] of [
+  [
+    "data target mixed with a cache operation",
+    { ...dataTarget, operation: 1 },
+    /additional properties/,
+  ],
+  [
+    "data target mixed with a queue job",
+    { ...dataTarget, jobId: "job-1" },
+    /additional properties/,
+  ],
+  [
+    "data target mixed with a delivery pair",
+    { ...dataTarget, messageId: "m1", attemptId: "m1-a1" },
+    /additional properties/,
+  ],
+  [
+    "data target with repeated occurrence",
+    { ...dataTarget, occurrence: 2 },
+    /must be equal to constant/,
+  ],
+  [
+    "data operation identity with trailing newline",
+    { ...dataTarget, operationId: "q1\n" },
+    /must NOT be valid/,
+  ],
+  [
+    "data target with an event kind",
+    { ...dataTarget, kind: "cache.fill" },
+    /never returns outcome kind cache.fill/,
+  ],
+  [
+    "data target without an identity",
+    { kind: "TENANT_RANGE", occurrence: 1 },
+    /required property 'operationId'/,
+  ],
+  [
+    "data target with a null identity",
+    { ...dataTarget, operationId: null },
+    /must be string/,
+  ],
+]) {
+  test(`reject checkpoint ${name}`, () =>
+    rejectCheckpointTarget("data-access-models", target, expected));
+}
+for (const topic of ["cache-aside", "queues-tail-latency", "queues-delivery"]) {
+  test(`reject outcome identity attached to ${topic} without outcome capability`, () => {
+    rejectCheckpointTarget(
+      topic,
+      dataTarget,
+      /outcomes do not support target selector operationId/,
+    );
+  });
+}
+test("reject an event selector attached to the untimed data-access model", () => {
+  rejectCheckpointTarget(
+    "data-access-models",
+    { operation: 1, kind: "cache.fill", occurrence: 1 },
+    /data-access-models events do not support target selector operation/,
+  );
+});
+test("accept actual operation outcomes without fabricating events or widening legacy target rules", () => {
+  checkChange(
+    () => {},
+    /Validated/,
+    () => {},
+    () => {},
+    0,
+  );
+});
+test("reject an unresolved operation-identity schema reference rather than trusting field presence", () => {
+  rejectChange(
+    () => {},
+    /outcomes do not support target selector operationId/,
+    () => {},
+    (fixture) => {
+      const path = join(fixture, "contracts/openapi.json");
+      const api = JSON.parse(readFileSync(path, "utf8"));
+      api.components.schemas.DataAccessOutcome.properties.operationId.$ref =
+        "#/components/schemas/MissingOperationIdentity";
+      writeFileSync(path, JSON.stringify(api));
+    },
+  );
+});

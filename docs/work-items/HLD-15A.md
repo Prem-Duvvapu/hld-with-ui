@@ -70,7 +70,7 @@ prediction and previous evidence. Shared Study/Practice and local answer storage
 | Packaged-smoke Python regressions       | PASS: eight cases, including missing mapping/stale baseline evidence                                                     | `/tmp/hld-data-access-smoke-unit.log`                                     |
 | Frontend gate                           | PASS: typecheck, lint, format, 478 units in 55 files, production build                                                   | `/tmp/hld-data-access-{typecheck,lint,format,frontend-tests,build}.log`   |
 | Real Java browser/UI evidence           | PASS: seven journeys; all seven scenarios, edits/empty/error/mismatch/retry/resume/keyboard and three widths/both themes | `/tmp/hld-data-access-browser.log`; retained captures below               |
-| Copied jar and final-head CI            | Copied jar PASS; required final-head CI pending before squash                                                            | `/tmp/hld-data-access-packaged.log`; PR records exact checkout/results    |
+| Copied jar and final-head CI            | Copied jar PASS; required final-head CI PASS before squash                                                               | `/tmp/hld-data-access-packaged.log`; PR records exact checkout/results    |
 
 The full drift check also passed all 142 contract cases after staging the final generated
 formatting. The first frontend run found a compatibility test fixture sharing the inserted
@@ -110,3 +110,14 @@ Architecture/sequence teaching plus its technical review before declaring the pr
 core complete or starting dependent transactions/idempotency. Human newcomer/screen-reader,
 native zoom and hosted freshness remain unperformed for this new module. Broader requirements,
 edge/API/scaling/storage-engine topics and the requested case-study dependency graph remain open.
+
+## Final delivery record
+
+[PR #69](https://github.com/Prem-Duvvapu/hld-with-ui/pull/69) merged at
+2026-10-13 18:58:04 UTC. Final head `57bed036ba658b81a2f5158c6105d1c889e55a70`
+passed [CI 38449578234](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/38449578234),
+which tested merge `17ee893`. Required Quality, Browser and Packaged Runtime checks passed:
+366 executed Java cases plus one existing opt-in skip, 478 frontend units, 142 contracts,
+193 browser journeys, 20 UI performance and 20 lesson-load groups, copied jar/container,
+memory and launcher gates. Squash commit `4e2e740e70ebb358662eb5b6fc03f253102a83f3`.
+The above pending Guided/diagram scope is closed by HLD-15B; historical A scope is retained.

@@ -125,6 +125,22 @@ for (const [kind, component, definitions] of [
     );
   }
 }
+const dataTarget = checkpoints.items.properties.target.oneOf.find((branch) =>
+  branch.required.includes("operationId"),
+);
+const dataOutcome = read("contracts/data-access.result.schema.json").$defs
+  .outcome;
+const dataIdentifier = read("contracts/data-access.input.schema.json").$defs
+  .identifier;
+const dataKinds = kindsSupportingSelectors(dataOutcome, ["operationId"], {
+  [`${dataInputId}#/$defs/identifier`]: dataIdentifier,
+});
+if (
+  JSON.stringify(dataTarget?.properties.kind.enum) !== JSON.stringify(dataKinds)
+)
+  throw new Error(
+    "Data-access checkpoint kinds differ from actual outcome selector capabilities.",
+  );
 
 // The lazy delivery client needs only its descriptor's reachable schemas, not the entire API.
 // This generated artifact keeps runtime validation derived from the same canonical HTTP contract.

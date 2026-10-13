@@ -140,6 +140,19 @@ Changing controls requires a new run; a displayed result belongs to the input su
 for that run. Selecting operation evidence does not perform another query. Use Practice
 to save an explanation and compare it with a reference; Playground predictions stay on the page.
 
+### Explain one outcome with Guided
+
+The **Guided** view offers eight predict → run → explain → choose checkpoints over the
+same seven Java presets. A target names its stable operation ID and kind. It selects an
+authoritative outcome, and no timed events are fabricated. The final two checkpoints share
+one preset: inspect the accepted insert, then its following query.
+
+Guided saves predictions and tradeoff choices locally. Reload restores your reasoning and
+requires an explicit Java run for fresh evidence; it does not restore an analysis result.
+The **Architecture** view explains the logical structures and ownership. **Operation sequence**
+provides three authored query/accepted-insert/rejected-insert paths with complete text
+equivalents. Those paths are reading illustrations, without a new Java run or timing claim.
+
 ## Failures and tradeoffs
 
 **Tempting wrong explanation:** “Both columns are in the index, so column order cannot matter.”

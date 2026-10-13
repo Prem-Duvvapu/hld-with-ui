@@ -162,4 +162,44 @@ class GuidedCheckpointTargetTest {
         assertThat(new GuidedCheckpoint.Target(null, "job-1", "job.started", 10_001).occurrence())
                 .isEqualTo(10_001);
     }
+
+    @Test
+    void analysisTargetsSelectEveryActualOutcomeKindWithOneOccurrence() {
+        for (var kind : com.hld.dataaccess.DataAccessInput.Kind.values()) {
+            var target = new GuidedCheckpoint.Target(null, null, null, null, "query-1", kind.name(), 1);
+            assertThat(target.operationId()).isEqualTo("query-1");
+            assertThat(target.kind()).isEqualTo(kind.name());
+            assertThat(target.occurrence()).isEqualTo(1);
+            assertThat(target.operation()).isNull();
+            assertThat(target.jobId()).isNull();
+            assertThat(target.messageId()).isNull();
+            assertThat(target.attemptId()).isNull();
+        }
+        assertThat(new GuidedCheckpoint.Target(null, null, null, null, "q" + "x".repeat(31), "LOOKUP_ID", 1).operationId())
+                .hasSize(32);
+    }
+
+    @Test
+    void analysisTargetRejectsInvalidIdsKindsRepeatedOccurrencesAndMixedFamilies() {
+        for (String id : new String[] {"", "Q1", "1q", "q!", "q ", "q\n", "q".repeat(33), "é"})
+            assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, null, null, id, "TENANT_RANGE", 1));
+        for (String kind : new String[] {null, "", "tenant_range", "TENANT_RANGE\n", "UNKNOWN", "cache.fill", "job.started", "ack.stale"})
+            assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, null, null, "q1", kind, 1));
+        for (int occurrence : new int[] {-1, 0, 2, 10_000})
+            assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, null, null, "q1", "TENANT_RANGE", occurrence));
+        assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(1, null, null, null, "q1", "TENANT_RANGE", 1));
+        assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, "job-1", null, null, "q1", "TENANT_RANGE", 1));
+        assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, "m1", "m1-a1", "q1", "TENANT_RANGE", 1));
+        assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, "m1", null, "q1", "TENANT_RANGE", 1));
+        assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, null, null, null, "TENANT_RANGE", 1));
+    }
+
+    @Test
+    void oldSourceConstructorsStillSelectOnlyTheirExistingFamily() {
+        assertThat(new GuidedCheckpoint.Target(1, null, "cache.fill", 1).operationId()).isNull();
+        assertThat(new GuidedCheckpoint.Target(null, "job-1", "job.started", 1).operationId()).isNull();
+        assertThat(new GuidedCheckpoint.Target(null, null, "m1", "m1-a1", "ack.stale", 1).operationId()).isNull();
+        assertThat(new GuidedCheckpoint.Target(1, null, "cache.fill", 10_001).occurrence()).isEqualTo(10_001);
+        assertThat(new GuidedCheckpoint.Target(null, "job-1", "job.started", 10_001).occurrence()).isEqualTo(10_001);
+    }
 }

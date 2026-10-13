@@ -224,7 +224,7 @@ function GuidedSession<Input, Result extends { modelVersion: string }>({
       if (resolveTarget(result, target) < 0) {
         setErrors((previous) => ({
           ...previous,
-          [id]: `This checkpoint no longer matches the Java trace (model v${result.modelVersion}). The playground still works.`,
+          [id]: `This checkpoint no longer matches the Java evidence (model v${result.modelVersion}). The playground still works.`,
         }));
         return;
       }
@@ -255,7 +255,7 @@ function GuidedSession<Input, Result extends { modelVersion: string }>({
           [id]:
             cause instanceof Error
               ? cause.message
-              : "The simulation could not run.",
+              : "The Java model could not run.",
         }));
     } finally {
       busy.current = false;
@@ -340,7 +340,7 @@ function GuidedSession<Input, Result extends { modelVersion: string }>({
           {prediction?.referenceViewed && !run && (
             <p className="practice-version-note">
               Your saved answer is restored. Run and reveal to generate the Java
-              evidence again; simulation traces are not stored.
+              evidence again; model results are not stored.
             </p>
           )}
 

@@ -1,0 +1,170 @@
+.access-concepts {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+  padding-block: 24px;
+}
+.access-concepts :is(h2, h3, p, li, strong, span) {
+  overflow-wrap: anywhere;
+}
+.access-concept-intro {
+  max-width: 74ch;
+}
+.access-concept-intro h2 {
+  margin: 8px 0 12px;
+}
+.access-concept-intro p {
+  line-height: 1.75;
+}
+.access-concept-scope {
+  color: var(--muted);
+  font-size: 0.85rem;
+  border-left: 3px solid var(--green);
+  padding-left: 14px;
+}
+.access-boundaries {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-2);
+}
+.access-boundary {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  text-align: left;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  min-width: 0;
+  cursor: pointer;
+}
+.access-boundary:first-child {
+  grid-column: 1/-1;
+}
+.access-boundary.selected {
+  border-color: var(--green);
+  background: color-mix(in srgb, var(--green) 8%, var(--surface));
+}
+.access-boundary strong {
+  font-size: 1.1rem;
+}
+.access-boundary > span:not(.eyebrow) {
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.access-inspect {
+  color: var(--green);
+}
+.access-boundary-flows {
+  grid-column: 1/-1;
+  padding: 4px 12px;
+  border-left: 3px solid var(--green);
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.75;
+}
+.access-boundary-flows strong {
+  color: var(--green);
+  margin-right: 8px;
+}
+.access-concept-card {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.access-concept-card p {
+  line-height: 1.75;
+}
+.access-concept-card h3 {
+  margin-top: 4px;
+}
+.access-concept-card ol {
+  padding-left: 24px;
+  line-height: 1.75;
+}
+.access-concept-card li {
+  margin-block: 12px;
+}
+.access-concept-takeaway {
+  border-left: 3px solid var(--green);
+  padding: 12px 16px;
+  background: color-mix(in srgb, var(--green) 7%, var(--surface));
+}
+.access-concept-notes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.access-path-choice {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  gap: 12px;
+  margin: 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.access-path-choice legend {
+  padding-inline: 8px;
+}
+.access-path-choice label {
+  display: flex;
+  flex: 1 1 200px;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  line-height: 1.6;
+  cursor: pointer;
+}
+.access-path-choice input {
+  accent-color: var(--green);
+  flex-shrink: 0;
+  margin: 0;
+}
+.access-path-edge {
+  color: var(--green);
+  font-weight: 600;
+}
+.access-path-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+.access-path-text li[aria-current="step"] > strong {
+  color: var(--green);
+}
+.access-path-text li p {
+  margin-bottom: 0;
+}
+@media (max-width: 600px) {
+  .access-boundaries,
+  .access-concept-notes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .access-boundaries,
+  .access-concept-card,
+  .access-path-choice {
+    padding: 16px;
+  }
+  .access-boundary {
+    padding: 16px;
+  }
+  .access-path-controls .button {
+    flex: 1 1 140px;
+  }
+}

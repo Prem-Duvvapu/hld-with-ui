@@ -137,7 +137,7 @@ it("hides explanation and tradeoff when the Java result has no matching semantic
   );
   reveal();
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "no longer matches the Java trace",
+    "no longer matches the Java evidence",
   );
   expect(screen.queryByText(checkpoints[0]!.explanation)).toBeNull();
   expect(screen.queryByText("4. Choose a tradeoff")).toBeNull();

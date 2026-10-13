@@ -165,20 +165,29 @@ const publishedWorkshopStages = [
   "defense",
 ];
 
-// Event kinds and available semantic selectors derive from the run-result contract.
-function eventSchema(simulationId) {
+// Evidence kinds and selectors derive from the actual named run-result collection.
+// Data-access operation identities select untimed outcomes; legacy families retain events.
+function eventSchema(simulationId, collection = "events") {
   const ref = (schema) => schema?.$ref?.split("/").at(-1);
   const result =
     openapi.paths?.[`/api/v1/simulations/${simulationId}/runs`]?.post
       ?.responses?.["200"]?.content?.["application/json"]?.schema;
   const event = ref(
-    openapi.components.schemas[ref(result)]?.properties?.events?.items,
+    openapi.components.schemas[ref(result)]?.properties?.[collection]?.items,
   );
   return openapi.components.schemas[event];
 }
-function eventKinds(simulationId) {
-  return new Set(eventSchema(simulationId)?.properties?.kind?.enum ?? []);
+function eventKinds(simulationId, collection = "events") {
+  return new Set(
+    eventSchema(simulationId, collection)?.properties?.kind?.enum ?? [],
+  );
 }
+const scalarReferences = Object.fromEntries(
+  Object.entries(openapi.components.schemas).map(([name, schema]) => [
+    `#/components/schemas/${name}`,
+    schema,
+  ]),
+);
 
 const requiredHeadings = [
   "Learning outcomes",
@@ -340,6 +349,9 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
     );
     // Presets and trace resolution are checked by Java tests, which run them.
     for (const checkpoint of checkpoints) {
+      const collection = Object.hasOwn(checkpoint.target ?? {}, "operationId")
+        ? "outcomes"
+        : "events";
       checkpointIds.push(`${entry.id}/${checkpoint.id}`);
       activityIds.push(
         `${checkpoint.id}-prediction`,
@@ -350,22 +362,31 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
           `${checkpoint.id}: simulation ${checkpoint.simulationId} is not one of ${entry.id}'s simulations`,
         );
       else if (
-        !eventKinds(checkpoint.simulationId).has(checkpoint.target?.kind)
+        !eventKinds(checkpoint.simulationId, collection).has(
+          checkpoint.target?.kind,
+        )
       )
         errors.push(
-          `${checkpoint.id}: ${checkpoint.simulationId} never emits ${checkpoint.target?.kind}`,
+          `${checkpoint.id}: ${checkpoint.simulationId} never ${collection === "events" ? "emits" : "returns outcome kind"} ${checkpoint.target?.kind}`,
         );
-      for (const selector of ["operation", "jobId", "messageId", "attemptId"]) {
+      for (const selector of [
+        "operation",
+        "jobId",
+        "messageId",
+        "attemptId",
+        "operationId",
+      ]) {
         if (
           Object.hasOwn(checkpoint.target ?? {}, selector) &&
           !eventSupportsSelector(
-            eventSchema(checkpoint.simulationId),
+            eventSchema(checkpoint.simulationId, collection),
             checkpoint.target?.kind,
             selector,
+            scalarReferences,
           )
         )
           errors.push(
-            `${checkpoint.id}: ${checkpoint.simulationId} events do not support target selector ${selector}`,
+            `${checkpoint.id}: ${checkpoint.simulationId} ${collection} do not support target selector ${selector}`,
           );
       }
       if (

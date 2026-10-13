@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "HLD with UI API",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "description": "Versioned contract for the HLD learning application. Simulation results are illustrative modeled runs."
   },
   "servers": [
@@ -1269,7 +1269,7 @@
             "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
           },
           "target": {
-            "description": "Select exactly one group: a cache operation, a capacity job ID, or a paired delivery messageId/attemptId. Then select its event kind and 1-based occurrence.",
+            "description": "Select exactly one identity family: cache operation, capacity job ID, delivery messageId/attemptId, or data-access operationId. Kind and occurrence select actual Java evidence; data-access operations have one outcome each.",
             "oneOf": [
               {
                 "type": "object",
@@ -1359,6 +1359,31 @@
                   }
                 },
                 "description": "Delivery target requires a semantic message/attempt pair. Attempt identity must equal messageId followed by -a1 through -a5; content and Java validators enforce this association. Its closed kind vocabulary is checked against actual delivery event selector capabilities during generation."
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["operationId", "kind", "occurrence"],
+                "properties": {
+                  "operationId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 32,
+                    "pattern": "^[a-z][a-z0-9-]{0,31}$",
+                    "not": {
+                      "pattern": "\\s"
+                    }
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": ["LOOKUP_ID", "TENANT_RANGE", "ALL_RANGE", "INSERT"]
+                  },
+                  "occurrence": {
+                    "type": "integer",
+                    "const": 1
+                  }
+                },
+                "description": "Select the one actual data-access outcome for a unique operation ID and its kind. This is untimed outcome evidence, not a fabricated simulation event; unique operation IDs require occurrence 1."
               }
             ]
           },
@@ -1413,7 +1438,7 @@
             }
           }
         },
-        "description": "One predict -> reveal -> explain -> choose step. Its target selects supported Java evidence by operation, job, or paired message/attempt identity, kind and occurrence; never by narration or event array index."
+        "description": "One predict -> reveal -> explain -> choose step. Its target selects actual Java evidence by exactly one identity family, kind and occurrence; never by narration or authored array index."
       },
       "RequestFlowInput": {
         "type": "object",

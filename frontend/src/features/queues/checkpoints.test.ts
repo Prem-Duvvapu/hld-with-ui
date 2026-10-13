@@ -40,3 +40,17 @@ it("distinguishes repeated occurrences and refuses another model's selector or a
   ] as GuidedCheckpoint["target"][])
     expect(resolveQueueCheckpoint(baselineResult.events, target)).toBe(-1);
 });
+
+it("refuses a data-access identity mixed into a matching queue job", () => {
+  const legacy = { jobId: "job-2", kind: "job.queued", occurrence: 1 };
+  expect(
+    resolveQueueCheckpoint(baselineResult.events, legacy),
+  ).toBeGreaterThanOrEqual(0);
+  for (const operationId of ["q1", null])
+    expect(
+      resolveQueueCheckpoint(baselineResult.events, {
+        ...legacy,
+        operationId,
+      } as GuidedCheckpoint["target"]),
+    ).toBe(-1);
+});
