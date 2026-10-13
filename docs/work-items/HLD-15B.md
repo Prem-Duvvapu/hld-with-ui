@@ -82,3 +82,27 @@ Broader P3 foundations and requested service case studies remain pending.
 Final local typecheck, changed-file lint and full frontend format checks passed after the
 zoom and scroll checks were added. The six-view page chunk is 37.38 kB raw / 11.49 kB gzip;
 these build sizes are not browser-load or production-performance measurements.
+
+## Final delivery record
+
+[PR #70](https://github.com/Prem-Duvvapu/hld-with-ui/pull/70) merged at
+2026-10-13 19:28:44 UTC. Final head `ae9b2210b1710509921bbf57d29a938aeb94f331`
+passed [CI 38453836517](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/38453836517),
+testing merge `13afc01`. All required checks passed: 383 executed Java cases plus one
+existing opt-in skip, 497 frontend units, 159 contract cases, 202 browser journeys,
+20 UI performance and 20 lesson-load groups, copied jar/container, memory and launcher.
+Squash commit `c4d5d008c0fc1670e35f5ec6992e81c0670b09bd`; owner main updated and
+its unrelated output assets preserved.
+
+## Hosted observation — release gate remains open
+
+Read-only checks through the production frontend proxy at 2026-10-13 19:21–19:28 UTC
+returned health 200 and the four published topics. The data-access descriptor returned
+404 (`No simulation has id data-access-models`); its draft topic and delivery draft topic
+returned 500. An unknown draft ID also returned 500, whereas current source/API tests
+expect structured 404. This is a hosted compatibility failure: the backend does not serve
+the current draft contract. Its exact deployed commit is unknown because health contains
+no revision identifier. The verified jar/container evidence does not establish that hosted
+deployment. Refresh and verify the Java deployment before claiming this draft works live;
+keep its release gate pending. Transient observations: `/tmp/hld-hosted-check.json` and
+`/tmp/hld-hosted-diagnostics.json`. No deployment or infrastructure change was performed.
