@@ -1,0 +1,133 @@
+{
+  "simulationId": "data-access-models",
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "kind": "analysis",
+  "status": "completed",
+  "input": {
+    "schemaVersion": "1.0",
+    "modelVersion": "1.0.0",
+    "indexOrder": "TENANT_CREATED",
+    "enforceBusinessKey": true,
+    "rows": [
+      {
+        "id": "a1",
+        "tenant": "alpha",
+        "businessKey": "k1",
+        "createdOrder": 10
+      },
+      {
+        "id": "a2",
+        "tenant": "alpha",
+        "businessKey": "k2",
+        "createdOrder": 20
+      },
+      {
+        "id": "a3",
+        "tenant": "alpha",
+        "businessKey": "k3",
+        "createdOrder": 30
+      },
+      {
+        "id": "a4",
+        "tenant": "alpha",
+        "businessKey": "k4",
+        "createdOrder": 40
+      },
+      { "id": "b1", "tenant": "beta", "businessKey": "k1", "createdOrder": 10 },
+      { "id": "b2", "tenant": "beta", "businessKey": "k2", "createdOrder": 20 },
+      { "id": "b3", "tenant": "beta", "businessKey": "k3", "createdOrder": 30 },
+      { "id": "b4", "tenant": "beta", "businessKey": "k4", "createdOrder": 40 },
+      {
+        "id": "g1",
+        "tenant": "gamma",
+        "businessKey": "k1",
+        "createdOrder": 10
+      },
+      {
+        "id": "g2",
+        "tenant": "gamma",
+        "businessKey": "k2",
+        "createdOrder": 20
+      },
+      {
+        "id": "g3",
+        "tenant": "gamma",
+        "businessKey": "k3",
+        "createdOrder": 30
+      },
+      { "id": "g4", "tenant": "gamma", "businessKey": "k4", "createdOrder": 40 }
+    ],
+    "operations": [
+      {
+        "id": "q1",
+        "kind": "TENANT_RANGE",
+        "tenant": "beta",
+        "fromCreatedOrder": 20,
+        "toCreatedOrder": 30,
+        "limit": 20
+      }
+    ]
+  },
+  "outcomes": [
+    {
+      "operationId": "q1",
+      "kind": "TENANT_RANGE",
+      "accessPath": "TENANT_CREATED_INDEX",
+      "candidateIds": ["b2", "b3"],
+      "matchedIds": ["b2", "b3"],
+      "returnedIds": ["b2", "b3"],
+      "recordCountBefore": 12,
+      "recordCountAfter": 12,
+      "work": {
+        "primaryKeyLookups": 0,
+        "indexSeeks": 1,
+        "indexEntriesExamined": 2,
+        "baseRowsExamined": 2,
+        "matchedRows": 2,
+        "returnedRows": 2,
+        "baseWrites": 0,
+        "secondaryIndexWrites": 0,
+        "businessKeyChecks": 0,
+        "businessKeyWrites": 0
+      },
+      "explanation": "The tenant-first index examined 2 entries and fetched 2 matching base rows after index-covered filtering. It matched 2 rows and returned 2; the result limit applies after this full candidate evaluation."
+    }
+  ],
+  "finalRows": [
+    { "id": "a1", "tenant": "alpha", "businessKey": "k1", "createdOrder": 10 },
+    { "id": "a2", "tenant": "alpha", "businessKey": "k2", "createdOrder": 20 },
+    { "id": "a3", "tenant": "alpha", "businessKey": "k3", "createdOrder": 30 },
+    { "id": "a4", "tenant": "alpha", "businessKey": "k4", "createdOrder": 40 },
+    { "id": "b1", "tenant": "beta", "businessKey": "k1", "createdOrder": 10 },
+    { "id": "b2", "tenant": "beta", "businessKey": "k2", "createdOrder": 20 },
+    { "id": "b3", "tenant": "beta", "businessKey": "k3", "createdOrder": 30 },
+    { "id": "b4", "tenant": "beta", "businessKey": "k4", "createdOrder": 40 },
+    { "id": "g1", "tenant": "gamma", "businessKey": "k1", "createdOrder": 10 },
+    { "id": "g2", "tenant": "gamma", "businessKey": "k2", "createdOrder": 20 },
+    { "id": "g3", "tenant": "gamma", "businessKey": "k3", "createdOrder": 30 },
+    { "id": "g4", "tenant": "gamma", "businessKey": "k4", "createdOrder": 40 }
+  ],
+  "totals": {
+    "primaryKeyLookups": 0,
+    "indexSeeks": 1,
+    "indexEntriesExamined": 2,
+    "baseRowsExamined": 2,
+    "matchedRows": 2,
+    "returnedRows": 2,
+    "baseWrites": 0,
+    "secondaryIndexWrites": 0,
+    "businessKeyChecks": 0,
+    "businessKeyWrites": 0
+  },
+  "assumptions": [
+    "This is an illustrative access-path analysis, not a database emulator or measured benchmark.",
+    "Created order is an integer ordering key, not milliseconds; no latency is modeled.",
+    "Operations run sequentially. There is no concurrency, durability, transaction or idempotency model.",
+    "Ordered secondary entries use the configured fields followed by record ID; no optimizer, skip scan, index intersection or physical pages are modeled.",
+    "Range queries inspect their full candidate interval and fetch matches before applying the result limit.",
+    "Index-covered residual filters run before base-row fetches; counts describe logical entries and rows, not disk I/O.",
+    "Accepted inserts append one base record and maintain one entry per configured access structure; primary-index maintenance is included in the base write.",
+    "One index seek is an abstract path-opening action even when the full index is scanned; it does not measure tree navigation."
+  ]
+}

@@ -20,6 +20,12 @@ import uuid
 
 ROOT = Path(__file__).resolve().parent.parent
 MAX_RESPONSE_BYTES = 5 * 1024 * 1024
+# Golden examples exercise actual model output, separate from catalog publication metadata.
+MODEL_BASELINE_FIXTURES = {
+    "queues-tail-latency": "queue-capacity",
+    "queues-delivery": "queue-delivery",
+    "data-access-models": "data-access",
+}
 
 
 def check(condition, message):
@@ -54,6 +60,21 @@ def normalized(value):
     if isinstance(value, list):
         return [normalized(item) for item in value]
     return value
+
+
+def verify_draft_model(base, model_id):
+    fixture = MODEL_BASELINE_FIXTURES.get(model_id)
+    check(fixture is not None, f"Draft model has no packaged baseline evidence: {model_id}")
+    path = f"/api/v1/simulations/{quote(model_id, safe='')}"
+    descriptor = api(base, path)
+    baseline = next((preset for preset in descriptor["presets"] if preset["id"] == "baseline"), None)
+    check(baseline is not None, f"Packaged {fixture} descriptor has no baseline")
+    expected_input = json.loads((ROOT / f"contracts/examples/{fixture}-baseline-input.json").read_text(encoding="utf-8"))
+    expected_result = json.loads((ROOT / f"contracts/examples/{fixture}-baseline-result.json").read_text(encoding="utf-8"))
+    check(baseline["input"] == expected_input, f"Packaged {fixture} baseline input differs")
+    result = api(base, path + "/runs", baseline["input"])
+    check(result == expected_result, f"Packaged {fixture} baseline full result differs")
+    print(f"PASS packaged draft {fixture} model", flush=True)
 
 
 def verify(base):
@@ -100,21 +121,12 @@ def verify(base):
         checkpoints = source_json(entry["checkpointsPath"]) if "checkpointsPath" in entry else []
         check(normalized(detail["checkpoints"]) == normalized(checkpoints), f"Draft checkpoints differ: {entry['id']}")
         print(f"PASS packaged draft topic {entry['id']} content={entry['contentVersion']}", flush=True)
-        if entry["id"] in {"queues-tail-latency", "queues-delivery"}:
-            path = f"/api/v1/simulations/{identifier}"
-            descriptor = api(base, path)
-            baseline = next(preset for preset in descriptor["presets"] if preset["id"] == "baseline")
-            fixture = "queue-capacity" if entry["id"] == "queues-tail-latency" else "queue-delivery"
-            expected_input = json.loads((ROOT / f"contracts/examples/{fixture}-baseline-input.json").read_text(encoding="utf-8"))
-            expected_result = json.loads((ROOT / f"contracts/examples/{fixture}-baseline-result.json").read_text(encoding="utf-8"))
-            check(baseline["input"] == expected_input, f"Packaged {fixture} baseline input differs")
-            result = api(base, path + "/runs", baseline["input"])
-            check(result == expected_result, f"Packaged {fixture} baseline full result differs")
+        for model_id in entry["simulationIds"]:
+            verify_draft_model(base, model_id)
             api(base, "/api/v1/draft/topics/request-flow", expected=404)
-            for query in ("queues", "delivery", "ACK"):
+            for query in ("queues", "delivery", "ACK", "data", "models"):
                 check(all(hit["entry"]["status"] == "published" and hit["entry"]["id"] not in draft_topic_ids
-                          for hit in api(base, f"/api/v1/search?q={query}")["results"]), "Draft queue leaked into published search")
-            print(f"PASS packaged draft {fixture} model and publication boundary", flush=True)
+                          for hit in api(base, f"/api/v1/search?q={query}")["results"]), "Draft topic leaked into published search")
     check([entry["id"] for entry in api(base, "/api/v1/case-studies")] == [entry["id"] for entry in cases], "Case publication differs from catalog")
     for entry in catalog:
         if entry["kind"] != "case-study" or entry["status"] == "planned":

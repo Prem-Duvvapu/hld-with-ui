@@ -1,0 +1,425 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hld-with-ui.dev/schemas/data-access.result.schema.json",
+  "title": "Data access analysis result",
+  "description": "Complete authoritative finite analysis, without modeled latency or production benchmark claims. input references its canonical schema. Java owns evolving table state, access-path candidates, filtering before result limit, conflict precedence and work totals. JSON Schema enforces closed shape and local outcome discriminants; Java tests and frontend compatibility checks separately enforce semantic identities and captured-request correlation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "simulationId",
+    "schemaVersion",
+    "modelVersion",
+    "kind",
+    "status",
+    "input",
+    "outcomes",
+    "finalRows",
+    "totals",
+    "assumptions"
+  ],
+  "properties": {
+    "simulationId": {
+      "const": "data-access-models"
+    },
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "modelVersion": {
+      "const": "1.0.0"
+    },
+    "kind": {
+      "const": "analysis"
+    },
+    "status": {
+      "const": "completed"
+    },
+    "input": {
+      "$ref": "https://hld-with-ui.dev/schemas/data-access.input.schema.json"
+    },
+    "outcomes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {
+        "$ref": "#/$defs/outcome"
+      }
+    },
+    "finalRows": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 30,
+      "items": {
+        "$ref": "https://hld-with-ui.dev/schemas/data-access.input.schema.json#/$defs/row"
+      }
+    },
+    "totals": {
+      "$ref": "#/$defs/totals"
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 30,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2000
+      }
+    }
+  },
+  "$defs": {
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operationId",
+        "kind",
+        "accessPath",
+        "candidateIds",
+        "matchedIds",
+        "returnedIds",
+        "recordCountBefore",
+        "recordCountAfter",
+        "work",
+        "explanation"
+      ],
+      "properties": {
+        "operationId": {
+          "$ref": "https://hld-with-ui.dev/schemas/data-access.input.schema.json#/$defs/identifier"
+        },
+        "kind": {
+          "enum": ["LOOKUP_ID", "TENANT_RANGE", "ALL_RANGE", "INSERT"]
+        },
+        "accessPath": {
+          "enum": [
+            "PRIMARY_KEY",
+            "TABLE_SCAN",
+            "TENANT_CREATED_INDEX",
+            "CREATED_TENANT_INDEX",
+            "INSERT"
+          ]
+        },
+        "candidateIds": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 30,
+          "items": {
+            "$ref": "https://hld-with-ui.dev/schemas/data-access.input.schema.json#/$defs/identifier"
+          },
+          "uniqueItems": true
+        },
+        "matchedIds": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 30,
+          "items": {
+            "$ref": "https://hld-with-ui.dev/schemas/data-access.input.schema.json#/$defs/identifier"
+          },
+          "uniqueItems": true
+        },
+        "returnedIds": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 20,
+          "items": {
+            "$ref": "https://hld-with-ui.dev/schemas/data-access.input.schema.json#/$defs/identifier"
+          },
+          "uniqueItems": true
+        },
+        "recordCountBefore": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "recordCountAfter": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "work": {
+          "$ref": "#/$defs/work"
+        },
+        "explanation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "accepted": {
+          "type": "boolean"
+        },
+        "conflict": {
+          "$ref": "#/$defs/conflict"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "INSERT"
+              }
+            }
+          },
+          "then": {
+            "required": ["accepted"],
+            "properties": {
+              "accessPath": {
+                "const": "INSERT"
+              },
+              "candidateIds": {
+                "maxItems": 0,
+                "type": "array"
+              },
+              "matchedIds": {
+                "maxItems": 0,
+                "type": "array"
+              },
+              "returnedIds": {
+                "maxItems": 0,
+                "type": "array"
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "accepted": {
+                      "const": true
+                    }
+                  },
+                  "required": ["accepted"]
+                },
+                "then": {
+                  "not": {
+                    "required": ["conflict"]
+                  }
+                },
+                "else": {
+                  "required": ["conflict"]
+                }
+              }
+            ]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": ["accepted"]
+                },
+                {
+                  "required": ["conflict"]
+                }
+              ]
+            },
+            "properties": {
+              "accessPath": {
+                "enum": [
+                  "PRIMARY_KEY",
+                  "TABLE_SCAN",
+                  "TENANT_CREATED_INDEX",
+                  "CREATED_TENANT_INDEX"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "LOOKUP_ID"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "accessPath": {
+                "const": "PRIMARY_KEY"
+              },
+              "candidateIds": {
+                "maxItems": 1,
+                "type": "array"
+              },
+              "matchedIds": {
+                "maxItems": 1,
+                "type": "array"
+              },
+              "returnedIds": {
+                "maxItems": 1,
+                "type": "array"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": ["TENANT_RANGE", "ALL_RANGE"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "accessPath": {
+                "enum": [
+                  "TABLE_SCAN",
+                  "TENANT_CREATED_INDEX",
+                  "CREATED_TENANT_INDEX"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "work": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primaryKeyLookups",
+        "indexSeeks",
+        "indexEntriesExamined",
+        "baseRowsExamined",
+        "matchedRows",
+        "returnedRows",
+        "baseWrites",
+        "secondaryIndexWrites",
+        "businessKeyChecks",
+        "businessKeyWrites"
+      ],
+      "properties": {
+        "primaryKeyLookups": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "indexSeeks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "indexEntriesExamined": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "baseRowsExamined": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "matchedRows": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "returnedRows": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "baseWrites": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "secondaryIndexWrites": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "businessKeyChecks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "businessKeyWrites": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primaryKeyLookups",
+        "indexSeeks",
+        "indexEntriesExamined",
+        "baseRowsExamined",
+        "matchedRows",
+        "returnedRows",
+        "baseWrites",
+        "secondaryIndexWrites",
+        "businessKeyChecks",
+        "businessKeyWrites"
+      ],
+      "properties": {
+        "primaryKeyLookups": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "indexSeeks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "indexEntriesExamined": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 300
+        },
+        "baseRowsExamined": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 300
+        },
+        "matchedRows": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 300
+        },
+        "returnedRows": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 200
+        },
+        "baseWrites": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "secondaryIndexWrites": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "businessKeyChecks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "businessKeyWrites": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        }
+      }
+    },
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "recordId"],
+      "properties": {
+        "reason": {
+          "enum": ["DUPLICATE_ID", "DUPLICATE_BUSINESS_KEY"]
+        },
+        "recordId": {
+          "$ref": "https://hld-with-ui.dev/schemas/data-access.input.schema.json#/$defs/identifier"
+        }
+      }
+    }
+  }
+}

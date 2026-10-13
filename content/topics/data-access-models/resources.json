@@ -1,0 +1,72 @@
+[
+  {
+    "id": "postgres-18-multicolumn-indexes",
+    "title": "PostgreSQL 18: Multicolumn Indexes",
+    "organization": "PostgreSQL Global Development Group",
+    "url": "https://www.postgresql.org/docs/18/indexes-multicolumn.html",
+    "sourceType": "documentation",
+    "relevantSections": "Leading equality/range constraints; residual index conditions; skip scan",
+    "supports": "Column order influences the scanned interval; later conditions can reduce table visits. PostgreSQL can use skip scan, which this contiguous-scan teaching model excludes.",
+    "reviewedAt": "2026-10-13"
+  },
+  {
+    "id": "postgres-18-index-maintenance",
+    "title": "PostgreSQL 18: Introduction to Indexes",
+    "organization": "PostgreSQL Global Development Group",
+    "url": "https://www.postgresql.org/docs/18/indexes-intro.html",
+    "sourceType": "documentation",
+    "relevantSections": "Keeping indexes synchronized with the table",
+    "supports": "Indexes add maintenance overhead to data changes. The experiment counts logical maintenance entries and does not measure PostgreSQL IO, storage or latency.",
+    "reviewedAt": "2026-10-13"
+  },
+  {
+    "id": "postgres-18-constraints",
+    "title": "PostgreSQL 18: Constraints",
+    "organization": "PostgreSQL Global Development Group",
+    "url": "https://www.postgresql.org/docs/18/ddl-constraints.html",
+    "sourceType": "documentation",
+    "relevantSections": "Unique constraints; primary keys; foreign keys",
+    "supports": "Primary identity, multi-column uniqueness and relational validity are distinct declared rules. The Java model only illustrates sequential primary/scoped-key rejection, without database transaction behavior.",
+    "reviewedAt": "2026-10-13"
+  },
+  {
+    "id": "mongodb-access-pattern-modeling",
+    "title": "MongoDB: Data Modeling",
+    "organization": "MongoDB",
+    "url": "https://www.mongodb.com/docs/manual/data-modeling/",
+    "sourceType": "documentation",
+    "relevantSections": "Access patterns; document relationships; embedding and referencing",
+    "supports": "Document organization should reflect application access patterns; embedding and references are choices for related data. This does not imply that a flexible schema removes correctness requirements.",
+    "reviewedAt": "2026-10-13"
+  },
+  {
+    "id": "redis-key-value-strings",
+    "title": "Redis Strings",
+    "organization": "Redis",
+    "url": "https://redis.io/docs/latest/develop/data-types/strings/",
+    "sourceType": "documentation",
+    "relevantSections": "SET and GET",
+    "supports": "A string value can be stored and retrieved by a named key, illustrating a direct-key access shape. Other Redis structures and query mechanisms are outside this comparison.",
+    "reviewedAt": "2026-10-13"
+  },
+  {
+    "id": "cassandra-query-driven-modeling",
+    "title": "Apache Cassandra: Introduction to Data Modeling",
+    "organization": "Apache Software Foundation",
+    "url": "https://cassandra.apache.org/doc/latest/cassandra/developing/data-modeling/intro.html",
+    "sourceType": "documentation",
+    "relevantSections": "Query-driven modeling; partitions; clustering keys; denormalization",
+    "supports": "Cassandra models tables around query needs, with partition keys and clustering order; multiple query-specific representations introduce repeated data. No Cassandra cluster or storage engine is modeled here.",
+    "reviewedAt": "2026-10-13"
+  },
+  {
+    "id": "neo4j-property-graph-modeling",
+    "title": "Neo4j: What Is Graph Data Modeling?",
+    "organization": "Neo4j",
+    "url": "https://neo4j.com/docs/getting-started/data-modeling/",
+    "sourceType": "documentation",
+    "relevantSections": "Nodes, relationships and properties",
+    "supports": "Property graphs express entities as nodes and connections as relationships, giving a shape for relationship-oriented questions. The Java access-path model does not execute graph traversals or benchmark them.",
+    "reviewedAt": "2026-10-13"
+  }
+]

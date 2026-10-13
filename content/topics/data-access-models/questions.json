@@ -1,0 +1,139 @@
+[
+  {
+    "id": "data-access-tenant-range",
+    "topicId": "data-access-models",
+    "level": "beginner",
+    "kind": "prediction",
+    "prompt": "Twelve records belong to alpha, beta and gamma, with creation orders 10, 20, 30 and 40 in each tenant. Predict index entries examined, base records fetched and returned IDs for beta in inclusive range 20–30 under both composite index orders.",
+    "explanation": "Tenant-first examines two index entries and fetches two records. Creation-first examines six entries across all tenants, applies the tenant condition in the index, and fetches only the two beta records. Both return b2, b3. Each indexed query counts one abstract seek. The model uses a complete contiguous scan without skip scan or early stopping.",
+    "modelAnswer": "With (tenant, createdOrder), beta's entries in 20–30 are b2 and b3: two entries examined, two base records fetched and two returned. With (createdOrder, tenant), the candidates are a2, b2, g2, a3, b3 and g3: six entries examined. Index-level tenant filtering leaves b2 and b3, so base fetches and returned records are still two. Each path has one abstract index seek; these counts do not measure latency.",
+    "rubric": [
+      "Gives two versus six index entries under the stated scan model",
+      "Keeps base fetches at two for both indexes",
+      "Returns b2, b3 and states the inclusive range",
+      "Separates logical counts from production performance"
+    ],
+    "followUp": "How would the counts change with no secondary index?"
+  },
+  {
+    "id": "data-access-global-range",
+    "topicId": "data-access-models",
+    "level": "beginner",
+    "kind": "diagnosis",
+    "prompt": "An operations dashboard removes the beta restriction and asks for every tenant's records in creation orders 20–30. A teammate says the tenant-first index must still be best because it helped the order page. Diagnose the claim with the twelve-record fixture.",
+    "explanation": "The required query changed. Under the model's no-skip-scan rule, the tenant-first index examines all twelve entries, then range filtering leaves six base records to fetch. Creation-first examines the six entries in the requested range and fetches those same six records. Both return a2, b2, g2, a3, b3, g3. The favorable grouping depends on the access pattern.",
+    "modelAnswer": "For the global range, tenant-first examines twelve index entries and fetches six matching base records. Creation-first examines six entries and fetches six. Both return a2, b2, g2, a3, b3, g3 in creation-order/ID order. An index useful for a tenant page is not automatically the access path with less candidate work for a dashboard. I would compare actual query frequency and write cost before maintaining another index, and inspect the real database plan rather than predicting measured speed from this model.",
+    "rubric": [
+      "States that the query no longer supplies a tenant equality condition",
+      "Gives twelve versus six examined entries and six fetched records",
+      "Does not claim the tenant-first index is unusable in real databases",
+      "Includes query frequency and maintenance cost in the decision"
+    ],
+    "followUp": "What would you check before adding a second index for a dashboard used only once a day?"
+  },
+  {
+    "id": "data-access-limit-work",
+    "topicId": "data-access-models",
+    "level": "beginner",
+    "kind": "calculation",
+    "prompt": "Run the beta 20–30 query with the tenant-first index, then change only its result limit from 20 to 1. What changes in returned IDs, matched records, index entries and base-record work?",
+    "explanation": "Java evaluates the complete candidate interval and fetches every match before applying the result limit. Returned IDs become b2, but matched records, examined index entries and fetched base records remain two. The result limit is not an early-stop strategy in this model. A real database may use a different execution plan.",
+    "modelAnswer": "With limit 1 the only returned ID is b2, so returnedRows is one. matchedRows, indexEntriesExamined and baseRowsExamined stay two, with one index seek. The experiment first scans the candidate interval, obtains both matches and sorts them by createdOrder then ID; it applies the limit afterward. I cannot infer that a production LIMIT 1 has this same amount of work because optimizer and early-stop behavior are outside this model.",
+    "rubric": [
+      "Returns b2 as the first record in the deterministic query order",
+      "Keeps matched, examined-entry and base-record counts at two",
+      "Explains full evaluation before limit instead of inventing early stopping"
+    ],
+    "followUp": "Why can zero returned records still require examining many candidates?"
+  },
+  {
+    "id": "data-access-scoped-duplicate",
+    "topicId": "data-access-models",
+    "level": "intermediate",
+    "kind": "prediction",
+    "prompt": "Start with the twelve-record fixture and tenant-first index. Insert b5 / beta / k2 / 25, then query beta in 20–30. Compare business-key protection enabled and disabled. Does the inserted row have a duplicate primary ID?",
+    "explanation": "b5 is a new primary ID, but beta/k2 already belongs to b2. Enabled protection rejects the insert after one primary lookup and one business-key check, performs zero writes, leaves twelve records and returns b2, b3. Disabled protection accepts it, leaves thirteen records, performs one base write and one secondary-index maintenance entry, and returns b2, b5, b3. There is no business-key check or maintenance when disabled.",
+    "modelAnswer": "The conflict is the scoped business key, not the primary ID: b5 is new and beta/k2 identifies b2. With protection enabled, one primary lookup and one business-key check lead to rejection, all write counts stay zero, and the following query returns b2, b3 from twelve records. With protection disabled, the insert is accepted: one base write and one secondary-index maintenance entry, zero business-key checks/writes, thirteen records, and results b2, b5, b3. Completion of either run does not mean every requested insert was accepted.",
+    "rubric": [
+      "Identifies b2 as the beta/k2 conflict and b5 as a new primary ID",
+      "Reports rejection, zero writes and unchanged state with protection",
+      "Reports acceptance, thirteen records and b2, b5, b3 without protection",
+      "Treats disabling the rule as a correctness change"
+    ],
+    "followUp": "Would alpha/k2 conflict with beta/k2 under the stated scope?"
+  },
+  {
+    "id": "data-access-write-maintenance",
+    "topicId": "data-access-models",
+    "level": "intermediate",
+    "kind": "calculation",
+    "prompt": "Use Insert a new business key: insert b5 / beta / k5 / 25 with business-key protection and the tenant-first index, then run the beta 20–30 query. Account for insert checks, maintenance, final rows and following query work. What changes if only the secondary index is removed?",
+    "explanation": "The insert is accepted with one primary lookup, one business-key check, one base write, one secondary-index maintenance entry and one business-key maintenance entry. There are thirteen final records. The query examines three index entries and fetches/returns b2, b5, b3. Removing only the secondary index keeps the uniqueness checks and accepted write but removes its secondary-index maintenance; the following table scan examines thirteen base records and returns the same three IDs.",
+    "modelAnswer": "b5 and beta/k5 are unused, so the insert succeeds. It counts primaryKeyLookups=1, businessKeyChecks=1, baseWrites=1, secondaryIndexWrites=1 and businessKeyWrites=1. The following query has one index seek, three examined entries and three base records fetched, returning b2, b5, b3. Without the secondary index, secondaryIndexWrites becomes zero and the query examines thirteen base records, still returning those three IDs. The other insert checks and maintenance remain. I keep these work categories separate rather than adding them into an invented physical IO or latency total.",
+    "rubric": [
+      "Accounts for the accepted insert's checks and three maintenance categories",
+      "Gives thirteen final records and three matching query records",
+      "Changes the unindexed query to thirteen examined base records",
+      "Separates secondary indexing from enabled business-key protection"
+    ],
+    "followUp": "Why should an infrequently used index still be reviewed when write traffic grows?",
+    "sourceIds": ["postgres-18-index-maintenance"]
+  },
+  {
+    "id": "data-access-primary-identity",
+    "topicId": "data-access-models",
+    "level": "beginner",
+    "kind": "recall",
+    "prompt": "Explain primary ID lookup versus scoped business-key uniqueness. With protection enabled, what happens to an INSERT using the existing ID b2? What work does LOOKUP_ID for absent ID z1 perform?",
+    "explanation": "Primary IDs are unique throughout the modeled records; business uniqueness applies to the tenant/businessKey pair when enabled. An insert using b2 is rejected as DUPLICATE_ID after one primary lookup, with no business-key check and zero writes. A lookup of absent z1 counts one abstract primary-key lookup, no candidates, matches, returned records or base fetches. Secondary index order does not change these lookup rules.",
+    "modelAnswer": "The primary ID identifies one record globally within the run. A business key identifies a business order only within its tenant, so alpha/k2 and beta/k2 can coexist. INSERT with b2 is rejected before checking the business key: one primary lookup, zero business checks and zero writes. LOOKUP_ID for missing z1 performs one abstract primary lookup and examines/fetches zero base records, returning no IDs. Neither claim measures the physical cost of a real database lookup.",
+    "rubric": [
+      "Distinguishes global record identity from scoped business identity",
+      "Uses duplicate-ID precedence and no business check on that rejection",
+      "Reports one abstract lookup and zero fetched records for a miss"
+    ],
+    "followUp": "Why does an index on tenant and creation order not express uniqueness of tenant and business key?",
+    "sourceIds": ["postgres-18-constraints"]
+  },
+  {
+    "id": "data-access-family-choice",
+    "topicId": "data-access-models",
+    "level": "intermediate",
+    "kind": "design-decision",
+    "prompt": "A design review covers five needs: related orders and line items with declared validity rules; a product aggregate usually read together; session retrieval by exact session ID; a device's ordered readings within a known partition; and account/device relationship exploration. Propose storage families and explain one cost or question for each. Alternatives are welcome when justified.",
+    "explanation": "Relational is a reasonable starting point for related orders and declared constraints; document for a product aggregate; key-value for exact session lookup; wide-column for query-specific partition and ordered-slice access; graph for relationship exploration. These are starting choices, not performance or consistency guarantees. Check actual product capabilities, query distribution, invariant scope, maintained representations and operating constraints.",
+    "modelAnswer": "I would start with relational tables for related orders and line items, then verify the required constraints and transaction scope. A document aggregate can suit a product page read together; I would decide what to embed versus reference and how repeated data changes. Exact session-ID retrieval suits a key-value shape, but another lookup shape needs an explicit access structure. Device readings can suit a wide-column partition/clustering design if partition size and query scope are controlled. Relationship exploration can suit a graph with entities and typed relationships; I would bound traversal and result size. Several products support multiple shapes, and acceptable alternatives depend on requirements. The Java experiment does not emulate any of these products or their distributed guarantees.",
+    "rubric": [
+      "Relates each proposed family to the specific query or data shape",
+      "Discusses relationship constraints and aggregate ownership",
+      "Names partition scope or traversal bounds for the corresponding needs",
+      "Includes a maintenance or unsupported-query cost",
+      "Checks actual guarantees rather than assigning them to a storage-family label"
+    ],
+    "followUp": "What would change if sessions must also be listed by account and product attributes must be searched across aggregates?",
+    "sourceIds": [
+      "postgres-18-constraints",
+      "mongodb-access-pattern-modeling",
+      "redis-key-value-strings",
+      "cassandra-query-driven-modeling",
+      "neo4j-property-graph-modeling"
+    ]
+  },
+  {
+    "id": "data-access-teach-back",
+    "topicId": "data-access-models",
+    "level": "intermediate",
+    "kind": "design-decision",
+    "prompt": "Explain a support-ticket design to a teammate or interviewer. The team page asks for one team's tickets in a creation range; operations asks across every team. Each team requires unique external ticket references, and clients may retry or submit concurrently. Use this module's evidence, then identify what it cannot establish.",
+    "explanation": "Translate tenant to team and businessKey to external reference. A team-first access structure suits the scoped range, while a creation-first structure reduces candidate work for the global range in the modeled fixture. Distinct physical tickets do not imply distinct business operations. A team/reference constraint names the business rule, but sequential rejection alone proves no concurrency, crash or idempotency guarantee. Verify the atomic boundary and retry semantics in the real system.",
+    "modelAnswer": "I would define reads for team/range and global/range, a primary ticket ID, and the invariant that each (team, externalReference) identifies at most one ticket. The modeled beta example considers two versus six index entries for the team-scoped read, while the global read favors creation-first with six rather than twelve examined entries. I would use real query plans, frequency and write load to choose maintained access paths. The sequential duplicate-key rejection illustrates the rule but does not establish safety for simultaneous writers or a crash between steps. I must verify an atomic database-enforced boundary and define what a repeated request returns before claiming idempotency. I would defend this design with requirements, one read, one accepted/rejected write, the tradeoff and a changed-condition follow-up.",
+    "rubric": [
+      "Names both access patterns and a scoped business invariant",
+      "Uses separate examined-entry and fetched-record evidence",
+      "States maintained structures and production verification needs",
+      "Rejects concurrency or idempotency claims based only on a sequential check",
+      "Gives a clear adaptable explanation rather than a product-name list"
+    ],
+    "followUp": "If a client times out after an accepted insert, what must the API specify before the retry can be called safe?"
+  }
+]

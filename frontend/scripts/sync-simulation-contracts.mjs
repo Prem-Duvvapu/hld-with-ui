@@ -24,6 +24,19 @@ const deliveryNames = {
   failureOutcome: "DeliveryFailureOutcome",
   lostAcknowledgmentOutcome: "DeliveryLostAcknowledgmentOutcome",
 };
+const dataInputId =
+  "https://hld-with-ui.dev/schemas/data-access.input.schema.json";
+const dataInputNames = {
+  identifier: "DataAccessIdentifier",
+  row: "DataAccessRow",
+  operation: "DataAccessOperation",
+};
+const dataResultNames = {
+  outcome: "DataAccessOutcome",
+  work: "DataAccessWork",
+  totals: "DataAccessTotals",
+  conflict: "DataAccessConflict",
+};
 
 // Canonical schemas own queue model and guided content shape. Export normal internal OpenAPI refs
 // so existing generation and response validators need no remote resolution.
@@ -36,7 +49,14 @@ function exportSchema(value, definitions = names) {
     if (["$schema", "$id", "$defs"].includes(key)) continue;
     if (key === "$ref" && child.startsWith("#/$defs/")) {
       const name = definitions[child.slice("#/$defs/".length)];
-      if (!name) throw new Error(`Unsupported queue definition: ${child}`);
+      if (!name) throw new Error(`Unsupported model definition: ${child}`);
+      result[key] = `#/components/schemas/${name}`;
+    } else if (key === "$ref" && child.startsWith(dataInputId)) {
+      const name =
+        child === dataInputId
+          ? "DataAccessInput"
+          : dataInputNames[child.slice(`${dataInputId}#/$defs/`.length)];
+      if (!name) throw new Error(`Unsupported data input reference: ${child}`);
       result[key] = `#/components/schemas/${name}`;
     } else result[key] = exportSchema(child, definitions);
   }
@@ -90,6 +110,22 @@ for (const [definition, name] of Object.entries(deliveryNames)) {
   );
 }
 
+// Captured result input and row/identifier references retain one canonical owner.
+for (const [kind, component, definitions] of [
+  ["input", "DataAccessInput", dataInputNames],
+  ["result", "DataAccessResult", dataResultNames],
+]) {
+  const schema = read(`contracts/data-access.${kind}.schema.json`);
+  openapi.components.schemas[component] = exportSchema(schema, definitions);
+  for (const [definition, name] of Object.entries(definitions)) {
+    if (!schema.$defs[definition]) throw new Error(`Missing ${definition}`);
+    openapi.components.schemas[name] = exportSchema(
+      schema.$defs[definition],
+      definitions,
+    );
+  }
+}
+
 // The lazy delivery client needs only its descriptor's reachable schemas, not the entire API.
 // This generated artifact keeps runtime validation derived from the same canonical HTTP contract.
 const descriptorSchema = {
@@ -110,6 +146,27 @@ mkdirSync(dirname(descriptorPath), { recursive: true });
 writeFileSync(
   descriptorPath,
   JSON.stringify(descriptorSchema).replaceAll(
+    "#/components/schemas/",
+    "#/$defs/",
+  ) + "\n",
+);
+const dataDescriptorSchema = {
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  ...openapi.components.schemas.DataAccessDescriptor,
+  $defs: Object.fromEntries(
+    [
+      "DataAccessIdentifier",
+      "DataAccessRow",
+      "DataAccessOperation",
+      "DataAccessInput",
+      "DataAccessLimits",
+      "DataAccessPreset",
+    ].map((name) => [name, openapi.components.schemas[name]]),
+  ),
+};
+writeFileSync(
+  resolve(root, "frontend/src/api/schemas/data-access-descriptor.schema.json"),
+  JSON.stringify(dataDescriptorSchema).replaceAll(
     "#/components/schemas/",
     "#/$defs/",
   ) + "\n",

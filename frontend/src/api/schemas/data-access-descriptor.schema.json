@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "kind",
+    "modelVersion",
+    "description",
+    "limits",
+    "presets",
+    "assumptions"
+  ],
+  "properties": {
+    "id": { "type": "string", "const": "data-access-models" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "kind": { "type": "string", "const": "simulation" },
+    "modelVersion": { "type": "string", "const": "1.0.0" },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "limits": { "$ref": "#/$defs/DataAccessLimits" },
+    "presets": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20,
+      "items": { "$ref": "#/$defs/DataAccessPreset" }
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 30,
+      "items": { "type": "string", "minLength": 1, "maxLength": 2000 }
+    }
+  },
+  "$defs": {
+    "DataAccessIdentifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "pattern": "^[a-z][a-z0-9-]{0,31}$",
+      "not": { "pattern": "\\s" }
+    },
+    "DataAccessRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "tenant", "businessKey", "createdOrder"],
+      "properties": {
+        "id": { "$ref": "#/$defs/DataAccessIdentifier" },
+        "tenant": { "$ref": "#/$defs/DataAccessIdentifier" },
+        "businessKey": { "$ref": "#/$defs/DataAccessIdentifier" },
+        "createdOrder": { "type": "integer", "minimum": 0, "maximum": 1000000 }
+      }
+    },
+    "DataAccessOperation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "kind", "rowId"],
+          "properties": {
+            "id": { "$ref": "#/$defs/DataAccessIdentifier" },
+            "kind": { "const": "LOOKUP_ID" },
+            "rowId": { "$ref": "#/$defs/DataAccessIdentifier" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "tenant",
+            "fromCreatedOrder",
+            "toCreatedOrder",
+            "limit"
+          ],
+          "properties": {
+            "id": { "$ref": "#/$defs/DataAccessIdentifier" },
+            "kind": { "const": "TENANT_RANGE" },
+            "tenant": { "$ref": "#/$defs/DataAccessIdentifier" },
+            "fromCreatedOrder": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "toCreatedOrder": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "limit": { "type": "integer", "minimum": 1, "maximum": 20 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "fromCreatedOrder",
+            "toCreatedOrder",
+            "limit"
+          ],
+          "properties": {
+            "id": { "$ref": "#/$defs/DataAccessIdentifier" },
+            "kind": { "const": "ALL_RANGE" },
+            "fromCreatedOrder": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "toCreatedOrder": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            "limit": { "type": "integer", "minimum": 1, "maximum": 20 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "kind", "row"],
+          "properties": {
+            "id": { "$ref": "#/$defs/DataAccessIdentifier" },
+            "kind": { "const": "INSERT" },
+            "row": { "$ref": "#/$defs/DataAccessRow" }
+          }
+        }
+      ]
+    },
+    "DataAccessInput": {
+      "title": "Data access analysis input",
+      "description": "Canonical finite sequential access-path model. createdOrder is an ordering key, not time. Java additionally checks unique row/operation identities, enabled tenant-scoped business-key uniqueness and inclusive range order. JSON Schema validates parsed values; HTTP additionally rejects duplicate keys, trailing roots and coerced/nonintegral token spellings.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "modelVersion",
+        "indexOrder",
+        "enforceBusinessKey",
+        "rows",
+        "operations"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "1.0" },
+        "modelVersion": { "const": "1.0.0" },
+        "indexOrder": { "enum": ["NONE", "TENANT_CREATED", "CREATED_TENANT"] },
+        "enforceBusinessKey": { "type": "boolean" },
+        "rows": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 20,
+          "items": { "$ref": "#/$defs/DataAccessRow" }
+        },
+        "operations": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": { "$ref": "#/$defs/DataAccessOperation" }
+        }
+      }
+    },
+    "DataAccessLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maxInitialRows",
+        "maxOperations",
+        "maxCreatedOrder",
+        "maxResultRows",
+        "maxQueryLimit",
+        "maxIdLength"
+      ],
+      "properties": {
+        "maxInitialRows": { "type": "integer", "const": 20 },
+        "maxOperations": { "type": "integer", "const": 10 },
+        "maxCreatedOrder": { "type": "integer", "const": 1000000 },
+        "maxResultRows": { "type": "integer", "const": 30 },
+        "maxQueryLimit": { "type": "integer", "const": 20 },
+        "maxIdLength": { "type": "integer", "const": 32 }
+      }
+    },
+    "DataAccessPreset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "question", "input"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "maxLength": 64,
+          "not": { "pattern": "\\s" }
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "question": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "input": { "$ref": "#/$defs/DataAccessInput" }
+      }
+    }
+  }
+}

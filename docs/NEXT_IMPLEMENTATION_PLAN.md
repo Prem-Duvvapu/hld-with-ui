@@ -14,6 +14,14 @@ message/attempt checkpoints and authored Architecture/message sequence views. It
 has six views. Next follow the required data-access/transaction foundation before idempotency. Transactions and
 idempotency follow their recorded prerequisites; this model has no deduplication.
 
+## Current data-access draft
+
+[HLD-15A](work-items/HLD-15A.md) adds a bounded Java access analysis, strict APIs,
+seven scenarios and an explicit Playground/Study/Practice experience at
+`/draft/topics/data-access-models`. Its first slice remains draft. Complete Guided and
+authored Architecture/sequence views plus technical teaching review before treating this
+prerequisite as a complete core module. Transactions and idempotency remain pending.
+
 ## 1. Objective and scope
 
 Deliver an excellent first learning path:
@@ -45,32 +53,32 @@ Before editing:
 
 ### Already implemented: preserve and reuse
 
-| Area | Current evidence / capabilities |
-| --- | --- |
-| Four published modules | `request-flow`, `capacity-estimation`, `distributed-rate-limiter`, `cache-aside` in the canonical catalog |
-| HLD-01 | Identity/document baseline; separate rate-limiter topic and future workshop IDs |
-| HLD-02 | Tab/history behavior, state preservation across tabs, hidden playback pause, content/model labels |
-| HLD-03 automated checks | Real Java browser journeys, errors/retry, layout/theme/focus checks, launcher cleanup/occupied-port smoke |
-| HLD-04 shipped slices | Descriptor limits, initial cache state, per-event operation/key/cache/origin state, byte accounting, HTTP response schema tests, compatibility errors |
-| PR #30 verification | 88 Java tests, 55 frontend tests, 41 browser checks, launcher smoke, production build, and CI passed at that revision |
+| Area                    | Current evidence / capabilities                                                                                                                       |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Four published modules  | `request-flow`, `capacity-estimation`, `distributed-rate-limiter`, `cache-aside` in the canonical catalog                                             |
+| HLD-01                  | Identity/document baseline; separate rate-limiter topic and future workshop IDs                                                                       |
+| HLD-02                  | Tab/history behavior, state preservation across tabs, hidden playback pause, content/model labels                                                     |
+| HLD-03 automated checks | Real Java browser journeys, errors/retry, layout/theme/focus checks, launcher cleanup/occupied-port smoke                                             |
+| HLD-04 shipped slices   | Descriptor limits, initial cache state, per-event operation/key/cache/origin state, byte accounting, HTTP response schema tests, compatibility errors |
+| PR #30 verification     | 88 Java tests, 55 frontend tests, 41 browser checks, launcher smoke, production build, and CI passed at that revision                                 |
 
 Those counts are historical, not a target or a substitute for rerunning applicable checks. Manual zoom/screen-reader review remains pending. Audit any broader HLD-04 acceptance requirement not yet evidenced—especially serialized-size bounds and concurrent isolation—when closing release gates; do not assume every detailed criterion is complete merely because its implementation slice merged.
 
 ## 3. Delivery sequence
 
-| Order | Task | Deliverable | Recommended PR boundary |
-| --- | --- | --- | --- |
-| 1 | HLD-05 | Cache state diagram, playback, event inspection | One usable playback contribution |
-| 2 | HLD-06A | Guided cache checkpoints with predictions and explanations | One guided-learning contribution |
-| 3 | HLD-06B | Cache architecture, sequences, design explanations, practice | One teaching/views contribution |
-| 4 | HLD-07 | Align existing modules and review release evidence | One PR each for request flow, capacity, rate limiter; skip changes with existing evidence |
-| 5 | HLD-08A | Versioned local storage with one real answer consumer | One persistence contribution |
-| 6 | HLD-08B | Remaining consumers, safe import/export and reset | One complete data-lifecycle contribution |
-| 7 | HLD-09A | Draft workshop contract/API/route plus Requirements stage | One end-to-end draft stage |
-| 8 | HLD-09B | Complete URL shortener design journey | Bounded stage groups with coherent flows |
-| 9 | HLD-09C | Workshop review and catalog publication | Publish only after all advertised stages pass |
-| 10 | HLD-10 | Search, bookmarks, resume, first learning path | Search first, then navigation/progress |
-| 11 | HLD-11 | First-release verification and honest release report | Fixes and evidence in focused PRs |
+| Order | Task    | Deliverable                                                  | Recommended PR boundary                                                                   |
+| ----- | ------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| 1     | HLD-05  | Cache state diagram, playback, event inspection              | One usable playback contribution                                                          |
+| 2     | HLD-06A | Guided cache checkpoints with predictions and explanations   | One guided-learning contribution                                                          |
+| 3     | HLD-06B | Cache architecture, sequences, design explanations, practice | One teaching/views contribution                                                           |
+| 4     | HLD-07  | Align existing modules and review release evidence           | One PR each for request flow, capacity, rate limiter; skip changes with existing evidence |
+| 5     | HLD-08A | Versioned local storage with one real answer consumer        | One persistence contribution                                                              |
+| 6     | HLD-08B | Remaining consumers, safe import/export and reset            | One complete data-lifecycle contribution                                                  |
+| 7     | HLD-09A | Draft workshop contract/API/route plus Requirements stage    | One end-to-end draft stage                                                                |
+| 8     | HLD-09B | Complete URL shortener design journey                        | Bounded stage groups with coherent flows                                                  |
+| 9     | HLD-09C | Workshop review and catalog publication                      | Publish only after all advertised stages pass                                             |
+| 10    | HLD-10  | Search, bookmarks, resume, first learning path               | Search first, then navigation/progress                                                    |
+| 11    | HLD-11  | First-release verification and honest release report         | Fixes and evidence in focused PRs                                                         |
 
 Finish the current task before starting another. If a manual gate is unavailable, record
 exactly what remains and keep the affected release/publication status incomplete. Independent
@@ -109,19 +117,19 @@ review remain separate gates. The published topic API still rejects drafts; prev
 
 ### Acceptance fixtures
 
-| Check | Required result |
-| --- | --- |
-| Initial position | Empty cache and initial origin `k = v1`, version 1; no later state leaks backward |
-| Baseline miss at 2 ms | No cache entry |
-| Origin read / fill at 22 ms | Separate events: entry appears only after the fill |
-| Origin update at 40 ms | Origin becomes v2 while cached v1 remains |
-| Stale hit at 72 ms | Cache v1, origin v2; explanation agrees with the trace |
-| Expiry at 122 ms | Lookup misses at the expiry boundary; renderer does not silently delete state the trace retains |
-| Fill at 142 ms | Cache contains v2; backward and forward seeks reproduce identical selected states |
-| Cold burst | Five misses and five origin reads at 22–26 ms; no entry before first fill |
-| Multiple keys | Events for one key do not erase or overwrite another key |
-| Limited/empty trace | Honest stopping state, no fabricated completed requests, safe controls |
-| Navigation | Tab round trip preserves cursor/result, pauses playback, sends no extra run |
+| Check                       | Required result                                                                                 |
+| --------------------------- | ----------------------------------------------------------------------------------------------- |
+| Initial position            | Empty cache and initial origin `k = v1`, version 1; no later state leaks backward               |
+| Baseline miss at 2 ms       | No cache entry                                                                                  |
+| Origin read / fill at 22 ms | Separate events: entry appears only after the fill                                              |
+| Origin update at 40 ms      | Origin becomes v2 while cached v1 remains                                                       |
+| Stale hit at 72 ms          | Cache v1, origin v2; explanation agrees with the trace                                          |
+| Expiry at 122 ms            | Lookup misses at the expiry boundary; renderer does not silently delete state the trace retains |
+| Fill at 142 ms              | Cache contains v2; backward and forward seeks reproduce identical selected states               |
+| Cold burst                  | Five misses and five origin reads at 22–26 ms; no entry before first fill                       |
+| Multiple keys               | Events for one key do not erase or overwrite another key                                        |
+| Limited/empty trace         | Honest stopping state, no fabricated completed requests, safe controls                          |
+| Navigation                  | Tab round trip preserves cursor/result, pauses playback, sends no extra run                     |
 
 Test reconstruction with real-contract fixtures and browser checks against Java. For each visible number/state, identify its response field. Avoid storing duplicate copies of derivable presentation state.
 
@@ -248,5 +256,8 @@ implements Java delivery semantics and contracts. [HLD-14B](work-items/HLD-14B.m
 strict APIs, guards/isolation evidence, canonical lesson/eight questions and a real
 Playground/Study/Practice renderer. HLD-14C adds Guided checkpoints, paired semantic message/attempt
 selectors, Java teaching fixtures and authored Architecture/message sequence views. Next follow
-the data-access-models prerequisite for transactions-isolation before executable idempotency. Keep
+the data-access-models prerequisite for transactions-isolation before executable idempotency.
+[HLD-15A](work-items/HLD-15A.md) supplies its first draft access analysis with Playground/Study/Practice.
+Complete its Guided and authored Architecture/sequence views and technical teaching review before
+using it as a complete prerequisite. Keep
 publication separate from draft development; follow the [delivery handoff](QUEUE_DELIVERY_IMPLEMENTATION_PLAN.md).

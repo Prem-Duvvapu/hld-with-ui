@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "indexOrder": "TENANT_CREATED",
+  "enforceBusinessKey": true,
+  "rows": [
+    { "id": "a1", "tenant": "alpha", "businessKey": "k1", "createdOrder": 10 },
+    { "id": "a2", "tenant": "alpha", "businessKey": "k2", "createdOrder": 20 },
+    { "id": "a3", "tenant": "alpha", "businessKey": "k3", "createdOrder": 30 },
+    { "id": "a4", "tenant": "alpha", "businessKey": "k4", "createdOrder": 40 },
+    { "id": "b1", "tenant": "beta", "businessKey": "k1", "createdOrder": 10 },
+    { "id": "b2", "tenant": "beta", "businessKey": "k2", "createdOrder": 20 },
+    { "id": "b3", "tenant": "beta", "businessKey": "k3", "createdOrder": 30 },
+    { "id": "b4", "tenant": "beta", "businessKey": "k4", "createdOrder": 40 },
+    { "id": "g1", "tenant": "gamma", "businessKey": "k1", "createdOrder": 10 },
+    { "id": "g2", "tenant": "gamma", "businessKey": "k2", "createdOrder": 20 },
+    { "id": "g3", "tenant": "gamma", "businessKey": "k3", "createdOrder": 30 },
+    { "id": "g4", "tenant": "gamma", "businessKey": "k4", "createdOrder": 40 }
+  ],
+  "operations": [
+    {
+      "id": "q1",
+      "kind": "TENANT_RANGE",
+      "tenant": "beta",
+      "fromCreatedOrder": 20,
+      "toCreatedOrder": 30,
+      "limit": 20
+    }
+  ]
+}

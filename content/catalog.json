@@ -226,5 +226,39 @@
       "aws-idempotent-apis"
     ],
     "checkpointsPath": "topics/queues-delivery/checkpoints.json"
+  },
+  {
+    "id": "data-access-models",
+    "kind": "topic",
+    "title": "Data Models & Access Patterns",
+    "summary": "Choose keys and indexes from the reads you need and the rules writes must preserve. Compare scans, scoped uniqueness and logical maintenance in a small Java model.",
+    "category": "Data & Storage",
+    "level": "Beginner",
+    "order": 8,
+    "status": "draft",
+    "prerequisites": ["capacity-estimation"],
+    "outcomes": [
+      "Turn lookup, range and insert requirements into explicit access patterns.",
+      "Compare examined index entries, fetched records and returned records separately.",
+      "Distinguish primary identity, scoped business-key uniqueness and index maintenance.",
+      "Defend a storage family from queries and invariants while stating unmodeled guarantees."
+    ],
+    "capabilities": ["study", "simulation", "practice"],
+    "lessonPath": "topics/data-access-models/lesson.md",
+    "questionsPath": "topics/data-access-models/questions.json",
+    "resourcesPath": "topics/data-access-models/resources.json",
+    "simulationIds": ["data-access-models"],
+    "estimatorIds": [],
+    "contentVersion": "1.0.0",
+    "reviewedAt": "2026-10-13",
+    "sourceIds": [
+      "postgres-18-multicolumn-indexes",
+      "postgres-18-index-maintenance",
+      "postgres-18-constraints",
+      "mongodb-access-pattern-modeling",
+      "redis-key-value-strings",
+      "cassandra-query-driven-modeling",
+      "neo4j-property-graph-modeling"
+    ]
   }
 ]

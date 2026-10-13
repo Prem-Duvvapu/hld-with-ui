@@ -1,5 +1,15 @@
 import type { components } from "./generated";
 
+export type DataAccessInput = components["schemas"]["DataAccessInput"];
+export type DataAccessResult = components["schemas"]["DataAccessResult"];
+export type DataAccessDescriptor =
+  components["schemas"]["DataAccessDescriptor"];
+export type DataAccessRow = components["schemas"]["DataAccessRow"];
+export type DataAccessOperation = components["schemas"]["DataAccessOperation"];
+export type DataAccessOutcome = components["schemas"]["DataAccessOutcome"];
+export type DataAccessWork = components["schemas"]["DataAccessWork"];
+export type DataAccessLimits = components["schemas"]["DataAccessLimits"];
+
 // Application names are aliases over the generated OpenAPI contract. Add a
 // schema to contracts/openapi.json before using a new API shape in the UI.
 export type CatalogEntry = components["schemas"]["CatalogEntry"];

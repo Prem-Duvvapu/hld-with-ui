@@ -8,6 +8,9 @@ import {
   CacheCompatibilityError,
 } from "./cacheCompatibility";
 import type {
+  DataAccessInput,
+  DataAccessResult,
+  DataAccessDescriptor,
   DeliveryDescriptor,
   DeliveryInput,
   DeliveryResult,
@@ -102,6 +105,59 @@ async function request<T>(
 }
 
 export const api = {
+  dataAccessDescriptor: async () => {
+    const { assertDataAccessDescriptor } =
+      await import("./dataAccessCompatibility");
+    return request<DataAccessDescriptor>(
+      "/api/v1/simulations/data-access-models",
+      undefined,
+      (body) => {
+        try {
+          assertDataAccessDescriptor(body);
+        } catch (cause: unknown) {
+          throw new ApiClientError(
+            cause instanceof Error
+              ? cause.message
+              : "This data-access response is incompatible with this app.",
+          );
+        }
+      },
+    );
+  },
+  runDataAccess: async (input: DataAccessInput) => {
+    const payload = JSON.stringify(input);
+    const submitted: DataAccessInput = JSON.parse(payload);
+    const { assertDataAccessInput, assertDataAccessResult } =
+      await import("./dataAccessCompatibility");
+    try {
+      assertDataAccessInput(submitted);
+    } catch (cause: unknown) {
+      throw new ApiClientError(
+        cause instanceof Error
+          ? cause.message
+          : "Check the submitted data-access input.",
+      );
+    }
+    return request<DataAccessResult>(
+      "/api/v1/simulations/data-access-models/runs",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      },
+      (body) => {
+        try {
+          assertDataAccessResult(body, submitted);
+        } catch (cause: unknown) {
+          throw new ApiClientError(
+            cause instanceof Error
+              ? cause.message
+              : "This data-access response is incompatible with this app.",
+          );
+        }
+      },
+    );
+  },
   deliveryDescriptor: async () => {
     const { assertDeliveryCompatibility } =
       await import("./deliveryCompatibility");

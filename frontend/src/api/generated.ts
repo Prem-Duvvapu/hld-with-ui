@@ -368,6 +368,43 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/simulations/data-access-models": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read the finite access-path descriptor used by the draft data models module */
+    get: operations["getDataAccessAnalysis"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/simulations/data-access-models/runs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Analyze access paths and tenant-scoped insertion invariants without modeled latency
+     * @description Finite sequential analysis with strict closed variant fields and exact token types. Existing HTTP admission, body and complete-result limits apply independently of model work counts. No physical database, optimizer, concurrent transaction, production latency or automatic retry is modeled.
+     */
+    post: operations["runDataAccessAnalysis"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1520,6 +1557,162 @@ export interface components {
       status:
         "REACHED" | "ACK_CANCELLED" | "ATTEMPT_NOT_DELIVERED" | "UNOBSERVED";
     };
+    DataAccessLimits: {
+      /** @constant */
+      maxInitialRows: 20;
+      /** @constant */
+      maxOperations: 10;
+      /** @constant */
+      maxCreatedOrder: 1000000;
+      /** @constant */
+      maxResultRows: 30;
+      /** @constant */
+      maxQueryLimit: 20;
+      /** @constant */
+      maxIdLength: 32;
+    };
+    DataAccessPreset: {
+      id: string;
+      title: string;
+      question: string;
+      input: components["schemas"]["DataAccessInput"];
+    };
+    DataAccessDescriptor: {
+      /** @constant */
+      id: "data-access-models";
+      title: string;
+      /** @constant */
+      kind: "simulation";
+      /** @constant */
+      modelVersion: "1.0.0";
+      description: string;
+      limits: components["schemas"]["DataAccessLimits"];
+      presets: components["schemas"]["DataAccessPreset"][];
+      assumptions: string[];
+    };
+    /**
+     * Data access analysis input
+     * @description Canonical finite sequential access-path model. createdOrder is an ordering key, not time. Java additionally checks unique row/operation identities, enabled tenant-scoped business-key uniqueness and inclusive range order. JSON Schema validates parsed values; HTTP additionally rejects duplicate keys, trailing roots and coerced/nonintegral token spellings.
+     */
+    DataAccessInput: {
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      modelVersion: "1.0.0";
+      /** @enum {unknown} */
+      indexOrder: "NONE" | "TENANT_CREATED" | "CREATED_TENANT";
+      enforceBusinessKey: boolean;
+      rows: components["schemas"]["DataAccessRow"][];
+      operations: components["schemas"]["DataAccessOperation"][];
+    };
+    DataAccessIdentifier: string;
+    DataAccessRow: {
+      id: components["schemas"]["DataAccessIdentifier"];
+      tenant: components["schemas"]["DataAccessIdentifier"];
+      businessKey: components["schemas"]["DataAccessIdentifier"];
+      createdOrder: number;
+    };
+    DataAccessOperation:
+      | {
+          id: components["schemas"]["DataAccessIdentifier"];
+          /** @constant */
+          kind: "LOOKUP_ID";
+          rowId: components["schemas"]["DataAccessIdentifier"];
+        }
+      | {
+          id: components["schemas"]["DataAccessIdentifier"];
+          /** @constant */
+          kind: "TENANT_RANGE";
+          tenant: components["schemas"]["DataAccessIdentifier"];
+          fromCreatedOrder: number;
+          toCreatedOrder: number;
+          limit: number;
+        }
+      | {
+          id: components["schemas"]["DataAccessIdentifier"];
+          /** @constant */
+          kind: "ALL_RANGE";
+          fromCreatedOrder: number;
+          toCreatedOrder: number;
+          limit: number;
+        }
+      | {
+          id: components["schemas"]["DataAccessIdentifier"];
+          /** @constant */
+          kind: "INSERT";
+          row: components["schemas"]["DataAccessRow"];
+        };
+    /**
+     * Data access analysis result
+     * @description Complete authoritative finite analysis, without modeled latency or production benchmark claims. input references its canonical schema. Java owns evolving table state, access-path candidates, filtering before result limit, conflict precedence and work totals. JSON Schema enforces closed shape and local outcome discriminants; Java tests and frontend compatibility checks separately enforce semantic identities and captured-request correlation.
+     */
+    DataAccessResult: {
+      /** @constant */
+      simulationId: "data-access-models";
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      modelVersion: "1.0.0";
+      /** @constant */
+      kind: "analysis";
+      /** @constant */
+      status: "completed";
+      input: components["schemas"]["DataAccessInput"];
+      outcomes: components["schemas"]["DataAccessOutcome"][];
+      finalRows: components["schemas"]["DataAccessRow"][];
+      totals: components["schemas"]["DataAccessTotals"];
+      assumptions: string[];
+    };
+    DataAccessOutcome: {
+      operationId: components["schemas"]["DataAccessIdentifier"];
+      /** @enum {unknown} */
+      kind: "LOOKUP_ID" | "TENANT_RANGE" | "ALL_RANGE" | "INSERT";
+      /** @enum {unknown} */
+      accessPath:
+        | "PRIMARY_KEY"
+        | "TABLE_SCAN"
+        | "TENANT_CREATED_INDEX"
+        | "CREATED_TENANT_INDEX"
+        | "INSERT";
+      candidateIds: components["schemas"]["DataAccessIdentifier"][];
+      matchedIds: components["schemas"]["DataAccessIdentifier"][];
+      returnedIds: components["schemas"]["DataAccessIdentifier"][];
+      recordCountBefore: number;
+      recordCountAfter: number;
+      work: components["schemas"]["DataAccessWork"];
+      explanation: string;
+      accepted?: boolean;
+      conflict?: components["schemas"]["DataAccessConflict"];
+    } & (unknown & unknown & unknown);
+    DataAccessWork: {
+      primaryKeyLookups: number;
+      indexSeeks: number;
+      indexEntriesExamined: number;
+      baseRowsExamined: number;
+      matchedRows: number;
+      returnedRows: number;
+      baseWrites: number;
+      secondaryIndexWrites: number;
+      businessKeyChecks: number;
+      businessKeyWrites: number;
+    };
+    DataAccessTotals: {
+      primaryKeyLookups: number;
+      indexSeeks: number;
+      indexEntriesExamined: number;
+      baseRowsExamined: number;
+      matchedRows: number;
+      returnedRows: number;
+      baseWrites: number;
+      secondaryIndexWrites: number;
+      businessKeyChecks: number;
+      businessKeyWrites: number;
+    };
+    DataAccessConflict: {
+      /** @enum {unknown} */
+      reason: "DUPLICATE_ID" | "DUPLICATE_BUSINESS_KEY";
+      recordId: components["schemas"]["DataAccessIdentifier"];
+    };
   };
   responses: never;
   parameters: {
@@ -2232,6 +2425,88 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["DeliveryResult"];
+        };
+      };
+      /** @description Structured error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free. */
+      503: {
+        headers: {
+          /** @description Retry hint in seconds. Capacity may remain occupied. */
+          "Retry-After"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  getDataAccessAnalysis: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DataAccessDescriptor"];
+        };
+      };
+    };
+  };
+  runDataAccessAnalysis: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["DataAccessInput"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DataAccessResult"];
         };
       };
       /** @description Structured error */
