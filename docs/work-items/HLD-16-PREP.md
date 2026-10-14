@@ -53,3 +53,12 @@ The hosted backend lacks current draft support; no deployed commit was verified.
 Under [decision 0022](../decisions/0022-development-and-publication-gates.md), the next
 unblocked draft contribution is HLD-16A, after rechecking current main and its gates.
 P3-02 remains planned until working artifacts and checks exist.
+
+## Final delivery record
+
+[PR #71](https://github.com/Prem-Duvvapu/hld-with-ui/pull/71) passed required
+[CI 38455666194](https://github.com/Prem-Duvvapu/hld-with-ui/actions/runs/38455666194)
+on final head `fca784b8539825012942cd7ae2a8f811fd1b2777`, then merged on
+2026-10-14 15:30:19 UTC as `4c4436135df1ce1ec4f4a7640375c0fa549e699d`.
+Those checks verify the documentation contribution and inherited baseline, not a new
+transaction implementation. The next actual model contribution is HLD-16A.

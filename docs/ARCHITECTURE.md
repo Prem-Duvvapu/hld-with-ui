@@ -210,3 +210,12 @@ and three Operation sequence paths have complete text equivalents and make no si
 selector family; [HLD-15B](work-items/HLD-15B.md) records verification.
 See [decision 0029](decisions/0029-finite-data-access-analysis.md) and
 [HLD-15A](work-items/HLD-15A.md).
+
+## Reservation analysis foundation
+
+The pure `com.hld.transactions` analysis accepts a finite ordering of READ and
+ATTEMPT_RESERVE actions for two through four reservations. Java owns stock, allocations,
+local observations and invariant evidence. Complete immutable snapshots need no shared
+scheduler, timing or generic state patches. This first slice has no API/descriptor/catalog
+registration or React renderer. [Decision 0031](decisions/0031-reservation-interleavings-and-invariants.md)
+and [HLD-16A](work-items/HLD-16A.md) record its scoped behavior and verification.

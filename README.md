@@ -290,3 +290,9 @@ Copyright (c) 2026 Prem Duvvapu.
 
 Third-party dependencies and materials remain subject to their own licenses and notices;
 the project license does not replace those terms.
+
+## Transaction model foundation
+
+HLD-16A implements a pure Java reservation analysis, following the
+[transaction handoff](docs/TRANSACTIONS_IMPLEMENTATION_PLAN.md). Its API, React experience
+and full isolation teaching remain pending; it is not an available learning module.

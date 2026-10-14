@@ -1,0 +1,223 @@
+{
+  "simulationId": "transactions-isolation",
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "kind": "analysis",
+  "status": "completed",
+  "input": {
+    "schemaVersion": "1.0",
+    "modelVersion": "1.0.0",
+    "strategy": "STALE_READ_WRITE",
+    "initialUnits": 1,
+    "reservations": [
+      { "id": "a", "quantity": 1 },
+      { "id": "b", "quantity": 1 }
+    ],
+    "schedule": [
+      { "id": "read-a", "reservationId": "a", "action": "READ" },
+      { "id": "read-b", "reservationId": "b", "action": "READ" },
+      { "id": "attempt-a", "reservationId": "a", "action": "ATTEMPT_RESERVE" },
+      { "id": "attempt-b", "reservationId": "b", "action": "ATTEMPT_RESERVE" }
+    ]
+  },
+  "initialState": {
+    "remainingUnits": 1,
+    "allocatedUnits": 0,
+    "reservations": [
+      { "id": "a", "quantity": 1, "status": "NOT_READ" },
+      { "id": "b", "quantity": 1, "status": "NOT_READ" }
+    ],
+    "allocations": [],
+    "invariants": {
+      "remainingNonnegative": true,
+      "allocatedWithinCapacity": true,
+      "unitsConserved": true,
+      "accountedUnits": 1
+    }
+  },
+  "outcomes": [
+    {
+      "sequence": 1,
+      "stepId": "read-a",
+      "reservationId": "a",
+      "action": "READ",
+      "kind": "READ_OBSERVED",
+      "postState": {
+        "remainingUnits": 1,
+        "allocatedUnits": 0,
+        "reservations": [
+          {
+            "id": "a",
+            "quantity": 1,
+            "status": "READ_OBSERVED",
+            "observedRemaining": 1
+          },
+          { "id": "b", "quantity": 1, "status": "NOT_READ" }
+        ],
+        "allocations": [],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "accountedUnits": 1
+        }
+      },
+      "explanation": "a observes 1 remaining units. Its later attempt will check this saved value. The read changes only its observation and status, not stock or allocations.",
+      "observedRemaining": 1
+    },
+    {
+      "sequence": 2,
+      "stepId": "read-b",
+      "reservationId": "b",
+      "action": "READ",
+      "kind": "READ_OBSERVED",
+      "postState": {
+        "remainingUnits": 1,
+        "allocatedUnits": 0,
+        "reservations": [
+          {
+            "id": "a",
+            "quantity": 1,
+            "status": "READ_OBSERVED",
+            "observedRemaining": 1
+          },
+          {
+            "id": "b",
+            "quantity": 1,
+            "status": "READ_OBSERVED",
+            "observedRemaining": 1
+          }
+        ],
+        "allocations": [],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "accountedUnits": 1
+        }
+      },
+      "explanation": "b observes 1 remaining units. Its later attempt will check this saved value. The read changes only its observation and status, not stock or allocations.",
+      "observedRemaining": 1
+    },
+    {
+      "sequence": 3,
+      "stepId": "attempt-a",
+      "reservationId": "a",
+      "action": "ATTEMPT_RESERVE",
+      "kind": "RESERVATION_ACCEPTED",
+      "postState": {
+        "remainingUnits": 0,
+        "allocatedUnits": 1,
+        "reservations": [
+          {
+            "id": "a",
+            "quantity": 1,
+            "status": "ACCEPTED",
+            "observedRemaining": 1
+          },
+          {
+            "id": "b",
+            "quantity": 1,
+            "status": "READ_OBSERVED",
+            "observedRemaining": 1
+          }
+        ],
+        "allocations": [
+          { "reservationId": "a", "quantity": 1, "stepId": "attempt-a" }
+        ],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "accountedUnits": 1
+        }
+      },
+      "explanation": "a checks its saved observation 1 against quantity 1. Accepted: assign 1 - 1 = 0 remaining units, replacing the previous shared value 1, and append its allocation. Allocated units now total 1. A saved read can miss other accepted work.",
+      "checkedRemaining": 1,
+      "checkSource": "SNAPSHOT",
+      "quantity": 1
+    },
+    {
+      "sequence": 4,
+      "stepId": "attempt-b",
+      "reservationId": "b",
+      "action": "ATTEMPT_RESERVE",
+      "kind": "RESERVATION_ACCEPTED",
+      "postState": {
+        "remainingUnits": 0,
+        "allocatedUnits": 2,
+        "reservations": [
+          {
+            "id": "a",
+            "quantity": 1,
+            "status": "ACCEPTED",
+            "observedRemaining": 1
+          },
+          {
+            "id": "b",
+            "quantity": 1,
+            "status": "ACCEPTED",
+            "observedRemaining": 1
+          }
+        ],
+        "allocations": [
+          { "reservationId": "a", "quantity": 1, "stepId": "attempt-a" },
+          { "reservationId": "b", "quantity": 1, "stepId": "attempt-b" }
+        ],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": false,
+          "unitsConserved": false,
+          "accountedUnits": 2
+        }
+      },
+      "explanation": "b checks its saved observation 1 against quantity 1. Accepted: assign 1 - 1 = 0 remaining units, replacing the previous shared value 0, and append its allocation. Allocated units now total 2. A saved read can miss other accepted work.",
+      "checkedRemaining": 1,
+      "checkSource": "SNAPSHOT",
+      "quantity": 1
+    }
+  ],
+  "finalState": {
+    "remainingUnits": 0,
+    "allocatedUnits": 2,
+    "reservations": [
+      {
+        "id": "a",
+        "quantity": 1,
+        "status": "ACCEPTED",
+        "observedRemaining": 1
+      },
+      { "id": "b", "quantity": 1, "status": "ACCEPTED", "observedRemaining": 1 }
+    ],
+    "allocations": [
+      { "reservationId": "a", "quantity": 1, "stepId": "attempt-a" },
+      { "reservationId": "b", "quantity": 1, "stepId": "attempt-b" }
+    ],
+    "invariants": {
+      "remainingNonnegative": true,
+      "allocatedWithinCapacity": false,
+      "unitsConserved": false,
+      "accountedUnits": 2
+    }
+  },
+  "metrics": {
+    "acceptedReservations": 2,
+    "rejectedReservations": 0,
+    "finalRemainingUnits": 0,
+    "finalAllocatedUnits": 2,
+    "invariantStatus": "VIOLATED",
+    "firstViolationStepId": "attempt-b"
+  },
+  "assumptions": [
+    "This is an illustrative reservation interleaving, not a database engine or an isolation-level emulator.",
+    "Schedule order is explicit. No elapsed time, random choice or actual thread scheduling is modeled.",
+    "Each distinct reservation reads once and attempts once; this model does not deduplicate retried business requests.",
+    "The stale strategy checks its saved observation and assigns remaining stock from that observation.",
+    "The conditional strategy checks current stock and changes stock plus its allocation in one indivisible modeled action.",
+    "Accepted allocations are local model state, not a durable database commit, payment or external effect.",
+    "A rejection changes the reservation status but leaves stock and allocations unchanged.",
+    "Capacity, nonnegative remaining stock and conservation are separate Java-reported checks at every observed prefix.",
+    "Completed means the schedule was evaluated; it can include rejected reservations or an intentional invariant violation.",
+    "Lock waiting, versions, rollback, crashes, retries, replicas and multiple-resource transactions are excluded."
+  ]
+}

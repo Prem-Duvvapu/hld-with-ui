@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "strategy": "STALE_READ_WRITE",
+  "initialUnits": 1,
+  "reservations": [
+    { "id": "a", "quantity": 1 },
+    { "id": "b", "quantity": 1 }
+  ],
+  "schedule": [
+    { "id": "read-a", "reservationId": "a", "action": "READ" },
+    { "id": "read-b", "reservationId": "b", "action": "READ" },
+    { "id": "attempt-a", "reservationId": "a", "action": "ATTEMPT_RESERVE" },
+    { "id": "attempt-b", "reservationId": "b", "action": "ATTEMPT_RESERVE" }
+  ]
+}

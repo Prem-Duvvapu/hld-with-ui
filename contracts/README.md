@@ -160,3 +160,19 @@ mixed families reject. Content checks resolve supported canonical scalar referen
 validate against actual `outcomes`, rather than introducing an artificial `events` array.
 Content `1.1.0` authors eight checkpoints over seven unchanged presets. Schema/model stay
 `1.0`/`1.0.0`. See [decision 0030](../docs/decisions/0030-guided-data-access-outcome-targets.md).
+
+## Standalone reservation evidence
+
+The HLD-16A standalone `transactions-isolation.input.schema.json` and
+`transactions-isolation.result.schema.json` define the pure Java analysis, not a new HTTP
+endpoint. Input owns shared identifiers and captured-input definitions; result references
+that canonical owner. Compile/register input before result. Closed conditional shapes omit
+inapplicable READ/attempt fields, retain observations in terminal actor states and require
+firstViolationStepId exactly for a violated history. Unsafe allocated/accounted quantities
+are allowed above initial stock so the teaching counterexample is representable.
+
+Actual unsafe and protected examples are produced by the configured Java mapper and compared
+without rewriting in ordinary verification. Isolated Node fixtures validate them and reject
+wrong shapes. Java validates identity/order relations and computes behavior/invariants; schema
+checks alone cannot prove those semantics. OpenAPI/types and descriptor delivery remain unchanged
+until real API paths exist. See [HLD-16A](../docs/work-items/HLD-16A.md).
