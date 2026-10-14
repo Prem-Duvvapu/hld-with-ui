@@ -233,3 +233,28 @@ selected postState through the shared ReservationEvidence, without whole-run met
 Eight checkpoints reuse five Java presets and the existing explicit saved-answer lifecycle.
 Authored Architecture/Operation sequence views are separate untimed illustrations sending no
 run. See [decision 0033](decisions/0033-guided-reservation-step-targets.md).
+
+## Transaction atomicity foundation
+
+[HLD-17A](work-items/HLD-17A.md) implements a separate pure `com.hld.atomicity` analysis,
+`transaction-atomicity` schema 1.0 / model 1.0.0. This foundation has no HTTP/OpenAPI path,
+Spring registration, catalog simulation ID or frontend integration in this slice. Its actual
+verification remains in the work item; the existing reservation experiment is unchanged.
+
+One through three complete transaction programs interleave within at most twelve untimed
+steps. `SPLIT_WRITES` publishes stock and allocation separately; its abort does not undo
+those effects. `STAGED_VERSION_CHECK` keeps both changes private and publishes them together
+only after validating the BEGIN-captured visible-data revision. Abort/conflict clears only
+that actor's workspace, retaining base history and other actors' published work. Every
+declared step has an immutable complete post-state, including explicit skipped work after
+an insufficient-stock decision. Validation precedes all transitions.
+
+Java separately reports published inventory/allocations/revision, private work, actor phase,
+applied stock units and four invariant flags. Visible allocation totals include split-aborted
+records. Conservation alone does not establish that aborted effects disappeared, and a later
+consistent final state cannot erase an earlier exposed breach. No frontend transition engine,
+SQL isolation-level guarantee, persistent recovery, retries, idempotency, acknowledgements
+or external effects are introduced. [Decision 0034](decisions/0034-transaction-atomicity-model.md)
+records this original local publication/discard boundary. A later verified API/UI slice can
+expose a second named experiment inside the existing draft topic; its old Guided coverage
+does not automatically extend to this new model.

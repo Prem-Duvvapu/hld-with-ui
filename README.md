@@ -36,8 +36,14 @@ review and publication remain pending.
 
 The draft **Transactions & Isolation** topic at `/draft/topics/transactions-isolation`
 provides eight editable reservation scenarios, Java snapshot evidence, Study and eight Practice
-questions. Its six draft views are described in [HLD-16B](docs/work-items/HLD-16B.md); broader
+questions. Its six draft views are described in [HLD-16C](docs/work-items/HLD-16C.md); broader
 transaction teaching and publication remain pending.
+
+The additional transaction foundation, `transaction-atomicity`, is implemented as a
+separate pure Java model with standalone contracts ([HLD-17A](docs/work-items/HLD-17A.md)).
+It is not yet available through the API or UI and is not a published module. It compares
+individually visible writes with staged publication and explicit abort. The existing
+reservation experiment keeps its recorded model version.
 
 ## Record your learning
 

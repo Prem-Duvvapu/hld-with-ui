@@ -244,3 +244,90 @@ first acceptance is a preserved prefix; the empty-stock first attempt shows one 
 and one remaining read observation of zero. Later metrics never become these selected facts.
 Manual Architecture and unsafe/conditional/serial sequences are authored illustrations.
 [HLD-16C](work-items/HLD-16C.md) records actual verification and remaining curriculum gates.
+
+## Pure transaction atomicity foundation
+
+[HLD-17A](work-items/HLD-17A.md) implements standalone `transaction-atomicity`
+schema 1.0 / model 1.0.0 as a pure bounded analysis. The input/result schemas are separate
+canonical artifacts; no HTTP/OpenAPI path, Spring registration, catalog simulation ID,
+frontend view or Guided target is introduced in this foundation slice. Existing reservation
+model 1.0.0 evidence remains unchanged. Actual checks are recorded only in the work item.
+
+### Complete input programs
+
+Input fields are exactly schemaVersion, modelVersion, mode, initialUnits, transactions and
+schedule. Mode is `SPLIT_WRITES` or `STAGED_VERSION_CHECK`; initialUnits is an integer from 0..20.
+One through three transaction records have id and quantity integer 1..20. Two through twelve schedule steps
+have id, transactionId and action. IDs follow whole ASCII `[a-z][a-z0-9-]{0,31}` without
+whitespace and are unique within their respective collections. References name known actors.
+Each actor follows exactly one of these programs, though actor programs may interleave:
+
+```text
+BEGIN → ABORT
+BEGIN → DECREMENT_STOCK → ABORT
+BEGIN → DECREMENT_STOCK → RECORD_ALLOCATION → ABORT
+BEGIN → DECREMENT_STOCK → RECORD_ALLOCATION → COMMIT
+```
+
+Reject null/default/coerced values, unsupported versions/variants, malformed/bounded IDs,
+unknown references and incomplete/repeated/reversed/post-terminal programs before execution.
+Defensive input copies retain null elements for explicit validation. One outcome is returned
+for every valid input step; there is no omitted action, partial/limited result, random seed,
+timer, real model thread or network call.
+
+### Published and private state
+
+BEGIN captures current remainingUnits and visible-data revision. Split DECREMENT checks
+CURRENT stock, publishes its subtraction and records appliedStockUnits; split RECORD publishes
+its allocation. Each mutation increments revision once. Split COMMIT changes actor status
+only, and split ABORT leaves prior published effects intact.
+
+Staged DECREMENT checks the BEGIN-captured WORKING_COPY and prepares private stock;
+staged RECORD prepares pendingAllocation. A nonblocked staged COMMIT compares expectedRevision
+with actualRevision before publishing workingRemaining plus its allocation in one action,
+incrementing revision once. A mismatch aborts with REVISION_CONFLICT even when current stock
+would fit. Every terminal action clears workingRemaining, pendingStockUnits and pendingAllocation
+but retains baseRemaining/baseRevision. Discard only that actor's workspace; never restore
+the shared BEGIN snapshot over someone else's work.
+
+Insufficient stock produces STOCK_REJECTED, phase BLOCKED and failureReason INSUFFICIENT_STOCK,
+with no mutation. A declared later record action returns WORK_SKIPPED. Terminal COMMIT or
+ABORT becomes ABORTED retaining the earlier failure. Otherwise explicit ABORT uses USER_ABORT.
+Status changes, staging, skipped/rejected work and aborts do not change shared revision.
+
+### Complete Java evidence
+
+State contains remainingUnits, allocatedUnits, revision, transactions, allocations and
+invariants. Published remaining/allocated/accounted values are 0..20; revision is 0..6.
+There are at most three transaction/visible allocation records and twelve outcomes.
+TransactionState preserves id, quantity, phase NOT_STARTED/OPEN/BLOCKED/COMMITTED/ABORTED,
+appliedStockUnits and pendingStockUnits. Base history exists after BEGIN; workingRemaining
+exists only for staged OPEN/BLOCKED actors, and pendingAllocation only for staged OPEN
+prepared records. failureReason is required for BLOCKED/ABORTED and absent otherwise.
+Absent work/history is omitted, not null or a fabricated zero.
+
+Visible Allocation contains transactionId, quantity, preparedAtStepId and publishedAtStepId.
+Split preparation/publication both name the RECORD action; staged preparation names RECORD
+and publication names COMMIT. PendingAllocation contains transactionId, quantity and stepId.
+Count every visible allocation, including one belonging to a later-aborted split actor.
+
+Each outcome contains sequence, stepId, transactionId, action, kind, postState and explanation.
+Its kind is one of TRANSACTION_STARTED, STOCK_APPLIED, STOCK_STAGED, STOCK_REJECTED,
+ALLOCATION_APPLIED, ALLOCATION_STAGED, WORK_SKIPPED, TRANSACTION_COMMITTED or TRANSACTION_ABORTED.
+checkedRemaining/checkSource occur only on successful/rejected DECREMENT; expectedRevision/
+actualRevision occur only on nonblocked staged COMMIT, success or conflict. reason is required
+only on STOCK_REJECTED, WORK_SKIPPED and TRANSACTION_ABORTED. Omit all inapplicable fields.
+
+Java reports remainingNonnegative, allocatedWithinCapacity, unitsConserved, abortedEffectsAbsent
+and accountedUnits. The aborted-effects flag fails when an ABORTED actor has applied stock
+or a visible allocation. Private preparation is excluded from published totals/flags.
+Metrics distinguish committed/aborted/conflicted transactions and abortedTransactionsWithEffects,
+final unit counts and history invariantStatus. firstViolationStepId is present exactly for
+VIOLATED history, even when final flags recover. Initial flags are all true; finalState equals
+the last outcome's postState. `completed` means the complete schedule was evaluated, not
+that all transactions committed or every invariant passed.
+
+This original local publication/discard protocol emulates no SQL isolation level, durable
+database commit, crash recovery, acknowledgement/lost-response protocol, retry, idempotency or
+external effect. [Decision 0034](decisions/0034-transaction-atomicity-model.md) explains the
+boundary; a later strict API/runnable experiment needs its own integration and release gates.

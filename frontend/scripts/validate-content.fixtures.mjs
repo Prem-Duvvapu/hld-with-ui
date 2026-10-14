@@ -17,6 +17,7 @@ import "./validate-delivery-contract.fixtures.mjs";
 import "./validate-data-access-contract.fixtures.mjs";
 import "./validate-reservation-contract.fixtures.mjs";
 import "./validate-reservation-http-contract.fixtures.mjs";
+import "./validate-content-atomicity.fixtures.mjs";
 import "./event-selector-capabilities.fixtures.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -84,6 +85,39 @@ function checkChange(
 function rejectChange(...args) {
   checkChange(...args);
 }
+
+for (const [variant, kind, mutate] of [
+  [
+    "protected",
+    "input",
+    (input) => {
+      input.transactions[0].id += "\n";
+    },
+  ],
+  [
+    "conflict",
+    "result",
+    (result) => {
+      delete result.outcomes.at(-1).actualRevision;
+    },
+  ],
+])
+  test(`canonical checker rejects malformed actual atomicity ${variant} ${kind} evidence`, () => {
+    rejectChange(
+      () => {},
+      new RegExp(`transaction-atomicity-${variant}-${kind}`),
+      () => {},
+      (fixture) => {
+        const path = join(
+          fixture,
+          `contracts/examples/transaction-atomicity-${variant}-${kind}.json`,
+        );
+        const example = JSON.parse(readFileSync(path, "utf8"));
+        mutate(example);
+        writeFileSync(path, JSON.stringify(example));
+      },
+    );
+  });
 
 function rejectQueueExample(kind, change, expected) {
   rejectChange(

@@ -1,0 +1,896 @@
+{
+  "simulationId": "transaction-atomicity",
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "kind": "analysis",
+  "status": "completed",
+  "input": {
+    "schemaVersion": "1.0",
+    "modelVersion": "1.0.0",
+    "mode": "STAGED_VERSION_CHECK",
+    "initialUnits": 20,
+    "transactions": [
+      { "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0", "quantity": 20 },
+      { "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1", "quantity": 20 },
+      { "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2", "quantity": 20 }
+    ],
+    "schedule": [
+      {
+        "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx00",
+        "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+        "action": "BEGIN"
+      },
+      {
+        "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx01",
+        "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+        "action": "BEGIN"
+      },
+      {
+        "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx02",
+        "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+        "action": "BEGIN"
+      },
+      {
+        "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx10",
+        "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+        "action": "DECREMENT_STOCK"
+      },
+      {
+        "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx11",
+        "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+        "action": "DECREMENT_STOCK"
+      },
+      {
+        "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx12",
+        "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+        "action": "DECREMENT_STOCK"
+      },
+      {
+        "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx20",
+        "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+        "action": "RECORD_ALLOCATION"
+      },
+      {
+        "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx21",
+        "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+        "action": "RECORD_ALLOCATION"
+      },
+      {
+        "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx22",
+        "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+        "action": "RECORD_ALLOCATION"
+      },
+      {
+        "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx30",
+        "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+        "action": "COMMIT"
+      },
+      {
+        "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx31",
+        "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+        "action": "COMMIT"
+      },
+      {
+        "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx32",
+        "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+        "action": "COMMIT"
+      }
+    ]
+  },
+  "initialState": {
+    "remainingUnits": 20,
+    "allocatedUnits": 0,
+    "revision": 0,
+    "transactions": [
+      {
+        "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+        "quantity": 20,
+        "phase": "NOT_STARTED",
+        "appliedStockUnits": 0,
+        "pendingStockUnits": 0
+      },
+      {
+        "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+        "quantity": 20,
+        "phase": "NOT_STARTED",
+        "appliedStockUnits": 0,
+        "pendingStockUnits": 0
+      },
+      {
+        "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+        "quantity": 20,
+        "phase": "NOT_STARTED",
+        "appliedStockUnits": 0,
+        "pendingStockUnits": 0
+      }
+    ],
+    "allocations": [],
+    "invariants": {
+      "remainingNonnegative": true,
+      "allocatedWithinCapacity": true,
+      "unitsConserved": true,
+      "abortedEffectsAbsent": true,
+      "accountedUnits": 20
+    }
+  },
+  "outcomes": [
+    {
+      "sequence": 1,
+      "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx00",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+      "action": "BEGIN",
+      "kind": "TRANSACTION_STARTED",
+      "postState": {
+        "remainingUnits": 20,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "transactions": [
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 20
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+            "quantity": 20,
+            "phase": "NOT_STARTED",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+            "quantity": 20,
+            "phase": "NOT_STARTED",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0
+          }
+        ],
+        "allocations": [],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "abortedEffectsAbsent": true,
+          "accountedUnits": 20
+        }
+      },
+      "explanation": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0 begins with remaining 20 and visible revision 0. Capturing this base changes no published stock or allocation."
+    },
+    {
+      "sequence": 2,
+      "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx01",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+      "action": "BEGIN",
+      "kind": "TRANSACTION_STARTED",
+      "postState": {
+        "remainingUnits": 20,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "transactions": [
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 20
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 20
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+            "quantity": 20,
+            "phase": "NOT_STARTED",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0
+          }
+        ],
+        "allocations": [],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "abortedEffectsAbsent": true,
+          "accountedUnits": 20
+        }
+      },
+      "explanation": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1 begins with remaining 20 and visible revision 0. Capturing this base changes no published stock or allocation."
+    },
+    {
+      "sequence": 3,
+      "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx02",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+      "action": "BEGIN",
+      "kind": "TRANSACTION_STARTED",
+      "postState": {
+        "remainingUnits": 20,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "transactions": [
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 20
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 20
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 20
+          }
+        ],
+        "allocations": [],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "abortedEffectsAbsent": true,
+          "accountedUnits": 20
+        }
+      },
+      "explanation": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2 begins with remaining 20 and visible revision 0. Capturing this base changes no published stock or allocation."
+    },
+    {
+      "sequence": 4,
+      "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx10",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+      "action": "DECREMENT_STOCK",
+      "kind": "STOCK_STAGED",
+      "postState": {
+        "remainingUnits": 20,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "transactions": [
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 20
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 20
+          }
+        ],
+        "allocations": [],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "abortedEffectsAbsent": true,
+          "accountedUnits": 20
+        }
+      },
+      "explanation": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0 prepares 20 - 20 = 0 remaining units privately. Public stock remains 20 and visible revision remains 0.",
+      "checkedRemaining": 20,
+      "checkSource": "WORKING_COPY"
+    },
+    {
+      "sequence": 5,
+      "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx11",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+      "action": "DECREMENT_STOCK",
+      "kind": "STOCK_STAGED",
+      "postState": {
+        "remainingUnits": 20,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "transactions": [
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 20
+          }
+        ],
+        "allocations": [],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "abortedEffectsAbsent": true,
+          "accountedUnits": 20
+        }
+      },
+      "explanation": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1 prepares 20 - 20 = 0 remaining units privately. Public stock remains 20 and visible revision remains 0.",
+      "checkedRemaining": 20,
+      "checkSource": "WORKING_COPY"
+    },
+    {
+      "sequence": 6,
+      "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx12",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+      "action": "DECREMENT_STOCK",
+      "kind": "STOCK_STAGED",
+      "postState": {
+        "remainingUnits": 20,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "transactions": [
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0
+          }
+        ],
+        "allocations": [],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "abortedEffectsAbsent": true,
+          "accountedUnits": 20
+        }
+      },
+      "explanation": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2 prepares 20 - 20 = 0 remaining units privately. Public stock remains 20 and visible revision remains 0.",
+      "checkedRemaining": 20,
+      "checkSource": "WORKING_COPY"
+    },
+    {
+      "sequence": 7,
+      "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx20",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+      "action": "RECORD_ALLOCATION",
+      "kind": "ALLOCATION_STAGED",
+      "postState": {
+        "remainingUnits": 20,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "transactions": [
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0,
+            "pendingAllocation": {
+              "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+              "quantity": 20,
+              "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx20"
+            }
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0
+          }
+        ],
+        "allocations": [],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "abortedEffectsAbsent": true,
+          "accountedUnits": 20
+        }
+      },
+      "explanation": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0 prepares an allocation of 20 units privately. Neither its pending row nor its pending stock is public yet."
+    },
+    {
+      "sequence": 8,
+      "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx21",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+      "action": "RECORD_ALLOCATION",
+      "kind": "ALLOCATION_STAGED",
+      "postState": {
+        "remainingUnits": 20,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "transactions": [
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0,
+            "pendingAllocation": {
+              "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+              "quantity": 20,
+              "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx20"
+            }
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0,
+            "pendingAllocation": {
+              "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+              "quantity": 20,
+              "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx21"
+            }
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0
+          }
+        ],
+        "allocations": [],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "abortedEffectsAbsent": true,
+          "accountedUnits": 20
+        }
+      },
+      "explanation": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1 prepares an allocation of 20 units privately. Neither its pending row nor its pending stock is public yet."
+    },
+    {
+      "sequence": 9,
+      "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx22",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+      "action": "RECORD_ALLOCATION",
+      "kind": "ALLOCATION_STAGED",
+      "postState": {
+        "remainingUnits": 20,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "transactions": [
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0,
+            "pendingAllocation": {
+              "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+              "quantity": 20,
+              "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx20"
+            }
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0,
+            "pendingAllocation": {
+              "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+              "quantity": 20,
+              "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx21"
+            }
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0,
+            "pendingAllocation": {
+              "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+              "quantity": 20,
+              "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx22"
+            }
+          }
+        ],
+        "allocations": [],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "abortedEffectsAbsent": true,
+          "accountedUnits": 20
+        }
+      },
+      "explanation": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2 prepares an allocation of 20 units privately. Neither its pending row nor its pending stock is public yet."
+    },
+    {
+      "sequence": 10,
+      "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx30",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+      "action": "COMMIT",
+      "kind": "TRANSACTION_COMMITTED",
+      "postState": {
+        "remainingUnits": 0,
+        "allocatedUnits": 20,
+        "revision": 1,
+        "transactions": [
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+            "quantity": 20,
+            "phase": "COMMITTED",
+            "appliedStockUnits": 20,
+            "pendingStockUnits": 0,
+            "baseRemaining": 20,
+            "baseRevision": 0
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0,
+            "pendingAllocation": {
+              "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+              "quantity": 20,
+              "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx21"
+            }
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0,
+            "pendingAllocation": {
+              "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+              "quantity": 20,
+              "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx22"
+            }
+          }
+        ],
+        "allocations": [
+          {
+            "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+            "quantity": 20,
+            "preparedAtStepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx20",
+            "publishedAtStepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx30"
+          }
+        ],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "abortedEffectsAbsent": true,
+          "accountedUnits": 20
+        }
+      },
+      "explanation": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0 validates visible revision 0 against its base 0 and publishes stock plus allocation together. Remaining is 0, revision becomes 1, and its private workspace is cleared. This local boundary does not promise durability.",
+      "expectedRevision": 0,
+      "actualRevision": 0
+    },
+    {
+      "sequence": 11,
+      "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx31",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+      "action": "COMMIT",
+      "kind": "TRANSACTION_ABORTED",
+      "postState": {
+        "remainingUnits": 0,
+        "allocatedUnits": 20,
+        "revision": 1,
+        "transactions": [
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+            "quantity": 20,
+            "phase": "COMMITTED",
+            "appliedStockUnits": 20,
+            "pendingStockUnits": 0,
+            "baseRemaining": 20,
+            "baseRevision": 0
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+            "quantity": 20,
+            "phase": "ABORTED",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "failureReason": "REVISION_CONFLICT"
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+            "quantity": 20,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 20,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "workingRemaining": 0,
+            "pendingAllocation": {
+              "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+              "quantity": 20,
+              "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx22"
+            }
+          }
+        ],
+        "allocations": [
+          {
+            "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+            "quantity": 20,
+            "preparedAtStepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx20",
+            "publishedAtStepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx30"
+          }
+        ],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "abortedEffectsAbsent": true,
+          "accountedUnits": 20
+        }
+      },
+      "explanation": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1 becomes ABORTED (REVISION_CONFLICT). Expected visible revision 0 but found 1. Discard only its private proposal; another transaction's published data stays intact.",
+      "expectedRevision": 0,
+      "actualRevision": 1,
+      "reason": "REVISION_CONFLICT"
+    },
+    {
+      "sequence": 12,
+      "stepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx32",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+      "action": "COMMIT",
+      "kind": "TRANSACTION_ABORTED",
+      "postState": {
+        "remainingUnits": 0,
+        "allocatedUnits": 20,
+        "revision": 1,
+        "transactions": [
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+            "quantity": 20,
+            "phase": "COMMITTED",
+            "appliedStockUnits": 20,
+            "pendingStockUnits": 0,
+            "baseRemaining": 20,
+            "baseRevision": 0
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+            "quantity": 20,
+            "phase": "ABORTED",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "failureReason": "REVISION_CONFLICT"
+          },
+          {
+            "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+            "quantity": 20,
+            "phase": "ABORTED",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0,
+            "baseRemaining": 20,
+            "baseRevision": 0,
+            "failureReason": "REVISION_CONFLICT"
+          }
+        ],
+        "allocations": [
+          {
+            "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+            "quantity": 20,
+            "preparedAtStepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx20",
+            "publishedAtStepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx30"
+          }
+        ],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "abortedEffectsAbsent": true,
+          "accountedUnits": 20
+        }
+      },
+      "explanation": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2 becomes ABORTED (REVISION_CONFLICT). Expected visible revision 0 but found 1. Discard only its private proposal; another transaction's published data stays intact.",
+      "expectedRevision": 0,
+      "actualRevision": 1,
+      "reason": "REVISION_CONFLICT"
+    }
+  ],
+  "finalState": {
+    "remainingUnits": 0,
+    "allocatedUnits": 20,
+    "revision": 1,
+    "transactions": [
+      {
+        "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+        "quantity": 20,
+        "phase": "COMMITTED",
+        "appliedStockUnits": 20,
+        "pendingStockUnits": 0,
+        "baseRemaining": 20,
+        "baseRevision": 0
+      },
+      {
+        "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+        "quantity": 20,
+        "phase": "ABORTED",
+        "appliedStockUnits": 0,
+        "pendingStockUnits": 0,
+        "baseRemaining": 20,
+        "baseRevision": 0,
+        "failureReason": "REVISION_CONFLICT"
+      },
+      {
+        "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+        "quantity": 20,
+        "phase": "ABORTED",
+        "appliedStockUnits": 0,
+        "pendingStockUnits": 0,
+        "baseRemaining": 20,
+        "baseRevision": 0,
+        "failureReason": "REVISION_CONFLICT"
+      }
+    ],
+    "allocations": [
+      {
+        "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+        "quantity": 20,
+        "preparedAtStepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx20",
+        "publishedAtStepId": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx30"
+      }
+    ],
+    "invariants": {
+      "remainingNonnegative": true,
+      "allocatedWithinCapacity": true,
+      "unitsConserved": true,
+      "abortedEffectsAbsent": true,
+      "accountedUnits": 20
+    }
+  },
+  "metrics": {
+    "committedTransactions": 1,
+    "abortedTransactions": 2,
+    "conflictedTransactions": 2,
+    "abortedTransactionsWithEffects": 0,
+    "finalRemainingUnits": 0,
+    "finalAllocatedUnits": 20,
+    "invariantStatus": "PRESERVED"
+  },
+  "assumptions": [
+    "This is an illustrative local stock/allocation model, not a database or SQL isolation-level emulator.",
+    "The complete supplied schedule determines order; no timing, random choice or actual thread scheduling is modeled.",
+    "Split writes publish stock and allocation separately; their modeled ABORT has no common rollback boundary.",
+    "Staged work is private until one revision-checked publication changes stock and allocation together.",
+    "The revision covers visible inventory/allocation mutations only; private preparation and statuses do not advance it.",
+    "A coarse revision conflict can reject work even when current stock would still fit its quantity.",
+    "Aborting staged work discards only its own unpublished workspace, never another transaction's published effects.",
+    "All visible allocations count, including rows written by split transactions that later abort.",
+    "Public invariant history includes partial split writes; a repaired final state does not erase an earlier breach.",
+    "COMMITTED names local modeled publication, not durable storage, crash recovery, acknowledgement or an external effect.",
+    "Retries, idempotency, locks, deadlocks, replicas and multiple-resource transactions are excluded.",
+    "Completed means every declared step was evaluated, including rejection, explicit skip or abort outcomes."
+  ]
+}

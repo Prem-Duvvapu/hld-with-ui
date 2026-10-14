@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "mode": "STAGED_VERSION_CHECK",
+  "initialUnits": 1,
+  "transactions": [
+    { "id": "a", "quantity": 1 },
+    { "id": "b", "quantity": 1 }
+  ],
+  "schedule": [
+    { "id": "begin-a", "transactionId": "a", "action": "BEGIN" },
+    { "id": "begin-b", "transactionId": "b", "action": "BEGIN" },
+    { "id": "decrement-a", "transactionId": "a", "action": "DECREMENT_STOCK" },
+    { "id": "decrement-b", "transactionId": "b", "action": "DECREMENT_STOCK" },
+    { "id": "record-a", "transactionId": "a", "action": "RECORD_ALLOCATION" },
+    { "id": "record-b", "transactionId": "b", "action": "RECORD_ALLOCATION" },
+    { "id": "commit-a", "transactionId": "a", "action": "COMMIT" },
+    { "id": "commit-b", "transactionId": "b", "action": "COMMIT" }
+  ]
+}

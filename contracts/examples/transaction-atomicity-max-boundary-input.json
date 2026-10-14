@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "mode": "STAGED_VERSION_CHECK",
+  "initialUnits": 20,
+  "transactions": [
+    { "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0", "quantity": 20 },
+    { "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1", "quantity": 20 },
+    { "id": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2", "quantity": 20 }
+  ],
+  "schedule": [
+    {
+      "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx00",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+      "action": "BEGIN"
+    },
+    {
+      "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx01",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+      "action": "BEGIN"
+    },
+    {
+      "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx02",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+      "action": "BEGIN"
+    },
+    {
+      "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx10",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+      "action": "DECREMENT_STOCK"
+    },
+    {
+      "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx11",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+      "action": "DECREMENT_STOCK"
+    },
+    {
+      "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx12",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+      "action": "DECREMENT_STOCK"
+    },
+    {
+      "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx20",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+      "action": "RECORD_ALLOCATION"
+    },
+    {
+      "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx21",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+      "action": "RECORD_ALLOCATION"
+    },
+    {
+      "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx22",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+      "action": "RECORD_ALLOCATION"
+    },
+    {
+      "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx30",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx0",
+      "action": "COMMIT"
+    },
+    {
+      "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx31",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx1",
+      "action": "COMMIT"
+    },
+    {
+      "id": "sxxxxxxxxxxxxxxxxxxxxxxxxxxxxx32",
+      "transactionId": "axxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2",
+      "action": "COMMIT"
+    }
+  ]
+}
