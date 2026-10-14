@@ -54,3 +54,17 @@ it("refuses a data-access identity mixed into a matching queue job", () => {
       } as GuidedCheckpoint["target"]),
     ).toBe(-1);
 });
+
+it("refuses a reservation step identity attached to a matching queue job", () => {
+  const legacy = { jobId: "job-2", kind: "job.queued", occurrence: 1 };
+  expect(
+    resolveQueueCheckpoint(baselineResult.events, legacy),
+  ).toBeGreaterThanOrEqual(0);
+  for (const stepId of ["attempt-a", null])
+    expect(
+      resolveQueueCheckpoint(baselineResult.events, {
+        ...legacy,
+        stepId,
+      } as GuidedCheckpoint["target"]),
+    ).toBe(-1);
+});

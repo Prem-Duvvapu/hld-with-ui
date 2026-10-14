@@ -14,12 +14,13 @@ import tools.jackson.databind.ObjectMapper;
 class GuidedTargetSerializationTest {
     @Autowired ObjectMapper mapper;
 
-    @Test void allFourFamiliesRoundTripWithExactlyTheirSelectedFields() {
+    @Test void allFiveFamiliesRoundTripWithExactlyTheirSelectedFields() {
         var cache = new GuidedCheckpoint.Target(1, null, "cache.fill", 1);
         var queue = new GuidedCheckpoint.Target(null, "job-1", "job.started", 1);
         var delivery = new GuidedCheckpoint.Target(null, null, "m1", "m1-a1", "ack.stale", 1);
         var analysis = new GuidedCheckpoint.Target(null, null, null, null, "q1", "TENANT_RANGE", 1);
-        for (var target : List.of(cache, queue, delivery, analysis)) {
+        var reservation = new GuidedCheckpoint.Target(null, null, null, null, null, "read-b", "READ_OBSERVED", 1);
+        for (var target : List.of(cache, queue, delivery, analysis, reservation)) {
             byte[] json = mapper.writeValueAsBytes(target);
             assertThat(mapper.readValue(json, GuidedCheckpoint.Target.class)).isEqualTo(target);
         }
@@ -27,6 +28,22 @@ class GuidedTargetSerializationTest {
         assertThat(mapper.valueToTree(queue).propertyNames()).containsExactlyInAnyOrder("jobId", "kind", "occurrence");
         assertThat(mapper.valueToTree(delivery).propertyNames()).containsExactlyInAnyOrder("messageId", "attemptId", "kind", "occurrence");
         assertThat(mapper.valueToTree(analysis).propertyNames()).containsExactlyInAnyOrder("operationId", "kind", "occurrence");
+        assertThat(mapper.valueToTree(reservation).propertyNames()).containsExactlyInAnyOrder("stepId", "kind", "occurrence");
+    }
+
+    @Test void reservationTargetSerializationRejectsMalformedMissingUnknownAndMixedSelectors() {
+        for (String json : List.of(
+                "{\"stepId\":null,\"kind\":\"READ_OBSERVED\",\"occurrence\":1}",
+                "{\"stepId\":[],\"kind\":\"READ_OBSERVED\",\"occurrence\":1}",
+                "{\"stepId\":{},\"kind\":\"READ_OBSERVED\",\"occurrence\":1}",
+                "{\"stepId\":\"read-b\",\"kind\":\"UNKNOWN\",\"occurrence\":1}",
+                "{\"stepId\":\"read-b\",\"kind\":\"READ_OBSERVED\",\"occurrence\":2}",
+                "{\"stepId\":\"read-b\",\"kind\":\"READ_OBSERVED\"}",
+                "{\"stepId\":\"read-b\",\"kind\":\"READ_OBSERVED\",\"occurrence\":1,\"operation\":1}",
+                "{\"stepId\":\"read-b\",\"kind\":\"READ_OBSERVED\",\"occurrence\":1,\"jobId\":\"job-1\"}",
+                "{\"stepId\":\"read-b\",\"kind\":\"READ_OBSERVED\",\"occurrence\":1,\"messageId\":\"m1\",\"attemptId\":\"m1-a1\"}",
+                "{\"stepId\":\"read-b\",\"kind\":\"READ_OBSERVED\",\"occurrence\":1,\"operationId\":\"q1\"}"))
+            assertThatThrownBy(() -> mapper.readValue(json, GuidedCheckpoint.Target.class)).as(json).isInstanceOf(RuntimeException.class);
     }
 
     @Test void configuredMapperRejectsMissingMixedMalformedUnknownAndRepeatedAnalysisTargets() {

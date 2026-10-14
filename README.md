@@ -36,7 +36,7 @@ review and publication remain pending.
 
 The draft **Transactions & Isolation** topic at `/draft/topics/transactions-isolation`
 provides eight editable reservation scenarios, Java snapshot evidence, Study and eight Practice
-questions. Its three views are described in [HLD-16B](docs/work-items/HLD-16B.md); broader
+questions. Its six draft views are described in [HLD-16B](docs/work-items/HLD-16B.md); broader
 transaction teaching and publication remain pending.
 
 ## Record your learning
@@ -302,9 +302,10 @@ the project license does not replace those terms.
 APIs and Playground, Study and Practice at `/draft/topics/transactions-isolation`. Eight
 scenarios let you edit stock, quantities, IDs and step order, then inspect actual initial and
 post-step snapshots. Eight original questions support locally saved interview explanations.
+[HLD-16C](docs/work-items/HLD-16C.md) adds eight Java-verified Guided checkpoints,
+inspectable Architecture and three authored manual Operation sequence paths.
 
 The draft compares stale-read assignment with an atomic current-stock condition, and labels
 capacity and conservation separately. It does not emulate a database engine or implement
-isolation levels, rollback, retries, durability or idempotency. Guided, Architecture and Operation
-sequence remain pending, along with human/hosted/publication gates. Follow the
+isolation levels, rollback, retries, durability or idempotency. Human/hosted/publication gates remain pending. Follow the
 [transaction handoff](docs/TRANSACTIONS_IMPLEMENTATION_PLAN.md) for the next bounded contribution.

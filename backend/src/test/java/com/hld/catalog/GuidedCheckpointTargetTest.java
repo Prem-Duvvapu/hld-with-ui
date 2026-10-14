@@ -202,4 +202,32 @@ class GuidedCheckpointTargetTest {
         assertThat(new GuidedCheckpoint.Target(1, null, "cache.fill", 10_001).occurrence()).isEqualTo(10_001);
         assertThat(new GuidedCheckpoint.Target(null, "job-1", "job.started", 10_001).occurrence()).isEqualTo(10_001);
     }
+
+    @Test void reservationTargetsSupportAllActualKindsAndPreserveEveryLegacyConstructor() {
+        for (var kind : com.hld.transactions.ReservationResult.Kind.values()) {
+            var target = new GuidedCheckpoint.Target(null, null, null, null, null, "attempt-b", kind.name(), 1);
+            assertThat(target.stepId()).isEqualTo("attempt-b");
+            assertThat(target.kind()).isEqualTo(kind.name());
+            assertThat(target.operationId()).isNull();
+        }
+        assertThat(new GuidedCheckpoint.Target(null, null, null, null, null, "s" + "x".repeat(31), "READ_OBSERVED", 1).stepId()).hasSize(32);
+        assertThat(new GuidedCheckpoint.Target(1, null, "cache.fill", 1).stepId()).isNull();
+        assertThat(new GuidedCheckpoint.Target(null, "job-1", "job.started", 1).stepId()).isNull();
+        assertThat(new GuidedCheckpoint.Target(null, null, "m1", "m1-a1", "ack.stale", 1).stepId()).isNull();
+        assertThat(new GuidedCheckpoint.Target(null, null, null, null, "q1", "TENANT_RANGE", 1).stepId()).isNull();
+    }
+
+    @Test void reservationTargetsRejectUnsupportedIdentityKindOccurrenceAndEveryMixedFamily() {
+        for (String id : new String[] {"", "Step", "1s", "s\n", "s ", "s".repeat(33), "é"})
+            assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, null, null, null, id, "READ_OBSERVED", 1));
+        for (String kind : new String[] {null, "", "UNKNOWN", "read.observed", "READ_OBSERVED\n", "TENANT_RANGE", "cache.fill", "ack.stale"})
+            assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, null, null, null, "read-b", kind, 1));
+        for (int occurrence : new int[] {-1, 0, 2, 10_000})
+            assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, null, null, null, "read-b", "READ_OBSERVED", occurrence));
+        assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(1, null, null, null, null, "read-b", "READ_OBSERVED", 1));
+        assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, "job-1", null, null, null, "read-b", "READ_OBSERVED", 1));
+        assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, "m1", "m1-a1", null, "read-b", "READ_OBSERVED", 1));
+        assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, null, null, "q1", "read-b", "READ_OBSERVED", 1));
+        assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, null, null, null, null, "READ_OBSERVED", 1));
+    }
 }

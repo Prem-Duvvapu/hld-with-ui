@@ -181,6 +181,29 @@ for (const [kind, component, definitions] of [
     );
   }
 }
+const reservationTarget = checkpoints.items.properties.target.oneOf.find(
+  (branch) => branch.required.includes("stepId"),
+);
+const reservationOutcome = read(
+  "contracts/transactions-isolation.result.schema.json",
+).$defs.outcome;
+const reservationIdentifier = read(
+  "contracts/transactions-isolation.input.schema.json",
+).$defs.identifier;
+const reservationKinds = kindsSupportingSelectors(
+  reservationOutcome,
+  ["stepId"],
+  {
+    [`${reservationInputId}#/$defs/identifier`]: reservationIdentifier,
+  },
+);
+if (
+  JSON.stringify(reservationTarget?.properties.kind.enum) !==
+  JSON.stringify(reservationKinds)
+)
+  throw new Error(
+    "Reservation checkpoint kinds differ from actual outcome selector capabilities.",
+  );
 
 // The lazy delivery client needs only its descriptor's reachable schemas, not the entire API.
 // This generated artifact keeps runtime validation derived from the same canonical HTTP contract.

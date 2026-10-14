@@ -97,3 +97,22 @@ it("refuses a data-access identity mixed into a matching delivery pair", () => {
       } as GuidedCheckpoint["target"]),
     ).toBe(-1);
 });
+
+it("refuses a reservation step identity attached to a matching delivery pair", () => {
+  const legacy: GuidedCheckpoint["target"] = {
+    messageId: "m1",
+    attemptId: "m1-a1",
+    kind: "effect.committed",
+    occurrence: 1,
+  };
+  expect(
+    resolveDeliveryCheckpoint(baselineResult.events, legacy),
+  ).toBeGreaterThanOrEqual(0);
+  for (const stepId of ["attempt-a", null])
+    expect(
+      resolveDeliveryCheckpoint(baselineResult.events, {
+        ...legacy,
+        stepId,
+      } as GuidedCheckpoint["target"]),
+    ).toBe(-1);
+});

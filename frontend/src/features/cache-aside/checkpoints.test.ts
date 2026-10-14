@@ -80,3 +80,15 @@ it("refuses a data-access identity mixed into a matching cache operation", () =>
       >[1]),
     ).toBe(-1);
 });
+
+it("refuses a reservation step identity attached to a matching cache operation", () => {
+  const events = orderedEvents(baseline.result.events);
+  const legacy = { operation: 4, kind: "cache.hit", occurrence: 1 };
+  expect(resolveCheckpoint(events, legacy)).toBeGreaterThanOrEqual(0);
+  for (const stepId of ["attempt-a", null])
+    expect(
+      resolveCheckpoint(events, { ...legacy, stepId } as Parameters<
+        typeof resolveCheckpoint
+      >[1]),
+    ).toBe(-1);
+});

@@ -58,3 +58,16 @@ it("refuses malformed, mixed, unsupported, repeated and unavailable semantic tar
     ),
   ).toBe(-1);
 });
+
+it("refuses a reservation step identity attached to a matching access-operation outcome", () => {
+  expect(
+    resolveDataAccessCheckpoint(result.outcomes, target),
+  ).toBeGreaterThanOrEqual(0);
+  for (const stepId of ["attempt-a", null])
+    expect(
+      resolveDataAccessCheckpoint(result.outcomes, {
+        ...target,
+        stepId,
+      } as GuidedCheckpoint["target"]),
+    ).toBe(-1);
+});

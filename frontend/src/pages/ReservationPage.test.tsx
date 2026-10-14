@@ -1,3 +1,4 @@
+import checkpoints from "../../../content/topics/transactions-isolation/checkpoints.json";
 import catalog from "../../../content/catalog.json";
 import questions from "../../../content/topics/transactions-isolation/questions.json";
 import {
@@ -29,7 +30,7 @@ const topic: TopicDetail = {
   lessonMarkdown:
     "# One unit, two readers\n\nKeep remaining stock and allocations consistent.",
   questions: questions as TopicDetail["questions"],
-  checkpoints: [],
+  checkpoints: checkpoints as TopicDetail["checkpoints"],
 };
 beforeEach(() => {
   vi.resetAllMocks();
@@ -50,12 +51,12 @@ function view(route = "/draft/topics/transactions-isolation") {
   return router;
 }
 
-it("offers exactly three implemented draft views without auto-running or exposing a bookmark", async () => {
+it("offers exactly six implemented draft views without auto-running or exposing a bookmark", async () => {
   view("/draft/topics/transactions-isolation?view=study");
   expect(
     await screen.findByRole("region", { name: "Draft reservation module" }),
   ).toBeVisible();
-  expect(screen.getAllByRole("tab")).toHaveLength(3);
+  expect(screen.getAllByRole("tab")).toHaveLength(6);
   expect(screen.getByRole("tab", { name: "Playground" })).toBeVisible();
   expect(screen.getByRole("tab", { name: "Practice" })).toBeVisible();
   expect(screen.getByRole("tab", { name: "Study" })).toHaveAttribute(
@@ -65,9 +66,9 @@ it("offers exactly three implemented draft views without auto-running or exposin
   expect(
     screen.getByRole("heading", { name: "One unit, two readers" }),
   ).toBeVisible();
-  expect(
-    screen.queryByRole("tab", { name: /Guided|Architecture|sequence/i }),
-  ).not.toBeInTheDocument();
+  expect(screen.getByRole("tab", { name: "Guided" })).toBeVisible();
+  expect(screen.getByRole("tab", { name: "Architecture" })).toBeVisible();
+  expect(screen.getByRole("tab", { name: "Operation sequence" })).toBeVisible();
   expect(
     screen.queryByRole("button", { name: "Save module" }),
   ).not.toBeInTheDocument();
@@ -196,16 +197,26 @@ it.each([
     },
   },
   {
-    name: "unsupported Guided capability",
+    name: "advertised Guided without checkpoints",
     value: {
       ...topic,
       topic: {
         ...topic.topic,
-        capabilities: [...topic.topic.capabilities, "guided"],
+        capabilities: topic.topic.capabilities,
+      },
+      checkpoints: [],
+    },
+  },
+  {
+    name: "checkpoints without Guided",
+    value: {
+      ...topic,
+      topic: {
+        ...topic.topic,
+        capabilities: ["study", "simulation", "practice"],
       },
     },
   },
-  { name: "unauthored checkpoints", value: { ...topic, checkpoints: [{}] } },
   { name: "empty lesson", value: { ...topic, lessonMarkdown: " " } },
   { name: "empty Practice", value: { ...topic, questions: [] } },
 ])(
@@ -222,7 +233,7 @@ it.each([
   },
 );
 
-it.each(["guided", "architecture", "sequence", "unknown"])(
+it.each(["unknown"])(
   "normalizes unsupported %s deep links to Playground without executing Java",
   async (requested) => {
     const router = view(
@@ -234,7 +245,7 @@ it.each(["guided", "architecture", "sequence", "unknown"])(
       "true",
     );
     await waitFor(() => expect(router.state.location.search).toBe(""));
-    expect(screen.getAllByRole("tab")).toHaveLength(3);
+    expect(screen.getAllByRole("tab")).toHaveLength(6);
     expect(api.runReservation).not.toHaveBeenCalled();
   },
 );

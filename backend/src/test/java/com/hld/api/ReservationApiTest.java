@@ -264,15 +264,21 @@ class ReservationApiTest {
         assertThat(result.at("/metrics/invariantStatus").asString()).isEqualTo("PRESERVED");
     }
 
-    @Test void draftTopicAdvertisesOnlyThreeViewsAndStaysOutsidePublishedDiscovery() throws Exception {
+    @Test void draftTopicAdvertisesImplementedTeachingAndStaysOutsidePublishedDiscovery() throws Exception {
         var detail = success(get("/api/v1/draft/topics/transactions-isolation"));
         assertThat(detail.at("/topic/id").asString()).isEqualTo("transactions-isolation");
         assertThat(detail.at("/topic/status").asString()).isEqualTo("draft");
-        assertThat(detail.at("/topic/contentVersion").asString()).isEqualTo("1.0.0");
+        assertThat(detail.at("/topic/contentVersion").asString()).isEqualTo("1.1.0");
         var capabilities = new ArrayList<String>();
         for (JsonNode value : detail.at("/topic/capabilities")) capabilities.add(value.asString());
-        assertThat(capabilities).containsExactlyInAnyOrder("study", "simulation", "practice");
-        assertThat(detail.path("checkpoints").size()).isZero();
+        assertThat(capabilities).containsExactlyInAnyOrder("study", "simulation", "guided", "practice");
+        assertThat(detail.path("checkpoints").size()).isEqualTo(8);
+        assertThat(detail.at("/topic/checkpointsPath").asString()).isEqualTo("topics/transactions-isolation/checkpoints.json");
+        for (JsonNode checkpoint : detail.path("checkpoints")) {
+            assertThat(checkpoint.path("target").propertyNames()).containsExactlyInAnyOrder("stepId", "kind", "occurrence");
+            assertThat(checkpoint.at("/target/occurrence").asInt()).isEqualTo(1);
+            assertThat(checkpoint.at("/target/kind").asString()).isIn("READ_OBSERVED", "RESERVATION_ACCEPTED", "RESERVATION_REJECTED");
+        }
         assertThat(detail.path("lessonMarkdown").asString()).isNotBlank();
         assertThat(detail.path("questions").size()).isGreaterThan(0);
         assertThat(get("/api/v1/topics/transactions-isolation").statusCode()).isEqualTo(404);

@@ -278,19 +278,20 @@
       "Explain separate nonnegative, capacity and conservation checks.",
       "Defend a current-state acceptance boundary while stating unmodeled transaction guarantees."
     ],
-    "capabilities": ["study", "simulation", "practice"],
+    "capabilities": ["study", "simulation", "guided", "practice"],
     "lessonPath": "topics/transactions-isolation/lesson.md",
     "questionsPath": "topics/transactions-isolation/questions.json",
     "resourcesPath": "topics/transactions-isolation/resources.json",
     "simulationIds": ["transactions-isolation"],
     "estimatorIds": [],
-    "contentVersion": "1.0.0",
+    "contentVersion": "1.1.0",
     "reviewedAt": "2026-10-14",
     "sourceIds": [
       "postgres-18-transaction-isolation",
       "postgres-18-conditional-update",
       "postgres-18-transactions",
       "postgres-18-constraints"
-    ]
+    ],
+    "checkpointsPath": "topics/transactions-isolation/checkpoints.json"
   }
 ]

@@ -4,10 +4,11 @@ Two people see one available unit and each tries to reserve it. Both reads can b
 when they happen. The problem is what the system checks when it accepts the reservations.
 Use this small example to locate the decision that must protect shared state.
 
-This draft teaches reservation safety through Playground, Study and Practice. The Java
+This draft teaches reservation safety through six implemented views. The Java
 model executes your chosen interleaving and returns complete snapshots. It has no elapsed
-time, database engine, durable commit, rollback or retry behavior. Guided and authored
-Architecture/Operation sequence views are not part of this first runnable slice.
+time, database engine, durable commit, rollback or retry behavior. Guided checkpoints select
+actual Java post-step evidence. Architecture and Operation sequence are authored untimed
+illustrations; reading them sends no Java run.
 
 ## Learning outcomes
 
@@ -153,8 +154,9 @@ than an invented result. Changing inputs keeps an earlier result labeled with it
 design. Selecting a snapshot does not submit a new analysis or change the modeled schedule.
 
 Practice saves explanations locally. Playground predictions stay on the page; they are not
-automatic grades or a claim of mastery. No Guided or authored diagram tab is required to
-follow the actual snapshots in this slice.
+automatic grades or a claim of mastery. Guided saves paired prediction/tradeoff answers and
+requires explicit reveal of selected Java evidence. Architecture and the three Operation
+sequence paths provide separately labelled authored illustrations with complete text.
 
 ## Failures and tradeoffs
 

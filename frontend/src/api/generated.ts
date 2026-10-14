@@ -524,7 +524,7 @@ export interface components {
       title: string;
       simulationId: string;
       presetId: string;
-      /** @description Select exactly one identity family: cache operation, capacity job ID, delivery messageId/attemptId, or data-access operationId. Kind and occurrence select actual Java evidence; data-access operations have one outcome each. */
+      /** @description Select exactly one identity family: cache operation, capacity job ID, delivery messageId/attemptId, data-access operationId, or reservation stepId. Kind and occurrence select actual Java evidence; each untimed operation/step has one outcome. */
       target:
         | {
             operation: number;
@@ -557,6 +557,14 @@ export interface components {
             operationId: string;
             /** @enum {string} */
             kind: "LOOKUP_ID" | "TENANT_RANGE" | "ALL_RANGE" | "INSERT";
+            /** @constant */
+            occurrence: 1;
+          }
+        | {
+            stepId: string;
+            /** @enum {string} */
+            kind:
+              "READ_OBSERVED" | "RESERVATION_ACCEPTED" | "RESERVATION_REJECTED";
             /** @constant */
             occurrence: 1;
           };

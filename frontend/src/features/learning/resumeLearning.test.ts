@@ -1,3 +1,4 @@
+import reservationCheckpoints from "../../../../content/topics/transactions-isolation/checkpoints.json";
 import reservationQuestions from "../../../../content/topics/transactions-isolation/questions.json";
 import { describe, expect, it } from "vitest";
 import catalog from "../../../../content/catalog.json";
@@ -379,4 +380,27 @@ it("resumes an actual reservation draft question through its implemented route",
     activity: reservationQuestions[1]!.prompt,
     removed: false,
   });
+});
+
+it("resumes an actual reservation Guided checkpoint by saved activity identity", () => {
+  const detail = {
+    topic: entries.find((entry) => entry.id === "transactions-isolation")!,
+    questions: reservationQuestions,
+    checkpoints: reservationCheckpoints,
+    lessonMarkdown: "Reservation evidence.",
+  } as TopicDetail;
+  const checkpoint = reservationCheckpoints[4]!;
+  for (const suffix of ["prediction", "tradeoff"]) {
+    const record = {
+      ...saved,
+      topicId: detail.topic.id,
+      activityId: `${checkpoint.id}-${suffix}`,
+      contentVersion: "1.1.0",
+    };
+    expect(draftTopicResumeTarget(record, detail)).toMatchObject({
+      path: `/draft/topics/transactions-isolation?view=guided&checkpoint=${checkpoint.id}`,
+      activity: checkpoint.title,
+      removed: false,
+    });
+  }
 });

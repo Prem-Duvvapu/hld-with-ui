@@ -223,3 +223,13 @@ captured inputs and Java-reported references. React manually selects complete sn
 keeps prefix flags separate from history metrics. Existing shared guards bound requests,
 results and admission. No simulation behavior is duplicated in the renderer. [Decision 0031](decisions/0031-reservation-interleavings-and-invariants.md)
 and [HLD-16A](work-items/HLD-16A.md) record its scoped behavior and verification.
+
+## Guided reservation evidence
+
+[HLD-16C](work-items/HLD-16C.md) adds a fifth closed stepId/kind/occurrence1 target family
+while preserving the four legacy families and Java constructors. Canonical capability checks
+resolve actual ReservationOutcome references and its three kinds. Guided renders only the
+selected postState through the shared ReservationEvidence, without whole-run metrics.
+Eight checkpoints reuse five Java presets and the existing explicit saved-answer lifecycle.
+Authored Architecture/Operation sequence views are separate untimed illustrations sending no
+run. See [decision 0033](decisions/0033-guided-reservation-step-targets.md).
