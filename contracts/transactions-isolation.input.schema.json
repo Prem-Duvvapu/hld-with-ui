@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hld-with-ui.dev/schemas/transactions-isolation.input.schema.json",
+  "title": "Reservation interleaving model input",
+  "description": "Canonical complete caller-supplied interleaving for two illustrative reservation algorithms, schema 1.0/model 1.0.0. No time, randomness or database is modeled. Java additionally validates unique reservation/step identities, known references, schedule length twice actor count and exactly one READ followed by one ATTEMPT_RESERVE per actor before execution. JSON Schema validates parsed values; it cannot establish those identity/order relations or detect duplicate JSON keys and token spellings.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "modelVersion",
+    "strategy",
+    "initialUnits",
+    "reservations",
+    "schedule"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "modelVersion": {
+      "const": "1.0.0"
+    },
+    "strategy": {
+      "enum": ["STALE_READ_WRITE", "ATOMIC_CONDITIONAL_RESERVATION"]
+    },
+    "initialUnits": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 20
+    },
+    "reservations": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 4,
+      "items": {
+        "$ref": "#/$defs/reservation"
+      }
+    },
+    "schedule": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 8,
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "pattern": "^[a-z][a-z0-9-]{0,31}$",
+      "not": {
+        "pattern": "\\s"
+      }
+    },
+    "reservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "quantity"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "reservationId", "action"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "reservationId": {
+          "$ref": "#/$defs/identifier"
+        },
+        "action": {
+          "enum": ["READ", "ATTEMPT_RESERVE"]
+        }
+      }
+    }
+  }
+}

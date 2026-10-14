@@ -24,7 +24,8 @@ authored Operation sequence paths. Review its recorded technical evidence before
 bounded transaction-foundation work item. Human/hosted review and publication remain open.
 Transactions and idempotency remain pending. Follow the
 [transaction implementation handoff](TRANSACTIONS_IMPLEMENTATION_PLAN.md), starting with
-HLD-16A pure Java and canonical evidence. It is a plan, not an implemented module.
+HLD-16A pure Java and canonical evidence. The model slice is in progress; HTTP/React and
+complete isolation coverage remain pending. See [HLD-16A](work-items/HLD-16A.md).
 
 ## 1. Objective and scope
 

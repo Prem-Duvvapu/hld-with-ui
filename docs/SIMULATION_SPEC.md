@@ -215,3 +215,20 @@ same immutable Java result. Guided shows only selected-operation counts, capture
 and before/after populations. Whole-workload totals and later outcomes are not presented as
 selected state. Authored Architecture/Operation sequence views are explicit untimed
 illustrations and send no Java run. See [decision 0030](decisions/0030-guided-data-access-outcome-targets.md).
+
+## Pure reservation analysis
+
+`transactions-isolation` schema/model 1.0/1.0.0 uses at most four reservations and eight
+caller-ordered actions. Every reservation reads once and attempts once after reading. The
+unsafe algorithm checks its observed count and assigns observed minus quantity; the protected
+algorithm checks current stock and indivisibly decrements it plus records the allocation.
+
+Each complete snapshot reports remaining and allocated units, per-reservation observations
+and status, acceptance-ordered allocations and Java-owned nonnegative/capacity/conservation
+flags. History-level correctness and the first violating step are separate from completed
+execution. Rejections change reservation status without changing stock/allocations.
+
+No database isolation mode, elapsed time, seed, real thread schedule, retries, rollback,
+crash durability or idempotency is implied. This pure-model slice is unavailable through
+HTTP or React. See [decision 0031](decisions/0031-reservation-interleavings-and-invariants.md)
+and [HLD-16A](work-items/HLD-16A.md).

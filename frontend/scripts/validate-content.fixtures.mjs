@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import "./validate-delivery-contract.fixtures.mjs";
 import "./validate-data-access-contract.fixtures.mjs";
+import "./validate-reservation-contract.fixtures.mjs";
 import "./event-selector-capabilities.fixtures.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
