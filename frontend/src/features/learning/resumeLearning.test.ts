@@ -1,3 +1,4 @@
+import reservationQuestions from "../../../../content/topics/transactions-isolation/questions.json";
 import { describe, expect, it } from "vitest";
 import catalog from "../../../../content/catalog.json";
 import questions from "../../../../content/topics/request-flow/questions.json";
@@ -356,5 +357,26 @@ describe("resume recorded learning work", () => {
         },
       }),
     ).toThrow(/incompatible/);
+  });
+});
+
+it("resumes an actual reservation draft question through its implemented route", () => {
+  const reservation = {
+    topic: entries.find((entry) => entry.id === "transactions-isolation")!,
+    questions: reservationQuestions,
+    checkpoints: [],
+    lessonMarkdown: "Reservation evidence.",
+  } as TopicDetail;
+  const record = {
+    ...saved,
+    topicId: reservation.topic.id,
+    activityId: reservationQuestions[1]!.id,
+    contentVersion: "1.0.0",
+  };
+  expect(supportsDraftTopicResume(record.topicId)).toBe(true);
+  expect(draftTopicResumeTarget(record, reservation)).toMatchObject({
+    path: `/draft/topics/transactions-isolation?view=practice&question=${record.activityId}`,
+    activity: reservationQuestions[1]!.prompt,
+    removed: false,
   });
 });

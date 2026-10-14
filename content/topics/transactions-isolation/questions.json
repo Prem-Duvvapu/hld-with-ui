@@ -1,0 +1,132 @@
+[
+  {
+    "id": "reservation-stale-one-unit",
+    "topicId": "transactions-isolation",
+    "level": "beginner",
+    "kind": "prediction",
+    "prompt": "Initial stock is one unit; reservations A and B each request one. Under stale read then write, follow READ A, READ B, ATTEMPT A, ATTEMPT B. Predict accepted IDs, remaining and allocated units, invariant flags and the first failing step.",
+    "explanation": "Both reads observe 1 without allocating anything. A assigns 1−1=0 and records its allocation. B also checks saved 1, assigns 0 and records a second allocation. A and B are accepted; remaining is 0 and allocated is 2. Nonnegative stock holds, but capacity and conservation fail at attempt-b: 0+2 does not equal initial 1. Completing the schedule does not imply correctness.",
+    "modelAnswer": "READ A and READ B each record observation 1; shared stock stays 1 and allocations stay empty. ATTEMPT A accepts, leaving remaining 0 and allocated 1. ATTEMPT B trusts its saved 1, accepts and sets remaining to 0 again while allocated becomes 2. Nonnegative stock is true, allocatedWithinCapacity and unitsConserved are false, and firstViolationStepId is attempt-b. Accepted means local allocation state, not a durable database commit. A nonnegative counter alone missed the violation.",
+    "rubric": [
+      "Traces both reads without treating a read as an allocation",
+      "Uses stale assignment rather than decrementing current stock to a negative value",
+      "Reports two accepted reservations, remaining 0 and allocated 2",
+      "Identifies attempt-b and distinguishes the three invariant checks"
+    ],
+    "followUp": "What has been established at attempt-a, before B's later attempt?"
+  },
+  {
+    "id": "reservation-current-state-rejection",
+    "topicId": "transactions-isolation",
+    "level": "beginner",
+    "kind": "prediction",
+    "prompt": "Use the same one-unit shared-read schedule with atomic conditional reservation. B previously saw 1. What does B's attempt check after A accepts? Describe B's status, observation, rejection reason and which shared data changes.",
+    "explanation": "A accepts against current 1 and atomically leaves remaining 0 with one allocation. B still remembers 1, but its attempt checks current 0 against quantity 1. B becomes REJECTED with INSUFFICIENT_STOCK and retains observedRemaining 1. Stock and allocations do not change on rejection. All three invariant flags remain true; actor status and decision do change.",
+    "modelAnswer": "After A accepts, current remaining is 0 and allocated units are 1. B's cached observation remains 1. Its checkedRemaining is 0 with checkSource CURRENT; quantity 1 cannot fit. B's status becomes REJECTED and the outcome reports INSUFFICIENT_STOCK. The stock and allocation list stay unchanged, while B's decision/status changes. The final result has one accepted and one rejected reservation, remaining 0, allocated 1 and all three invariants true. The protected boundary covers the condition, stock mutation and allocation record together.",
+    "rubric": [
+      "Distinguishes B's retained observation 1 from checked current value 0",
+      "Names the rejected business decision rather than an execution error",
+      "Preserves stock and allocations while acknowledging actor-status change",
+      "Defines all parts of the protected acceptance boundary"
+    ],
+    "followUp": "Does checking current stock first and separately writing later provide the same boundary?"
+  },
+  {
+    "id": "reservation-serial-test-blind-spot",
+    "topicId": "transactions-isolation",
+    "level": "intermediate",
+    "kind": "diagnosis",
+    "prompt": "A test uses READ A, ATTEMPT A, READ B, ATTEMPT B with initial stock 1 and quantities 1/1. The stale algorithm accepts only A, so a teammate concludes the service cannot oversell. Diagnose that conclusion and propose a revealing test order.",
+    "explanation": "In the serial order, A consumes the unit before B reads. B observes 0 and rejects, so the invariants hold for this execution. That does not protect an order in which both read 1 before either attempts. READ A, READ B, ATTEMPT A, ATTEMPT B is the counterexample with two allocations. Test legal interleavings and the current-state boundary, not merely one favorable run.",
+    "modelAnswer": "The serial test establishes one correct result: A reads 1 and accepts; B then reads 0 and rejects. It does not establish that every ordering is safe. Move B's READ before A's attempt, producing READ A, READ B, ATTEMPT A, ATTEMPT B. The stale rule then accepts both based on saved 1 and violates capacity/conservation. For two reservations there are six legal read-before-attempt orders; the finite one-unit model has four unsafe stale orders and two safe serial ones. That is model coverage, not a probability of a production race.",
+    "rubric": [
+      "Explains why B sees 0 in the serial control",
+      "Gives a legal shared-read counterexample",
+      "Separates one observed safe execution from an algorithm guarantee",
+      "Avoids interpreting finite ordering counts as production probability"
+    ],
+    "followUp": "If B attempts first after both reads, which reservation does the protected policy accept?"
+  },
+  {
+    "id": "reservation-conservation-gap",
+    "topicId": "transactions-isolation",
+    "level": "beginner",
+    "kind": "calculation",
+    "prompt": "Initial stock is 2; A and B each request 1 and both read before either attempt. Compute the stale algorithm's final remaining, allocated and accounted units. Does avoiding allocations above capacity establish conservation? Compare the conditional algorithm.",
+    "explanation": "Each stale attempt assigns 2−1=1, while their allocations accumulate to 2. Remaining is 1 and accounted units are 1+2=3, not initial 2. Nonnegative stock and capacity are true but conservation is false. The conditional algorithm accepts both while decrementing current stock 2→1→0, leaving allocated 2 and accounted 2 with all flags true.",
+    "modelAnswer": "The stale final state is remaining 1, allocated 2 and accounted 3. Two allocated units fit within initial capacity 2, and remaining is nonnegative, yet remaining plus allocated does not equal initial stock. Therefore allocatedWithinCapacity=true, remainingNonnegative=true and unitsConserved=false. The first violation is attempt-b. Under the conditional rule, the two current-state decrements leave remaining 0, allocated 2 and accounted 2, preserving all three checks. Capacity and conservation answer different questions.",
+    "rubric": [
+      "Reports stale remaining 1, allocated 2 and accounted 3",
+      "Keeps capacity true while identifying conservation false",
+      "Gives conditional remaining 0 and allocated 2",
+      "Distinguishes units from the number of accepted IDs"
+    ],
+    "followUp": "Which production signals could reveal a counter/allocation discrepancy even without an oversell report?"
+  },
+  {
+    "id": "reservation-stale-stock-restoration",
+    "topicId": "transactions-isolation",
+    "level": "intermediate",
+    "kind": "calculation",
+    "prompt": "Initial stock is 2. A requests 2 and B requests 1; both read 2, then A attempts before B. Compare stale read then write with atomic conditional reservation. Account for accepted reservation counts and allocated quantities separately.",
+    "explanation": "Stale A assigns 0 and allocates 2; stale B then assigns 1 from saved 2 and allocates another 1. Remaining rises 0→1 while allocated rises 2→3. Two reservations allocate three units, and accounted units are 4 against initial 2. The protected rule instead accepts A and rejects B after checking current 0, ending with one accepted reservation, allocated 2, remaining 0 and accounted 2.",
+    "modelAnswer": "For the stale rule, A uses saved 2 to write 2−2=0 and append quantity 2. B also uses saved 2 to write 2−1=1, replacing current 0 while appending quantity 1. Final accepted reservations=2, allocated units=3, remaining units=1 and accounted units=4; capacity and conservation fail. For the conditional rule, A atomically consumes both units. B checks current 0 and rejects, so accepted reservations=1, allocated units=2 and remaining=0. The stale model deliberately assigns an old value, which explains restored stock; it is not a current-counter decrement.",
+    "rubric": [
+      "Explains the stale remaining sequence 2→0→1",
+      "Counts two accepted reservations but three allocated units",
+      "Reports accounted 4 against initial 2",
+      "Explains protected B rejection against current 0"
+    ],
+    "followUp": "Reverse the protected attempts. Why can B accept one unit while A later rejects its request for two?"
+  },
+  {
+    "id": "reservation-result-versus-error",
+    "topicId": "transactions-isolation",
+    "level": "beginner",
+    "kind": "diagnosis",
+    "prompt": "Distinguish three cases: valid initial stock 0 with two one-unit reservations; a schedule that attempts before its READ; and an unavailable API. What evidence is available, and how should the learner interpret each case?",
+    "explanation": "Zero stock is valid: both READs observe 0, both attempts reject, remaining and allocated stay 0, and all invariants hold. Actor statuses become REJECTED. Attempt-before-read is invalid input and must be rejected before modeled transitions. An unavailable API supplies no new authoritative result; a prior result may remain labeled as earlier evidence. None should be replaced by a fabricated successful snapshot.",
+    "modelAnswer": "The zero-stock input produces a completed finite run with zero acceptances, two business rejections, no allocations and all three checks true. Its actors change status, but stock/allocation state stays zero. Attempt-before-read fails schedule validation before execution and should explain the illegal order so I can fix it. An unavailable API is a loading/run failure, not evidence that the reservation succeeded or was rejected for stock. The app should keep my design/prediction and distinguish any previous submitted result from this failed attempt.",
+    "rubric": [
+      "Treats zero stock as valid and describes its actual rejected outcomes",
+      "Separates invalid schedule validation from business rejection",
+      "Reports no new authoritative evidence on an unavailable API",
+      "Does not invent results or call every rejection a server failure"
+    ],
+    "followUp": "Why must a completed unsafe run still display its failed business invariants?"
+  },
+  {
+    "id": "reservation-atomic-boundary",
+    "topicId": "transactions-isolation",
+    "level": "intermediate",
+    "kind": "design-decision",
+    "prompt": "A proposed fix atomically changes an inventory counter, then writes an allocation record independently. Another proposal atomically assigns from an earlier client observation. Explain which model guarantee each proposal still fails to establish and what boundary you would verify.",
+    "explanation": "The protected model combines a current-state condition, stock decrement and allocation append in one indivisible action. A separately recorded allocation is outside that boundary and needs coordination in a real system. An atomic stale assignment still uses the wrong decision basis; the default counterexample already makes its accepted changes as complete actions. Atomicity and the condition being checked are both necessary to describe this guarantee.",
+    "modelAnswer": "The first proposal protects only its counter change. It does not establish that the allocation record and inventory change stay coordinated; I would inspect their actual transaction/failure boundary. The second proposal may make changes atomically, but it trusts an old observation, so two distinct reservations can still be accepted from the same unit. This model's protected rule checks current stock, decrements it and records the allocation inside one indivisible transition. A real database implementation must establish that whole boundary with its actual transaction/constraint behavior. The model itself contains no crash, durable commit, rollback or external effect proof.",
+    "rubric": [
+      "Includes current condition, inventory mutation and allocation record in the protected scope",
+      "Identifies the separately written allocation as outside the first proposal's boundary",
+      "Explains why atomic stale changes still permit the counterexample",
+      "States production verification and the model's failure/durability limits"
+    ],
+    "followUp": "Would checking a nonnegative inventory column alone express its relationship to a separate allocation ledger?",
+    "sourceIds": ["postgres-18-transactions", "postgres-18-constraints"]
+  },
+  {
+    "id": "reservation-teach-back-quota",
+    "topicId": "transactions-isolation",
+    "level": "intermediate",
+    "kind": "design-decision",
+    "prompt": "Explain a shared quota design to a teammate or interviewer. Two distinct jobs each read one remaining token and try to consume it. Their IDs are unique; a client can later time out or retry. Use this module's evidence to propose the first safe boundary and state what remains unresolved.",
+    "explanation": "Unique job IDs distinguish requests but do not increase quota. The stale one-unit experiment accepts both and records two allocated units while remaining stays zero. A current-state conditional check plus quota change and consumption record in one defined boundary protects this resource invariant. Safe timeout recovery, duplicate-request replay, durability and external work require additional semantics that this one-attempt model does not supply.",
+    "modelAnswer": "I would define remaining tokens plus recorded consumptions to equal initial quota, with allocated tokens within capacity. Distinct job IDs do not prevent overspending the same token. The example shows two stale reads leading to two acceptances, remaining 0 and allocated 2 from initial 1. I would put the current quota check, decrement and consumption record in one owner-controlled atomic boundary and verify that path against overlapping contenders. A business rejection is a valid outcome when another job wins. I would separately define what survives failure and how a timed-out duplicate request is recognized before claiming idempotency or durable replay. In an interview I would state requirements, trace the example, defend the boundary and handle one changed condition.",
+    "rubric": [
+      "Names quota units and an explicit conservation/capacity requirement",
+      "Separates unique request identity from limited-resource safety",
+      "Uses the one-unit counterexample and a precise current-state boundary",
+      "Treats business rejection as an intentional outcome",
+      "Leaves timeout, durability and idempotency scope explicit"
+    ],
+    "followUp": "What changes if a job must consume quota from two independently owned resources?"
+  }
+]

@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "HLD with UI API",
-    "version": "1.6.0",
+    "version": "1.7.0",
     "description": "Versioned contract for the HLD learning application. Simulation results are illustrative modeled runs."
   },
   "servers": [
@@ -988,6 +988,103 @@
           }
         },
         "description": "Finite sequential analysis with strict closed variant fields and exact token types. Existing HTTP admission, body and complete-result limits apply independently of model work counts. No physical database, optimizer, concurrent transaction, production latency or automatic retry is modeled."
+      }
+    },
+    "/api/v1/simulations/transactions-isolation": {
+      "get": {
+        "operationId": "getReservationSimulation",
+        "summary": "Read the Java reservation interleaving descriptor for the draft transactions module",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationDescriptor"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/transactions-isolation/runs": {
+      "post": {
+        "operationId": "runReservationSchedule",
+        "summary": "Evaluate a complete untimed reservation schedule and return authoritative snapshots",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReservationInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Retry hint in seconds. Capacity may remain occupied.",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[0-9]+$",
+                  "examples": ["1"]
+                }
+              }
+            }
+          }
+        },
+        "description": "Strict closed reservation input with full schedule validation before execution. Business rejection and deliberate unsafe invariant breach are successful completed analyses, not HTTP errors. Shared HTTP admission, raw-body and bounded complete-result serialization guards apply outside the model. No partial result, database isolation emulator, elapsed time or automatic retry."
       }
     }
   },
@@ -7506,6 +7603,700 @@
             "$ref": "#/components/schemas/DataAccessIdentifier"
           }
         }
+      },
+      "ReservationLimits": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "maxInitialUnits",
+          "minReservations",
+          "maxReservations",
+          "maxQuantity",
+          "maxSteps",
+          "maxIdLength"
+        ],
+        "properties": {
+          "maxInitialUnits": {
+            "type": "integer",
+            "const": 20
+          },
+          "minReservations": {
+            "type": "integer",
+            "const": 2
+          },
+          "maxReservations": {
+            "type": "integer",
+            "const": 4
+          },
+          "maxQuantity": {
+            "type": "integer",
+            "const": 20
+          },
+          "maxSteps": {
+            "type": "integer",
+            "const": 8
+          },
+          "maxIdLength": {
+            "type": "integer",
+            "const": 32
+          }
+        }
+      },
+      "ReservationPreset": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "description", "input"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          },
+          "input": {
+            "$ref": "#/components/schemas/ReservationInput"
+          }
+        }
+      },
+      "ReservationDescriptor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "modelVersion",
+          "description",
+          "limits",
+          "presets",
+          "assumptions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "const": "transactions-isolation"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "kind": {
+            "type": "string",
+            "const": "simulation"
+          },
+          "modelVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "limits": {
+            "$ref": "#/components/schemas/ReservationLimits"
+          },
+          "presets": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/ReservationPreset"
+            }
+          },
+          "assumptions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 600
+            }
+          }
+        }
+      },
+      "ReservationInput": {
+        "title": "Reservation interleaving model input",
+        "description": "Canonical complete caller-supplied interleaving for two illustrative reservation algorithms, schema 1.0/model 1.0.0. No time, randomness or database is modeled. Java additionally validates unique reservation/step identities, known references, schedule length twice actor count and exactly one READ followed by one ATTEMPT_RESERVE per actor before execution. JSON Schema validates parsed values; it cannot establish those identity/order relations or detect duplicate JSON keys and token spellings.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "modelVersion",
+          "strategy",
+          "initialUnits",
+          "reservations",
+          "schedule"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "const": "1.0.0"
+          },
+          "strategy": {
+            "enum": ["STALE_READ_WRITE", "ATOMIC_CONDITIONAL_RESERVATION"]
+          },
+          "initialUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "reservations": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 4,
+            "items": {
+              "$ref": "#/components/schemas/ReservationRequest"
+            }
+          },
+          "schedule": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/components/schemas/ReservationStep"
+            }
+          }
+        }
+      },
+      "ReservationIdentifier": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 32,
+        "pattern": "^[a-z][a-z0-9-]{0,31}$",
+        "not": {
+          "pattern": "\\s"
+        }
+      },
+      "ReservationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "quantity"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ReservationIdentifier"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        }
+      },
+      "ReservationStep": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "reservationId", "action"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ReservationIdentifier"
+          },
+          "reservationId": {
+            "$ref": "#/components/schemas/ReservationIdentifier"
+          },
+          "action": {
+            "enum": ["READ", "ATTEMPT_RESERVE"]
+          }
+        }
+      },
+      "ReservationResult": {
+        "title": "Reservation interleaving model result",
+        "description": "Complete authoritative untimed reservation analysis. Captured input and all identities reference the canonical input owner. Closed outcome kinds distinguish reads, accepted reservations and business rejections; post-state retains prior observations. Completed describes schedule consumption, not invariant preservation or database commit. Unsafe allocated/accounted bounds intentionally permit values above initial units. Java tests own identity correlation, snapshot equality, arithmetic and first violating prefix semantics; JSON Schema establishes structure and local required/forbidden fields.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "simulationId",
+          "schemaVersion",
+          "modelVersion",
+          "kind",
+          "status",
+          "input",
+          "initialState",
+          "outcomes",
+          "finalState",
+          "metrics",
+          "assumptions"
+        ],
+        "properties": {
+          "simulationId": {
+            "const": "transactions-isolation"
+          },
+          "schemaVersion": {
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "const": "1.0.0"
+          },
+          "kind": {
+            "const": "analysis"
+          },
+          "status": {
+            "const": "completed"
+          },
+          "input": {
+            "$ref": "#/components/schemas/ReservationInput"
+          },
+          "initialState": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReservationState"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "allocatedUnits": {
+                    "const": 0
+                  },
+                  "allocations": {
+                    "type": "array",
+                    "maxItems": 0
+                  },
+                  "reservations": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "const": "NOT_READ"
+                        }
+                      }
+                    }
+                  },
+                  "invariants": {
+                    "type": "object",
+                    "properties": {
+                      "remainingNonnegative": {
+                        "const": true
+                      },
+                      "allocatedWithinCapacity": {
+                        "const": true
+                      },
+                      "unitsConserved": {
+                        "const": true
+                      },
+                      "accountedUnits": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 20
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "outcomes": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 8,
+            "items": {
+              "$ref": "#/components/schemas/ReservationOutcome"
+            }
+          },
+          "finalState": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReservationState"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "reservations": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "enum": ["ACCEPTED", "REJECTED"]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/ReservationMetrics"
+          },
+          "assumptions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 600
+            }
+          }
+        }
+      },
+      "ReservationActorState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "quantity", "status"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/ReservationIdentifier"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "status": {
+            "enum": ["NOT_READ", "READ_OBSERVED", "ACCEPTED", "REJECTED"]
+          },
+          "observedRemaining": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "NOT_READ"
+                }
+              }
+            },
+            "then": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["observedRemaining"]
+                  }
+                ]
+              }
+            },
+            "else": {
+              "required": ["observedRemaining"]
+            }
+          }
+        ]
+      },
+      "ReservationAllocation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reservationId", "quantity", "stepId"],
+        "properties": {
+          "reservationId": {
+            "$ref": "#/components/schemas/ReservationIdentifier"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "stepId": {
+            "$ref": "#/components/schemas/ReservationIdentifier"
+          }
+        }
+      },
+      "ReservationInvariants": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "remainingNonnegative",
+          "allocatedWithinCapacity",
+          "unitsConserved",
+          "accountedUnits"
+        ],
+        "properties": {
+          "remainingNonnegative": {
+            "type": "boolean"
+          },
+          "allocatedWithinCapacity": {
+            "type": "boolean"
+          },
+          "unitsConserved": {
+            "type": "boolean"
+          },
+          "accountedUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          }
+        }
+      },
+      "ReservationState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "remainingUnits",
+          "allocatedUnits",
+          "reservations",
+          "allocations",
+          "invariants"
+        ],
+        "properties": {
+          "remainingUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "allocatedUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 80
+          },
+          "reservations": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 4,
+            "items": {
+              "$ref": "#/components/schemas/ReservationActorState"
+            }
+          },
+          "allocations": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 4,
+            "items": {
+              "$ref": "#/components/schemas/ReservationAllocation"
+            }
+          },
+          "invariants": {
+            "$ref": "#/components/schemas/ReservationInvariants"
+          }
+        }
+      },
+      "ReservationOutcome": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sequence",
+          "stepId",
+          "reservationId",
+          "action",
+          "kind",
+          "postState",
+          "explanation"
+        ],
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8
+          },
+          "stepId": {
+            "$ref": "#/components/schemas/ReservationIdentifier"
+          },
+          "reservationId": {
+            "$ref": "#/components/schemas/ReservationIdentifier"
+          },
+          "action": {
+            "enum": ["READ", "ATTEMPT_RESERVE"]
+          },
+          "kind": {
+            "enum": [
+              "READ_OBSERVED",
+              "RESERVATION_ACCEPTED",
+              "RESERVATION_REJECTED"
+            ]
+          },
+          "postState": {
+            "$ref": "#/components/schemas/ReservationState"
+          },
+          "explanation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          },
+          "observedRemaining": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "checkedRemaining": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "checkSource": {
+            "enum": ["SNAPSHOT", "CURRENT"]
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "rejectionReason": {
+            "const": "INSUFFICIENT_STOCK"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "READ_OBSERVED"
+                }
+              }
+            },
+            "then": {
+              "required": ["observedRemaining"],
+              "properties": {
+                "action": {
+                  "const": "READ"
+                }
+              },
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["checkedRemaining"]
+                  },
+                  {
+                    "required": ["checkSource"]
+                  },
+                  {
+                    "required": ["quantity"]
+                  },
+                  {
+                    "required": ["rejectionReason"]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "RESERVATION_ACCEPTED"
+                }
+              }
+            },
+            "then": {
+              "required": ["checkedRemaining", "checkSource", "quantity"],
+              "properties": {
+                "action": {
+                  "const": "ATTEMPT_RESERVE"
+                }
+              },
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["observedRemaining"]
+                  },
+                  {
+                    "required": ["rejectionReason"]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "RESERVATION_REJECTED"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "checkedRemaining",
+                "checkSource",
+                "quantity",
+                "rejectionReason"
+              ],
+              "properties": {
+                "action": {
+                  "const": "ATTEMPT_RESERVE"
+                }
+              },
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["observedRemaining"]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "ReservationMetrics": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "acceptedReservations",
+          "rejectedReservations",
+          "finalRemainingUnits",
+          "finalAllocatedUnits",
+          "invariantStatus"
+        ],
+        "properties": {
+          "acceptedReservations": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4
+          },
+          "rejectedReservations": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4
+          },
+          "finalRemainingUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "finalAllocatedUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 80
+          },
+          "invariantStatus": {
+            "enum": ["PRESERVED", "VIOLATED"]
+          },
+          "firstViolationStepId": {
+            "$ref": "#/components/schemas/ReservationIdentifier"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "invariantStatus": {
+                  "const": "VIOLATED"
+                }
+              }
+            },
+            "then": {
+              "required": ["firstViolationStepId"]
+            },
+            "else": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["firstViolationStepId"]
+                  }
+                ]
+              }
+            }
+          }
+        ]
       }
     }
   }

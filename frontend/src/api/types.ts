@@ -98,3 +98,21 @@ export type DeliveryFailureOutcome =
   components["schemas"]["DeliveryFailureOutcome"];
 export type DeliveryLostAcknowledgmentOutcome =
   components["schemas"]["DeliveryLostAcknowledgmentOutcome"];
+
+export type ReservationInput = components["schemas"]["ReservationInput"];
+export type ReservationResult = components["schemas"]["ReservationResult"];
+export type ReservationDescriptor =
+  components["schemas"]["ReservationDescriptor"];
+export type ReservationLimits = components["schemas"]["ReservationLimits"];
+export type ReservationPreset = components["schemas"]["ReservationPreset"];
+export type ReservationRequest = components["schemas"]["ReservationRequest"];
+export type ReservationStep = components["schemas"]["ReservationStep"];
+export type ReservationActorState =
+  components["schemas"]["ReservationActorState"];
+export type ReservationAllocation =
+  components["schemas"]["ReservationAllocation"];
+export type ReservationInvariants =
+  components["schemas"]["ReservationInvariants"];
+export type ReservationState = components["schemas"]["ReservationState"];
+export type ReservationOutcome = components["schemas"]["ReservationOutcome"];
+export type ReservationMetrics = components["schemas"]["ReservationMetrics"];

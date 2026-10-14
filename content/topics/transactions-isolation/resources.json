@@ -1,0 +1,42 @@
+[
+  {
+    "id": "postgres-18-transaction-isolation",
+    "title": "PostgreSQL 18: Transaction Isolation",
+    "organization": "PostgreSQL Global Development Group",
+    "url": "https://www.postgresql.org/docs/18/transaction-iso.html",
+    "sourceType": "documentation",
+    "relevantSections": "13.2.1 Read Committed; concurrent row updates and search-condition re-evaluation",
+    "supports": "The documented simple row-update case connects current-state conditional mutation to real database behavior. It does not identify the two teaching algorithms as PostgreSQL isolation levels or prove arbitrary multi-row invariants.",
+    "reviewedAt": "2026-10-14"
+  },
+  {
+    "id": "postgres-18-conditional-update",
+    "title": "PostgreSQL 18: UPDATE",
+    "organization": "PostgreSQL Global Development Group",
+    "url": "https://www.postgresql.org/docs/18/sql-update.html",
+    "sourceType": "documentation",
+    "relevantSections": "WHERE conditions; RETURNING; affected-row command count",
+    "supports": "Conditional update and returned/affected-row evidence distinguish a mutation from no qualifying update. This supports a production discussion; the Java model executes no SQL.",
+    "reviewedAt": "2026-10-14"
+  },
+  {
+    "id": "postgres-18-transactions",
+    "title": "PostgreSQL 18: Transactions",
+    "organization": "PostgreSQL Global Development Group",
+    "url": "https://www.postgresql.org/docs/18/tutorial-transactions.html",
+    "sourceType": "documentation",
+    "relevantSections": "Grouping related changes; BEGIN, COMMIT and ROLLBACK",
+    "supports": "Related database changes need a transaction boundary. The modeled current condition, stock mutation and allocation record share an indivisible transition, without implementing database commit, rollback or durability.",
+    "reviewedAt": "2026-10-14"
+  },
+  {
+    "id": "postgres-18-constraints",
+    "title": "PostgreSQL 18: Constraints",
+    "organization": "PostgreSQL Global Development Group",
+    "url": "https://www.postgresql.org/docs/18/ddl-constraints.html",
+    "sourceType": "documentation",
+    "relevantSections": "5.5.1 CHECK constraints and restrictions involving other rows/tables",
+    "supports": "A row check has a defined scope; a nonnegative inventory column alone does not establish the example's cross-record stock/allocation relationship. This existing source ID refers to the same pinned page used by data-access.",
+    "reviewedAt": "2026-10-14"
+  }
+]

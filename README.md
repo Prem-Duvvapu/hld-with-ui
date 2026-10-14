@@ -9,7 +9,7 @@ Learn high-level system design by reading, experimenting, diagnosing failures, a
 
 The idea is simple: **see a system work, change one condition, explain what happened, then choose a design.** Each module will help you answer both “How does this work?” and “How would I explain it to my team or in an interview?”
 
-**Status: four published modules, three draft topics and one draft workshop.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers ten authored stages from Requirements through Defense by direct link; publication checks and later roadmap modules remain pending.
+**Status: four published modules, four draft topics and one draft workshop.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers ten authored stages from Requirements through Defense by direct link; publication checks and later roadmap modules remain pending.
 
 A draft **Queues & Tail Latency** module is available at
 `/draft/topics/queues-tail-latency`. It connects a strict Java API to editable worker/buffer/job
@@ -33,6 +33,11 @@ work without modeling database latency, physical storage engines or concurrent t
 Eight Guided checkpoints, inspectable Architecture and three authored Operation sequence paths
 complete its six draft views; see [HLD-15B](docs/work-items/HLD-15B.md). Human/hosted
 review and publication remain pending.
+
+The draft **Transactions & Isolation** topic at `/draft/topics/transactions-isolation`
+provides eight editable reservation scenarios, Java snapshot evidence, Study and eight Practice
+questions. Its three views are described in [HLD-16B](docs/work-items/HLD-16B.md); broader
+transaction teaching and publication remain pending.
 
 ## Record your learning
 
@@ -291,8 +296,15 @@ Copyright (c) 2026 Prem Duvvapu.
 Third-party dependencies and materials remain subject to their own licenses and notices;
 the project license does not replace those terms.
 
-## Transaction model foundation
+## Draft Transactions & Isolation
 
-HLD-16A implements a pure Java reservation analysis, following the
-[transaction handoff](docs/TRANSACTIONS_IMPLEMENTATION_PLAN.md). Its API, React experience
-and full isolation teaching remain pending; it is not an available learning module.
+[HLD-16B](docs/work-items/HLD-16B.md) connects the verified Java reservation model to strict
+APIs and Playground, Study and Practice at `/draft/topics/transactions-isolation`. Eight
+scenarios let you edit stock, quantities, IDs and step order, then inspect actual initial and
+post-step snapshots. Eight original questions support locally saved interview explanations.
+
+The draft compares stale-read assignment with an atomic current-stock condition, and labels
+capacity and conservation separately. It does not emulate a database engine or implement
+isolation levels, rollback, retries, durability or idempotency. Guided, Architecture and Operation
+sequence remain pending, along with human/hosted/publication gates. Follow the
+[transaction handoff](docs/TRANSACTIONS_IMPLEMENTATION_PLAN.md) for the next bounded contribution.

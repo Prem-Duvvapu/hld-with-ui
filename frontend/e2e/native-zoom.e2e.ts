@@ -584,3 +584,99 @@ for (const theme of ["light", "dark"] as const) {
     }
   });
 }
+
+for (const theme of ["light", "dark"] as const) {
+  test(`native 200% zoom keeps reservation three views usable in ${theme}`, async ({
+    baseURL,
+  }, testInfo) => {
+    test.setTimeout(90_000);
+    const profile = await mkdtemp(join(tmpdir(), "hld-data-zoom-"));
+    const extension = resolve(
+      dirname(fileURLToPath(import.meta.url)),
+      "fixtures/native-zoom",
+    );
+    let context: BrowserContext | undefined;
+    try {
+      context = await chromium.launchPersistentContext(profile, {
+        baseURL,
+        channel: "chromium",
+        headless: true,
+        viewport: null,
+        args: [
+          `--disable-extensions-except=${extension}`,
+          `--load-extension=${extension}`,
+          "--window-size=1440,1000",
+        ],
+      });
+      const worker =
+        context.serviceWorkers()[0] ??
+        (await context.waitForEvent("serviceworker"));
+      const page = await context.newPage();
+      await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
+      const cdp = await context.newCDPSession(page);
+      const { windowId } = await cdp.send("Browser.getWindowForTarget");
+      const observations: unknown[] = [];
+      for (const pixels of [1440, 640]) {
+        await page.goto("/draft/topics/transactions-isolation");
+        await nativeZoom(page, worker, 1);
+        await cdp.send("Browser.setWindowBounds", {
+          windowId,
+          bounds: { width: pixels, height: 1000 },
+        });
+        await expect.poll(() => page.evaluate(() => innerWidth)).toBe(pixels);
+        const baseDpr = await page.evaluate(() => devicePixelRatio);
+        await nativeZoom(page, worker, 2);
+        await expect
+          .poll(() => page.evaluate(() => innerWidth))
+          .toBe(pixels / 2);
+        await expect
+          .poll(() => page.evaluate(() => devicePixelRatio))
+          .toBe(baseDpr * 2);
+        for (const name of ["Playground", "Study", "Practice"]) {
+          const tab = page.getByRole("tab", { name, exact: true });
+          await tab.focus();
+          await page.keyboard.press("Enter");
+          await expect(tab).toHaveAttribute("aria-selected", "true");
+          if (name === "Playground") {
+            await page
+              .getByRole("button", {
+                name: "Run reservation schedule",
+                exact: true,
+              })
+              .click();
+            await expect(
+              page
+                .getByRole("tabpanel", { name: "Playground", exact: true })
+                .getByRole("article", { name: "Initial state", exact: true }),
+            ).toBeVisible();
+          }
+          await expect
+            .poll(() =>
+              page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth,
+              ),
+            )
+            .toBe(true);
+          observations.push({
+            theme,
+            view: name,
+            physicalWidth: pixels,
+            zoom: 2,
+            cssWidth: await page.evaluate(() => innerWidth),
+            dpr: await page.evaluate(() => devicePixelRatio),
+          });
+        }
+      }
+      await testInfo.attach("reservation-native-zoom-observations", {
+        body: JSON.stringify(observations, null, 2),
+        contentType: "application/json",
+      });
+    } finally {
+      try {
+        await context?.close();
+      } finally {
+        await rm(profile, { recursive: true, force: true });
+      }
+    }
+  });
+}

@@ -41,7 +41,8 @@ export function supportsDraftTopicResume(id: string) {
   return (
     id === "queues-tail-latency" ||
     id === "queues-delivery" ||
-    id === "data-access-models"
+    id === "data-access-models" ||
+    id === "transactions-isolation"
   );
 }
 

@@ -70,3 +70,14 @@ the inherited application; they do not make this transaction topic available fro
 Next: HLD-16B strict API and direct draft Playground/Study/Practice, after this model's
 required checks and focused PR pass. Deeper isolation, rollback/retry, idempotency, human
 review, hosted compatibility and publication remain separate work.
+
+## Final delivery record
+
+[PR #72](https://github.com/Prem-Duvvapu/hld-with-ui/pull/72) final head
+`0a3b0872ff25f6bf8c6e9045a892d787fd72ad41` passed required Quality, Browser journeys and
+Packaged runtime plus GitGuardian/Vercel. CI run `38593583802` tested merge `ead202d`:
+461 Java cases (one existing opt-in skip), 497 units, 235 contracts, 202 ordinary browser
+journeys, 20 UI performance and 20 reading checks; launcher and packaged runtime passed.
+Squash `ae4a88ea0e5675db8f9302d8770faa8f4371db5d` merged 2026-10-14 16:03:55 UTC.
+Owned branch deleted; owner main fast-forwarded with unrelated `output/` preserved.
+The next [HLD-16B](HLD-16B.md) connects this verified foundation to HTTP/React.

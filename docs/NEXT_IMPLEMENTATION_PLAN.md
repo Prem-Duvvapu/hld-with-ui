@@ -22,10 +22,15 @@ seven scenarios and an explicit Playground/Study/Practice experience at
 core draft views with eight Java-verified checkpoints, inspectable Architecture and three
 authored Operation sequence paths. Review its recorded technical evidence before the next
 bounded transaction-foundation work item. Human/hosted review and publication remain open.
-Transactions and idempotency remain pending. Follow the
-[transaction implementation handoff](TRANSACTIONS_IMPLEMENTATION_PLAN.md), starting with
-HLD-16A pure Java and canonical evidence. The model slice is in progress; HTTP/React and
-complete isolation coverage remain pending. See [HLD-16A](work-items/HLD-16A.md).
+## Current reservation draft
+
+[HLD-16A](work-items/HLD-16A.md) verifies the Java model and canonical evidence.
+[HLD-16B](work-items/HLD-16B.md) connects strict HTTP and draft Playground/Study/Practice
+at `/draft/topics/transactions-isolation`. Eight scenarios and eight questions are implemented;
+full isolation/rollback/retry teaching and human/hosted/publication gates remain pending.
+Next implement HLD-16C Guided/Architecture/Operation sequence using the
+[transaction implementation handoff](TRANSACTIONS_IMPLEMENTATION_PLAN.md). Idempotency
+follows this foundation; no idempotency experiment is implemented by the reservation model.
 
 ## 1. Objective and scope
 

@@ -37,8 +37,23 @@ const dataResultNames = {
   totals: "DataAccessTotals",
   conflict: "DataAccessConflict",
 };
+const reservationInputId =
+  "https://hld-with-ui.dev/schemas/transactions-isolation.input.schema.json";
+const reservationInputNames = {
+  identifier: "ReservationIdentifier",
+  reservation: "ReservationRequest",
+  step: "ReservationStep",
+};
+const reservationResultNames = {
+  reservationState: "ReservationActorState",
+  allocation: "ReservationAllocation",
+  invariants: "ReservationInvariants",
+  state: "ReservationState",
+  outcome: "ReservationOutcome",
+  metrics: "ReservationMetrics",
+};
 
-// Canonical schemas own queue model and guided content shape. Export normal internal OpenAPI refs
+// Canonical schemas own model evidence and guided content. Export normal internal OpenAPI refs
 // so existing generation and response validators need no remote resolution.
 function exportSchema(value, definitions = names) {
   if (Array.isArray(value))
@@ -57,6 +72,16 @@ function exportSchema(value, definitions = names) {
           ? "DataAccessInput"
           : dataInputNames[child.slice(`${dataInputId}#/$defs/`.length)];
       if (!name) throw new Error(`Unsupported data input reference: ${child}`);
+      result[key] = `#/components/schemas/${name}`;
+    } else if (key === "$ref" && child.startsWith(reservationInputId)) {
+      const name =
+        child === reservationInputId
+          ? "ReservationInput"
+          : reservationInputNames[
+              child.slice(`${reservationInputId}#/$defs/`.length)
+            ];
+      if (!name)
+        throw new Error(`Unsupported reservation input reference: ${child}`);
       result[key] = `#/components/schemas/${name}`;
     } else result[key] = exportSchema(child, definitions);
   }
@@ -142,6 +167,21 @@ if (
     "Data-access checkpoint kinds differ from actual outcome selector capabilities.",
   );
 
+for (const [kind, component, definitions] of [
+  ["input", "ReservationInput", reservationInputNames],
+  ["result", "ReservationResult", reservationResultNames],
+]) {
+  const schema = read(`contracts/transactions-isolation.${kind}.schema.json`);
+  openapi.components.schemas[component] = exportSchema(schema, definitions);
+  for (const [definition, name] of Object.entries(definitions)) {
+    if (!schema.$defs[definition]) throw new Error(`Missing ${definition}`);
+    openapi.components.schemas[name] = exportSchema(
+      schema.$defs[definition],
+      definitions,
+    );
+  }
+}
+
 // The lazy delivery client needs only its descriptor's reachable schemas, not the entire API.
 // This generated artifact keeps runtime validation derived from the same canonical HTTP contract.
 const descriptorSchema = {
@@ -183,6 +223,27 @@ const dataDescriptorSchema = {
 writeFileSync(
   resolve(root, "frontend/src/api/schemas/data-access-descriptor.schema.json"),
   JSON.stringify(dataDescriptorSchema).replaceAll(
+    "#/components/schemas/",
+    "#/$defs/",
+  ) + "\n",
+);
+const reservationDescriptorSchema = {
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  ...openapi.components.schemas.ReservationDescriptor,
+  $defs: Object.fromEntries(
+    [
+      "ReservationIdentifier",
+      "ReservationRequest",
+      "ReservationStep",
+      "ReservationInput",
+      "ReservationLimits",
+      "ReservationPreset",
+    ].map((name) => [name, openapi.components.schemas[name]]),
+  ),
+};
+writeFileSync(
+  resolve(root, "frontend/src/api/schemas/reservation-descriptor.schema.json"),
+  JSON.stringify(reservationDescriptorSchema).replaceAll(
     "#/components/schemas/",
     "#/$defs/",
   ) + "\n",

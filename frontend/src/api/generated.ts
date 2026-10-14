@@ -405,6 +405,43 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/simulations/transactions-isolation": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read the Java reservation interleaving descriptor for the draft transactions module */
+    get: operations["getReservationSimulation"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/simulations/transactions-isolation/runs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Evaluate a complete untimed reservation schedule and return authoritative snapshots
+     * @description Strict closed reservation input with full schedule validation before execution. Business rejection and deliberate unsafe invariant breach are successful completed analyses, not HTTP errors. Shared HTTP admission, raw-body and bounded complete-result serialization guards apply outside the model. No partial result, database isolation emulator, elapsed time or automatic retry.
+     */
+    post: operations["runReservationSchedule"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1720,6 +1757,161 @@ export interface components {
       reason: "DUPLICATE_ID" | "DUPLICATE_BUSINESS_KEY";
       recordId: components["schemas"]["DataAccessIdentifier"];
     };
+    ReservationLimits: {
+      /** @constant */
+      maxInitialUnits: 20;
+      /** @constant */
+      minReservations: 2;
+      /** @constant */
+      maxReservations: 4;
+      /** @constant */
+      maxQuantity: 20;
+      /** @constant */
+      maxSteps: 8;
+      /** @constant */
+      maxIdLength: 32;
+    };
+    ReservationPreset: {
+      id: string;
+      title: string;
+      description: string;
+      input: components["schemas"]["ReservationInput"];
+    };
+    ReservationDescriptor: {
+      /** @constant */
+      id: "transactions-isolation";
+      title: string;
+      /** @constant */
+      kind: "simulation";
+      /** @constant */
+      modelVersion: "1.0.0";
+      description: string;
+      limits: components["schemas"]["ReservationLimits"];
+      presets: components["schemas"]["ReservationPreset"][];
+      assumptions: string[];
+    };
+    /**
+     * Reservation interleaving model input
+     * @description Canonical complete caller-supplied interleaving for two illustrative reservation algorithms, schema 1.0/model 1.0.0. No time, randomness or database is modeled. Java additionally validates unique reservation/step identities, known references, schedule length twice actor count and exactly one READ followed by one ATTEMPT_RESERVE per actor before execution. JSON Schema validates parsed values; it cannot establish those identity/order relations or detect duplicate JSON keys and token spellings.
+     */
+    ReservationInput: {
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      modelVersion: "1.0.0";
+      /** @enum {unknown} */
+      strategy: "STALE_READ_WRITE" | "ATOMIC_CONDITIONAL_RESERVATION";
+      initialUnits: number;
+      reservations: components["schemas"]["ReservationRequest"][];
+      schedule: components["schemas"]["ReservationStep"][];
+    };
+    ReservationIdentifier: string;
+    ReservationRequest: {
+      id: components["schemas"]["ReservationIdentifier"];
+      quantity: number;
+    };
+    ReservationStep: {
+      id: components["schemas"]["ReservationIdentifier"];
+      reservationId: components["schemas"]["ReservationIdentifier"];
+      /** @enum {unknown} */
+      action: "READ" | "ATTEMPT_RESERVE";
+    };
+    /**
+     * Reservation interleaving model result
+     * @description Complete authoritative untimed reservation analysis. Captured input and all identities reference the canonical input owner. Closed outcome kinds distinguish reads, accepted reservations and business rejections; post-state retains prior observations. Completed describes schedule consumption, not invariant preservation or database commit. Unsafe allocated/accounted bounds intentionally permit values above initial units. Java tests own identity correlation, snapshot equality, arithmetic and first violating prefix semantics; JSON Schema establishes structure and local required/forbidden fields.
+     */
+    ReservationResult: {
+      /** @constant */
+      simulationId: "transactions-isolation";
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      modelVersion: "1.0.0";
+      /** @constant */
+      kind: "analysis";
+      /** @constant */
+      status: "completed";
+      input: components["schemas"]["ReservationInput"];
+      initialState: components["schemas"]["ReservationState"] & {
+        /** @constant */
+        allocatedUnits?: 0;
+        allocations?: unknown[];
+        reservations?: {
+          /** @constant */
+          status?: "NOT_READ";
+        }[];
+        invariants?: {
+          /** @constant */
+          remainingNonnegative?: true;
+          /** @constant */
+          allocatedWithinCapacity?: true;
+          /** @constant */
+          unitsConserved?: true;
+          accountedUnits?: number;
+        };
+      };
+      outcomes: components["schemas"]["ReservationOutcome"][];
+      finalState: components["schemas"]["ReservationState"] & {
+        reservations?: {
+          /** @enum {unknown} */
+          status?: "ACCEPTED" | "REJECTED";
+        }[];
+      };
+      metrics: components["schemas"]["ReservationMetrics"];
+      assumptions: string[];
+    };
+    ReservationActorState: {
+      id: components["schemas"]["ReservationIdentifier"];
+      quantity: number;
+      /** @enum {unknown} */
+      status: "NOT_READ" | "READ_OBSERVED" | "ACCEPTED" | "REJECTED";
+      observedRemaining?: number;
+    } & unknown;
+    ReservationAllocation: {
+      reservationId: components["schemas"]["ReservationIdentifier"];
+      quantity: number;
+      stepId: components["schemas"]["ReservationIdentifier"];
+    };
+    ReservationInvariants: {
+      remainingNonnegative: boolean;
+      allocatedWithinCapacity: boolean;
+      unitsConserved: boolean;
+      accountedUnits: number;
+    };
+    ReservationState: {
+      remainingUnits: number;
+      allocatedUnits: number;
+      reservations: components["schemas"]["ReservationActorState"][];
+      allocations: components["schemas"]["ReservationAllocation"][];
+      invariants: components["schemas"]["ReservationInvariants"];
+    };
+    ReservationOutcome: {
+      sequence: number;
+      stepId: components["schemas"]["ReservationIdentifier"];
+      reservationId: components["schemas"]["ReservationIdentifier"];
+      /** @enum {unknown} */
+      action: "READ" | "ATTEMPT_RESERVE";
+      /** @enum {unknown} */
+      kind: "READ_OBSERVED" | "RESERVATION_ACCEPTED" | "RESERVATION_REJECTED";
+      postState: components["schemas"]["ReservationState"];
+      explanation: string;
+      observedRemaining?: number;
+      checkedRemaining?: number;
+      /** @enum {unknown} */
+      checkSource?: "SNAPSHOT" | "CURRENT";
+      quantity?: number;
+      /** @constant */
+      rejectionReason?: "INSUFFICIENT_STOCK";
+    } & (unknown & unknown & unknown);
+    ReservationMetrics: {
+      acceptedReservations: number;
+      rejectedReservations: number;
+      finalRemainingUnits: number;
+      finalAllocatedUnits: number;
+      /** @enum {unknown} */
+      invariantStatus: "PRESERVED" | "VIOLATED";
+      firstViolationStepId?: components["schemas"]["ReservationIdentifier"];
+    } & unknown;
   };
   responses: never;
   parameters: {
@@ -2514,6 +2706,88 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["DataAccessResult"];
+        };
+      };
+      /** @description Structured error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free. */
+      503: {
+        headers: {
+          /** @description Retry hint in seconds. Capacity may remain occupied. */
+          "Retry-After"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  getReservationSimulation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReservationDescriptor"];
+        };
+      };
+    };
+  };
+  runReservationSchedule: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ReservationInput"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReservationResult"];
         };
       };
       /** @description Structured error */

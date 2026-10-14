@@ -164,8 +164,7 @@ Content `1.1.0` authors eight checkpoints over seven unchanged presets. Schema/m
 ## Standalone reservation evidence
 
 The HLD-16A standalone `transactions-isolation.input.schema.json` and
-`transactions-isolation.result.schema.json` define the pure Java analysis, not a new HTTP
-endpoint. Input owns shared identifiers and captured-input definitions; result references
+`transactions-isolation.result.schema.json` define the Java analysis now exported through HTTP 1.7 reservation endpoints. Input owns shared identifiers and captured-input definitions; result references
 that canonical owner. Compile/register input before result. Closed conditional shapes omit
 inapplicable READ/attempt fields, retain observations in terminal actor states and require
 firstViolationStepId exactly for a violated history. Unsafe allocated/accounted quantities
@@ -174,5 +173,11 @@ are allowed above initial stock so the teaching counterexample is representable.
 Actual unsafe and protected examples are produced by the configured Java mapper and compared
 without rewriting in ordinary verification. Isolated Node fixtures validate them and reject
 wrong shapes. Java validates identity/order relations and computes behavior/invariants; schema
-checks alone cannot prove those semantics. OpenAPI/types and descriptor delivery remain unchanged
-until real API paths exist. See [HLD-16A](../docs/work-items/HLD-16A.md).
+checks alone cannot prove those semantics. HTTP 1.7 exports the canonical input/result through GET `/api/v1/simulations/transactions-isolation`
+and POST `/api/v1/simulations/transactions-isolation/runs`. Its closed descriptor supplies six
+Java limits and eight presets whose prompt is `description`; default is `unsafe-baseline` by ID.
+The generated reachable descriptor schema supports lazy runtime validation. The endpoint
+requires integer JSON tokens and rejects decimal/exponent tokens, even when their numeric
+value is integral; JSON Schema integer validation alone cannot distinguish those spellings.
+Existing 400/413/422/503/500 guards apply; business rejection and unsafe invariant failure are
+valid completed 200 analyses. [HLD-16B](../docs/work-items/HLD-16B.md) records integration. See [HLD-16A](../docs/work-items/HLD-16A.md).

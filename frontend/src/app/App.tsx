@@ -48,6 +48,11 @@ const DeliveryPage = lazy(() =>
     default: module.DeliveryPage,
   })),
 );
+const ReservationPage = lazy(() =>
+  import("../pages/ReservationPage").then((module) => ({
+    default: module.ReservationPage,
+  })),
+);
 const DataAccessPage = lazy(() =>
   import("../pages/DataAccessPage").then((module) => ({
     default: module.DataAccessPage,
@@ -129,6 +134,10 @@ export function App() {
             <Route
               path="/draft/topics/data-access-models"
               element={<DataAccessPage />}
+            />
+            <Route
+              path="/draft/topics/transactions-isolation"
+              element={<ReservationPage />}
             />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

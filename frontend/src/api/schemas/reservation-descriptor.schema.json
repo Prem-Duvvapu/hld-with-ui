@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "kind",
+    "modelVersion",
+    "description",
+    "limits",
+    "presets",
+    "assumptions"
+  ],
+  "properties": {
+    "id": { "type": "string", "const": "transactions-isolation" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "kind": { "type": "string", "const": "simulation" },
+    "modelVersion": { "type": "string", "const": "1.0.0" },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "limits": { "$ref": "#/$defs/ReservationLimits" },
+    "presets": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 12,
+      "items": { "$ref": "#/$defs/ReservationPreset" }
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": { "type": "string", "minLength": 1, "maxLength": 600 }
+    }
+  },
+  "$defs": {
+    "ReservationIdentifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "pattern": "^[a-z][a-z0-9-]{0,31}$",
+      "not": { "pattern": "\\s" }
+    },
+    "ReservationRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "quantity"],
+      "properties": {
+        "id": { "$ref": "#/$defs/ReservationIdentifier" },
+        "quantity": { "type": "integer", "minimum": 1, "maximum": 20 }
+      }
+    },
+    "ReservationStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "reservationId", "action"],
+      "properties": {
+        "id": { "$ref": "#/$defs/ReservationIdentifier" },
+        "reservationId": { "$ref": "#/$defs/ReservationIdentifier" },
+        "action": { "enum": ["READ", "ATTEMPT_RESERVE"] }
+      }
+    },
+    "ReservationInput": {
+      "title": "Reservation interleaving model input",
+      "description": "Canonical complete caller-supplied interleaving for two illustrative reservation algorithms, schema 1.0/model 1.0.0. No time, randomness or database is modeled. Java additionally validates unique reservation/step identities, known references, schedule length twice actor count and exactly one READ followed by one ATTEMPT_RESERVE per actor before execution. JSON Schema validates parsed values; it cannot establish those identity/order relations or detect duplicate JSON keys and token spellings.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "modelVersion",
+        "strategy",
+        "initialUnits",
+        "reservations",
+        "schedule"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "1.0" },
+        "modelVersion": { "const": "1.0.0" },
+        "strategy": {
+          "enum": ["STALE_READ_WRITE", "ATOMIC_CONDITIONAL_RESERVATION"]
+        },
+        "initialUnits": { "type": "integer", "minimum": 0, "maximum": 20 },
+        "reservations": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 4,
+          "items": { "$ref": "#/$defs/ReservationRequest" }
+        },
+        "schedule": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/ReservationStep" }
+        }
+      }
+    },
+    "ReservationLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maxInitialUnits",
+        "minReservations",
+        "maxReservations",
+        "maxQuantity",
+        "maxSteps",
+        "maxIdLength"
+      ],
+      "properties": {
+        "maxInitialUnits": { "type": "integer", "const": 20 },
+        "minReservations": { "type": "integer", "const": 2 },
+        "maxReservations": { "type": "integer", "const": 4 },
+        "maxQuantity": { "type": "integer", "const": 20 },
+        "maxSteps": { "type": "integer", "const": 8 },
+        "maxIdLength": { "type": "integer", "const": 32 }
+      }
+    },
+    "ReservationPreset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "description", "input"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "not": { "pattern": "\\s" }
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "description": { "type": "string", "minLength": 1, "maxLength": 600 },
+        "input": { "$ref": "#/$defs/ReservationInput" }
+      }
+    }
+  }
+}

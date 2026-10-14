@@ -229,6 +229,8 @@ flags. History-level correctness and the first violating step are separate from 
 execution. Rejections change reservation status without changing stock/allocations.
 
 No database isolation mode, elapsed time, seed, real thread schedule, retries, rollback,
-crash durability or idempotency is implied. This pure-model slice is unavailable through
-HTTP or React. See [decision 0031](decisions/0031-reservation-interleavings-and-invariants.md)
+crash durability or idempotency is implied. [HLD-16B](work-items/HLD-16B.md) exposes this unchanged model through strict descriptor/run
+APIs and the direct draft route. Presets are selected by semantic ID; Run is explicit.
+Playground selects initial/post-step snapshots without manufacturing outcomes; whole-schedule
+metrics remain separately labelled. Invalid ordering is rejected without automatic repair. See [decision 0031](decisions/0031-reservation-interleavings-and-invariants.md)
 and [HLD-16A](work-items/HLD-16A.md).
