@@ -26,7 +26,7 @@
     "url": "https://www.postgresql.org/docs/18/tutorial-transactions.html",
     "sourceType": "documentation",
     "relevantSections": "Grouping related changes; BEGIN, COMMIT and ROLLBACK",
-    "supports": "Related database changes need a transaction boundary. The modeled current condition, stock mutation and allocation record share an indivisible transition, without implementing database commit, rollback or durability.",
+    "supports": "Related database changes need a defined transaction boundary. Reservation acceptance and the separate atomicity publication/discard model illustrate original local rules; neither implements database durability or crash recovery.",
     "reviewedAt": "2026-10-14"
   },
   {
@@ -37,6 +37,26 @@
     "sourceType": "documentation",
     "relevantSections": "5.5.1 CHECK constraints and restrictions involving other rows/tables",
     "supports": "A row check has a defined scope; a nonnegative inventory column alone does not establish the example's cross-record stock/allocation relationship. This existing source ID refers to the same pinned page used by data-access.",
+    "reviewedAt": "2026-10-14"
+  },
+  {
+    "id": "postgres-18-rollback",
+    "title": "PostgreSQL 18: ROLLBACK",
+    "organization": "PostgreSQL Global Development Group",
+    "url": "https://www.postgresql.org/docs/18/sql-rollback.html",
+    "sourceType": "documentation",
+    "relevantSections": "Description; discarding updates inside the current transaction",
+    "supports": "A real SQL transaction discards its updates on rollback. The split teaching algorithm has no shared rollback boundary; its ABORT does not model PostgreSQL rollback failing. Staged discard supplies no crash-recovery guarantee.",
+    "reviewedAt": "2026-10-14"
+  },
+  {
+    "id": "postgres-18-commit",
+    "title": "PostgreSQL 18: COMMIT",
+    "organization": "PostgreSQL Global Development Group",
+    "url": "https://www.postgresql.org/docs/18/sql-commit.html",
+    "sourceType": "documentation",
+    "relevantSections": "Description; database publication and durability",
+    "supports": "Real database COMMIT has a documented transaction publication and durability boundary. The original Java COMMITTED phase represents only local modeled publication, with no persistent recovery or acknowledgement protocol.",
     "reviewedAt": "2026-10-14"
   }
 ]

@@ -11,7 +11,10 @@ its verification/delivery evidence is recorded in that work item. [HLD-16C](work
 adds Guided and authored design views, completing six draft views for the bounded reservation
 experiment. [HLD-17A](work-items/HLD-17A.md) implements a separate pure transaction-atomicity
 model and standalone evidence, without API/UI/catalog registration. Actual verification
-and delivery evidence is recorded in its work item and PR. Broader SQL isolation, retry/idempotency and publication remain pending.
+and delivery evidence is recorded in its work item and PR. [HLD-17B](work-items/HLD-17B.md)
+integrates the strict API and second named Playground/Study/Practice experiment; its actual
+verification remains in that work item. Broader SQL isolation, retry/idempotency and publication
+remain pending.
 Phase descriptions below retain their acceptance scope; they are not evidence that every
 phase is done.
 This plan supersedes the temporary model/contract/learning design notes from this session.
@@ -317,9 +320,9 @@ sizes and relevant inherited checks plus final-head CI. Actual evidence belongs 
 This foundation creates no HTTP/OpenAPI path, Spring registration, catalog simulation ID,
 lesson resource or frontend capability. No placeholder makes the model look available.
 
-#### Later atomicity API and second named experiment
+#### HLD-17B — Atomicity API and second named experiment
 
-After the foundation passes required checks and merges, use a fresh branch for a strict
+The foundation is merged with required CI in PR #75. HLD-17B uses a fresh branch for a strict
 descriptor/run API and second named Playground experiment within the existing
 `transactions-isolation` draft. Register the extra simulation ID only when API/renderer
 actually exist. Preserve the default reservation route and saved activity IDs; load the new
@@ -406,28 +409,28 @@ copy no vendor code/assets. Add canonical resource IDs only when the content sli
 ## 8. Execution prompt
 
 ```text
-Implement the next uncompleted slice in docs/TRANSACTIONS_IMPLEMENTATION_PLAN.md.
+Implement the next uncompleted bounded slice in docs/TRANSACTIONS_IMPLEMENTATION_PLAN.md.
 Read AGENTS.md and its required documents, inspect actual current main/code/tests/status,
-and preserve unrelated user work. Verify the reservation and preceding atomicity slice's
-actual final-head CI/delivery evidence before selecting subsequent work.
+and preserve unrelated user work. Verify the reservation and atomicity foundation/API/UI
+contributions and their actual final-head CI/merge before selecting subsequent work.
 Create a fresh branch from updated main for one focused work item.
 
-The existing reservation foundation/API/six-view draft is implemented. Continue the next
-uncompleted bounded slice after verifying HLD-17A atomicity Java/standalone evidence
-and its delivery. Preserve reservation model 1.0.0 and its goldens/selectors. Follow
-the frozen atomicity mode/program/field/reason names, input bounds and Java-owned complete
-published/private snapshots. Do not add an API/catalog/UI placeholder in this pure slice,
-invent timing, use actual model threads, add services/dependencies, call the algorithms SQL
-isolation levels, promise durability/idempotency, or publish drafts.
+HLD-17A supplies the atomicity model; HLD-17B integrates strict APIs and a second named
+Playground/Study/Practice experiment. Verify actual source and delivery, then complete
+atomicity Guided/design with Java-targeted checkpoints and authored Architecture/Sequence
+views. Existing reservation checkpoints/model/schema/goldens and saved IDs remain valid.
+Do not claim full transaction isolation, SQL rollback/recovery, retries or idempotency.
 
-Write a work item and model decision, implement and run relevant checks, record only actual
-results, and review learning/contract/model agreement. Push a focused PR to main, wait for
-required final-head CI, squash merge and update local main. Continue to atomicity API/UI
-integration only after HLD-17A is complete and the current user-authorized work window
-allows another bounded slice.
-Reuse the shared module/answer UX and strict API/schema/runtime patterns, keeping frontend
-and backend code readable and the example easy to explain to a teammate or interviewer.
+Java owns authoritative states/outcomes/flags/metrics. React projects selected snapshots
+and validates static contracts/references without choosing model outcomes or doing model
+math. Keep public data, private proposals, retained base history and whole-run scope clear.
+Original teaching must carry one small example through prediction, evidence, tradeoff,
+teammate explanation and interview follow-ups. Missing authored views stay visibly scoped.
 
-Finish with changed artifacts, learning outcome, checks/results, limitations and next item.
-Full isolation/rollback/retry, human/hosted reviews and publication remain separate gates.
+Run relevant semantic/API/contracts/UI/accessibility/runtime checks, record only actual
+results, review model/content/renderer agreement, then push a focused PR to main. Wait for
+required final-head CI, squash merge, delete only the merged branch and update local main.
+Draft development does not close hosted/human/prerequisite/publication gates. Continue the
+full HLD objective through deeper isolation/retry/idempotency and later integrated cases.
+
 ```

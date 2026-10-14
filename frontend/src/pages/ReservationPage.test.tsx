@@ -1,3 +1,7 @@
+import atomicityInput from "../../../contracts/examples/transaction-atomicity-baseline-input.json";
+import protectedInput from "../../../contracts/examples/transaction-atomicity-protected-input.json";
+import conflictInput from "../../../contracts/examples/transaction-atomicity-conflict-input.json";
+import atomicityResult from "../../../contracts/examples/transaction-atomicity-baseline-result.json";
 import checkpoints from "../../../content/topics/transactions-isolation/checkpoints.json";
 import catalog from "../../../content/catalog.json";
 import questions from "../../../content/topics/transactions-isolation/questions.json";
@@ -7,11 +11,12 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { beforeEach, expect, it, vi } from "vitest";
 import { api, ApiClientError } from "../api/client";
-import type { TopicDetail } from "../api/types";
+import type { AtomicityDescriptor, TopicDetail } from "../api/types";
 import { descriptor } from "../features/reservations/reservationTestFixtures";
 import { ReservationPage } from "./ReservationPage";
 
@@ -21,8 +26,47 @@ vi.mock("../api/client", async (original) => ({
     draftTopic: vi.fn(),
     reservationDescriptor: vi.fn(),
     runReservation: vi.fn(),
+    atomicityDescriptor: vi.fn(),
+    runAtomicity: vi.fn(),
   },
 }));
+const atomicityDescriptor = {
+  id: "transaction-atomicity",
+  title: "Atomicity & Abort",
+  kind: "simulation",
+  modelVersion: "1.0.0",
+  description: "Inspect related writes and abort.",
+  limits: {
+    maxInitialUnits: 20,
+    minTransactions: 1,
+    maxTransactions: 3,
+    maxQuantity: 20,
+    minSteps: 2,
+    maxSteps: 12,
+    maxIdLength: 32,
+  },
+  presets: [
+    {
+      id: "baseline",
+      title: "Abort between separate writes",
+      description: "What remains after stock changes?",
+      input: atomicityInput,
+    },
+    {
+      id: "protected-baseline",
+      title: "Discard unpublished stock work",
+      description: "What does private abort discard?",
+      input: protectedInput,
+    },
+    {
+      id: "protected-conflict",
+      title: "Two private proposals share one base",
+      description: "Which proposal can publish?",
+      input: conflictInput,
+    },
+  ],
+  assumptions: atomicityResult.assumptions,
+} as AtomicityDescriptor;
 const topic: TopicDetail = {
   topic: catalog.find(
     (entry) => entry.id === "transactions-isolation",
@@ -36,6 +80,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(api.draftTopic).mockResolvedValue(topic);
   vi.mocked(api.reservationDescriptor).mockResolvedValue(descriptor);
+  vi.mocked(api.atomicityDescriptor).mockResolvedValue(atomicityDescriptor);
 });
 function view(route = "/draft/topics/transactions-isolation") {
   const router = createMemoryRouter(
@@ -54,7 +99,7 @@ function view(route = "/draft/topics/transactions-isolation") {
 it("offers exactly six implemented draft views without auto-running or exposing a bookmark", async () => {
   view("/draft/topics/transactions-isolation?view=study");
   expect(
-    await screen.findByRole("region", { name: "Draft reservation module" }),
+    await screen.findByRole("region", { name: "Draft transaction module" }),
   ).toBeVisible();
   expect(screen.getAllByRole("tab")).toHaveLength(6);
   expect(screen.getByRole("tab", { name: "Playground" })).toBeVisible();
@@ -84,7 +129,7 @@ it("offers exactly six implemented draft views without auto-running or exposing 
 
 it("preserves edited design and prediction across tabs and browser history without refetching", async () => {
   const router = view();
-  await screen.findByRole("region", { name: "Draft reservation module" });
+  await screen.findByRole("region", { name: "Draft transaction module" });
   fireEvent.change(screen.getByLabelText("Reservation 1 ID"), {
     target: { value: "team-a" },
   });
@@ -102,7 +147,9 @@ it("preserves edited design and prediction across tabs and browser history witho
       name: "Explain the race and defend the boundary",
     }),
   ).toBeVisible();
-  expect(screen.getAllByLabelText("Your explanation")).toHaveLength(8);
+  expect(screen.getAllByLabelText("Your explanation")).toHaveLength(
+    questions.length,
+  );
   await act(async () => {
     await router.navigate(-1);
   });
@@ -133,14 +180,14 @@ it("waits for both metadata requests and retries a genuine descriptor failure", 
   );
   view();
   expect(screen.getByRole("status")).toHaveTextContent(
-    "Loading the draft reservation module",
+    "Loading the draft transaction module",
   );
   expect(screen.queryByRole("tab")).not.toBeInTheDocument();
   await act(async () => reject(new ApiClientError("Model unavailable", 503)));
   expect(screen.getByRole("alert")).toHaveTextContent("Model unavailable");
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
   expect(
-    await screen.findByRole("region", { name: "Draft reservation module" }),
+    await screen.findByRole("region", { name: "Draft transaction module" }),
   ).toBeVisible();
   expect(api.draftTopic).toHaveBeenCalledTimes(2);
   expect(api.reservationDescriptor).toHaveBeenCalledTimes(2);
@@ -189,6 +236,16 @@ it.each([
     value: {
       ...topic,
       topic: { ...topic.topic, capabilities: ["study", "simulation"] },
+    },
+  },
+  {
+    name: "non-array simulator references",
+    value: {
+      ...topic,
+      topic: {
+        ...topic.topic,
+        simulationIds: "transactions-isolation,transaction-atomicity",
+      },
     },
   },
   {
@@ -241,7 +298,7 @@ it.each(["unknown"])(
     const router = view(
       `/draft/topics/transactions-isolation?view=${requested}`,
     );
-    await screen.findByRole("region", { name: "Draft reservation module" });
+    await screen.findByRole("region", { name: "Draft transaction module" });
     expect(screen.getByRole("tab", { name: "Playground" })).toHaveAttribute(
       "aria-selected",
       "true",
@@ -275,10 +332,105 @@ it("ignores loading completion after a page unmount", async () => {
   );
   old.unmount();
   view();
-  await screen.findByRole("region", { name: "Draft reservation module" });
+  await screen.findByRole("region", { name: "Draft transaction module" });
   await act(async () => resolve(descriptor));
   expect(
-    screen.getAllByRole("region", { name: "Draft reservation module" }),
+    screen.getAllByRole("region", { name: "Draft transaction module" }),
   ).toHaveLength(1);
   expect(api.runReservation).not.toHaveBeenCalled();
+});
+
+it("loads atomicity only when selected and preserves independent experiment drafts through history", async () => {
+  const router = view();
+  await screen.findByRole("region", { name: "Draft transaction module" });
+  expect(api.atomicityDescriptor).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText("Reservation 1 quantity"), {
+    target: { value: "2" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /^Atomicity & abort/ }));
+  const actor = await screen.findByLabelText("Transaction 1 quantity");
+  fireEvent.change(actor, { target: { value: "3" } });
+  expect(router.state.location.search).toBe("?experiment=atomicity");
+  expect(api.atomicityDescriptor).toHaveBeenCalledTimes(1);
+  expect(api.runAtomicity).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: /^Reservation race/ }));
+  expect(screen.getByLabelText("Reservation 1 quantity")).toHaveValue("2");
+  await act(async () => {
+    await router.navigate(-1);
+  });
+  expect(screen.getByLabelText("Transaction 1 quantity")).toHaveValue("3");
+  fireEvent.click(screen.getByRole("tab", { name: "Study" }));
+  expect(router.state.location.search).toBe("?experiment=atomicity&view=study");
+  fireEvent.click(screen.getByRole("tab", { name: "Playground" }));
+  expect(screen.getByLabelText("Transaction 1 quantity")).toHaveValue("3");
+  expect(api.atomicityDescriptor).toHaveBeenCalledTimes(1);
+});
+
+it("keeps reservation available when atomicity loading fails and retries only its descriptor", async () => {
+  vi.mocked(api.atomicityDescriptor).mockRejectedValueOnce(
+    new ApiClientError("Atomicity offline", 503),
+  );
+  view("/draft/topics/transactions-isolation?experiment=atomicity");
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Atomicity offline",
+  );
+  fireEvent.click(screen.getByRole("button", { name: /^Reservation race/ }));
+  expect(
+    screen.getByRole("button", { name: "Run reservation schedule" }),
+  ).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: /^Atomicity & abort/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  expect(await screen.findByLabelText("Transaction 1 quantity")).toHaveValue(
+    "1",
+  );
+  expect(api.reservationDescriptor).toHaveBeenCalledTimes(1);
+  expect(api.draftTopic).toHaveBeenCalledTimes(1);
+  expect(api.atomicityDescriptor).toHaveBeenCalledTimes(2);
+});
+
+it("explains an older backend's missing atomicity capability without fetching or substituting a model", async () => {
+  vi.mocked(api.draftTopic).mockResolvedValue({
+    ...topic,
+    topic: { ...topic.topic, simulationIds: ["transactions-isolation"] },
+  });
+  view("/draft/topics/transactions-isolation?experiment=atomicity");
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Atomicity is unavailable in this backend",
+  );
+  expect(api.atomicityDescriptor).not.toHaveBeenCalled();
+  expect(api.runAtomicity).not.toHaveBeenCalled();
+  expect(
+    screen.queryByRole("button", { name: "Run reservation schedule" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: /^Reservation race/ }));
+  expect(
+    screen.getByRole("button", { name: "Run reservation schedule" }),
+  ).toBeVisible();
+});
+
+it("keeps an unknown experiment visible as unavailable until an explicit choice", async () => {
+  const router = view("/draft/topics/transactions-isolation?experiment=other");
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "This experiment is unavailable",
+  );
+  expect(router.state.location.search).toBe("?experiment=other");
+  expect(api.atomicityDescriptor).not.toHaveBeenCalled();
+  expect(
+    screen.queryByRole("button", { name: "Run reservation schedule" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: /^Reservation race/ }));
+  expect(router.state.location.search).toBe("");
+});
+
+it("scopes the existing Guided and design views to reservation even with atomicity selected", async () => {
+  view(
+    "/draft/topics/transactions-isolation?view=architecture&experiment=atomicity",
+  );
+  const scope = await screen.findByRole("complementary", {
+    name: "Architecture experiment scope",
+  });
+  expect(within(scope).getByText("Reservation race.")).toBeVisible();
+  expect(scope).toHaveTextContent("its Guided and design views are pending");
+  expect(api.atomicityDescriptor).not.toHaveBeenCalled();
+  expect(api.runAtomicity).not.toHaveBeenCalled();
 });

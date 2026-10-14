@@ -442,6 +442,43 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/simulations/transaction-atomicity": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read the Java atomicity and abort descriptor for the existing draft transactions module */
+    get: operations["getAtomicityDescriptor"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/simulations/transaction-atomicity/runs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Evaluate a complete untimed atomicity program and return authoritative public/private snapshots
+     * @description Strict closed input, exact integer JSON tokens and complete actor programs. Legal abort, stock rejection and skipped work return completed analysis with HTTP 200. No database engine, durable commit, retries or elapsed time is modeled.
+     */
+    post: operations["runAtomicity"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1920,6 +1957,215 @@ export interface components {
       invariantStatus: "PRESERVED" | "VIOLATED";
       firstViolationStepId?: components["schemas"]["ReservationIdentifier"];
     } & unknown;
+    AtomicityLimits: {
+      /** @constant */
+      maxInitialUnits: 20;
+      /** @constant */
+      minTransactions: 1;
+      /** @constant */
+      maxTransactions: 3;
+      /** @constant */
+      maxQuantity: 20;
+      /** @constant */
+      minSteps: 2;
+      /** @constant */
+      maxSteps: 12;
+      /** @constant */
+      maxIdLength: 32;
+    };
+    AtomicityPreset: {
+      id: string;
+      title: string;
+      description: string;
+      input: components["schemas"]["AtomicityInput"];
+    };
+    AtomicityDescriptor: {
+      /** @constant */
+      id: "transaction-atomicity";
+      title: string;
+      /** @constant */
+      kind: "simulation";
+      /** @constant */
+      modelVersion: "1.0.0";
+      description: string;
+      limits: components["schemas"]["AtomicityLimits"];
+      presets: components["schemas"]["AtomicityPreset"][];
+      assumptions: string[];
+    };
+    /**
+     * Transaction atomicity model input
+     * @description Canonical finite complete interleaving for illustrative split writes and staged revision-checked publication. Java validates unique transaction/step IDs, references and the four legal complete per-actor programs before execution. Aborting or encountering insufficient stock in a legal program is a modeled result, not malformed input. JSON Schema validates parsed shape and bounds, not protocol order, duplicate JSON keys or integer token spelling. No clock, database or random choices are modeled.
+     */
+    AtomicityInput: {
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      modelVersion: "1.0.0";
+      /** @enum {unknown} */
+      mode: "SPLIT_WRITES" | "STAGED_VERSION_CHECK";
+      initialUnits: number;
+      transactions: components["schemas"]["AtomicityTransaction"][];
+      schedule: components["schemas"]["AtomicityStep"][];
+    };
+    AtomicityIdentifier: string;
+    AtomicityTransaction: {
+      id: components["schemas"]["AtomicityIdentifier"];
+      quantity: number;
+    };
+    AtomicityStep: {
+      id: components["schemas"]["AtomicityIdentifier"];
+      transactionId: components["schemas"]["AtomicityIdentifier"];
+      /** @enum {unknown} */
+      action:
+        "BEGIN" | "DECREMENT_STOCK" | "RECORD_ALLOCATION" | "COMMIT" | "ABORT";
+    };
+    /**
+     * Transaction atomicity model result
+     * @description Complete authoritative untimed atomicity analysis. Public remaining and allocated units are guarded and together cannot exceed initial units; split writes may lose units and leak aborted effects but cannot create them. State bounds are 0..20, including unsafe partial states. Captured input and all IDs refer to the canonical input owner. Java owns mode-dependent private workspace presence, identity relationships, revision arithmetic, final/snapshot equality and invariant calculations. JSON Schema enforces closed local phase/outcome evidence and retained/cleared fields; it does not emulate transactions or promise durability.
+     */
+    AtomicityResult: {
+      /** @constant */
+      simulationId: "transaction-atomicity";
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      modelVersion: "1.0.0";
+      /** @constant */
+      kind: "analysis";
+      /** @constant */
+      status: "completed";
+      input: components["schemas"]["AtomicityInput"];
+      initialState: components["schemas"]["AtomicityState"] & {
+        /** @constant */
+        allocatedUnits?: 0;
+        /** @constant */
+        revision?: 0;
+        allocations?: unknown[];
+        transactions?: {
+          /** @constant */
+          phase?: "NOT_STARTED";
+        }[];
+        invariants?: {
+          /** @constant */
+          remainingNonnegative?: true;
+          /** @constant */
+          allocatedWithinCapacity?: true;
+          /** @constant */
+          unitsConserved?: true;
+          /** @constant */
+          abortedEffectsAbsent?: true;
+        };
+      };
+      outcomes: components["schemas"]["AtomicityOutcome"][];
+      finalState: components["schemas"]["AtomicityState"] & {
+        transactions?: {
+          /** @enum {unknown} */
+          phase?: "COMMITTED" | "ABORTED";
+        }[];
+      };
+      metrics: components["schemas"]["AtomicityMetrics"];
+      assumptions: string[];
+    };
+    AtomicityPendingAllocation: {
+      transactionId: components["schemas"]["AtomicityIdentifier"];
+      quantity: number;
+      stepId: components["schemas"]["AtomicityIdentifier"];
+    };
+    AtomicityAllocation: {
+      transactionId: components["schemas"]["AtomicityIdentifier"];
+      quantity: number;
+      preparedAtStepId: components["schemas"]["AtomicityIdentifier"];
+      publishedAtStepId: components["schemas"]["AtomicityIdentifier"];
+    };
+    AtomicityTransactionState: {
+      id: components["schemas"]["AtomicityIdentifier"];
+      quantity: number;
+      /** @enum {unknown} */
+      phase: "NOT_STARTED" | "OPEN" | "BLOCKED" | "COMMITTED" | "ABORTED";
+      appliedStockUnits: number;
+      pendingStockUnits: number;
+      baseRemaining?: number;
+      baseRevision?: number;
+      workingRemaining?: number;
+      pendingAllocation?: components["schemas"]["AtomicityPendingAllocation"];
+      /** @enum {unknown} */
+      failureReason?: "INSUFFICIENT_STOCK" | "USER_ABORT" | "REVISION_CONFLICT";
+    } & (unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown);
+    AtomicityInvariants: {
+      remainingNonnegative: boolean;
+      allocatedWithinCapacity: boolean;
+      unitsConserved: boolean;
+      abortedEffectsAbsent: boolean;
+      accountedUnits: number;
+    };
+    AtomicityState: {
+      remainingUnits: number;
+      allocatedUnits: number;
+      revision: number;
+      transactions: components["schemas"]["AtomicityTransactionState"][];
+      allocations: components["schemas"]["AtomicityAllocation"][];
+      invariants: components["schemas"]["AtomicityInvariants"];
+    };
+    AtomicityOutcome: {
+      sequence: number;
+      stepId: components["schemas"]["AtomicityIdentifier"];
+      transactionId: components["schemas"]["AtomicityIdentifier"];
+      /** @enum {unknown} */
+      action:
+        "BEGIN" | "DECREMENT_STOCK" | "RECORD_ALLOCATION" | "COMMIT" | "ABORT";
+      /** @enum {unknown} */
+      kind:
+        | "TRANSACTION_STARTED"
+        | "STOCK_APPLIED"
+        | "STOCK_STAGED"
+        | "STOCK_REJECTED"
+        | "ALLOCATION_APPLIED"
+        | "ALLOCATION_STAGED"
+        | "WORK_SKIPPED"
+        | "TRANSACTION_COMMITTED"
+        | "TRANSACTION_ABORTED";
+      postState: components["schemas"]["AtomicityState"];
+      explanation: string;
+      checkedRemaining?: number;
+      /** @enum {unknown} */
+      checkSource?: "CURRENT" | "WORKING_COPY";
+      expectedRevision?: number;
+      actualRevision?: number;
+      /** @enum {unknown} */
+      reason?: "INSUFFICIENT_STOCK" | "USER_ABORT" | "REVISION_CONFLICT";
+    } & (unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown);
+    AtomicityMetrics: {
+      committedTransactions: number;
+      abortedTransactions: number;
+      conflictedTransactions: number;
+      abortedTransactionsWithEffects: number;
+      finalRemainingUnits: number;
+      finalAllocatedUnits: number;
+      /** @enum {unknown} */
+      invariantStatus: "PRESERVED" | "VIOLATED";
+      firstViolationStepId?: components["schemas"]["AtomicityIdentifier"];
+    } & unknown;
   };
   responses: never;
   parameters: {
@@ -2818,6 +3064,97 @@ export interface operations {
       };
       /** @description result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying. */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free. */
+      503: {
+        headers: {
+          /** @description Retry hint in seconds. Capacity may remain occupied. */
+          "Retry-After"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  getAtomicityDescriptor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AtomicityDescriptor"];
+        };
+      };
+    };
+  };
+  runAtomicity: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AtomicityInput"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AtomicityResult"];
+        };
+      };
+      /** @description Structured error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description internal_error: unexpected model or serialization failure, distinct from intentional whole-result byte limits. */
+      500: {
         headers: {
           [name: string]: unknown;
         };

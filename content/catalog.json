@@ -266,7 +266,7 @@
     "id": "transactions-isolation",
     "kind": "topic",
     "title": "Transactions & Isolation",
-    "summary": "Follow two reservations competing for stock. Compare stale decisions with a current-state atomic boundary, and explain capacity and conservation from Java snapshots.",
+    "summary": "Inspect reservation races and related writes that commit or abort, using Java snapshots and explicit invariant evidence.",
     "category": "Data & Storage",
     "level": "Intermediate",
     "order": 9,
@@ -276,21 +276,25 @@
       "Distinguish earlier client observations from current shared stock.",
       "Predict accepted quantities and rejected reservations for an explicit interleaving.",
       "Explain separate nonnegative, capacity and conservation checks.",
-      "Defend a current-state acceptance boundary while stating unmodeled transaction guarantees."
+      "Defend a current-state acceptance boundary while stating unmodeled transaction guarantees.",
+      "Distinguish private preparation from published effects and explain what abort discards.",
+      "Use separate conservation, aborted-effect and history checks to defend a related-write boundary."
     ],
     "capabilities": ["study", "simulation", "guided", "practice"],
     "lessonPath": "topics/transactions-isolation/lesson.md",
     "questionsPath": "topics/transactions-isolation/questions.json",
     "resourcesPath": "topics/transactions-isolation/resources.json",
-    "simulationIds": ["transactions-isolation"],
+    "simulationIds": ["transactions-isolation", "transaction-atomicity"],
     "estimatorIds": [],
-    "contentVersion": "1.1.0",
+    "contentVersion": "1.2.0",
     "reviewedAt": "2026-10-14",
     "sourceIds": [
       "postgres-18-transaction-isolation",
       "postgres-18-conditional-update",
       "postgres-18-transactions",
-      "postgres-18-constraints"
+      "postgres-18-constraints",
+      "postgres-18-rollback",
+      "postgres-18-commit"
     ],
     "checkpointsPath": "topics/transactions-isolation/checkpoints.json"
   }

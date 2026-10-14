@@ -128,5 +128,141 @@
       "Leaves timeout, durability and idempotency scope explicit"
     ],
     "followUp": "What changes if a job must consume quota from two independently owned resources?"
+  },
+  {
+    "id": "atomicity-stock-only-stop",
+    "topicId": "transactions-isolation",
+    "level": "beginner",
+    "kind": "prediction",
+    "prompt": "Atomicity & abort: initial stock is 1 and A requests 1. Use split writes with BEGIN, DECREMENT_STOCK, ABORT. Predict published stock, allocations, revision, A's phase/applied stock, final flags and the first violating step.",
+    "explanation": "The decrement immediately publishes remaining 0 and revision 1 with no allocation. A is still OPEN, so only conservation fails there. Abort leaves the published effect and makes A ABORTED with USER_ABORT and appliedStockUnits 1; abortedEffectsAbsent now also fails. The first violating step is decrement-a.",
+    "modelAnswer": "Final published remaining is 0, allocated is 0, revision is 1 and allocations are empty. A is ABORTED with USER_ABORT, appliedStockUnits 1 and no private workspace. Nonnegative remaining and capacity are true; conservation and abortedEffectsAbsent are false. History is VIOLATED first at decrement-a, before A's abort. Returning an abort did not restore the already published stock write.",
+    "rubric": [
+      "Reports published remaining 0, allocated 0 and revision 1",
+      "Tracks A as OPEN at the stock write and ABORTED after abort",
+      "Names appliedStockUnits 1 despite no allocation record",
+      "Distinguishes conservation failure from the later aborted-effects failure"
+    ],
+    "followUp": "What remains if the allocation is also separately published before ABORT?"
+  },
+  {
+    "id": "atomicity-abort-discards-private",
+    "topicId": "transactions-isolation",
+    "level": "beginner",
+    "kind": "prediction",
+    "prompt": "Atomicity & abort: run the same one-unit BEGIN, DECREMENT_STOCK, ABORT program with staged version checking. What is published and private immediately before abort, and what is discarded or retained afterward?",
+    "explanation": "After decrement-a, published remaining 1, allocated 0 and revision 0 stay unchanged. A privately has workingRemaining 0 and pendingStockUnits 1. Abort clears that work, sets pendingStockUnits to 0 and retains baseRemaining 1/baseRevision 0 as history. Nothing was published and all four public flags remain true.",
+    "modelAnswer": "Before abort A is OPEN with captured baseRemaining 1/baseRevision 0, workingRemaining 0 and pendingStockUnits 1; appliedStockUnits is 0 and no allocation exists. Published state is still remaining 1, allocated 0, revision 0. Abort makes A ABORTED with USER_ABORT, omits workingRemaining and pendingAllocation, resets pendingStockUnits to 0 and retains its base history. It discards only A's private work; it does not undo a published write or restore someone else's global state.",
+    "rubric": [
+      "Separates unchanged published 1/0/revision 0 from private workingRemaining 0",
+      "Reports pendingStockUnits 1 before abort and 0 afterward",
+      "Retains base history while removing active private workspace",
+      "Names all four public flags as preserved without inventing undo"
+    ],
+    "followUp": "If another transaction published while A had private work, why must A's abort preserve that other publication?",
+    "sourceIds": ["postgres-18-transactions", "postgres-18-rollback"]
+  },
+  {
+    "id": "atomicity-private-is-not-published",
+    "topicId": "transactions-isolation",
+    "level": "beginner",
+    "kind": "diagnosis",
+    "prompt": "Atomicity & abort: in Publish both pieces together, private stock is 0 and a private allocation is prepared, while published stock is still 1 and allocated units are 0. Is that contradictory? Explain the exact publication step and allocation identities.",
+    "explanation": "The two regions describe different ownership and visibility. The prepared record is not included in published totals. At commit-a, expectedRevision 0 equals actualRevision 0, so stock 0 and allocation 1 publish together and revision becomes 1. The visible row records preparedAtStepId record-a and publishedAtStepId commit-a.",
+    "modelAnswer": "There is no contradiction: A's workingRemaining 0 and pending allocation are private proposals, while the published inventory/allocation list remain 1/0 at revision 0. COMMIT validates expected revision 0 against actual 0 and publishes both pieces as one action. The final row belongs to A with quantity 1, prepared at record-a and published at commit-a. A becomes COMMITTED, appliedStockUnits is 1, pendingStockUnits is 0 and active workspace is omitted. The public flags stay true. This local commit does not prove durability.",
+    "rubric": [
+      "Distinguishes private proposal from published inventory and totals",
+      "Identifies commit-a and its expected/actual revision 0",
+      "Separates record-a preparation from commit-a publication",
+      "States workspace clearing and the limit of local COMMITTED"
+    ],
+    "followUp": "Which actual result changes if the published revision no longer matches at commit?",
+    "sourceIds": ["postgres-18-transactions", "postgres-18-commit"]
+  },
+  {
+    "id": "atomicity-final-state-hides-prefix",
+    "topicId": "transactions-isolation",
+    "level": "intermediate",
+    "kind": "diagnosis",
+    "prompt": "Atomicity & abort: A repaired final state has a history ends with remaining 0, allocated 1 and all four final flags true. A teammate concludes that every published prefix was safe. Use the returned steps to diagnose the conclusion.",
+    "explanation": "Split decrement-a exposed remaining 0 and allocated 0, so conservation failed before record-a repaired the pair. Revision becomes 1 at decrement and 2 at record. COMMIT changes phase only. The final flags recover but history remains VIOLATED with firstViolationStepId decrement-a.",
+    "modelAnswer": "The final state alone hides the earlier stock-only publication. After decrement-a, remaining 0 plus allocated 0 did not account for initial 1; the actor was OPEN. Record-a made the final visible pair 0/1 and advanced revision to 2. Commit-a changed A to COMMITTED without another data publication. Every final flag can be true while the Java history is VIOLATED first at decrement-a. I would inspect the selected prefix and whole-history summary separately before claiming all-or-nothing visibility.",
+    "rubric": [
+      "Identifies the stock-only 0/0 prefix at decrement-a",
+      "Explains record-a repairing final conservation",
+      "Keeps final flags separate from VIOLATED history",
+      "Does not call split COMMIT a new atomic data publication"
+    ],
+    "followUp": "What does an abort at that stock-only prefix leave behind?"
+  },
+  {
+    "id": "atomicity-aborted-records-still-count",
+    "topicId": "transactions-isolation",
+    "level": "intermediate",
+    "kind": "calculation",
+    "prompt": "Atomicity & abort: An aborted actor still has effects uses initial stock 1 and quantity 1, with split BEGIN, DECREMENT_STOCK, RECORD_ALLOCATION, ABORT. Compute final remaining, allocated, accounted units and flags. Should A's row be excluded because its phase is ABORTED?",
+    "explanation": "Remaining 0 plus the visible quantity-1 row equals accounted 1. Nonnegative stock, capacity and conservation pass, while abortedEffectsAbsent fails. A retains appliedStockUnits 1 and its row remains prepared/published at record-a. Filtering it out by ABORTED status would misreport actual visible state.",
+    "modelAnswer": "Final remaining is 0, allocated is 1, accounted is 1 and revision is 2. A is ABORTED with USER_ABORT and appliedStockUnits 1. Its allocation of quantity 1 is still visible, with both preparation and publication at record-a. The three quantity flags are true, but abortedEffectsAbsent is false. The allocation must still count because it was published; ABORT did not undo it. History remains VIOLATED first at decrement-a. Conservation does not prove that aborted effects disappeared.",
+    "rubric": [
+      "Computes remaining 0, allocated 1, accounted 1 and revision 2",
+      "Preserves the visible allocation of an ABORTED actor",
+      "Keeps three passing quantity flags separate from the failing fourth flag",
+      "Names appliedStockUnits and first violation without filtering by phase"
+    ],
+    "followUp": "Change initial stock to 3 and quantity to 2: what published quantities remain after the same split abort?",
+    "sourceIds": ["postgres-18-constraints"]
+  },
+  {
+    "id": "atomicity-status-versus-transport",
+    "topicId": "transactions-isolation",
+    "level": "beginner",
+    "kind": "diagnosis",
+    "prompt": "Atomicity & abort: distinguish an OPEN private snapshot, the valid empty-stock full program, and an unavailable API request. What decisions or evidence may the UI display in each case?",
+    "explanation": "OPEN private work is not publication. Empty stock is valid input and returns TRANSACTION_STARTED, STOCK_REJECTED, WORK_SKIPPED, TRANSACTION_ABORTED with INSUFFICIENT_STOCK; published state stays 0/0 at revision 0. A failed API call supplies no new authoritative result, so previous evidence must remain labelled separately.",
+    "modelAnswer": "An OPEN staged snapshot shows an unfinished private proposal, not a final committed or aborted decision. The legal empty-stock program is a completed Java analysis: its decrement is STOCK_REJECTED, record is explicitly WORK_SKIPPED, and terminal COMMIT becomes TRANSACTION_ABORTED with INSUFFICIENT_STOCK. A is BLOCKED before terminal, then ABORTED; final published stock/allocations/revision remain zero and all flags hold. An unavailable API yields no new model evidence. Keep inputs/prediction and label any prior result. None of these facts implies a network ACK or lost response.",
+    "rubric": [
+      "Separates OPEN private work from final publication",
+      "Names blocked, explicitly skipped and aborted empty-stock outcomes",
+      "Treats insufficient stock as valid input with unchanged published data",
+      "Claims no new authoritative evidence or ACK semantics after API failure"
+    ],
+    "followUp": "If a real response is lost after database commit, what additional retry/idempotency semantics are needed?"
+  },
+  {
+    "id": "atomicity-name-the-real-boundary",
+    "topicId": "transactions-isolation",
+    "level": "intermediate",
+    "kind": "design-decision",
+    "prompt": "Atomicity & abort: A revision conflict despite enough stock starts at 3 with A and B requesting 1. Both capture revision 0; A publishes first. Why does B abort when current stock is 2, and what guarantee can this result establish?",
+    "explanation": "A publishes remaining 2/allocated 1 at revision 1. B's commit compares expectedRevision 0 with actualRevision 1 and reports REVISION_CONFLICT. The coarse guard rejects an obsolete shared base even though B's quantity would fit. It discards B's workspace while preserving A's row; no retry or SQL isolation-level guarantee follows.",
+    "modelAnswer": "Both actors captured stock 3 and revision 0, but A's complete publication advances revision to 1 and leaves remaining 2 with allocation 1. B's private preparation came from the old base. Its commit rejects expected 0 versus actual 1, becomes ABORTED with REVISION_CONFLICT and publishes nothing. Current stock 2 being sufficient does not satisfy the revision guard. A's state remains; all public flags hold. This is a conservative original optimistic check over visible inventory/allocation changes, not proof of a named SQL isolation level, fairness, automatic retry or durable storage.",
+    "rubric": [
+      "Uses current remaining 2 and revision 1 after A publishes",
+      "Explains expected 0 versus actual 1 as the commit guard",
+      "Discards only B's private proposal and preserves A's allocation",
+      "Names conservative rejection and its unmodeled production guarantees"
+    ],
+    "followUp": "Begin B only after A commits: which base history changes, and why can enough-stock serialized work succeed?"
+  },
+  {
+    "id": "atomicity-teach-back-budget",
+    "topicId": "transactions-isolation",
+    "level": "intermediate",
+    "kind": "design-decision",
+    "prompt": "Atomicity & abort: explain to a teammate or interviewer a budget decrement plus spending record that must stay coordinated when an operation aborts. Use this model's one-unit evidence, propose the real boundary to verify, and state what remains unresolved after publication.",
+    "explanation": "Split stock-only abort leaves a consumed unit without its record. Protected work stages privately, validates the shared revision and publishes the pair or discards its workspace. A real implementation must coordinate the actual related writes and separately establish durability, response ambiguity, retry/idempotency and external-effect boundaries.",
+    "modelAnswer": "I would define remaining budget plus recorded spending to equal the starting budget and require aborted work to leave no published effects inside the chosen boundary. The one-unit split abort leaves remaining 0 and recorded 0, with applied stock 1; its abort label did not undo the debit. The protected model keeps the proposal private, checks the captured revision and publishes both pieces together or discards its own work. For production I would verify the real transaction owner and both writes' database boundary. Local COMMITTED supplies no durability, ACK, safe timeout retry, retained idempotency result or atomic external payment. I would explain one changed condition before claiming a broader guarantee.",
+    "rubric": [
+      "Names both related writes and the budget/conservation/discard requirements",
+      "Uses the one-unit counterexample with correct units",
+      "Defines private preparation, revision validation and complete publication/discard",
+      "Identifies actual storage ownership and separates durability/response/retry/external effects"
+    ],
+    "followUp": "What if a spending action must change two independently owned budgets or issue a payment?",
+    "sourceIds": [
+      "postgres-18-transactions",
+      "postgres-18-rollback",
+      "postgres-18-commit"
+    ]
   }
 ]

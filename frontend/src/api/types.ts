@@ -116,3 +116,21 @@ export type ReservationInvariants =
 export type ReservationState = components["schemas"]["ReservationState"];
 export type ReservationOutcome = components["schemas"]["ReservationOutcome"];
 export type ReservationMetrics = components["schemas"]["ReservationMetrics"];
+export type AtomicityInput = components["schemas"]["AtomicityInput"];
+export type AtomicityResult = components["schemas"]["AtomicityResult"];
+export type AtomicityDescriptor = components["schemas"]["AtomicityDescriptor"];
+export type AtomicityLimits = components["schemas"]["AtomicityLimits"];
+export type AtomicityPreset = components["schemas"]["AtomicityPreset"];
+export type AtomicityIdentifier = components["schemas"]["AtomicityIdentifier"];
+export type AtomicityTransaction =
+  components["schemas"]["AtomicityTransaction"];
+export type AtomicityStep = components["schemas"]["AtomicityStep"];
+export type AtomicityPendingAllocation =
+  components["schemas"]["AtomicityPendingAllocation"];
+export type AtomicityAllocation = components["schemas"]["AtomicityAllocation"];
+export type AtomicityTransactionState =
+  components["schemas"]["AtomicityTransactionState"];
+export type AtomicityInvariants = components["schemas"]["AtomicityInvariants"];
+export type AtomicityState = components["schemas"]["AtomicityState"];
+export type AtomicityOutcome = components["schemas"]["AtomicityOutcome"];
+export type AtomicityMetrics = components["schemas"]["AtomicityMetrics"];

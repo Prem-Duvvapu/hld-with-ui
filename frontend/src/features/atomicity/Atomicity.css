@@ -1,0 +1,432 @@
+.atomicity-experience {
+  padding-block: 24px;
+  min-width: 0;
+}
+.atomicity-experience
+  :is(h2, h3, h4, p, li, dt, dd, label, small, code, button, span) {
+  overflow-wrap: anywhere;
+}
+.atomicity-prediction {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 24px;
+  padding: 22px;
+  margin-bottom: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.atomicity-prediction h2,
+.atomicity-controls h2,
+.atomicity-results h2,
+.atomicity-empty h2 {
+  margin: 6px 0 12px;
+  font-size: 1.3rem;
+}
+.atomicity-workbench {
+  display: grid;
+  grid-template-columns: minmax(290px, 0.85fr) minmax(0, 1.65fr);
+  gap: 24px;
+  align-items: start;
+}
+.atomicity-controls,
+.atomicity-results,
+.atomicity-empty {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.atomicity-controls h3 {
+  margin-block: 24px 12px;
+  font-size: 1.05rem;
+}
+.atomicity-muted {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.atomicity-field {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.atomicity-field label {
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+.atomicity-field :is(input, select, textarea) {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.atomicity-field textarea {
+  resize: vertical;
+}
+.atomicity-field [aria-invalid="true"] {
+  border-color: var(--red);
+}
+.atomicity-two-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.atomicity-control-set {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.atomicity-edit-card {
+  min-width: 0;
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.atomicity-edit-card legend {
+  padding-inline: 6px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.atomicity-presets,
+.atomicity-step-moves,
+.atomicity-playback-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 16px;
+}
+.atomicity-experience button:not(.atomicity-run) {
+  max-width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-2);
+  color: var(--ink);
+  text-align: left;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.atomicity-experience button[aria-pressed="true"] {
+  border-color: var(--green);
+  background: color-mix(in srgb, var(--green) 8%, var(--surface));
+}
+.atomicity-experience button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.atomicity-experience
+  :is(button, input, textarea, select, summary):focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}
+.atomicity-run {
+  width: 100%;
+  margin-top: 18px;
+  padding: 13px 16px;
+  border: 1px solid var(--green);
+  border-radius: 7px;
+  background: var(--green);
+  color: var(--surface);
+  font-weight: 700;
+  cursor: pointer;
+}
+:root[data-theme="dark"] .atomicity-run {
+  color: var(--paper);
+}
+.atomicity-schedule {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+  padding: 0;
+}
+.atomicity-schedule > li {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.atomicity-step-heading {
+  margin-top: 0;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+.atomicity-step-moves {
+  margin-bottom: 0;
+}
+.atomicity-error {
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  border: 1px solid var(--red);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--red) 6%, var(--surface));
+}
+.atomicity-error-text {
+  color: var(--red);
+  font-size: 0.85rem;
+}
+.atomicity-results-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+}
+.atomicity-version {
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--muted);
+  font: 0.75rem var(--mono);
+}
+.atomicity-run-status,
+.atomicity-boundary {
+  padding: 12px;
+  border-left: 3px solid var(--orange);
+  background: var(--surface-2);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.atomicity-playback {
+  margin-block: 20px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+}
+.atomicity-playback-buttons {
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0;
+  font-size: 0.85rem;
+}
+.atomicity-playback > label {
+  display: block;
+  font-size: 0.85rem;
+}
+.atomicity-playback > input {
+  width: 100%;
+  margin-block: 12px;
+  accent-color: var(--green);
+}
+.atomicity-returned-steps {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  padding: 0;
+  margin-bottom: 0;
+}
+.atomicity-returned-steps button {
+  width: 100%;
+}
+.atomicity-snapshot :is(h3, h4) {
+  margin-block: 20px 10px;
+  font-size: 1.05rem;
+}
+.atomicity-snapshot article h3 {
+  margin-top: 6px;
+}
+.atomicity-snapshot article p {
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+.atomicity-decision {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.atomicity-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-block: 18px;
+}
+.atomicity-counts > div {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.atomicity-counts dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.atomicity-counts dd {
+  margin: 6px 0 0;
+  font-size: 1.6rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.atomicity-invariants {
+  display: grid;
+  gap: 8px;
+  margin-block: 20px;
+}
+.atomicity-invariants > div {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-size: 0.8rem;
+}
+.atomicity-invariants dd {
+  margin: 0;
+  font-weight: 700;
+}
+.atomicity-invariants .passed dd {
+  color: var(--green);
+}
+.atomicity-invariants .failed {
+  border-color: var(--red);
+  background: color-mix(in srgb, var(--red) 5%, var(--surface));
+}
+.atomicity-invariants .failed dd {
+  color: var(--red);
+}
+.atomicity-private {
+  border-top: 1px solid var(--line);
+  margin-top: 22px;
+  padding-top: 4px;
+}
+.atomicity-actors {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.atomicity-actors > li {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.atomicity-actors > li.active {
+  border-color: var(--green);
+  box-shadow: inset 3px 0 var(--green);
+}
+.atomicity-actors > li > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+}
+.atomicity-phase {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.atomicity-phase.committed {
+  color: var(--green);
+}
+.atomicity-phase.aborted,
+.atomicity-phase.blocked {
+  color: var(--orange);
+}
+.atomicity-actors dl,
+.atomicity-summary dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.atomicity-actors dl {
+  margin-bottom: 0;
+}
+.atomicity-actors dt,
+.atomicity-summary dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.atomicity-actors dd,
+.atomicity-summary dd {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+.atomicity-allocations {
+  padding-left: 20px;
+  font-size: 0.85rem;
+}
+.atomicity-allocations li {
+  margin-block: 12px;
+}
+.atomicity-allocations span {
+  display: block;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.atomicity-summary {
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+}
+.atomicity-summary h3 {
+  margin-top: 0;
+}
+.atomicity-summary p {
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.atomicity-explain {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+.atomicity-assumptions {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 0.85rem;
+}
+.atomicity-assumptions summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+.atomicity-assumptions li {
+  margin-block: 10px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.atomicity-empty li {
+  margin-block: 14px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+@media (max-width: 1000px) {
+  .atomicity-workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 650px) {
+  .atomicity-prediction {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .atomicity-controls,
+  .atomicity-results,
+  .atomicity-empty,
+  .atomicity-prediction {
+    padding: 16px;
+  }
+  .atomicity-counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 400px) {
+  .atomicity-two-fields,
+  .atomicity-actors dl,
+  .atomicity-summary dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

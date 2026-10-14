@@ -14,7 +14,9 @@ public record AtomicityInput(String schemaVersion, String modelVersion, Mode mod
     public static final int MIN_TRANSACTIONS = 1;
     public static final int MAX_TRANSACTIONS = 3;
     public static final int MAX_QUANTITY = 20;
+    public static final int MIN_STEPS = MIN_TRANSACTIONS * 2;
     public static final int MAX_STEPS = MAX_TRANSACTIONS * 4;
+    public static final int MAX_ID_LENGTH = 32;
 
     public AtomicityInput {
         transactions = own(transactions);

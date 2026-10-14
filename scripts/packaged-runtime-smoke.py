@@ -26,6 +26,7 @@ MODEL_BASELINE_FIXTURES = {
     "queues-delivery": "queue-delivery",
     "data-access-models": "data-access",
     "transactions-isolation": "transactions-isolation",
+    "transaction-atomicity": "transaction-atomicity",
 }
 
 
@@ -68,7 +69,13 @@ def verify_draft_model(base, model_id):
     check(fixture is not None, f"Draft model has no packaged baseline evidence: {model_id}")
     path = f"/api/v1/simulations/{quote(model_id, safe='')}"
     descriptor = api(base, path)
-    variants = [("unsafe-baseline", "baseline"), ("protected-baseline", "protected")] if model_id == "transactions-isolation" else [("baseline", "baseline")]
+    if model_id == "transactions-isolation":
+        variants = [("unsafe-baseline", "baseline"), ("protected-baseline", "protected")]
+    elif model_id == "transaction-atomicity":
+        variants = [("baseline", "baseline"), ("protected-baseline", "protected"),
+                    ("protected-conflict", "conflict")]
+    else:
+        variants = [("baseline", "baseline")]
     for preset_id, variant in variants:
         preset = next((preset for preset in descriptor["presets"] if preset["id"] == preset_id), None)
         check(preset is not None, f"Packaged {fixture} descriptor has no {preset_id}")

@@ -3,7 +3,7 @@ import { api, ApiClientError } from "../api/client";
 import type { ReservationDescriptor, TopicDetail } from "../api/types";
 import { ErrorState, LoadingState } from "../components/AsyncState";
 import { ModuleShell } from "../components/ModuleShell";
-import { ReservationPlayground } from "../features/reservations/ReservationPlayground";
+import { TransactionExperiments } from "../features/reservations/TransactionExperiments";
 import { ReservationGuided } from "../features/reservations/ReservationGuided";
 import {
   ReservationArchitectureView,
@@ -34,6 +34,7 @@ export function ReservationPage() {
           !(["study", "simulation", "practice"] as const).every((capability) =>
             topic.topic.capabilities.includes(capability),
           ) ||
+          !Array.isArray(topic.topic.simulationIds) ||
           !topic.topic.simulationIds?.includes(id) ||
           typeof topic.lessonMarkdown !== "string" ||
           !topic.lessonMarkdown.trim() ||
@@ -45,7 +46,7 @@ export function ReservationPage() {
           topic.questions.length === 0
         ) {
           setError(
-            "This draft reservation module is incompatible with this app. Refresh and try again.",
+            "This draft transaction module is incompatible with this app. Refresh and try again.",
           );
           return;
         }
@@ -84,21 +85,21 @@ export function ReservationPage() {
   if (!data)
     return (
       <div className="page-width standalone-state">
-        <LoadingState label="Loading the draft reservation module" />
+        <LoadingState label="Loading the draft transaction module" />
       </div>
     );
   return (
     <>
       <section
         className="reservation-draft page-width"
-        aria-label="Draft reservation module"
+        aria-label="Draft transaction module"
       >
         <p className="eyebrow">Draft learning module</p>
         <p>
-          Compare an earlier read with a current-state atomic reservation. Edit
-          quantities and step order, inspect Java snapshots, then explain the
-          rule each strategy preserves. This is a bounded logical model;
-          publication review remains pending.
+          Explore a reservation race and the publication or abort of related
+          writes. Edit quantities and action order, inspect Java snapshots, then
+          explain the boundary each model protects. These are bounded logical
+          models; publication review remains pending.
         </p>
       </section>
       <ModuleShell
@@ -116,25 +117,41 @@ export function ReservationPage() {
         defaultView="playground"
         panels={{
           playground: (
-            <ReservationPlayground
+            <TransactionExperiments
               key={`${data.topic.topic.contentVersion}/${data.descriptor.modelVersion}`}
-              descriptor={data.descriptor}
+              reservation={data.descriptor}
+              atomicityAvailable={data.topic.topic.simulationIds.includes(
+                "transaction-atomicity",
+              )}
             />
           ),
           guided: data.topic.topic.capabilities.includes("guided") && (
-            <ReservationGuided
-              checkpoints={data.topic.checkpoints}
-              descriptor={data.descriptor}
-              contentVersion={data.topic.topic.contentVersion}
-            />
+            <>
+              <ReservationScope view="Guided checkpoints" />
+              <ReservationGuided
+                checkpoints={data.topic.checkpoints}
+                descriptor={data.descriptor}
+                contentVersion={data.topic.topic.contentVersion}
+              />
+            </>
           ),
-          architecture: <ReservationArchitectureView />,
-          sequence: <ReservationSequenceView />,
+          architecture: (
+            <>
+              <ReservationScope view="Architecture" />
+              <ReservationArchitectureView />
+            </>
+          ),
+          sequence: (
+            <>
+              <ReservationScope view="Operation sequences" />
+              <ReservationSequenceView />
+            </>
+          ),
           study: (
             <StudyView
               markdown={data.topic.lessonMarkdown}
-              title="Start with the rule the write must preserve."
-              guidance="Trace an earlier observation and a later reservation attempt. Explain the check, the shared-state change, and the unmodeled guarantees."
+              title="Choose the boundary the operation needs."
+              guidance="Trace an earlier read, or related writes that commit or abort. Explain published state, private work, and the guarantees each model leaves unmodeled."
             />
           ),
           practice: (
@@ -144,11 +161,26 @@ export function ReservationPage() {
               contentVersion={data.topic.topic.contentVersion}
               topicTitle={data.topic.topic.title}
               title="Explain the race and defend the boundary"
-              description="Explain the observation, acceptance check, evidence and tradeoff. A saved explanation is your own reasoning, not an automatic grade."
+              description="Explain reservation decisions and atomicity using the named experiment in each prompt. A saved explanation is your own reasoning, not an automatic grade."
             />
           ),
         }}
       />
     </>
+  );
+}
+
+function ReservationScope({ view }: { view: string }) {
+  return (
+    <aside
+      className="transaction-reservation-scope"
+      aria-label={`${view} experiment scope`}
+    >
+      <p>
+        <strong>Reservation race.</strong> This view teaches the original
+        reservation experiment. Explore Atomicity &amp; abort in Playground,
+        Study, and Practice; its Guided and design views are pending.
+      </p>
+    </aside>
   );
 }

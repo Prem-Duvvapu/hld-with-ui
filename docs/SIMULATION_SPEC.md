@@ -331,3 +331,28 @@ This original local publication/discard protocol emulates no SQL isolation level
 database commit, crash recovery, acknowledgement/lost-response protocol, retry, idempotency or
 external effect. [Decision 0034](decisions/0034-transaction-atomicity-model.md) explains the
 boundary; a later strict API/runnable experiment needs its own integration and release gates.
+
+## Atomicity HTTP and learning integration
+
+[HLD-17B](work-items/HLD-17B.md) exposes GET `/api/v1/simulations/transaction-atomicity`
+and POST `/api/v1/simulations/transaction-atomicity/runs`, using AtomicityDescriptor and the
+unchanged canonical input/result contracts. HTTP 1.9 adds these paths; schema/model replay
+versions remain 1.0 / 1.0.0. Descriptor limits are maxInitialUnits 20, minTransactions 1,
+maxTransactions 3, maxQuantity 20, minSteps 2, maxSteps 12 and maxIdLength 32, derived in Java.
+
+Transport validates exact fields, tokens, duplicate/trailing JSON and complete programs before
+model execution. Unknown/null/coerced input is 400; request budget is 413, whole-result budget
+422 and shared occupied admission 503. A valid program that aborts is 200 completed analysis.
+No partial trace is returned as a replacement for a rejected whole response.
+
+The draft Playground choice `?experiment=atomicity` loads independent descriptor/renderer
+state and starts no POST automatically. Explicit edits define what Java runs. Playback selects
+returned initial/post-state snapshots only. Private preparation is excluded from published
+counts; known zero and absent work have distinct labels. Java history includes every prefix
+regardless of the selected state. Study and eight added Practice questions cover this model;
+existing reservation Guided/design targets are unchanged and explicitly scoped.
+
+The copied-runtime smoke requires named baseline/protected-baseline/protected-conflict presets
+and compares their entire inputs/results with configured Java baseline/protected/conflict
+goldens. The maximum-boundary golden remains standalone stress evidence, not a ninth preset.
+Actual HTTP/UI/accessibility checks and publication limits are recorded in HLD-17B.

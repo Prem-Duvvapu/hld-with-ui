@@ -586,10 +586,10 @@ for (const theme of ["light", "dark"] as const) {
 }
 
 for (const theme of ["light", "dark"] as const) {
-  test(`native 200% zoom keeps reservation six views usable in ${theme}`, async ({
+  test(`native 200% zoom keeps both transaction experiments and six views usable in ${theme}`, async ({
     baseURL,
   }, testInfo) => {
-    test.setTimeout(90_000);
+    test.setTimeout(120_000);
     const profile = await mkdtemp(join(tmpdir(), "hld-data-zoom-"));
     const extension = resolve(
       dirname(fileURLToPath(import.meta.url)),
@@ -632,7 +632,14 @@ for (const theme of ["light", "dark"] as const) {
         await expect
           .poll(() => page.evaluate(() => devicePixelRatio))
           .toBe(baseDpr * 2);
-        for (const name of ["Playground", "Study", "Practice"]) {
+        for (const name of [
+          "Playground",
+          "Guided",
+          "Architecture",
+          "Operation sequence",
+          "Study",
+          "Practice",
+        ]) {
           const tab = page.getByRole("tab", { name, exact: true });
           await tab.focus();
           await page.keyboard.press("Enter");
@@ -696,8 +703,53 @@ for (const theme of ["light", "dark"] as const) {
             dpr: await page.evaluate(() => devicePixelRatio),
           });
         }
+        await page
+          .getByRole("tab", { name: "Playground", exact: true })
+          .click();
+        const atomicity = page.getByRole("button", {
+          name: /^Atomicity & abort/,
+        });
+        await atomicity.focus();
+        await page.keyboard.press("Enter");
+        await expect(atomicity).toBeFocused();
+        await page
+          .getByRole("button", {
+            name: "Run atomicity experiment",
+            exact: true,
+          })
+          .click();
+        const selected = page.getByRole("region", {
+          name: "Selected atomicity snapshot",
+          exact: true,
+        });
+        await expect(selected).toBeVisible();
+        await page
+          .getByRole("slider", {
+            name: "Atomicity snapshot position",
+            exact: true,
+          })
+          .fill("3");
+        await expect(selected).toContainText("Transaction aborted");
+        await expect(
+          selected.getByRole("definition").filter({ hasText: "Violated" }),
+        ).toHaveCount(2);
+        await expect
+          .poll(() =>
+            page.evaluate(
+              () => document.documentElement.scrollWidth <= innerWidth,
+            ),
+          )
+          .toBe(true);
+        observations.push({
+          theme,
+          view: "Atomicity & abort",
+          physicalWidth: pixels,
+          zoom: 2,
+          cssWidth: await page.evaluate(() => innerWidth),
+          dpr: await page.evaluate(() => devicePixelRatio),
+        });
       }
-      await testInfo.attach("reservation-native-zoom-observations", {
+      await testInfo.attach("transaction-native-zoom-observations", {
         body: JSON.stringify(observations, null, 2),
         contentType: "application/json",
       });
