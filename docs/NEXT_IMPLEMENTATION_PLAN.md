@@ -22,7 +22,9 @@ seven scenarios and an explicit Playground/Study/Practice experience at
 core draft views with eight Java-verified checkpoints, inspectable Architecture and three
 authored Operation sequence paths. Review its recorded technical evidence before the next
 bounded transaction-foundation work item. Human/hosted review and publication remain open.
-Transactions and idempotency remain pending.
+Transactions and idempotency remain pending. Follow the
+[transaction implementation handoff](TRANSACTIONS_IMPLEMENTATION_PLAN.md), starting with
+HLD-16A pure Java and canonical evidence. It is a plan, not an implemented module.
 
 ## 1. Objective and scope
 
