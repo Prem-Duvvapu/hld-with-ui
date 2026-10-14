@@ -8,6 +8,9 @@ import {
   CacheCompatibilityError,
 } from "./cacheCompatibility";
 import type {
+  ReservationInput,
+  ReservationResult,
+  ReservationDescriptor,
   DataAccessInput,
   DataAccessResult,
   DataAccessDescriptor,
@@ -105,6 +108,39 @@ async function request<T>(
 }
 
 export const api = {
+  reservationDescriptor: async () => {
+    const { assertReservationDescriptor } =
+      await import("./reservationCompatibility");
+    return request<ReservationDescriptor>(
+      "/api/v1/simulations/transactions-isolation",
+      undefined,
+      deliveryValidation(assertReservationDescriptor),
+    );
+  },
+  runReservation: async (input: ReservationInput) => {
+    const payload = JSON.stringify(input);
+    const submitted: ReservationInput = JSON.parse(payload);
+    const { assertReservationInput, assertReservationResult } =
+      await import("./reservationCompatibility");
+    try {
+      assertReservationInput(submitted);
+    } catch (cause: unknown) {
+      throw new ApiClientError(
+        cause instanceof Error
+          ? cause.message
+          : "Check the submitted reservation input.",
+      );
+    }
+    return request<ReservationResult>(
+      "/api/v1/simulations/transactions-isolation/runs",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      },
+      deliveryValidation((body) => assertReservationResult(body, submitted)),
+    );
+  },
   dataAccessDescriptor: async () => {
     const { assertDataAccessDescriptor } =
       await import("./dataAccessCompatibility");

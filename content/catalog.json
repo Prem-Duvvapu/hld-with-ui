@@ -261,5 +261,36 @@
       "neo4j-property-graph-modeling"
     ],
     "checkpointsPath": "topics/data-access-models/checkpoints.json"
+  },
+  {
+    "id": "transactions-isolation",
+    "kind": "topic",
+    "title": "Transactions & Isolation",
+    "summary": "Follow two reservations competing for stock. Compare stale decisions with a current-state atomic boundary, and explain capacity and conservation from Java snapshots.",
+    "category": "Data & Storage",
+    "level": "Intermediate",
+    "order": 9,
+    "status": "draft",
+    "prerequisites": ["data-access-models"],
+    "outcomes": [
+      "Distinguish earlier client observations from current shared stock.",
+      "Predict accepted quantities and rejected reservations for an explicit interleaving.",
+      "Explain separate nonnegative, capacity and conservation checks.",
+      "Defend a current-state acceptance boundary while stating unmodeled transaction guarantees."
+    ],
+    "capabilities": ["study", "simulation", "practice"],
+    "lessonPath": "topics/transactions-isolation/lesson.md",
+    "questionsPath": "topics/transactions-isolation/questions.json",
+    "resourcesPath": "topics/transactions-isolation/resources.json",
+    "simulationIds": ["transactions-isolation"],
+    "estimatorIds": [],
+    "contentVersion": "1.0.0",
+    "reviewedAt": "2026-10-14",
+    "sourceIds": [
+      "postgres-18-transaction-isolation",
+      "postgres-18-conditional-update",
+      "postgres-18-transactions",
+      "postgres-18-constraints"
+    ]
   }
 ]

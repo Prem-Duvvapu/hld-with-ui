@@ -216,6 +216,10 @@ See [decision 0029](decisions/0029-finite-data-access-analysis.md) and
 The pure `com.hld.transactions` analysis accepts a finite ordering of READ and
 ATTEMPT_RESERVE actions for two through four reservations. Java owns stock, allocations,
 local observations and invariant evidence. Complete immutable snapshots need no shared
-scheduler, timing or generic state patches. This first slice has no API/descriptor/catalog
-registration or React renderer. [Decision 0031](decisions/0031-reservation-interleavings-and-invariants.md)
+scheduler, timing or generic state patches. [HLD-16B](work-items/HLD-16B.md) adds strict descriptor/run endpoints, canonical HTTP 1.7
+exports and a single catalog-owned draft with Playground/Study/Practice. Internal stable form
+keys preserve editable actor links; only semantic IDs cross the API. Lazy guards correlate
+captured inputs and Java-reported references. React manually selects complete snapshots and
+keeps prefix flags separate from history metrics. Existing shared guards bound requests,
+results and admission. No simulation behavior is duplicated in the renderer. [Decision 0031](decisions/0031-reservation-interleavings-and-invariants.md)
 and [HLD-16A](work-items/HLD-16A.md) record its scoped behavior and verification.

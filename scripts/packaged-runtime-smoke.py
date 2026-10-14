@@ -25,6 +25,7 @@ MODEL_BASELINE_FIXTURES = {
     "queues-tail-latency": "queue-capacity",
     "queues-delivery": "queue-delivery",
     "data-access-models": "data-access",
+    "transactions-isolation": "transactions-isolation",
 }
 
 
@@ -67,14 +68,16 @@ def verify_draft_model(base, model_id):
     check(fixture is not None, f"Draft model has no packaged baseline evidence: {model_id}")
     path = f"/api/v1/simulations/{quote(model_id, safe='')}"
     descriptor = api(base, path)
-    baseline = next((preset for preset in descriptor["presets"] if preset["id"] == "baseline"), None)
-    check(baseline is not None, f"Packaged {fixture} descriptor has no baseline")
-    expected_input = json.loads((ROOT / f"contracts/examples/{fixture}-baseline-input.json").read_text(encoding="utf-8"))
-    expected_result = json.loads((ROOT / f"contracts/examples/{fixture}-baseline-result.json").read_text(encoding="utf-8"))
-    check(baseline["input"] == expected_input, f"Packaged {fixture} baseline input differs")
-    result = api(base, path + "/runs", baseline["input"])
-    check(result == expected_result, f"Packaged {fixture} baseline full result differs")
-    print(f"PASS packaged draft {fixture} model", flush=True)
+    variants = [("unsafe-baseline", "baseline"), ("protected-baseline", "protected")] if model_id == "transactions-isolation" else [("baseline", "baseline")]
+    for preset_id, variant in variants:
+        preset = next((preset for preset in descriptor["presets"] if preset["id"] == preset_id), None)
+        check(preset is not None, f"Packaged {fixture} descriptor has no {preset_id}")
+        expected_input = json.loads((ROOT / f"contracts/examples/{fixture}-{variant}-input.json").read_text(encoding="utf-8"))
+        expected_result = json.loads((ROOT / f"contracts/examples/{fixture}-{variant}-result.json").read_text(encoding="utf-8"))
+        check(preset["input"] == expected_input, f"Packaged {fixture} {variant} input differs")
+        result = api(base, path + "/runs", preset["input"])
+        check(result == expected_result, f"Packaged {fixture} {variant} full result differs")
+        print(f"PASS packaged draft {fixture} {variant} model", flush=True)
 
 
 def verify(base):
@@ -124,7 +127,7 @@ def verify(base):
         for model_id in entry["simulationIds"]:
             verify_draft_model(base, model_id)
             api(base, "/api/v1/draft/topics/request-flow", expected=404)
-            for query in ("queues", "delivery", "ACK", "data", "models"):
+            for query in ("queues", "delivery", "ACK", "data", "models", "transactions", "isolation"):
                 check(all(hit["entry"]["status"] == "published" and hit["entry"]["id"] not in draft_topic_ids
                           for hit in api(base, f"/api/v1/search?q={query}")["results"]), "Draft topic leaked into published search")
     check([entry["id"] for entry in api(base, "/api/v1/case-studies")] == [entry["id"] for entry in cases], "Case publication differs from catalog")

@@ -60,6 +60,32 @@ class PackagedRuntimeFailures(unittest.TestCase):
                     smoke.verify_draft_model("http://example.invalid", "data-access-models")
                 self.assertEqual(api.call_count, 1)
 
+    def test_reservation_variants_use_named_presets_and_compare_full_java_evidence(self):
+        fixtures = ROOT / "contracts/examples"
+        load = lambda variant, kind: json.loads((fixtures / f"transactions-isolation-{variant}-{kind}.json").read_text())
+        unsafe, protected = load("baseline", "input"), load("protected", "input")
+        unsafe_result, protected_result = load("baseline", "result"), load("protected", "result")
+        descriptor = {"presets": [{"id": "protected-baseline", "input": protected}, {"id": "unsafe-baseline", "input": unsafe}]}
+        with patch.object(smoke, "api", side_effect=[descriptor, unsafe_result, protected_result]) as api:
+            smoke.verify_draft_model("http://example.invalid", "transactions-isolation")
+        self.assertEqual(api.call_args_list[1].args[2], unsafe)
+        self.assertEqual(api.call_args_list[2].args[2], protected)
+        for variant, expected in [("baseline", unsafe_result), ("protected", protected_result)]:
+            wrong = copy.deepcopy(expected)
+            wrong["initialState"]["remainingUnits"] += 1
+            responses = [descriptor, wrong] if variant == "baseline" else [descriptor, unsafe_result, wrong]
+            with self.subTest(variant=variant), patch.object(smoke, "api", side_effect=responses):
+                with self.assertRaisesRegex(RuntimeError, f"{variant} full result differs"):
+                    smoke.verify_draft_model("http://example.invalid", "transactions-isolation")
+        for presets, message in [
+            ([{"id": "baseline", "input": unsafe}], "no unsafe-baseline"),
+            ([{"id": "unsafe-baseline", "input": protected}], "baseline input differs"),
+            ([{"id": "unsafe-baseline", "input": unsafe}], "no protected-baseline"),
+        ]:
+            with self.subTest(message=message), patch.object(smoke, "api", side_effect=[{"presets": presets}, unsafe_result]):
+                with self.assertRaisesRegex(RuntimeError, message):
+                    smoke.verify_draft_model("http://example.invalid", "transactions-isolation")
+
     def test_readiness_retries_transient_connection_failures_then_cleans_its_container(self):
         for failure in (ConnectionResetError("starting"), TimeoutError("starting"), URLError("starting")):
             args = argparse.Namespace(jar=None, image="hld-test-image", port=free_port())

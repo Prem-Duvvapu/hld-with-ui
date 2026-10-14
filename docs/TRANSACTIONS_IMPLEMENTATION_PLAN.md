@@ -2,6 +2,12 @@
 
 Status: **implementation handoff, not an implemented module**. Prepared 2026-10-13.
 Canonical ID: `transactions-isolation`. Prerequisite: `data-access-models`.
+
+Current implementation: [HLD-16A](work-items/HLD-16A.md) is merged with final CI evidence.
+[HLD-16B](work-items/HLD-16B.md) implements the draft HTTP/Playground/Study/Practice slice;
+its verification/delivery evidence is recorded in that work item. HLD-16C and broader
+isolation/rollback/retry teaching remain pending. Phase descriptions below retain their
+acceptance scope; they are not evidence that every phase is done.
 This plan supersedes the temporary model/contract/learning design notes from this session.
 
 ## 1. Start here

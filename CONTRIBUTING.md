@@ -58,7 +58,7 @@ The root launcher is for Linux/WSL and accepts `BACKEND_PORT` and `FRONTEND_PORT
 
 After packaging the backend, use Python 3 to exercise the jar from an empty temporary working
 directory. The check copies only the executable jar into that directory, compares delivered
-content with the canonical checkout, runs each published simulation/estimator baseline and the explicitly scoped draft capacity and delivery queue baselines,
+content with the canonical checkout, runs each published simulation/estimator baseline and the explicitly scoped draft queue/data-access baselines and both unsafe/protected reservation baselines,
 checks draft visibility and the learning path, then stops its own process and checks port cleanup.
 
 ```bash
