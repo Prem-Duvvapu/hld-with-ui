@@ -1,13 +1,19 @@
 # Transactions & Isolation implementation plan
 
-Status: **implementation handoff, not an implemented module**. Prepared 2026-10-13.
+Status: **active staged handoff**. The reservation experiment is implemented as a six-view
+draft; the complete transaction curriculum is not implemented. Prepared on 2026-10-13,
+reconciled on 2026-10-14.
 Canonical ID: `transactions-isolation`. Prerequisite: `data-access-models`.
 
 Current implementation: [HLD-16A](work-items/HLD-16A.md) is merged with final CI evidence.
 [HLD-16B](work-items/HLD-16B.md) implements the draft HTTP/Playground/Study/Practice slice;
-its verification/delivery evidence is recorded in that work item. [HLD-16C](work-items/HLD-16C.md) adds Guided and authored design views; broader
-isolation/rollback/retry teaching remains pending. Phase descriptions below retain their
-acceptance scope; they are not evidence that every phase is done.
+its verification/delivery evidence is recorded in that work item. [HLD-16C](work-items/HLD-16C.md)
+adds Guided and authored design views, completing six draft views for the bounded reservation
+experiment. [HLD-17A](work-items/HLD-17A.md) implements a separate pure transaction-atomicity
+model and standalone evidence, without API/UI/catalog registration. Actual verification
+and delivery evidence is recorded in its work item and PR. Broader SQL isolation, retry/idempotency and publication remain pending.
+Phase descriptions below retain their acceptance scope; they are not evidence that every
+phase is done.
 This plan supersedes the temporary model/contract/learning design notes from this session.
 
 ## 1. Start here
@@ -270,9 +276,66 @@ keyboard/reduced motion/widths/themes/native zoom, copied runtime and required C
 
 ### Remaining transaction curriculum
 
-Six views around this experiment do not constitute complete isolation coverage. Keep chosen
-isolation guarantees, multi-record anomalies/write skew, rollback/abort boundaries and retry
-semantics explicitly pending. Add further behavior only through separate bounded designs and
+#### HLD-17A — Atomicity/abort foundation
+
+The next question is **If stock changes before its allocation record is written, what does
+abort remove?** Keep the existing reservation model 1.0.0 / schema 1.0, eight presets, four
+goldens and Guided targets unchanged. Implement independent `com.hld.atomicity` model
+`transaction-atomicity` schema 1.0 / model 1.0.0; result kind analysis / status completed.
+
+Input uses mode SPLIT_WRITES or STAGED_VERSION_CHECK, initialUnits 0..20, one through three
+transactions `{id, quantity}` with quantity 1..20 and two through twelve steps `{id, transactionId, action}`.
+Each actor has BEGIN followed by ABORT, stock then ABORT, stock/record then ABORT, or
+stock/record then COMMIT. Every ID uses whole-value lowercase ASCII grammar with maximum 32
+characters. Validate the whole complete schedule before mutation.
+
+Split writes check current stock and publish stock/record separately; ABORT cannot erase
+their already-visible effects. Protected work checks BEGIN-captured stock privately and
+publishes stock plus allocation only after the captured visible-data revision still matches.
+Every terminal clears that actor's private workspace while retaining its base history.
+Insufficient stock and revision conflict are valid abort outcomes, with explicit skipped
+record work rather than omitted steps. There is no elapsed time, simulated real-thread
+scheduling, SQL isolation mode, durability, crash recovery, retry, idempotency or ACK protocol.
+
+Java owns complete published/private snapshots and four separate checks: nonnegative stock,
+capacity, conservation and abortedEffectsAbsent. A split success can recover final conservation
+after an earlier exposed breach. A split abort after both writes can preserve quantity checks
+while retaining aborted effects. State/metrics must show those differences without filtering
+visible records by COMMITTED status. [Decision 0034](decisions/0034-transaction-atomicity-model.md)
+and [SIMULATION_SPEC](SIMULATION_SPEC.md#pure-transaction-atomicity-foundation)
+record the exact protocol, conditional fields, bounds and reason precedence.
+
+Eight frozen preset IDs: baseline, protected-baseline, protected-commit, split-commit,
+split-abort-after-record, empty-stock, protected-conflict and conservative-conflict.
+The conflict programs interleave BEGIN A/B, DECREMENT A/B, RECORD A/B, COMMIT A/B.
+Use actual configured-mapper baseline/protected/conflict/max-boundary goldens; do not copy
+the preparation notes as executed results. Require exact fixtures, all seventy legal two-actor
+four-action interleavings at stock 1 and 2, validation/ownership/replay/request isolation, abort
+without undoing another publication, schema/golden agreement, measured representative wire
+sizes and relevant inherited checks plus final-head CI. Actual evidence belongs in HLD-17A.
+
+This foundation creates no HTTP/OpenAPI path, Spring registration, catalog simulation ID,
+lesson resource or frontend capability. No placeholder makes the model look available.
+
+#### Later atomicity API and second named experiment
+
+After the foundation passes required checks and merges, use a fresh branch for a strict
+descriptor/run API and second named Playground experiment within the existing
+`transactions-isolation` draft. Register the extra simulation ID only when API/renderer
+actually exist. Preserve the default reservation route and saved activity IDs; load the new
+descriptor independently so its error does not break the first experiment. Keep published
+state/private work, selected-prefix flags and whole-history status visibly separate.
+
+Original Study/Practice extensions should carry the one-unit abort example through teammate
+and interview transfer, including the revision-conflict follow-up. Existing eight Guided
+checkpoints and authored design views remain reservation-only until an additional bounded
+contribution supplies actual atomicity targets/views. Human/hosted/publication and full
+isolation/retry/idempotency teaching remain separate gates.
+
+The six reservation views do not constitute complete transaction coverage. Keep chosen SQL
+isolation guarantees, multi-record anomalies/write skew, real database rollback/recovery and
+retry semantics explicitly pending. HLD-17A adds a bounded local publication/abort model,
+without supplying those broader guarantees. Add further behavior through separate designs and
 fixtures. Review precisely which atomic guarantee supports a later idempotency draft; that
 module also depends on `queues-delivery` and must define its own retained-key/effect boundary,
 request conflicts, expiry and lost-response scope. This first model deduplicates nothing.
@@ -315,7 +378,8 @@ rubrics and shared attempt/reveal/compare/revise, not automatic free-text gradin
 
 ## 7. Primary sources verified for the handoff
 
-Pinned PostgreSQL 18 documentation was opened on 2026-10-13. The finite rules and numbers
+Pinned PostgreSQL 18 documentation was opened on 2026-10-13 and the relevant transaction
+pages were reopened on 2026-10-14 for the atomicity handoff. The finite rules and numbers
 above are original model definitions. These connections do not establish engine emulation.
 
 - [Transaction isolation](https://www.postgresql.org/docs/18/transaction-iso.html): its simple
@@ -329,6 +393,12 @@ above are original model definitions. These connections do not establish engine 
 - [Constraints](https://www.postgresql.org/docs/18/ddl-constraints.html): row checks have limits
   for conditions involving other rows/tables. A nonnegative counter alone cannot certify the
   example's stock/allocation relationship.
+- [ROLLBACK](https://www.postgresql.org/docs/18/sql-rollback.html): an actual SQL transaction
+  discards updates inside its own boundary. The split model's writes share no such rollback
+  boundary; its ABORT is not a failed implementation of PostgreSQL rollback.
+- [COMMIT](https://www.postgresql.org/docs/18/sql-commit.html): real database transaction
+  publication has a documented durability guarantee. The atomicity model's COMMITTED phase
+  describes local publication only and establishes no persistent recovery guarantee.
 
 Recheck source claims when authoring the actual lesson. Write original explanations/diagrams;
 copy no vendor code/assets. Add canonical resource IDs only when the content slice needs them.
@@ -338,18 +408,23 @@ copy no vendor code/assets. Add canonical resource IDs only when the content sli
 ```text
 Implement the next uncompleted slice in docs/TRANSACTIONS_IMPLEMENTATION_PLAN.md.
 Read AGENTS.md and its required documents, inspect actual current main/code/tests/status,
-and preserve unrelated user work. Verify HLD-15B final-head CI and technical core evidence.
+and preserve unrelated user work. Verify the reservation and preceding atomicity slice's
+actual final-head CI/delivery evidence before selecting subsequent work.
 Create a fresh branch from updated main for one focused work item.
 
-Start with HLD-16A if no reservation model exists. Follow the plan's exact two algorithms,
-bounds, semantic IDs, snapshots, Java-owned quantities/invariants and fixtures. Do not
-invent elapsed time, use actual threads in the model, add dependencies/services, rename
-these algorithms as SQL isolation levels, advertise unsupported tabs, or publish drafts.
+The existing reservation foundation/API/six-view draft is implemented. Continue the next
+uncompleted bounded slice after verifying HLD-17A atomicity Java/standalone evidence
+and its delivery. Preserve reservation model 1.0.0 and its goldens/selectors. Follow
+the frozen atomicity mode/program/field/reason names, input bounds and Java-owned complete
+published/private snapshots. Do not add an API/catalog/UI placeholder in this pure slice,
+invent timing, use actual model threads, add services/dependencies, call the algorithms SQL
+isolation levels, promise durability/idempotency, or publish drafts.
 
 Write a work item and model decision, implement and run relevant checks, record only actual
 results, and review learning/contract/model agreement. Push a focused PR to main, wait for
-required final-head CI, squash merge and update local main. Continue to HLD-16B only if
-16A is complete and the current user-authorized work window allows another bounded slice.
+required final-head CI, squash merge and update local main. Continue to atomicity API/UI
+integration only after HLD-17A is complete and the current user-authorized work window
+allows another bounded slice.
 Reuse the shared module/answer UX and strict API/schema/runtime patterns, keeping frontend
 and backend code readable and the example easy to explain to a teammate or interviewer.
 

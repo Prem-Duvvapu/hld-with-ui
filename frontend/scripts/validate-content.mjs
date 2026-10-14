@@ -85,6 +85,17 @@ for (const model of ["queue-capacity", "queue-delivery", "data-access"]) {
     );
   }
 }
+// Atomicity is standalone evidence in this slice, without an API or catalog capability.
+for (const variant of ["baseline", "protected", "conflict", "max-boundary"]) {
+  for (const kind of ["input", "result"]) {
+    const example = `transaction-atomicity-${variant}-${kind}`;
+    validateSchema(
+      `contracts/transaction-atomicity.${kind}.schema.json`,
+      readJson(`contracts/examples/${example}.json`),
+      example,
+    );
+  }
+}
 
 unique(
   catalog.map((entry) => entry.id),

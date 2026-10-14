@@ -1,0 +1,197 @@
+{
+  "simulationId": "transaction-atomicity",
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "kind": "analysis",
+  "status": "completed",
+  "input": {
+    "schemaVersion": "1.0",
+    "modelVersion": "1.0.0",
+    "mode": "STAGED_VERSION_CHECK",
+    "initialUnits": 1,
+    "transactions": [{ "id": "a", "quantity": 1 }],
+    "schedule": [
+      { "id": "begin-a", "transactionId": "a", "action": "BEGIN" },
+      {
+        "id": "decrement-a",
+        "transactionId": "a",
+        "action": "DECREMENT_STOCK"
+      },
+      { "id": "abort-a", "transactionId": "a", "action": "ABORT" }
+    ]
+  },
+  "initialState": {
+    "remainingUnits": 1,
+    "allocatedUnits": 0,
+    "revision": 0,
+    "transactions": [
+      {
+        "id": "a",
+        "quantity": 1,
+        "phase": "NOT_STARTED",
+        "appliedStockUnits": 0,
+        "pendingStockUnits": 0
+      }
+    ],
+    "allocations": [],
+    "invariants": {
+      "remainingNonnegative": true,
+      "allocatedWithinCapacity": true,
+      "unitsConserved": true,
+      "abortedEffectsAbsent": true,
+      "accountedUnits": 1
+    }
+  },
+  "outcomes": [
+    {
+      "sequence": 1,
+      "stepId": "begin-a",
+      "transactionId": "a",
+      "action": "BEGIN",
+      "kind": "TRANSACTION_STARTED",
+      "postState": {
+        "remainingUnits": 1,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "transactions": [
+          {
+            "id": "a",
+            "quantity": 1,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0,
+            "baseRemaining": 1,
+            "baseRevision": 0,
+            "workingRemaining": 1
+          }
+        ],
+        "allocations": [],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "abortedEffectsAbsent": true,
+          "accountedUnits": 1
+        }
+      },
+      "explanation": "a begins with remaining 1 and visible revision 0. Capturing this base changes no published stock or allocation."
+    },
+    {
+      "sequence": 2,
+      "stepId": "decrement-a",
+      "transactionId": "a",
+      "action": "DECREMENT_STOCK",
+      "kind": "STOCK_STAGED",
+      "postState": {
+        "remainingUnits": 1,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "transactions": [
+          {
+            "id": "a",
+            "quantity": 1,
+            "phase": "OPEN",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 1,
+            "baseRemaining": 1,
+            "baseRevision": 0,
+            "workingRemaining": 0
+          }
+        ],
+        "allocations": [],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "abortedEffectsAbsent": true,
+          "accountedUnits": 1
+        }
+      },
+      "explanation": "a prepares 1 - 1 = 0 remaining units privately. Public stock remains 1 and visible revision remains 0.",
+      "checkedRemaining": 1,
+      "checkSource": "WORKING_COPY"
+    },
+    {
+      "sequence": 3,
+      "stepId": "abort-a",
+      "transactionId": "a",
+      "action": "ABORT",
+      "kind": "TRANSACTION_ABORTED",
+      "postState": {
+        "remainingUnits": 1,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "transactions": [
+          {
+            "id": "a",
+            "quantity": 1,
+            "phase": "ABORTED",
+            "appliedStockUnits": 0,
+            "pendingStockUnits": 0,
+            "baseRemaining": 1,
+            "baseRevision": 0,
+            "failureReason": "USER_ABORT"
+          }
+        ],
+        "allocations": [],
+        "invariants": {
+          "remainingNonnegative": true,
+          "allocatedWithinCapacity": true,
+          "unitsConserved": true,
+          "abortedEffectsAbsent": true,
+          "accountedUnits": 1
+        }
+      },
+      "explanation": "a becomes ABORTED (USER_ABORT). Discard only its unpublished workspace. Published inventory and allocations stay unchanged.",
+      "reason": "USER_ABORT"
+    }
+  ],
+  "finalState": {
+    "remainingUnits": 1,
+    "allocatedUnits": 0,
+    "revision": 0,
+    "transactions": [
+      {
+        "id": "a",
+        "quantity": 1,
+        "phase": "ABORTED",
+        "appliedStockUnits": 0,
+        "pendingStockUnits": 0,
+        "baseRemaining": 1,
+        "baseRevision": 0,
+        "failureReason": "USER_ABORT"
+      }
+    ],
+    "allocations": [],
+    "invariants": {
+      "remainingNonnegative": true,
+      "allocatedWithinCapacity": true,
+      "unitsConserved": true,
+      "abortedEffectsAbsent": true,
+      "accountedUnits": 1
+    }
+  },
+  "metrics": {
+    "committedTransactions": 0,
+    "abortedTransactions": 1,
+    "conflictedTransactions": 0,
+    "abortedTransactionsWithEffects": 0,
+    "finalRemainingUnits": 1,
+    "finalAllocatedUnits": 0,
+    "invariantStatus": "PRESERVED"
+  },
+  "assumptions": [
+    "This is an illustrative local stock/allocation model, not a database or SQL isolation-level emulator.",
+    "The complete supplied schedule determines order; no timing, random choice or actual thread scheduling is modeled.",
+    "Split writes publish stock and allocation separately; their modeled ABORT has no common rollback boundary.",
+    "Staged work is private until one revision-checked publication changes stock and allocation together.",
+    "The revision covers visible inventory/allocation mutations only; private preparation and statuses do not advance it.",
+    "A coarse revision conflict can reject work even when current stock would still fit its quantity.",
+    "Aborting staged work discards only its own unpublished workspace, never another transaction's published effects.",
+    "All visible allocations count, including rows written by split transactions that later abort.",
+    "Public invariant history includes partial split writes; a repaired final state does not erase an earlier breach.",
+    "COMMITTED names local modeled publication, not durable storage, crash recovery, acknowledgement or an external effect.",
+    "Retries, idempotency, locks, deadlocks, replicas and multiple-resource transactions are excluded.",
+    "Completed means every declared step was evaluated, including rejection, explicit skip or abort outcomes."
+  ]
+}

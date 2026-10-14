@@ -1,0 +1,937 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hld-with-ui.dev/schemas/transaction-atomicity.result.schema.json",
+  "title": "Transaction atomicity model result",
+  "description": "Complete authoritative untimed atomicity analysis. Public remaining and allocated units are guarded and together cannot exceed initial units; split writes may lose units and leak aborted effects but cannot create them. State bounds are 0..20, including unsafe partial states. Captured input and all IDs refer to the canonical input owner. Java owns mode-dependent private workspace presence, identity relationships, revision arithmetic, final/snapshot equality and invariant calculations. JSON Schema enforces closed local phase/outcome evidence and retained/cleared fields; it does not emulate transactions or promise durability.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "simulationId",
+    "schemaVersion",
+    "modelVersion",
+    "kind",
+    "status",
+    "input",
+    "initialState",
+    "outcomes",
+    "finalState",
+    "metrics",
+    "assumptions"
+  ],
+  "properties": {
+    "simulationId": {
+      "const": "transaction-atomicity"
+    },
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "modelVersion": {
+      "const": "1.0.0"
+    },
+    "kind": {
+      "const": "analysis"
+    },
+    "status": {
+      "const": "completed"
+    },
+    "input": {
+      "$ref": "https://hld-with-ui.dev/schemas/transaction-atomicity.input.schema.json"
+    },
+    "initialState": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/state"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "allocatedUnits": {
+              "const": 0
+            },
+            "revision": {
+              "const": 0
+            },
+            "allocations": {
+              "type": "array",
+              "maxItems": 0
+            },
+            "transactions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "phase": {
+                    "const": "NOT_STARTED"
+                  }
+                }
+              }
+            },
+            "invariants": {
+              "type": "object",
+              "properties": {
+                "remainingNonnegative": {
+                  "const": true
+                },
+                "allocatedWithinCapacity": {
+                  "const": true
+                },
+                "unitsConserved": {
+                  "const": true
+                },
+                "abortedEffectsAbsent": {
+                  "const": true
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "outcomes": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 12,
+      "items": {
+        "$ref": "#/$defs/outcome"
+      }
+    },
+    "finalState": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/state"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "transactions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "phase": {
+                    "enum": ["COMMITTED", "ABORTED"]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "metrics": {
+      "$ref": "#/$defs/metrics"
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 600
+      }
+    }
+  },
+  "$defs": {
+    "pendingAllocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transactionId", "quantity", "stepId"],
+      "properties": {
+        "transactionId": {
+          "$ref": "https://hld-with-ui.dev/schemas/transaction-atomicity.input.schema.json#/$defs/identifier"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "stepId": {
+          "$ref": "https://hld-with-ui.dev/schemas/transaction-atomicity.input.schema.json#/$defs/identifier"
+        }
+      }
+    },
+    "allocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transactionId",
+        "quantity",
+        "preparedAtStepId",
+        "publishedAtStepId"
+      ],
+      "properties": {
+        "transactionId": {
+          "$ref": "https://hld-with-ui.dev/schemas/transaction-atomicity.input.schema.json#/$defs/identifier"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "preparedAtStepId": {
+          "$ref": "https://hld-with-ui.dev/schemas/transaction-atomicity.input.schema.json#/$defs/identifier"
+        },
+        "publishedAtStepId": {
+          "$ref": "https://hld-with-ui.dev/schemas/transaction-atomicity.input.schema.json#/$defs/identifier"
+        }
+      }
+    },
+    "transactionState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "quantity",
+        "phase",
+        "appliedStockUnits",
+        "pendingStockUnits"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "https://hld-with-ui.dev/schemas/transaction-atomicity.input.schema.json#/$defs/identifier"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "phase": {
+          "enum": ["NOT_STARTED", "OPEN", "BLOCKED", "COMMITTED", "ABORTED"]
+        },
+        "appliedStockUnits": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "pendingStockUnits": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "baseRemaining": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "baseRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "workingRemaining": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "pendingAllocation": {
+          "$ref": "#/$defs/pendingAllocation"
+        },
+        "failureReason": {
+          "enum": ["INSUFFICIENT_STOCK", "USER_ABORT", "REVISION_CONFLICT"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "phase": {
+                "const": "NOT_STARTED"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "appliedStockUnits": {
+                "const": 0
+              },
+              "pendingStockUnits": {
+                "const": 0
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": ["baseRemaining"]
+                },
+                {
+                  "required": ["baseRevision"]
+                },
+                {
+                  "required": ["workingRemaining"]
+                },
+                {
+                  "required": ["pendingAllocation"]
+                },
+                {
+                  "required": ["failureReason"]
+                }
+              ]
+            }
+          },
+          "else": {
+            "required": ["baseRemaining", "baseRevision"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "phase": {
+                "enum": ["NOT_STARTED", "OPEN", "COMMITTED"]
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": ["failureReason"]
+                }
+              ]
+            }
+          },
+          "else": {
+            "required": ["failureReason"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "phase": {
+                "enum": ["NOT_STARTED", "COMMITTED", "ABORTED"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "pendingStockUnits": {
+                "const": 0
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": ["workingRemaining"]
+                },
+                {
+                  "required": ["pendingAllocation"]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "phase": {
+                "const": "BLOCKED"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "failureReason": {
+                "const": "INSUFFICIENT_STOCK"
+              },
+              "appliedStockUnits": {
+                "const": 0
+              },
+              "pendingStockUnits": {
+                "const": 0
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": ["pendingAllocation"]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "phase": {
+                "const": "COMMITTED"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "appliedStockUnits": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["pendingAllocation"]
+          },
+          "then": {
+            "required": ["workingRemaining"],
+            "properties": {
+              "phase": {
+                "const": "OPEN"
+              },
+              "pendingStockUnits": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "pendingStockUnits": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              }
+            }
+          },
+          "then": {
+            "required": ["workingRemaining"],
+            "properties": {
+              "phase": {
+                "const": "OPEN"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["workingRemaining"]
+          },
+          "then": {
+            "properties": {
+              "phase": {
+                "enum": ["OPEN", "BLOCKED"]
+              },
+              "appliedStockUnits": {
+                "const": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "invariants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "remainingNonnegative",
+        "allocatedWithinCapacity",
+        "unitsConserved",
+        "abortedEffectsAbsent",
+        "accountedUnits"
+      ],
+      "properties": {
+        "remainingNonnegative": {
+          "type": "boolean"
+        },
+        "allocatedWithinCapacity": {
+          "type": "boolean"
+        },
+        "unitsConserved": {
+          "type": "boolean"
+        },
+        "abortedEffectsAbsent": {
+          "type": "boolean"
+        },
+        "accountedUnits": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        }
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "remainingUnits",
+        "allocatedUnits",
+        "revision",
+        "transactions",
+        "allocations",
+        "invariants"
+      ],
+      "properties": {
+        "remainingUnits": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "allocatedUnits": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "transactions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/transactionState"
+          }
+        },
+        "allocations": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/allocation"
+          }
+        },
+        "invariants": {
+          "$ref": "#/$defs/invariants"
+        }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequence",
+        "stepId",
+        "transactionId",
+        "action",
+        "kind",
+        "postState",
+        "explanation"
+      ],
+      "properties": {
+        "sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "stepId": {
+          "$ref": "https://hld-with-ui.dev/schemas/transaction-atomicity.input.schema.json#/$defs/identifier"
+        },
+        "transactionId": {
+          "$ref": "https://hld-with-ui.dev/schemas/transaction-atomicity.input.schema.json#/$defs/identifier"
+        },
+        "action": {
+          "enum": [
+            "BEGIN",
+            "DECREMENT_STOCK",
+            "RECORD_ALLOCATION",
+            "COMMIT",
+            "ABORT"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "TRANSACTION_STARTED",
+            "STOCK_APPLIED",
+            "STOCK_STAGED",
+            "STOCK_REJECTED",
+            "ALLOCATION_APPLIED",
+            "ALLOCATION_STAGED",
+            "WORK_SKIPPED",
+            "TRANSACTION_COMMITTED",
+            "TRANSACTION_ABORTED"
+          ]
+        },
+        "postState": {
+          "$ref": "#/$defs/state"
+        },
+        "explanation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600
+        },
+        "checkedRemaining": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "checkSource": {
+          "enum": ["CURRENT", "WORKING_COPY"]
+        },
+        "expectedRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "actualRevision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "reason": {
+          "enum": ["INSUFFICIENT_STOCK", "USER_ABORT", "REVISION_CONFLICT"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "TRANSACTION_STARTED"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "action": {
+                "const": "BEGIN"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": ["STOCK_APPLIED", "STOCK_STAGED", "STOCK_REJECTED"]
+              }
+            }
+          },
+          "then": {
+            "required": ["checkedRemaining", "checkSource"],
+            "properties": {
+              "action": {
+                "const": "DECREMENT_STOCK"
+              }
+            }
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": ["checkedRemaining"]
+                },
+                {
+                  "required": ["checkSource"]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "STOCK_APPLIED"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "checkSource": {
+                "const": "CURRENT"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "STOCK_STAGED"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "checkSource": {
+                "const": "WORKING_COPY"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "ALLOCATION_APPLIED",
+                  "ALLOCATION_STAGED",
+                  "WORK_SKIPPED"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "action": {
+                "const": "RECORD_ALLOCATION"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "TRANSACTION_COMMITTED"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "action": {
+                "const": "COMMIT"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "TRANSACTION_ABORTED"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "action": {
+                "enum": ["COMMIT", "ABORT"]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "STOCK_REJECTED",
+                  "WORK_SKIPPED",
+                  "TRANSACTION_ABORTED"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": ["reason"]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": ["reason"]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": ["STOCK_REJECTED", "WORK_SKIPPED"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "reason": {
+                "const": "INSUFFICIENT_STOCK"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": ["TRANSACTION_COMMITTED", "TRANSACTION_ABORTED"]
+              }
+            }
+          },
+          "then": {},
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": ["expectedRevision"]
+                },
+                {
+                  "required": ["actualRevision"]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["expectedRevision"]
+          },
+          "then": {
+            "required": ["actualRevision"],
+            "properties": {
+              "action": {
+                "const": "COMMIT"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["actualRevision"]
+          },
+          "then": {
+            "required": ["expectedRevision"],
+            "properties": {
+              "action": {
+                "const": "COMMIT"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "TRANSACTION_ABORTED"
+              },
+              "reason": {
+                "const": "REVISION_CONFLICT"
+              }
+            },
+            "required": ["reason"]
+          },
+          "then": {
+            "required": ["expectedRevision", "actualRevision"],
+            "properties": {
+              "action": {
+                "const": "COMMIT"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "reason": {
+                "enum": ["USER_ABORT", "INSUFFICIENT_STOCK"]
+              }
+            },
+            "required": ["reason"]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": ["expectedRevision"]
+                },
+                {
+                  "required": ["actualRevision"]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "reason": {
+                "const": "USER_ABORT"
+              }
+            },
+            "required": ["reason"]
+          },
+          "then": {
+            "properties": {
+              "kind": {
+                "const": "TRANSACTION_ABORTED"
+              },
+              "action": {
+                "const": "ABORT"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "committedTransactions",
+        "abortedTransactions",
+        "conflictedTransactions",
+        "abortedTransactionsWithEffects",
+        "finalRemainingUnits",
+        "finalAllocatedUnits",
+        "invariantStatus"
+      ],
+      "properties": {
+        "committedTransactions": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "abortedTransactions": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "conflictedTransactions": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "abortedTransactionsWithEffects": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "finalRemainingUnits": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "finalAllocatedUnits": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "invariantStatus": {
+          "enum": ["PRESERVED", "VIOLATED"]
+        },
+        "firstViolationStepId": {
+          "$ref": "https://hld-with-ui.dev/schemas/transaction-atomicity.input.schema.json#/$defs/identifier"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "invariantStatus": {
+                "const": "VIOLATED"
+              }
+            }
+          },
+          "then": {
+            "required": ["firstViolationStepId"]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": ["firstViolationStepId"]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
