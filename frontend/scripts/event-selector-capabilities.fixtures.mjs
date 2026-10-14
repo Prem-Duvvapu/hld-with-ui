@@ -294,3 +294,108 @@ test("data-access target requires its closed operation family and exactly one ou
   ])
     assert.equal(validatesTarget(value), false, JSON.stringify(value));
 });
+
+test("reservation step target kinds derive from its actual required canonical outcome identities", () => {
+  const target = checkpoints.items.properties.target.oneOf.find((branch) =>
+    branch.required.includes("stepId"),
+  );
+  const references = {
+    "#/components/schemas/ReservationIdentifier": schemas.ReservationIdentifier,
+  };
+  assert.deepEqual(
+    kindsSupportingSelectors(
+      schemas.ReservationOutcome,
+      ["stepId"],
+      references,
+    ),
+    target.properties.kind.enum,
+  );
+  assert.equal(target.properties.kind.enum.length, 3);
+  for (const kind of target.properties.kind.enum)
+    assert.equal(
+      eventSupportsSelector(
+        schemas.ReservationOutcome,
+        kind,
+        "stepId",
+        references,
+      ),
+      true,
+    );
+  assert.equal(
+    eventSupportsSelector(
+      schemas.ReservationOutcome,
+      "READ_OBSERVED",
+      "stepId",
+    ),
+    false,
+  );
+  assert.equal(
+    eventSupportsSelector(
+      schemas.ReservationOutcome,
+      "READ_OBSERVED",
+      "operationId",
+      references,
+    ),
+    false,
+  );
+  const optional = structuredClone(schemas.ReservationOutcome);
+  optional.required = optional.required.filter((field) => field !== "stepId");
+  assert.equal(
+    eventSupportsSelector(optional, "READ_OBSERVED", "stepId", references),
+    false,
+  );
+  for (const owner of [
+    null,
+    { type: ["string", "null"] },
+    { $ref: "#/components/schemas/ReservationIdentifier" },
+  ])
+    assert.equal(
+      eventSupportsSelector(
+        schemas.ReservationOutcome,
+        "READ_OBSERVED",
+        "stepId",
+        {
+          "#/components/schemas/ReservationIdentifier": owner,
+        },
+      ),
+      false,
+    );
+});
+test("reservation step target stays closed, unique and separate from every legacy family", () => {
+  const ajv = new Ajv2020({ strict: true, strictRequired: false });
+  const validatesTarget = ajv.compile(checkpoints.items.properties.target);
+  const base = {
+    stepId: "attempt-b",
+    kind: "RESERVATION_REJECTED",
+    occurrence: 1,
+  };
+  for (const kind of [
+    "READ_OBSERVED",
+    "RESERVATION_ACCEPTED",
+    "RESERVATION_REJECTED",
+  ])
+    assert.equal(validatesTarget({ ...base, kind }), true);
+  assert.equal(validatesTarget({ ...base, stepId: "s".repeat(32) }), true);
+  for (const value of [
+    null,
+    [],
+    true,
+    "attempt-b",
+    {},
+    { ...base, occurrence: 0 },
+    { ...base, occurrence: 2 },
+    { ...base, occurrence: 1.5 },
+    { ...base, occurrence: "1" },
+    { ...base, stepId: null },
+    { ...base, stepId: "attempt-b\n" },
+    { ...base, stepId: "s".repeat(33) },
+    { ...base, kind: "TENANT_RANGE" },
+    { ...base, kind: "reservation.accepted" },
+    { ...base, operation: 1 },
+    { ...base, jobId: "job-1" },
+    { ...base, messageId: "m1", attemptId: "m1-a1" },
+    { ...base, operationId: "q1" },
+    { ...base, extra: true },
+  ])
+    assert.equal(validatesTarget(value), false, JSON.stringify(value));
+});

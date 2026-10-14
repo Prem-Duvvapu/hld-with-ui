@@ -679,3 +679,107 @@ test("reject an unresolved operation-identity schema reference rather than trust
     },
   );
 });
+
+const reservationTarget = {
+  stepId: "attempt-b",
+  kind: "RESERVATION_REJECTED",
+  occurrence: 1,
+};
+for (const [name, target, expected] of [
+  [
+    "reservation target mixed with cache operation",
+    { ...reservationTarget, operation: 1 },
+    /additional properties/,
+  ],
+  [
+    "reservation target mixed with queue job",
+    { ...reservationTarget, jobId: "job-1" },
+    /additional properties/,
+  ],
+  [
+    "reservation target mixed with delivery pair",
+    { ...reservationTarget, messageId: "m1", attemptId: "m1-a1" },
+    /additional properties/,
+  ],
+  [
+    "reservation target mixed with access operation",
+    { ...reservationTarget, operationId: "q1" },
+    /additional properties/,
+  ],
+  [
+    "reservation target occurrence two",
+    { ...reservationTarget, occurrence: 2 },
+    /must be equal to constant/,
+  ],
+  [
+    "reservation step identity with trailing newline",
+    { ...reservationTarget, stepId: "attempt-b\n" },
+    /must NOT be valid/,
+  ],
+  [
+    "reservation target missing identity",
+    { kind: "RESERVATION_REJECTED", occurrence: 1 },
+    /required property 'stepId'/,
+  ],
+  [
+    "reservation target null identity",
+    { ...reservationTarget, stepId: null },
+    /must be string/,
+  ],
+  [
+    "reservation target unsupported kind",
+    { ...reservationTarget, kind: "TRANSACTION_COMMITTED" },
+    /never returns outcome kind TRANSACTION_COMMITTED/,
+  ],
+])
+  test(`reject checkpoint ${name}`, () =>
+    rejectCheckpointTarget("transactions-isolation", target, expected));
+for (const topic of [
+  "cache-aside",
+  "queues-tail-latency",
+  "queues-delivery",
+  "data-access-models",
+])
+  test(`reject reservation step target on ${topic} without its outcome capability`, () =>
+    rejectCheckpointTarget(
+      topic,
+      reservationTarget,
+      /outcomes do not support target selector stepId/,
+    ));
+test("reject a data-access operation target on reservation outcomes without widening either kind family", () => {
+  rejectCheckpointTarget(
+    "transactions-isolation",
+    { operationId: "q1", kind: "TENANT_RANGE", occurrence: 1 },
+    /outcomes do not support target selector operationId/,
+  );
+});
+test("reject an event selector attached to the untimed reservation result", () => {
+  rejectCheckpointTarget(
+    "transactions-isolation",
+    { operation: 1, kind: "cache.fill", occurrence: 1 },
+    /transactions-isolation events do not support target selector operation/,
+  );
+});
+test("accept actual reservation step checkpoints without adding a fabricated event collection", () => {
+  checkChange(
+    () => {},
+    /Validated/,
+    () => {},
+    () => {},
+    0,
+  );
+});
+test("reject an unresolved reservation step-identity schema reference", () => {
+  rejectChange(
+    () => {},
+    /outcomes do not support target selector stepId/,
+    () => {},
+    (fixture) => {
+      const path = join(fixture, "contracts/openapi.json");
+      const api = JSON.parse(readFileSync(path, "utf8"));
+      api.components.schemas.ReservationOutcome.properties.stepId.$ref =
+        "#/components/schemas/MissingStepIdentity";
+      writeFileSync(path, JSON.stringify(api));
+    },
+  );
+});

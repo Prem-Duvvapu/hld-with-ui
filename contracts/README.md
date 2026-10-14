@@ -181,3 +181,10 @@ requires integer JSON tokens and rejects decimal/exponent tokens, even when thei
 value is integral; JSON Schema integer validation alone cannot distinguish those spellings.
 Existing 400/413/422/503/500 guards apply; business rejection and unsafe invariant failure are
 valid completed 200 analyses. [HLD-16B](../docs/work-items/HLD-16B.md) records integration. See [HLD-16A](../docs/work-items/HLD-16A.md).
+
+HTTP `1.8.0` adds the fifth closed Guided target `{stepId, kind, occurrence: 1}` for actual
+reservation outcomes. Its three kind names and scalar identifier owner are checked against
+canonical ReservationOutcome capabilities. It does not widen the data-access operationId
+family or three event families. Content associates each selector with its actual model family;
+Java fixtures verify the named step exists in its preset. Legacy constructors, omitted-null
+wire shapes and renderer matchers remain compatible. See [HLD-16C](../docs/work-items/HLD-16C.md).

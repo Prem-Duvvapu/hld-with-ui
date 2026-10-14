@@ -234,3 +234,13 @@ APIs and the direct draft route. Presets are selected by semantic ID; Run is exp
 Playground selects initial/post-step snapshots without manufacturing outcomes; whole-schedule
 metrics remain separately labelled. Invalid ordering is rejected without automatic repair. See [decision 0031](decisions/0031-reservation-interleavings-and-invariants.md)
 and [HLD-16A](work-items/HLD-16A.md).
+
+## Guided reservation steps
+
+HTTP 1.8 adds the closed stepId/kind/occurrence1 checkpoint family. Select a unique actual
+returned outcome and show its complete postState; reject missing/wrong-kind/duplicate matches.
+Eight Guided checkpoints use five unchanged presets and all three outcome kinds. The unsafe
+first acceptance is a preserved prefix; the empty-stock first attempt shows one rejected actor
+and one remaining read observation of zero. Later metrics never become these selected facts.
+Manual Architecture and unsafe/conditional/serial sequences are authored illustrations.
+[HLD-16C](work-items/HLD-16C.md) records actual verification and remaining curriculum gates.

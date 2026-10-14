@@ -73,3 +73,16 @@ contribution is HLD-16C: Java-verified Guided checkpoints and authored inspectab
 and Operation sequence, following the unchanged model and [handoff](../TRANSACTIONS_IMPLEMENTATION_PLAN.md).
 Broader isolation/rollback/retries/idempotency, replication/partitioning/hashing and integrated
 Notification/Chat/Feed/Booking cases remain pending. This contribution does not complete P3-02.
+
+## Final delivery record
+
+[PR #73](https://github.com/Prem-Duvvapu/hld-with-ui/pull/73) final head
+`562d8c745e210a2e89281d7ea0ba0691b6a8eb62` passed required Quality, Browser journeys and
+Packaged runtime plus GitGuardian/Vercel. Run `38599533781` tested merge `d07612a`:
+475 Java cases (one existing skip), 574 units, 240 contracts, 212 ordinary browser journeys,
+20 UI performance and 20 reading checks; launcher, copied jar/container and owned cleanup passed.
+Squash `2fc1816894834ed86efbf4363aa43d9ee73f4f4a` merged 2026-10-14 16:47:04 UTC.
+Owner main updated with `output/` preserved; owned branch deleted. [HLD-16C](HLD-16C.md)
+adds the next bounded teaching views. Four hosted read-only requests through Vercel timed out
+at the 15-second bound on this date; this does not identify its deployed commit or prove recovery.
+Raw observations: `/tmp/hld-16b-hosted/`. The deployment incident remains open.

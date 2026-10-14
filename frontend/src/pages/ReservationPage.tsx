@@ -4,6 +4,11 @@ import type { ReservationDescriptor, TopicDetail } from "../api/types";
 import { ErrorState, LoadingState } from "../components/AsyncState";
 import { ModuleShell } from "../components/ModuleShell";
 import { ReservationPlayground } from "../features/reservations/ReservationPlayground";
+import { ReservationGuided } from "../features/reservations/ReservationGuided";
+import {
+  ReservationArchitectureView,
+  ReservationSequenceView,
+} from "../features/reservations/ReservationConceptViews";
 import { PracticeView } from "../features/learning/PracticeView";
 import { StudyView } from "../features/learning/StudyView";
 import { NotFoundPage } from "./NotFoundPage";
@@ -34,8 +39,9 @@ export function ReservationPage() {
           !topic.lessonMarkdown.trim() ||
           !Array.isArray(topic.questions) ||
           !Array.isArray(topic.checkpoints) ||
-          topic.checkpoints.length > 0 ||
-          topic.topic.capabilities.includes("guided") ||
+          (topic.topic.capabilities.includes("guided")
+            ? !topic.checkpoints.length
+            : topic.checkpoints.length > 0) ||
           topic.questions.length === 0
         ) {
           setError(
@@ -99,6 +105,11 @@ export function ReservationPage() {
         topic={data.topic.topic}
         tabs={[
           { id: "playground", label: "Playground" },
+          ...(data.topic.topic.capabilities.includes("guided")
+            ? [{ id: "guided", label: "Guided" }]
+            : []),
+          { id: "architecture", label: "Architecture" },
+          { id: "sequence", label: "Operation sequence" },
           { id: "study", label: "Study" },
           { id: "practice", label: "Practice" },
         ]}
@@ -110,6 +121,15 @@ export function ReservationPage() {
               descriptor={data.descriptor}
             />
           ),
+          guided: data.topic.topic.capabilities.includes("guided") && (
+            <ReservationGuided
+              checkpoints={data.topic.checkpoints}
+              descriptor={data.descriptor}
+              contentVersion={data.topic.topic.contentVersion}
+            />
+          ),
+          architecture: <ReservationArchitectureView />,
+          sequence: <ReservationSequenceView />,
           study: (
             <StudyView
               markdown={data.topic.lessonMarkdown}

@@ -586,7 +586,7 @@ for (const theme of ["light", "dark"] as const) {
 }
 
 for (const theme of ["light", "dark"] as const) {
-  test(`native 200% zoom keeps reservation three views usable in ${theme}`, async ({
+  test(`native 200% zoom keeps reservation six views usable in ${theme}`, async ({
     baseURL,
   }, testInfo) => {
     test.setTimeout(90_000);
@@ -649,6 +649,36 @@ for (const theme of ["light", "dark"] as const) {
                 .getByRole("tabpanel", { name: "Playground", exact: true })
                 .getByRole("article", { name: "Initial state", exact: true }),
             ).toBeVisible();
+          }
+          if (name === "Guided") {
+            await page
+              .getByRole("button", { name: "Run and reveal", exact: true })
+              .click();
+            await expect(
+              page
+                .getByRole("tabpanel", { name: "Guided", exact: true })
+                .getByRole("article", {
+                  name: "Evidence for read-b",
+                  exact: true,
+                }),
+            ).toBeVisible();
+          }
+          if (name === "Architecture") {
+            const inspect = page
+              .getByRole("button", { name: /^Inspect / })
+              .last();
+            await inspect.focus();
+            await page.keyboard.press("Enter");
+            await expect(inspect).toBeFocused();
+          }
+          if (name === "Operation sequence") {
+            const next = page.getByRole("button", {
+              name: "Next path step",
+              exact: true,
+            });
+            await next.focus();
+            await page.keyboard.press("Enter");
+            await expect(next).toBeFocused();
           }
           await expect
             .poll(() =>

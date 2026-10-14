@@ -166,7 +166,7 @@ const publishedWorkshopStages = [
 ];
 
 // Evidence kinds and selectors derive from the actual named run-result collection.
-// Data-access operation identities select untimed outcomes; legacy families retain events.
+// Data-access operation and reservation step identities select untimed outcomes; event families retain events.
 function eventSchema(simulationId, collection = "events") {
   const ref = (schema) => schema?.$ref?.split("/").at(-1);
   const result =
@@ -349,9 +349,11 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
     );
     // Presets and trace resolution are checked by Java tests, which run them.
     for (const checkpoint of checkpoints) {
-      const collection = Object.hasOwn(checkpoint.target ?? {}, "operationId")
-        ? "outcomes"
-        : "events";
+      const collection =
+        Object.hasOwn(checkpoint.target ?? {}, "operationId") ||
+        Object.hasOwn(checkpoint.target ?? {}, "stepId")
+          ? "outcomes"
+          : "events";
       checkpointIds.push(`${entry.id}/${checkpoint.id}`);
       activityIds.push(
         `${checkpoint.id}-prediction`,
@@ -375,6 +377,7 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
         "messageId",
         "attemptId",
         "operationId",
+        "stepId",
       ]) {
         if (
           Object.hasOwn(checkpoint.target ?? {}, selector) &&

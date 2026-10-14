@@ -1,0 +1,238 @@
+[
+  {
+    "id": "read-is-preview",
+    "title": "A read has not reserved the unit",
+    "simulationId": "transactions-isolation",
+    "presetId": "protected-baseline",
+    "target": { "stepId": "read-b", "kind": "READ_OBSERVED", "occurrence": 1 },
+    "prompt": "A and B each want the last unit. After both READs under the conditional strategy, predict their observations, shared remaining units and accepted allocations. Has either reservation acquired the unit?",
+    "lookFor": "A and B both have READ_OBSERVED with observedRemaining 1. Shared remaining is 1, allocated is 0, and the allocation list is empty.",
+    "explanation": "Java records B's observation of 1 beside A's earlier observation of 1. Both actor statuses are READ_OBSERVED, while remaining stock stays 1, allocated units stay 0 and accounted units are 1. All three invariant flags are true. Neither read appended an allocation. Under this conditional strategy the observations are previews: each later attempt will check current stock. This snapshot says nothing yet about either acceptance decision.",
+    "tradeoff": {
+      "prompt": "A teammate wants to tell the caller that seeing available stock guarantees the reservation. Which response fits this evidence?",
+      "options": [
+        {
+          "id": "preview-only",
+          "label": "Treat the read as a preview and confirm at the acceptance boundary",
+          "feedback": "The selected read has no allocation. The service needs an explicit check-and-change boundary before promising a reservation; the protected strategy checks current stock there."
+        },
+        {
+          "id": "read-reserves",
+          "label": "Treat the available-stock response as a confirmed reservation",
+          "feedback": "A's observation is 1, but Java still reports zero allocated units and no allocation records. Another reservation can act before A attempts."
+        }
+      ],
+      "recommendedOptionId": "preview-only"
+    }
+  },
+  {
+    "id": "first-acceptance-looks-safe",
+    "title": "The first acceptance looks consistent",
+    "simulationId": "transactions-isolation",
+    "presetId": "unsafe-baseline",
+    "target": {
+      "stepId": "attempt-a",
+      "kind": "RESERVATION_ACCEPTED",
+      "occurrence": 1
+    },
+    "prompt": "Both reservations have observed 1. Inspect A's stale attempt before B attempts: predict the checked value, remaining units, allocated units and B's saved observation. Can this step certify the whole schedule?",
+    "lookFor": "A checks SNAPSHOT 1, accepts quantity 1 and assigns remaining 0. Allocated units are 1; B remains READ_OBSERVED with its saved 1. All three checks still hold here.",
+    "explanation": "A uses its saved observation: 1 minus quantity 1 assigns remaining 0 and appends A's allocation. Java reports allocated 1 and accounted 1, with nonnegative stock, capacity and conservation all preserved at this selected step. B still retains observedRemaining 1 and has not attempted. A consistent prefix cannot certify that B's later stale assignment preserves the rule. Acceptance is local model state, not a durable commit.",
+    "tradeoff": {
+      "prompt": "The dashboard is green immediately after A accepts. What should the reviewer examine before trusting the stale algorithm?",
+      "options": [
+        {
+          "id": "later-contender",
+          "label": "Inspect B's later attempt and its decision source",
+          "feedback": "B's saved 1 survives A's change to current 0. The later step is the counterexample, so a passing selected prefix does not prove safety for the full schedule."
+        },
+        {
+          "id": "green-enough",
+          "label": "Approve the algorithm because this selected step passed",
+          "feedback": "The three Java flags describe the selected prefix. They do not predict or approve the unobserved later step, where B can allocate from its stale value."
+        }
+      ],
+      "recommendedOptionId": "later-contender"
+    }
+  },
+  {
+    "id": "stale-second-acceptance",
+    "title": "Two acceptances spend one observed unit",
+    "simulationId": "transactions-isolation",
+    "presetId": "unsafe-baseline",
+    "target": {
+      "stepId": "attempt-b",
+      "kind": "RESERVATION_ACCEPTED",
+      "occurrence": 1
+    },
+    "prompt": "A has already allocated the last unit. B still remembers 1. Predict B's checked value, assignment, total allocated units and each invariant flag under the stale strategy.",
+    "lookFor": "B checks SNAPSHOT 1 and is accepted. Its assignment leaves remaining 0 again; allocated becomes 2. Nonnegative stock stays true, but capacity and conservation are false.",
+    "explanation": "B checks saved 1 against quantity 1 and writes 1 minus 1 equals 0, replacing the shared value that was already 0. Java appends B's allocation beside A's, so allocated units become 2 and accounted units become 0 plus 2 equals 2, although initial stock was 1. Remaining stock is nonnegative; allocatedWithinCapacity and unitsConserved are false. The whole-schedule firstViolationStepId is attempt-b. This is stale assignment, not decrementing current stock to minus one.",
+    "tradeoff": {
+      "prompt": "A teammate proposes adding only a check that remaining stock never goes below zero. What does this counterexample require instead?",
+      "options": [
+        {
+          "id": "current-boundary",
+          "label": "Protect the current condition, stock change and allocation together",
+          "feedback": "The counter stays nonnegative while two units are allocated from one. The proposed boundary must protect the relationship between stock and recorded allocations, not only the sign of a counter."
+        },
+        {
+          "id": "nonnegative-only",
+          "label": "Use nonnegative remaining stock as the complete safety test",
+          "feedback": "Java reports remaining 0 with nonnegative=true in this failing state. That single check misses both capacity and conservation breaches."
+        }
+      ],
+      "recommendedOptionId": "current-boundary"
+    }
+  },
+  {
+    "id": "current-check-boundary",
+    "title": "Name what acceptance protects together",
+    "simulationId": "transactions-isolation",
+    "presetId": "protected-baseline",
+    "target": {
+      "stepId": "attempt-a",
+      "kind": "RESERVATION_ACCEPTED",
+      "occurrence": 1
+    },
+    "prompt": "Keep the shared-read schedule but choose the conditional strategy. At A's attempt, predict the decision source and shared-state changes. Which three parts form the protected action?",
+    "lookFor": "A checks CURRENT 1 for quantity 1, leaves remaining 0 and appends A's allocation. Allocated is 1, accounted is 1, and every invariant flag is true.",
+    "explanation": "A's attempt checks current shared stock 1, subtracts quantity 1 and appends its allocation in one indivisible modeled transition. Java reports remaining 0, allocated 1 and accounted 1, with all three flags preserved. The protected scope includes the current condition, stock mutation and allocation record. B's earlier observed value remains 1; this snapshot does not claim B has already been rejected. A's acceptance supplies no crash, durability, rollback or external-effect guarantee.",
+    "tradeoff": {
+      "prompt": "The production service atomically changes its counter, then independently records the reservation. What boundary would you review?",
+      "options": [
+        {
+          "id": "coordinate-record",
+          "label": "Verify coordination of the current check, counter and reservation record",
+          "feedback": "The model protects all three inside one action. A separate record write falls outside a counter-only boundary; the real transaction and failure behavior need their own evidence."
+        },
+        {
+          "id": "counter-sufficient",
+          "label": "Assume a counter-only atomic update establishes the full model guarantee",
+          "feedback": "The invariant connects remaining stock with allocation records. Atomicity of one counter alone does not establish that the separate record stays coordinated or survives failure consistently."
+        }
+      ],
+      "recommendedOptionId": "coordinate-record"
+    }
+  },
+  {
+    "id": "stale-preview-rejected",
+    "title": "The saved preview does not decide B's attempt",
+    "simulationId": "transactions-isolation",
+    "presetId": "protected-baseline",
+    "target": {
+      "stepId": "attempt-b",
+      "kind": "RESERVATION_REJECTED",
+      "occurrence": 1
+    },
+    "prompt": "B earlier observed 1, but A has now allocated the unit. Predict B's checked value, status, retained observation and rejection reason. Does rejecting B change stock or the allocation list?",
+    "lookFor": "B retains observedRemaining 1 but checks CURRENT 0, becomes REJECTED and reports INSUFFICIENT_STOCK. Remaining stays 0 and allocated stays 1, with only A's allocation.",
+    "explanation": "The conditional decision uses current 0, not B's saved preview 1. Quantity 1 no longer fits, so Java reports RESERVATION_REJECTED with INSUFFICIENT_STOCK. B's status becomes REJECTED while its observation remains 1. Remaining stock stays 0, the allocation list still contains only A, allocated units are 1, and all three flags remain true. Rejection changes actor state; it does not append an allocation. The valid schedule still completes successfully as a model run.",
+    "tradeoff": {
+      "prompt": "A caller previously saw available stock but receives this rejection. How should the service describe the outcome?",
+      "options": [
+        {
+          "id": "business-outcome",
+          "label": "Explain that another reservation won before the current-state check",
+          "feedback": "A preview can become stale. The authoritative acceptance boundary now sees no available unit, so a readable insufficient-stock business outcome is consistent with the protected rule."
+        },
+        {
+          "id": "retry-promises-unit",
+          "label": "Promise that retrying the same quantity must eventually succeed",
+          "feedback": "The model supplies neither replenishment nor retries, fairness or idempotency. Repeating a request does not establish that another unit exists or that an uncertain earlier effect is deduplicated."
+        }
+      ],
+      "recommendedOptionId": "business-outcome"
+    }
+  },
+  {
+    "id": "serial-order-hides-race",
+    "title": "One serial test can hide the race",
+    "simulationId": "transactions-isolation",
+    "presetId": "serial-control",
+    "target": {
+      "stepId": "attempt-b",
+      "kind": "RESERVATION_REJECTED",
+      "occurrence": 1
+    },
+    "prompt": "Move B's read after A's attempt: READ A, ATTEMPT A, READ B, ATTEMPT B. Under the stale strategy, predict B's observation and outcome. What does this passing run fail to prove?",
+    "lookFor": "B observes 0 after A accepts, then checks SNAPSHOT 0 and rejects. Remaining 0 plus allocated 1 accounts for initial 1, so all three flags are true for this order.",
+    "explanation": "In this serial schedule A accepts before B reads. B therefore saves 0 and later checks that saved 0 against quantity 1, producing INSUFFICIENT_STOCK. Java reports one allocation, remaining 0, allocated 1 and accounted 1, with all checks preserved. The stale algorithm did not gain a current-state guarantee; this favorable input order removed the conflicting shared reads. Returning to READ A, READ B, ATTEMPT A, ATTEMPT B exposes its breach.",
+    "tradeoff": {
+      "prompt": "A test suite contains only this successful serial order. What additional test best challenges the claimed reservation guarantee?",
+      "options": [
+        {
+          "id": "shared-read-test",
+          "label": "Test a legal order where both read before either attempt",
+          "feedback": "The shared-read fixture lets both actors save 1, exposing the decision-source difference. Legal interleavings test the mechanism; their counts are not production failure probabilities."
+        },
+        {
+          "id": "repeat-serial",
+          "label": "Repeat the same serial schedule and call that concurrent coverage",
+          "feedback": "Repeating a deterministic input reproduces the same favorable order. It does not evaluate the competing stale observations that caused the counterexample."
+        }
+      ],
+      "recommendedOptionId": "shared-read-test"
+    }
+  },
+  {
+    "id": "capacity-not-conservation",
+    "title": "Capacity can pass while units stop adding up",
+    "simulationId": "transactions-isolation",
+    "presetId": "conservation-gap",
+    "target": {
+      "stepId": "attempt-b",
+      "kind": "RESERVATION_ACCEPTED",
+      "occurrence": 1
+    },
+    "prompt": "Start with two units; A and B each request one and both read 2. Under stale assignment, predict the final remaining, allocated and accounted units. Which check fails even if allocated units fit capacity?",
+    "lookFor": "B checks SNAPSHOT 2 and writes remaining 1 again. Allocated is 2 and accounted is 3. Nonnegative stock and capacity are true, but conservation is false.",
+    "explanation": "A assigns 2 minus 1 equals 1 and allocates one unit. B repeats that saved-value assignment, leaving remaining 1 while the allocation list grows to two units. Java reports accountedUnits 3 against initial stock 2. Two allocated units fit initial capacity, and remaining is nonnegative, but remaining plus allocated does not equal initial stock. Thus only unitsConserved is false at attempt-b. The broken counter/allocation relationship can exist without allocating above capacity.",
+    "tradeoff": {
+      "prompt": "Operations reports no capacity breach in this run. What evidence should the teammate still reconcile?",
+      "options": [
+        {
+          "id": "reconcile-units",
+          "label": "Check the stock and allocation relationship as a separate rule",
+          "feedback": "Java's accounted 3 exceeds initial 2 even though allocated 2 fits capacity 2. Reconciliation must address that relationship; capacity and conservation are distinct checks."
+        },
+        {
+          "id": "capacity-complete",
+          "label": "Conclude that passing capacity proves all reservation data consistent",
+          "feedback": "This selected outcome passes capacity while failing conservation. A green capacity flag does not replace the other Java-reported invariants."
+        }
+      ],
+      "recommendedOptionId": "reconcile-units"
+    }
+  },
+  {
+    "id": "empty-stock-valid-rejection",
+    "title": "Zero stock produces valid rejected work",
+    "simulationId": "transactions-isolation",
+    "presetId": "empty-stock",
+    "target": {
+      "stepId": "attempt-a",
+      "kind": "RESERVATION_REJECTED",
+      "occurrence": 1
+    },
+    "prompt": "Initial stock is zero and both reservations request one. At A's first attempt, predict its checked value, both actor statuses, allocation records and invariant flags. Is insufficient stock an invalid schedule or a valid business result?",
+    "lookFor": "Both actors observed 0. A checks SNAPSHOT 0, becomes REJECTED and reports INSUFFICIENT_STOCK; B is still READ_OBSERVED. Remaining, allocated and accounted units are 0; allocations are empty and all flags are true.",
+    "explanation": "Zero initial stock is valid model input. Both reads save 0. A then checks saved 0 against quantity 1 and rejects without changing shared stock or appending an allocation. At this selected step A is REJECTED, while B is still READ_OBSERVED and has not attempted; both retain observations 0. Java reports remaining 0, allocated 0, accounted 0 and all three invariant flags true. This is a valid insufficient-stock business decision. Attempt-before-read validation or an unavailable API supplies different evidence. B's later rejection is outside this selected snapshot.",
+    "tradeoff": {
+      "prompt": "The API evaluates this valid empty-stock workload. How should the app communicate the result and next action?",
+      "options": [
+        {
+          "id": "valid-rejection",
+          "label": "Show the rejected business decisions and let the learner change the workload",
+          "feedback": "Java completed the legal schedule and preserved the invariants. Keep the explicit rejection evidence visible; zero stock is a meaningful experiment, not missing data."
+        },
+        {
+          "id": "server-error",
+          "label": "Replace the result with a generic execution failure",
+          "feedback": "The schedule is valid and has returned authoritative decisions. Calling every business rejection a server failure hides the reason and confuses it with an unavailable model."
+        }
+      ],
+      "recommendedOptionId": "valid-rejection"
+    }
+  }
+]

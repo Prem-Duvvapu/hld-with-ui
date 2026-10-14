@@ -13,6 +13,7 @@ export function resolveDeliveryCheckpoint(
     "operation" in target ||
     "jobId" in target ||
     "operationId" in target ||
+    "stepId" in target ||
     typeof target.messageId !== "string" ||
     typeof target.attemptId !== "string" ||
     typeof target.kind !== "string" ||
