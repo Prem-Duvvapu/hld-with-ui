@@ -77,7 +77,9 @@ it("offers exactly six implemented draft views without auto-running or exposing 
   );
   expect(api.reservationDescriptor).toHaveBeenCalledTimes(1);
   expect(api.runReservation).not.toHaveBeenCalled();
-  expect(document.title).toContain("Study · Transactions & Isolation");
+  await waitFor(() =>
+    expect(document.title).toContain("Study · Transactions & Isolation"),
+  );
 });
 
 it("preserves edited design and prediction across tabs and browser history without refetching", async () => {

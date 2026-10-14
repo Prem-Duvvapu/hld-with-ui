@@ -69,3 +69,11 @@ newcomer/teach-back/screen-reader/hosted and publication gates remain pending. N
 bounded isolation/abort/retry continuation before executable idempotency, following the
 remaining curriculum section of the [transaction plan](../TRANSACTIONS_IMPLEMENTATION_PLAN.md).
 Replication, partitioning, hashing and integrated Notification/Chat/Feed/Booking remain pending.
+
+## CI correction
+
+The first PR #74 run `38613726160` passed packaged runtime/security/Vercel but Quality's
+page test read the title before React's title effect ran (599/600 units passed). The assertion
+now waits for the actual title update; it retains the same expected title and timeout. No
+application behavior changed. The focused page suite and required new final-head CI verify
+this correction; do not merge based on the superseded run.
