@@ -1,0 +1,493 @@
+.retry-experience {
+  min-width: 0;
+  padding-block: 24px;
+}
+.retry-experience
+  :is(h2, h3, h4, h5, p, li, dt, dd, label, small, code, button, span, strong) {
+  overflow-wrap: anywhere;
+}
+.retry-draft {
+  margin-block: 24px;
+}
+.retry-draft > p {
+  max-width: 900px;
+  line-height: 1.65;
+}
+.retry-prediction {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 24px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.retry-prediction h2 {
+  margin: 6px 0 12px;
+  font-size: clamp(1.35rem, 2.5vw, 1.8rem);
+}
+.retry-prediction p {
+  line-height: 1.65;
+}
+.retry-workbench {
+  display: grid;
+  grid-template-columns: minmax(290px, 0.8fr) minmax(0, 1.6fr);
+  gap: 24px;
+  align-items: start;
+}
+.retry-controls,
+.retry-results,
+.retry-empty {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.retry-controls h2,
+.retry-empty h2 {
+  margin: 6px 0 16px;
+  font-size: 1.25rem;
+}
+.retry-controls h3 {
+  margin: 24px 0 12px;
+  font-size: 1.05rem;
+}
+.retry-inputs {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  min-width: 0;
+}
+.retry-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.retry-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  margin-bottom: 14px;
+}
+.retry-field > span {
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+.retry-field :is(input, select, textarea) {
+  min-width: 0;
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.retry-field textarea {
+  resize: vertical;
+}
+.retry-field :is(small) {
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.retry-field [aria-invalid="true"] {
+  border-color: var(--red);
+}
+.retry-field-error {
+  color: var(--red);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.retry-muted {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.65;
+}
+.retry-presets {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 20px;
+}
+.retry-experience button:not(.retry-run) {
+  max-width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-2);
+  color: var(--ink);
+  text-align: left;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.retry-experience button[aria-pressed="true"] {
+  border-color: var(--green);
+  background: color-mix(in srgb, var(--green) 8%, var(--surface));
+}
+.retry-experience button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.retry-experience :is(button, input, textarea, select, summary):focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}
+.retry-run {
+  width: 100%;
+  margin-top: 24px;
+}
+.retry-request-editors {
+  list-style: none;
+  display: grid;
+  gap: 14px;
+  padding: 0;
+}
+.retry-request-editors > li {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.retry-request-editors > li > p {
+  margin: 0 0 12px;
+}
+.retry-advanced {
+  min-width: 0;
+  padding-top: 22px;
+  margin-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.retry-advanced summary,
+.retry-trace summary,
+.retry-assumptions summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 650;
+  line-height: 1.6;
+}
+.retry-error {
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  border: 1px solid var(--red);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--red) 5%, var(--surface));
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.retry-notice,
+.retry-boundary {
+  padding: 12px 16px;
+  border-left: 3px solid var(--orange);
+  background: var(--surface-2);
+  font-size: 0.85rem;
+  line-height: 1.65;
+}
+.retry-notice {
+  margin-top: 0;
+}
+.retry-submitted {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.7;
+  margin-top: 0;
+}
+.retry-results-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block: 20px;
+}
+.retry-results-heading h3 {
+  margin: 5px 0 0;
+  font-size: 1.2rem;
+}
+.retry-version {
+  display: inline-block;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--muted);
+  font: 0.75rem var(--mono);
+}
+.retry-playback-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+}
+.retry-playback-controls label {
+  display: grid;
+  gap: 5px;
+  font-size: 0.75rem;
+}
+.retry-playback-controls select {
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.retry-position-label {
+  display: block;
+  margin-top: 18px;
+  font-size: 0.8rem;
+}
+.retry-slider {
+  display: block;
+  width: 100%;
+  margin-block: 12px;
+  accent-color: var(--green);
+}
+.retry-position {
+  color: var(--muted);
+  font: 0.8rem var(--mono);
+  line-height: 1.6;
+}
+.retry-event {
+  padding: 16px;
+  margin-block: 20px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+}
+.retry-event h4 {
+  margin: 6px 0 12px;
+  font-size: 1.05rem;
+}
+.retry-event p {
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+.retry-event dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+}
+.retry-event dt {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.retry-event dd {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+.retry-snapshot > section {
+  margin-block: 24px;
+}
+.retry-snapshot > section > h4 {
+  margin: 0 0 14px;
+  font-size: 1.05rem;
+}
+.retry-caller-cards,
+.retry-attempt-cards {
+  display: grid;
+  gap: 12px;
+}
+.retry-state-card {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+}
+.retry-state-card h5 {
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.retry-state-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0;
+}
+.retry-state-card dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.retry-state-card dd {
+  margin: 5px 0 0;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+.retry-state-card :is(ul, ol) {
+  padding-left: 20px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.retry-state-card li {
+  margin-block: 8px;
+}
+.retry-server {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.retry-budget {
+  padding: 12px 16px;
+  border: 1px dashed var(--line);
+  border-radius: 7px;
+  font-size: 0.85rem;
+}
+.retry-state-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.retry-state-pair p {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 12px;
+  border-radius: 7px;
+  background: var(--surface-2);
+}
+.retry-state-pair span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.retry-state-pair strong {
+  font-size: 0.95rem;
+}
+.retry-trace {
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.retry-trace > label {
+  margin-top: 20px;
+}
+.retry-trace-list {
+  padding-left: 22px;
+}
+.retry-trace-list li {
+  margin-block: 14px;
+  padding-left: 3px;
+}
+.retry-trace-list button {
+  width: 100%;
+}
+.retry-trace-list p {
+  font-size: 0.85rem;
+  line-height: 1.65;
+}
+.retry-summary {
+  padding: 18px;
+  margin-top: 26px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.retry-summary h3 {
+  margin: 6px 0 12px;
+  font-size: 1.2rem;
+}
+.retry-summary p {
+  font-size: 0.85rem;
+  line-height: 1.65;
+}
+.retry-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-block: 22px;
+}
+.retry-metrics > div {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.retry-metrics dt {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.retry-metrics dd {
+  margin: 7px 0 0;
+  font-size: 1.5rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.retry-ratios {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.retry-ratios article {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+}
+.retry-ratios h4 {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+}
+.retry-ratios strong {
+  font-size: 1.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.retry-assumptions {
+  padding-top: 22px;
+  margin-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.retry-assumptions li {
+  margin-block: 10px;
+  font-size: 0.85rem;
+  line-height: 1.65;
+}
+@media (max-width: 1050px) {
+  .retry-workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 650px) {
+  .retry-prediction {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .retry-controls,
+  .retry-results,
+  .retry-empty,
+  .retry-prediction {
+    padding: 16px;
+  }
+  .retry-server,
+  .retry-ratios {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .retry-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 400px) {
+  .retry-fields,
+  .retry-state-card dl,
+  .retry-state-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .retry-request-editors > li,
+  .retry-state-card,
+  .retry-summary {
+    padding: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .retry-experience * {
+    scroll-behavior: auto;
+  }
+}
+
+.retry-state-card[data-selected="true"] {
+  border-color: var(--green);
+  box-shadow: inset 3px 0 var(--green);
+  background: color-mix(in srgb, var(--green) 5%, var(--surface));
+}

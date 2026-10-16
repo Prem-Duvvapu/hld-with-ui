@@ -1,0 +1,42 @@
+[
+  {
+    "id": "aws-timeouts-backoff-jitter",
+    "title": "Timeouts, retries and backoff with jitter",
+    "organization": "AWS",
+    "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
+    "sourceType": "engineering-article",
+    "relevantSections": "Timeouts; retries and backoff; jitter",
+    "supports": "Caller waiting, extra retry load and effect safety. The finite Java workload, timings and tie rules are original illustrative choices, not AWS measurements or SDK behavior.",
+    "reviewedAt": "2026-10-16"
+  },
+  {
+    "id": "aws-exponential-jitter",
+    "title": "Exponential Backoff and Jitter",
+    "organization": "AWS",
+    "url": "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/",
+    "sourceType": "engineering-article",
+    "relevantSections": "Capped backoff; Full Jitter; comparisons",
+    "supports": "Motivation for varying retry delays and workload-dependent comparison. No vendor code, graphs or universal jitter improvement claim is copied.",
+    "reviewedAt": "2026-10-16"
+  },
+  {
+    "id": "google-sre-retry-overload",
+    "title": "Handling Overload",
+    "organization": "Google SRE",
+    "url": "https://sre.google/sre-book/handling-overload/",
+    "sourceType": "book-chapter",
+    "relevantSections": "Handling overload errors; deciding to retry",
+    "supports": "Bounded retry policy and ownership. The modeled finite batch budget is distinct from the chapter's per-client retry ratio and other production policies.",
+    "reviewedAt": "2026-10-16"
+  },
+  {
+    "id": "grpc-deadlines-cancellation",
+    "title": "Deadlines",
+    "organization": "gRPC",
+    "url": "https://grpc.io/docs/guides/deadlines/",
+    "sourceType": "documentation",
+    "relevantSections": "Deadlines on the client; deadlines on the server; deadline propagation",
+    "supports": "Distinguishes client deadlines, RPC cancellation and server application responsibility for stopping spawned work. The Java model does not implement gRPC or cancellation.",
+    "reviewedAt": "2026-10-16"
+  }
+]

@@ -1,0 +1,221 @@
+{
+  "id": "timeouts-retries",
+  "title": "Timeouts & Retries",
+  "kind": "simulation",
+  "modelVersion": "1.0.0",
+  "description": "Separate caller waiting from accepted server work. Compare timeout, queue admission, backoff, seeded jitter and a shared retry budget in a bounded virtual-time model without cancellation or business effects.",
+  "limits": {
+    "maxSafeSeed": 9007199254740991,
+    "maxWorkers": 3,
+    "maxQueueCapacity": 12,
+    "maxRequests": 12,
+    "maxArrivalTimeMs": 10000,
+    "maxServiceTimeMs": 1000,
+    "maxAttemptTimeoutMs": 1000,
+    "maxOverallTimeoutMs": 10000,
+    "maxAttempts": 5,
+    "maxDelayMs": 1000,
+    "maxRetryBudget": 48,
+    "maxUnavailableUntilMs": 10000,
+    "maxIdLength": 32
+  },
+  "presets": [
+    {
+      "id": "late-work",
+      "title": "A timeout leaves server work running",
+      "description": "A retry adds another accepted unit of work while its timed-out predecessor still runs.",
+      "input": {
+        "schemaVersion": "1.0",
+        "modelVersion": "1.0.0",
+        "seed": 42,
+        "workers": 1,
+        "queueCapacity": 2,
+        "attemptTimeoutMs": 50,
+        "overallTimeoutMs": 500,
+        "maxAttempts": 2,
+        "backoff": "IMMEDIATE",
+        "baseDelayMs": 0,
+        "maxDelayMs": 0,
+        "jitter": "NONE",
+        "retryBudget": 48,
+        "unavailableUntilMs": 0,
+        "requests": [{ "id": "a", "arrivalTimeMs": 0, "serviceTimeMs": 80 }]
+      }
+    },
+    {
+      "id": "healthy-timeout",
+      "title": "Let the healthy response arrive",
+      "description": "A longer attempt timeout receives the same 80 ms work without a retry.",
+      "input": {
+        "schemaVersion": "1.0",
+        "modelVersion": "1.0.0",
+        "seed": 42,
+        "workers": 1,
+        "queueCapacity": 2,
+        "attemptTimeoutMs": 100,
+        "overallTimeoutMs": 500,
+        "maxAttempts": 2,
+        "backoff": "IMMEDIATE",
+        "baseDelayMs": 0,
+        "maxDelayMs": 0,
+        "jitter": "NONE",
+        "retryBudget": 48,
+        "unavailableUntilMs": 0,
+        "requests": [{ "id": "a", "arrivalTimeMs": 0, "serviceTimeMs": 80 }]
+      }
+    },
+    {
+      "id": "queue-full",
+      "title": "A retry meets a full admission boundary",
+      "description": "With no waiting room, the retry is rejected while the first accepted work keeps running.",
+      "input": {
+        "schemaVersion": "1.0",
+        "modelVersion": "1.0.0",
+        "seed": 42,
+        "workers": 1,
+        "queueCapacity": 0,
+        "attemptTimeoutMs": 50,
+        "overallTimeoutMs": 500,
+        "maxAttempts": 2,
+        "backoff": "IMMEDIATE",
+        "baseDelayMs": 0,
+        "maxDelayMs": 0,
+        "jitter": "NONE",
+        "retryBudget": 48,
+        "unavailableUntilMs": 0,
+        "requests": [{ "id": "a", "arrivalTimeMs": 0, "serviceTimeMs": 80 }]
+      }
+    },
+    {
+      "id": "immediate-outage",
+      "title": "Immediate retries spend attempts during an outage",
+      "description": "Three sends at the same virtual time cannot outwait an unavailable dependency.",
+      "input": {
+        "schemaVersion": "1.0",
+        "modelVersion": "1.0.0",
+        "seed": 42,
+        "workers": 1,
+        "queueCapacity": 2,
+        "attemptTimeoutMs": 50,
+        "overallTimeoutMs": 200,
+        "maxAttempts": 3,
+        "backoff": "IMMEDIATE",
+        "baseDelayMs": 0,
+        "maxDelayMs": 0,
+        "jitter": "NONE",
+        "retryBudget": 48,
+        "unavailableUntilMs": 60,
+        "requests": [{ "id": "a", "arrivalTimeMs": 0, "serviceTimeMs": 20 }]
+      }
+    },
+    {
+      "id": "backoff-recovery",
+      "title": "Backoff can reach a recovered dependency",
+      "description": "Compare explicit retry delays of 40 and 80 ms with the same authored outage.",
+      "input": {
+        "schemaVersion": "1.0",
+        "modelVersion": "1.0.0",
+        "seed": 42,
+        "workers": 1,
+        "queueCapacity": 2,
+        "attemptTimeoutMs": 50,
+        "overallTimeoutMs": 200,
+        "maxAttempts": 3,
+        "backoff": "EXPONENTIAL",
+        "baseDelayMs": 40,
+        "maxDelayMs": 80,
+        "jitter": "NONE",
+        "retryBudget": 48,
+        "unavailableUntilMs": 60,
+        "requests": [{ "id": "a", "arrivalTimeMs": 0, "serviceTimeMs": 20 }]
+      }
+    },
+    {
+      "id": "deadline-before-retry",
+      "title": "A proposed retry would miss the deadline",
+      "description": "Inspect an explicit blocked retry proposal, then the actual overall deadline failure.",
+      "input": {
+        "schemaVersion": "1.0",
+        "modelVersion": "1.0.0",
+        "seed": 42,
+        "workers": 1,
+        "queueCapacity": 2,
+        "attemptTimeoutMs": 50,
+        "overallTimeoutMs": 100,
+        "maxAttempts": 3,
+        "backoff": "EXPONENTIAL",
+        "baseDelayMs": 40,
+        "maxDelayMs": 80,
+        "jitter": "NONE",
+        "retryBudget": 48,
+        "unavailableUntilMs": 60,
+        "requests": [{ "id": "a", "arrivalTimeMs": 0, "serviceTimeMs": 20 }]
+      }
+    },
+    {
+      "id": "retry-budget",
+      "title": "Planning a retry does not reserve a shared token",
+      "description": "Two callers plan a retry, but only one can dispatch with the remaining batch budget.",
+      "input": {
+        "schemaVersion": "1.0",
+        "modelVersion": "1.0.0",
+        "seed": 42,
+        "workers": 1,
+        "queueCapacity": 2,
+        "attemptTimeoutMs": 50,
+        "overallTimeoutMs": 200,
+        "maxAttempts": 3,
+        "backoff": "EXPONENTIAL",
+        "baseDelayMs": 40,
+        "maxDelayMs": 80,
+        "jitter": "NONE",
+        "retryBudget": 1,
+        "unavailableUntilMs": 60,
+        "requests": [
+          { "id": "a", "arrivalTimeMs": 0, "serviceTimeMs": 20 },
+          { "id": "b", "arrivalTimeMs": 0, "serviceTimeMs": 20 }
+        ]
+      }
+    },
+    {
+      "id": "jittered-recovery",
+      "title": "Inspect seeded retry delays",
+      "description": "Replay actual inclusive jitter choices for two callers without assuming spread or success.",
+      "input": {
+        "schemaVersion": "1.0",
+        "modelVersion": "1.0.0",
+        "seed": 42,
+        "workers": 1,
+        "queueCapacity": 2,
+        "attemptTimeoutMs": 50,
+        "overallTimeoutMs": 300,
+        "maxAttempts": 5,
+        "backoff": "EXPONENTIAL",
+        "baseDelayMs": 40,
+        "maxDelayMs": 80,
+        "jitter": "FULL",
+        "retryBudget": 8,
+        "unavailableUntilMs": 60,
+        "requests": [
+          { "id": "a", "arrivalTimeMs": 0, "serviceTimeMs": 20 },
+          { "id": "b", "arrivalTimeMs": 0, "serviceTimeMs": 20 }
+        ]
+      }
+    }
+  ],
+  "assumptions": [
+    "This illustrative model separates a caller's waiting from accepted server work; it does not model business effects or durable storage.",
+    "Authored arrivals and per-request service times determine work; networking and response delivery take zero time.",
+    "Attempt timeout begins at send and includes queue wait. Timeout and overall deadline never cancel accepted queued or running work.",
+    "Server workers run accepted work to completion in FIFO order; queue capacity excludes running work and idle workers can start with queue capacity zero.",
+    "Dependency unavailability and a full waiting queue reject immediately without accepting server work.",
+    "Only a response to the currently waiting attempt can succeed its logical request. Late completions cannot revive a caller or satisfy a newer attempt.",
+    "Completion wins equality with the overall deadline or attempt timeout; overall deadline wins equality with attempt timeout.",
+    "Existing FIFO work is promoted before same-time arrivals, and original sends precede same-time retry sends.",
+    "Maximum attempts includes the original. The finite batch retry budget is consumed only by dispatched retries, including immediately rejected ones.",
+    "Exponential backoff is capped; FULL jitter draws an inclusive integer delay from one run-local versioned seeded generator.",
+    "A proposed retry at or after its arrival-relative overall deadline is not scheduled; the caller waits until that deadline to fail.",
+    "All accepted server work drains before the result ends. No-op future timers do not extend the reported final time.",
+    "Cancellation, idempotency, actual networking, retry trees, persistence and production latency measurements are excluded."
+  ]
+}

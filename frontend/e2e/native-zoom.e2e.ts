@@ -830,3 +830,117 @@ for (const theme of ["light", "dark"] as const) {
     }
   });
 }
+
+for (const theme of ["light", "dark"] as const) {
+  test(`native 200% zoom keeps retry caller and work evidence usable in ${theme}`, async ({
+    baseURL,
+  }, info) => {
+    test.setTimeout(90_000);
+    const profile = await mkdtemp(join(tmpdir(), "hld-retry-zoom-"));
+    const extension = resolve(
+      dirname(fileURLToPath(import.meta.url)),
+      "fixtures/native-zoom",
+    );
+    let context: BrowserContext | undefined;
+    try {
+      context = await chromium.launchPersistentContext(profile, {
+        baseURL,
+        channel: "chromium",
+        headless: true,
+        viewport: null,
+        args: [
+          `--disable-extensions-except=${extension}`,
+          `--load-extension=${extension}`,
+          "--window-size=1440,1000",
+        ],
+      });
+      const worker =
+        context.serviceWorkers()[0] ??
+        (await context.waitForEvent("serviceworker"));
+      const page = await context.newPage();
+      await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
+      await page.addInitScript(
+        (value) => localStorage.setItem("hld-theme", value),
+        theme,
+      );
+      const cdp = await context.newCDPSession(page);
+      const { windowId } = await cdp.send("Browser.getWindowForTarget");
+      const observations: unknown[] = [];
+      for (const pixels of [1440, 640]) {
+        await page.goto("/draft/topics/timeouts-retries");
+        await nativeZoom(page, worker, 1);
+        await cdp.send("Browser.setWindowBounds", {
+          windowId,
+          bounds: { width: pixels, height: 1000 },
+        });
+        await expect.poll(() => page.evaluate(() => innerWidth)).toBe(pixels);
+        const dpr = await page.evaluate(() => devicePixelRatio);
+        await nativeZoom(page, worker, 2);
+        await expect
+          .poll(() => page.evaluate(() => innerWidth))
+          .toBe(pixels / 2);
+        await expect
+          .poll(() => page.evaluate(() => devicePixelRatio))
+          .toBe(dpr * 2);
+        const run = page.getByRole("button", {
+          name: "Run retry experiment",
+          exact: true,
+        });
+        await run.focus();
+        await page.keyboard.press("Enter");
+        const summary = page.getByRole("region", {
+          name: "Whole retry experiment summary",
+          exact: true,
+        });
+        await expect(summary).toContainText("Completed server work");
+        const slider = page.getByRole("slider", {
+          name: "Retry snapshot position",
+          exact: true,
+        });
+        await slider.fill((await slider.getAttribute("max")) ?? "0");
+        await expect(
+          page.getByRole("region", {
+            name: "Selected retry snapshot",
+            exact: true,
+          }),
+        ).toContainText("Timed out");
+        for (const view of ["Playground", "Study", "Practice"]) {
+          const tab = page.getByRole("tab", { name: view, exact: true });
+          await tab.focus();
+          await page.keyboard.press("Enter");
+          await expect(tab).toBeFocused();
+          await expect(tab).toHaveAttribute("aria-selected", "true");
+          await expect
+            .poll(() =>
+              page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth + 1,
+              ),
+            )
+            .toBe(true);
+          observations.push({
+            theme,
+            view,
+            physicalWidth: pixels,
+            zoom: 2,
+            cssWidth: await page.evaluate(() => innerWidth),
+            dpr: await page.evaluate(() => devicePixelRatio),
+          });
+        }
+        await info.attach(`retry-native-${pixels}-${theme}`, {
+          body: await page.screenshot(),
+          contentType: "image/png",
+        });
+      }
+      await info.attach("retry-native-zoom-observations", {
+        body: JSON.stringify(observations, null, 2),
+        contentType: "application/json",
+      });
+    } finally {
+      try {
+        await context?.close();
+      } finally {
+        await rm(profile, { recursive: true, force: true });
+      }
+    }
+  });
+}

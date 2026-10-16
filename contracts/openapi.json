@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "HLD with UI API",
-    "version": "1.10.0",
+    "version": "1.11.0",
     "description": "Versioned contract for the HLD learning application. Simulation results are illustrative modeled runs."
   },
   "servers": [
@@ -1192,6 +1192,113 @@
           }
         },
         "description": "Strict closed input, exact integer JSON tokens and complete actor programs. Legal abort, stock rejection and skipped work return completed analysis with HTTP 200. No database engine, durable commit, retries or elapsed time is modeled."
+      }
+    },
+    "/api/v1/simulations/timeouts-retries": {
+      "get": {
+        "operationId": "getRetryDescriptor",
+        "summary": "Read the Java timeouts and retries descriptor",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetryDescriptor"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/timeouts-retries/runs": {
+      "post": {
+        "operationId": "runRetry",
+        "summary": "Run a bounded caller retry policy and return independent caller and server work snapshots",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetryInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetryResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "internal_error: unexpected model or serialization failure, distinct from intentional whole-result byte limits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Retry hint in seconds. Capacity may remain occupied.",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[0-9]+$",
+                  "examples": ["1"]
+                }
+              }
+            }
+          }
+        },
+        "description": "Strict closed retry input with exact integral JSON tokens, duplicate-key and trailing-root rejection. Logical caller failure, timeout and dependency rejection return a complete simulation with HTTP200; shared raw-body, in-flight admission and complete-result serialization guards remain outside the pure finite model. No real network, cancellation or business-effect deduplication is modeled."
       }
     }
   },
@@ -9595,6 +9702,1350 @@
                   }
                 ]
               }
+            }
+          }
+        ]
+      },
+      "RetryLimits": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "maxSafeSeed",
+          "maxWorkers",
+          "maxQueueCapacity",
+          "maxRequests",
+          "maxArrivalTimeMs",
+          "maxServiceTimeMs",
+          "maxAttemptTimeoutMs",
+          "maxOverallTimeoutMs",
+          "maxAttempts",
+          "maxDelayMs",
+          "maxRetryBudget",
+          "maxUnavailableUntilMs",
+          "maxIdLength"
+        ],
+        "properties": {
+          "maxSafeSeed": {
+            "type": "integer",
+            "const": 9007199254740991
+          },
+          "maxWorkers": {
+            "type": "integer",
+            "const": 3
+          },
+          "maxQueueCapacity": {
+            "type": "integer",
+            "const": 12
+          },
+          "maxRequests": {
+            "type": "integer",
+            "const": 12
+          },
+          "maxArrivalTimeMs": {
+            "type": "integer",
+            "const": 10000
+          },
+          "maxServiceTimeMs": {
+            "type": "integer",
+            "const": 1000
+          },
+          "maxAttemptTimeoutMs": {
+            "type": "integer",
+            "const": 1000
+          },
+          "maxOverallTimeoutMs": {
+            "type": "integer",
+            "const": 10000
+          },
+          "maxAttempts": {
+            "type": "integer",
+            "const": 5
+          },
+          "maxDelayMs": {
+            "type": "integer",
+            "const": 1000
+          },
+          "maxRetryBudget": {
+            "type": "integer",
+            "const": 48
+          },
+          "maxUnavailableUntilMs": {
+            "type": "integer",
+            "const": 10000
+          },
+          "maxIdLength": {
+            "type": "integer",
+            "const": 32
+          }
+        }
+      },
+      "RetryPreset": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "description", "input"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          },
+          "input": {
+            "$ref": "#/components/schemas/RetryInput"
+          }
+        }
+      },
+      "RetryDescriptor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "modelVersion",
+          "description",
+          "limits",
+          "presets",
+          "assumptions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "const": "timeouts-retries"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "kind": {
+            "type": "string",
+            "const": "simulation"
+          },
+          "modelVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "limits": {
+            "$ref": "#/components/schemas/RetryLimits"
+          },
+          "presets": {
+            "type": "array",
+            "minItems": 8,
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/RetryPreset"
+            }
+          },
+          "assumptions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 30,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            }
+          }
+        }
+      },
+      "RetryInput": {
+        "title": "Timeouts and retries model input",
+        "description": "Canonical finite input for an illustrative caller retry policy and shared dependency worker queue. Java additionally validates unique original IDs, chronological arrival order and maxDelayMs >= baseDelayMs before any transition. Parsed JSON shape is not transport token spelling, duplicate-key or trailing-root validation. One run-local recorded random stream selects bounded FULL jitter delays; no network, cancellation, business effect, database or durability is modeled.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "modelVersion",
+          "seed",
+          "workers",
+          "queueCapacity",
+          "attemptTimeoutMs",
+          "overallTimeoutMs",
+          "maxAttempts",
+          "backoff",
+          "baseDelayMs",
+          "maxDelayMs",
+          "jitter",
+          "retryBudget",
+          "unavailableUntilMs",
+          "requests"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "const": "1.0.0"
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "workers": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "queueCapacity": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "attemptTimeoutMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "overallTimeoutMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "maxAttempts": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "backoff": {
+            "enum": ["IMMEDIATE", "EXPONENTIAL"]
+          },
+          "baseDelayMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000
+          },
+          "maxDelayMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000
+          },
+          "jitter": {
+            "enum": ["NONE", "FULL"]
+          },
+          "retryBudget": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 48
+          },
+          "unavailableUntilMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "requests": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/RetryRequest"
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "backoff": {
+                  "const": "IMMEDIATE"
+                }
+              },
+              "required": ["backoff"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "baseDelayMs": {
+                  "const": 0
+                },
+                "maxDelayMs": {
+                  "const": 0
+                },
+                "jitter": {
+                  "const": "NONE"
+                }
+              },
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "backoff": {
+                  "const": "EXPONENTIAL"
+                }
+              },
+              "required": ["backoff"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "baseDelayMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1000
+                },
+                "maxDelayMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1000
+                }
+              },
+              "type": "object"
+            }
+          }
+        ]
+      },
+      "RetryIdentifier": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 32,
+        "pattern": "^[a-z][a-z0-9-]{0,31}$",
+        "not": {
+          "pattern": "\\s"
+        }
+      },
+      "RetryRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "arrivalTimeMs", "serviceTimeMs"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/RetryIdentifier"
+          },
+          "arrivalTimeMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "serviceTimeMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          }
+        }
+      },
+      "RetryResult": {
+        "title": "Timeouts and retries model result",
+        "description": "Complete finite Java simulation evidence for caller wait state and independent dependency work. Captured input owns original IDs and controls. Initial and complete final state, closed event field categories and local caller/work phases are constrained here. Java owns identity/reference correspondence, scheduler ordering, arithmetic, exact event-prefix/final-state equality, policy behavior, metrics and replay. Same-callback causal microsteps may show completed work whose caller is still WAITING, before the following explicit request success; no other callback interleaves. No artificial partial result, business effect, idempotency, actual networking or durability is modeled.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "simulationId",
+          "schemaVersion",
+          "modelVersion",
+          "kind",
+          "status",
+          "input",
+          "randomAlgorithm",
+          "initialState",
+          "events",
+          "finalState",
+          "metrics",
+          "assumptions"
+        ],
+        "properties": {
+          "simulationId": {
+            "const": "timeouts-retries"
+          },
+          "schemaVersion": {
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "const": "1.0.0"
+          },
+          "kind": {
+            "const": "simulation"
+          },
+          "status": {
+            "const": "completed"
+          },
+          "input": {
+            "$ref": "#/components/schemas/RetryInput"
+          },
+          "randomAlgorithm": {
+            "const": "SplittableRandom"
+          },
+          "initialState": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RetryState"
+              },
+              {
+                "properties": {
+                  "requests": {
+                    "items": {
+                      "properties": {
+                        "phase": {
+                          "const": "NOT_ARRIVED"
+                        },
+                        "attemptsSent": {
+                          "const": 0
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "attempts": {
+                    "maxItems": 0,
+                    "type": "array"
+                  },
+                  "workers": {
+                    "items": {
+                      "properties": {
+                        "attemptId": false
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "queue": {
+                    "maxItems": 0,
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            ]
+          },
+          "events": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 384,
+            "items": {
+              "$ref": "#/components/schemas/RetryEvent"
+            }
+          },
+          "finalState": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RetryState"
+              },
+              {
+                "properties": {
+                  "requests": {
+                    "items": {
+                      "properties": {
+                        "phase": {
+                          "enum": ["SUCCEEDED", "FAILED"]
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "attempts": {
+                    "minItems": 1,
+                    "items": {
+                      "properties": {
+                        "workState": {
+                          "enum": ["NOT_ACCEPTED", "COMPLETED"]
+                        },
+                        "callerState": {
+                          "enum": [
+                            "REJECTED",
+                            "TIMED_OUT",
+                            "DEADLINE_EXCEEDED",
+                            "RESPONDED"
+                          ]
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "workers": {
+                    "items": {
+                      "properties": {
+                        "attemptId": false
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "queue": {
+                    "maxItems": 0,
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            ]
+          },
+          "metrics": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "originalRequests",
+              "succeededRequests",
+              "failedRequests",
+              "attemptsSent",
+              "retriesSent",
+              "rejectedAttempts",
+              "acceptedServerWork",
+              "completedServerWork",
+              "lateCompletions",
+              "attemptTimeouts",
+              "retryBudgetUsed",
+              "peakQueueDepth",
+              "peakRunningWork",
+              "finalTimeMs",
+              "attemptAmplification",
+              "executionAmplification"
+            ],
+            "properties": {
+              "originalRequests": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12
+              },
+              "succeededRequests": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 12
+              },
+              "failedRequests": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 12
+              },
+              "attemptsSent": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 60
+              },
+              "retriesSent": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 48
+              },
+              "rejectedAttempts": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 60
+              },
+              "acceptedServerWork": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 60
+              },
+              "completedServerWork": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 60
+              },
+              "lateCompletions": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 60
+              },
+              "attemptTimeouts": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 60
+              },
+              "retryBudgetUsed": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 48
+              },
+              "peakQueueDepth": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 12
+              },
+              "peakRunningWork": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 3
+              },
+              "finalTimeMs": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 80000
+              },
+              "attemptAmplification": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 5
+              },
+              "executionAmplification": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 5
+              }
+            }
+          },
+          "assumptions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 30,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            }
+          }
+        }
+      },
+      "RetryAttemptIdentifier": {
+        "type": "string",
+        "minLength": 4,
+        "maxLength": 35,
+        "pattern": "^[a-z][a-z0-9-]{0,31}-a[1-5]$",
+        "not": {
+          "pattern": "\\s"
+        }
+      },
+      "RetryRequestState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "overallDeadlineAtMs", "phase", "attemptsSent"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/RetryIdentifier"
+          },
+          "overallDeadlineAtMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20000
+          },
+          "phase": {
+            "enum": [
+              "NOT_ARRIVED",
+              "READY",
+              "WAITING",
+              "DECIDING_RETRY",
+              "BACKING_OFF",
+              "AWAITING_DEADLINE",
+              "SUCCEEDED",
+              "FAILED"
+            ]
+          },
+          "attemptsSent": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5
+          },
+          "activeAttemptId": {
+            "$ref": "#/components/schemas/RetryAttemptIdentifier"
+          },
+          "nextRetryAtMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20000
+          },
+          "finishedAtMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20000
+          },
+          "failureReason": {
+            "enum": [
+              "ATTEMPTS_EXHAUSTED",
+              "RETRY_BUDGET_EXHAUSTED",
+              "OVERALL_DEADLINE"
+            ]
+          },
+          "lastFailureCause": {
+            "enum": ["DEPENDENCY_UNAVAILABLE", "QUEUE_FULL", "ATTEMPT_TIMEOUT"]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "phase": {
+                  "enum": ["NOT_ARRIVED", "READY"]
+                }
+              },
+              "required": ["phase"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "attemptsSent": {
+                  "const": 0
+                },
+                "activeAttemptId": false,
+                "nextRetryAtMs": false,
+                "finishedAtMs": false,
+                "failureReason": false,
+                "lastFailureCause": false
+              },
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "phase": {
+                  "const": "WAITING"
+                }
+              },
+              "required": ["phase"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "attemptsSent": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5
+                },
+                "nextRetryAtMs": false,
+                "finishedAtMs": false,
+                "failureReason": false
+              },
+              "required": ["activeAttemptId"],
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "phase": {
+                  "const": "DECIDING_RETRY"
+                }
+              },
+              "required": ["phase"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "attemptsSent": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5
+                },
+                "activeAttemptId": false,
+                "nextRetryAtMs": false,
+                "finishedAtMs": false,
+                "failureReason": false
+              },
+              "required": ["lastFailureCause"],
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "phase": {
+                  "const": "BACKING_OFF"
+                }
+              },
+              "required": ["phase"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "attemptsSent": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5
+                },
+                "activeAttemptId": false,
+                "finishedAtMs": false,
+                "failureReason": false
+              },
+              "required": ["nextRetryAtMs", "lastFailureCause"],
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "phase": {
+                  "const": "AWAITING_DEADLINE"
+                }
+              },
+              "required": ["phase"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "attemptsSent": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5
+                },
+                "activeAttemptId": false,
+                "nextRetryAtMs": false,
+                "finishedAtMs": false,
+                "failureReason": false
+              },
+              "required": ["lastFailureCause"],
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "phase": {
+                  "const": "SUCCEEDED"
+                }
+              },
+              "required": ["phase"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "attemptsSent": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5
+                },
+                "activeAttemptId": false,
+                "nextRetryAtMs": false,
+                "failureReason": false
+              },
+              "required": ["finishedAtMs"],
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "phase": {
+                  "const": "FAILED"
+                }
+              },
+              "required": ["phase"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "attemptsSent": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5
+                },
+                "activeAttemptId": false,
+                "nextRetryAtMs": false
+              },
+              "required": ["finishedAtMs", "failureReason"],
+              "type": "object"
+            }
+          }
+        ]
+      },
+      "RetryAttemptState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "requestId",
+          "number",
+          "sentAtMs",
+          "callerState",
+          "workState"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/RetryAttemptIdentifier"
+          },
+          "requestId": {
+            "$ref": "#/components/schemas/RetryIdentifier"
+          },
+          "number": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "sentAtMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20000
+          },
+          "callerState": {
+            "enum": [
+              "WAITING",
+              "REJECTED",
+              "TIMED_OUT",
+              "DEADLINE_EXCEEDED",
+              "RESPONDED"
+            ]
+          },
+          "workState": {
+            "enum": [
+              "PENDING_ADMISSION",
+              "NOT_ACCEPTED",
+              "QUEUED",
+              "RUNNING",
+              "COMPLETED"
+            ]
+          },
+          "startedAtMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 80000
+          },
+          "completedAtMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 80000
+          },
+          "callerFinishedAtMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20000
+          },
+          "timeoutAtMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 21000
+          },
+          "failureCause": {
+            "enum": ["DEPENDENCY_UNAVAILABLE", "QUEUE_FULL", "ATTEMPT_TIMEOUT"]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "workState": {
+                  "const": "PENDING_ADMISSION"
+                }
+              },
+              "required": ["workState"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "callerState": {
+                  "const": "WAITING"
+                },
+                "startedAtMs": false,
+                "completedAtMs": false,
+                "timeoutAtMs": false
+              },
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "workState": {
+                  "const": "NOT_ACCEPTED"
+                }
+              },
+              "required": ["workState"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "callerState": {
+                  "const": "REJECTED"
+                },
+                "startedAtMs": false,
+                "completedAtMs": false,
+                "timeoutAtMs": false
+              },
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "workState": {
+                  "const": "QUEUED"
+                }
+              },
+              "required": ["workState"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "startedAtMs": false,
+                "completedAtMs": false
+              },
+              "required": ["timeoutAtMs"],
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "workState": {
+                  "const": "RUNNING"
+                }
+              },
+              "required": ["workState"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "completedAtMs": false
+              },
+              "required": ["timeoutAtMs", "startedAtMs"],
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "workState": {
+                  "const": "COMPLETED"
+                }
+              },
+              "required": ["workState"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {},
+              "required": ["timeoutAtMs", "startedAtMs", "completedAtMs"],
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "callerState": {
+                  "const": "WAITING"
+                }
+              },
+              "required": ["callerState"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "callerFinishedAtMs": false,
+                "failureCause": false
+              },
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "callerState": {
+                  "const": "REJECTED"
+                }
+              },
+              "required": ["callerState"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "workState": {
+                  "const": "NOT_ACCEPTED"
+                },
+                "failureCause": {
+                  "enum": ["DEPENDENCY_UNAVAILABLE", "QUEUE_FULL"]
+                }
+              },
+              "required": ["callerFinishedAtMs", "failureCause"],
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "callerState": {
+                  "const": "TIMED_OUT"
+                }
+              },
+              "required": ["callerState"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "workState": {
+                  "enum": ["QUEUED", "RUNNING", "COMPLETED"]
+                },
+                "failureCause": {
+                  "const": "ATTEMPT_TIMEOUT"
+                }
+              },
+              "required": ["callerFinishedAtMs", "failureCause"],
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "callerState": {
+                  "const": "DEADLINE_EXCEEDED"
+                }
+              },
+              "required": ["callerState"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "workState": {
+                  "enum": ["QUEUED", "RUNNING", "COMPLETED"]
+                },
+                "failureCause": false
+              },
+              "required": ["callerFinishedAtMs"],
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "callerState": {
+                  "const": "RESPONDED"
+                }
+              },
+              "required": ["callerState"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "workState": {
+                  "const": "COMPLETED"
+                },
+                "failureCause": false
+              },
+              "required": ["callerFinishedAtMs"],
+              "type": "object"
+            }
+          }
+        ]
+      },
+      "RetryWorkerState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^worker-[1-3]$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "attemptId": {
+            "$ref": "#/components/schemas/RetryAttemptIdentifier"
+          }
+        }
+      },
+      "RetryState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requests",
+          "attempts",
+          "workers",
+          "queue",
+          "retryBudgetRemaining"
+        ],
+        "properties": {
+          "requests": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/RetryRequestState"
+            }
+          },
+          "attempts": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 60,
+            "items": {
+              "$ref": "#/components/schemas/RetryAttemptState"
+            }
+          },
+          "workers": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/components/schemas/RetryWorkerState"
+            }
+          },
+          "queue": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/RetryAttemptIdentifier"
+            },
+            "uniqueItems": true
+          },
+          "retryBudgetRemaining": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 48
+          }
+        }
+      },
+      "RetryEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sequence",
+          "timeMs",
+          "kind",
+          "requestId",
+          "explanation",
+          "postState"
+        ],
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 384
+          },
+          "timeMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 80000
+          },
+          "kind": {
+            "enum": [
+              "REQUEST_ARRIVED",
+              "ATTEMPT_SENT",
+              "WORK_QUEUED",
+              "WORK_STARTED",
+              "ATTEMPT_REJECTED",
+              "ATTEMPT_TIMED_OUT",
+              "WORK_COMPLETED",
+              "RETRY_SCHEDULED",
+              "RETRY_BLOCKED_BY_DEADLINE",
+              "REQUEST_SUCCEEDED",
+              "REQUEST_FAILED"
+            ]
+          },
+          "requestId": {
+            "$ref": "#/components/schemas/RetryIdentifier"
+          },
+          "attemptId": {
+            "$ref": "#/components/schemas/RetryAttemptIdentifier"
+          },
+          "delayMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000
+          },
+          "retryAtMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20000
+          },
+          "proposedRetryAtMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 21000
+          },
+          "explanation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "postState": {
+            "$ref": "#/components/schemas/RetryState"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "REQUEST_ARRIVED",
+                    "REQUEST_SUCCEEDED",
+                    "REQUEST_FAILED"
+                  ]
+                }
+              },
+              "required": ["kind"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "attemptId": false,
+                "delayMs": false,
+                "retryAtMs": false,
+                "proposedRetryAtMs": false
+              },
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "ATTEMPT_SENT",
+                    "WORK_QUEUED",
+                    "WORK_STARTED",
+                    "ATTEMPT_REJECTED",
+                    "ATTEMPT_TIMED_OUT",
+                    "WORK_COMPLETED"
+                  ]
+                }
+              },
+              "required": ["kind"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "delayMs": false,
+                "retryAtMs": false,
+                "proposedRetryAtMs": false
+              },
+              "required": ["attemptId"],
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "RETRY_SCHEDULED"
+                }
+              },
+              "required": ["kind"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "proposedRetryAtMs": false
+              },
+              "required": ["attemptId", "delayMs", "retryAtMs"],
+              "type": "object"
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "RETRY_BLOCKED_BY_DEADLINE"
+                }
+              },
+              "required": ["kind"],
+              "type": "object"
+            },
+            "then": {
+              "properties": {
+                "retryAtMs": false
+              },
+              "required": ["attemptId", "delayMs", "proposedRetryAtMs"],
+              "type": "object"
             }
           }
         ]

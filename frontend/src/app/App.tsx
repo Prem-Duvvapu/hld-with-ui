@@ -63,6 +63,11 @@ const QueueCapacityPage = lazy(() =>
     default: module.QueueCapacityPage,
   })),
 );
+const RetryPage = lazy(() =>
+  import("../pages/RetryPage").then((module) => ({
+    default: module.RetryPage,
+  })),
+);
 const WorkshopPage = lazy(() =>
   import("../pages/WorkshopPage").then((module) => ({
     default: module.WorkshopPage,
@@ -138,6 +143,10 @@ export function App() {
             <Route
               path="/draft/topics/transactions-isolation"
               element={<ReservationPage />}
+            />
+            <Route
+              path="/draft/topics/timeouts-retries"
+              element={<RetryPage />}
             />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

@@ -8,6 +8,9 @@ import {
   CacheCompatibilityError,
 } from "./cacheCompatibility";
 import type {
+  RetryInput,
+  RetryResult,
+  RetryDescriptor,
   AtomicityInput,
   AtomicityResult,
   AtomicityDescriptor,
@@ -111,6 +114,38 @@ async function request<T>(
 }
 
 export const api = {
+  retryDescriptor: async () => {
+    const { assertRetryDescriptor } = await import("./retryCompatibility");
+    return request<RetryDescriptor>(
+      "/api/v1/simulations/timeouts-retries",
+      undefined,
+      deliveryValidation(assertRetryDescriptor),
+    );
+  },
+  runRetry: async (input: RetryInput) => {
+    const payload = JSON.stringify(input);
+    const submitted: RetryInput = JSON.parse(payload);
+    const { assertRetryInput, assertRetryResult } =
+      await import("./retryCompatibility");
+    try {
+      assertRetryInput(submitted);
+    } catch (cause: unknown) {
+      throw new ApiClientError(
+        cause instanceof Error
+          ? cause.message
+          : "Check the submitted retry input.",
+      );
+    }
+    return request<RetryResult>(
+      "/api/v1/simulations/timeouts-retries/runs",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      },
+      deliveryValidation((body) => assertRetryResult(body, submitted)),
+    );
+  },
   atomicityDescriptor: async () => {
     const { assertAtomicityDescriptor } =
       await import("./atomicityCompatibility");

@@ -69,6 +69,21 @@ const atomicityResultNames = {
   metrics: "AtomicityMetrics",
 };
 
+const retryInputId =
+  "https://hld-with-ui.dev/schemas/timeouts-retries.input.schema.json";
+const retryInputNames = {
+  identifier: "RetryIdentifier",
+  request: "RetryRequest",
+};
+const retryResultNames = {
+  attemptIdentifier: "RetryAttemptIdentifier",
+  requestState: "RetryRequestState",
+  attemptState: "RetryAttemptState",
+  workerState: "RetryWorkerState",
+  state: "RetryState",
+  event: "RetryEvent",
+};
+
 // Canonical schemas own model evidence and guided content. Export normal internal OpenAPI refs
 // so existing generation and response validators need no remote resolution.
 function exportSchema(value, definitions = names) {
@@ -108,6 +123,13 @@ function exportSchema(value, definitions = names) {
             ];
       if (!name)
         throw new Error(`Unsupported atomicity input reference: ${child}`);
+      result[key] = `#/components/schemas/${name}`;
+    } else if (key === "$ref" && child.startsWith(retryInputId)) {
+      const name =
+        child === retryInputId
+          ? "RetryInput"
+          : retryInputNames[child.slice(`${retryInputId}#/$defs/`.length)];
+      if (!name) throw new Error(`Unsupported retry input reference: ${child}`);
       result[key] = `#/components/schemas/${name}`;
     } else result[key] = exportSchema(child, definitions);
   }
@@ -212,6 +234,20 @@ for (const [kind, component, definitions] of [
   ["result", "AtomicityResult", atomicityResultNames],
 ]) {
   const schema = read(`contracts/transaction-atomicity.${kind}.schema.json`);
+  openapi.components.schemas[component] = exportSchema(schema, definitions);
+  for (const [definition, name] of Object.entries(definitions)) {
+    if (!schema.$defs[definition]) throw new Error(`Missing ${definition}`);
+    openapi.components.schemas[name] = exportSchema(
+      schema.$defs[definition],
+      definitions,
+    );
+  }
+}
+for (const [kind, component, definitions] of [
+  ["input", "RetryInput", retryInputNames],
+  ["result", "RetryResult", retryResultNames],
+]) {
+  const schema = read(`contracts/timeouts-retries.${kind}.schema.json`);
   openapi.components.schemas[component] = exportSchema(schema, definitions);
   for (const [definition, name] of Object.entries(definitions)) {
     if (!schema.$defs[definition]) throw new Error(`Missing ${definition}`);
@@ -338,6 +374,26 @@ const atomicityDescriptorSchema = {
 writeFileSync(
   resolve(root, "frontend/src/api/schemas/atomicity-descriptor.schema.json"),
   JSON.stringify(atomicityDescriptorSchema).replaceAll(
+    "#/components/schemas/",
+    "#/$defs/",
+  ) + "\n",
+);
+const retryDescriptorSchema = {
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  ...openapi.components.schemas.RetryDescriptor,
+  $defs: Object.fromEntries(
+    [
+      "RetryIdentifier",
+      "RetryRequest",
+      "RetryInput",
+      "RetryLimits",
+      "RetryPreset",
+    ].map((name) => [name, openapi.components.schemas[name]]),
+  ),
+};
+writeFileSync(
+  resolve(root, "frontend/src/api/schemas/retry-descriptor.schema.json"),
+  JSON.stringify(retryDescriptorSchema).replaceAll(
     "#/components/schemas/",
     "#/$defs/",
   ) + "\n",

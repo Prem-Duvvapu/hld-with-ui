@@ -1,0 +1,135 @@
+[
+  {
+    "id": "retry-timeout-does-not-prove-cancellation",
+    "topicId": "timeouts-retries",
+    "level": "beginner",
+    "kind": "prediction",
+    "prompt": "In late-work, one 80 ms attempt starts at 0 ms and its caller times out at 50 ms. What can you infer about accepted work, and when does it complete?",
+    "explanation": "The caller has stopped waiting, but this model does not cancel accepted work. The first attempt keeps running and completes at 80 ms. Its response is late and cannot satisfy the newer attempt. Real cancellation needs protocol/application behavior; no business effect is modeled here.",
+    "modelAnswer": "The caller has stopped waiting, but this model does not cancel accepted work. The first attempt keeps running and completes at 80 ms. Its response is late and cannot satisfy the newer attempt. Real cancellation needs protocol/application behavior; no business effect is modeled here.",
+    "rubric": [
+      "Separates caller waiting from running work",
+      "Gives the first completion at 80 ms",
+      "Does not infer cancellation, a successful caller or a persisted effect"
+    ],
+    "followUp": "What separate evidence would you seek if your actual RPC stack supports cancellation?",
+    "sourceIds": ["grpc-deadlines-cancellation"]
+  },
+  {
+    "id": "retry-queued-timeout-still-drains",
+    "topicId": "timeouts-retries",
+    "level": "intermediate",
+    "kind": "diagnosis",
+    "prompt": "Two originals arrive at 0 ms. One worker runs a for 100 ms; b needs 10 ms and waits. Attempt timeout is 30 ms and maximum attempts is one. What happens to b?",
+    "explanation": "b times out at 30 ms while still queued and its original fails. Its accepted work remains in FIFO: it starts at 100 ms and completes late at 110 ms. Both callers can fail before the server drains. A waiting timeout does not remove queued work in this model.",
+    "modelAnswer": "b times out at 30 ms while still queued and its original fails. Its accepted work remains in FIFO: it starts at 100 ms and completes late at 110 ms. Both callers can fail before the server drains. A waiting timeout does not remove queued work in this model.",
+    "rubric": [
+      "Counts queue waiting inside the attempt timeout",
+      "Keeps b queued after its caller fails",
+      "Gives start 100 ms and completion 110 ms",
+      "States the absence of modeled cancellation"
+    ],
+    "followUp": "How would a real deadline-aware admission policy need to differ from this experiment?",
+    "sourceIds": ["grpc-deadlines-cancellation"]
+  },
+  {
+    "id": "retry-work-amplification-populations",
+    "topicId": "timeouts-retries",
+    "level": "beginner",
+    "kind": "calculation",
+    "prompt": "The default run has one original, two sends, two completed server-work units and no successful original. What are its two amplification ratios, and what do they not prove?",
+    "explanation": "Attempts per original = 2/1 = 2. Completed work per original = 2/1 = 2. The original fails at 100 ms; accepted work drains at 160 ms. Neither ratio counts persisted business effects or proves that a payment happened twice. The final drainage time is not successful caller latency.",
+    "modelAnswer": "Attempts per original = 2/1 = 2. Completed work per original = 2/1 = 2. The original fails at 100 ms; accepted work drains at 160 ms. Neither ratio counts persisted business effects or proves that a payment happened twice. The final drainage time is not successful caller latency.",
+    "rubric": [
+      "Uses originals as both denominators",
+      "Separates failed originals from completed server work",
+      "Keeps 100 ms caller failure separate from 160 ms drainage",
+      "Does not invent business-effect evidence"
+    ],
+    "followUp": "Why might more sends add no completed work when admission rejects them?",
+    "sourceIds": ["aws-timeouts-backoff-jitter"]
+  },
+  {
+    "id": "retry-immediate-outage-attempt-budget",
+    "topicId": "timeouts-retries",
+    "level": "beginner",
+    "kind": "prediction",
+    "prompt": "A dependency is unavailable until 60 ms. One original uses immediate retries and maximum attempts three, including the original. How many sends occur before it gives up?",
+    "explanation": "All three sends occur at 0 ms and reject. No server work is accepted and the original fails at 0 ms because maximum attempts is reached. Three attempts includes the original, so this is two retries. A retry does not advance virtual time just because it is another send.",
+    "modelAnswer": "All three sends occur at 0 ms and reject. No server work is accepted and the original fails at 0 ms because maximum attempts is reached. Three attempts includes the original, so this is two retries. A retry does not advance virtual time just because it is another send.",
+    "rubric": [
+      "Counts three sends and two retries",
+      "Places them at 0 ms before recovery",
+      "Reports zero accepted work and attempts-exhausted policy failure"
+    ],
+    "followUp": "Which authored delay could let a later attempt reach the recovery instant?",
+    "sourceIds": ["aws-timeouts-backoff-jitter"]
+  },
+  {
+    "id": "retry-backoff-crosses-recovery",
+    "topicId": "timeouts-retries",
+    "level": "intermediate",
+    "kind": "calculation",
+    "prompt": "Keep the outage until 60 ms, 20 ms service and maximum attempts three. Exponential backoff uses base 40 ms and cap 80 ms, with no jitter. When are sends and success?",
+    "explanation": "The original sends at 0 ms and rejects. A 40 ms delay sends attempt two at 40 ms, which rejects. The next delay is 80 ms, so attempt three sends at 120 ms. The dependency has recovered; that work completes and the caller succeeds at 140 ms. Backoff helps this workload by changing when a send reaches recovery; it creates no worker capacity.",
+    "modelAnswer": "The original sends at 0 ms and rejects. A 40 ms delay sends attempt two at 40 ms, which rejects. The next delay is 80 ms, so attempt three sends at 120 ms. The dependency has recovered; that work completes and the caller succeeds at 140 ms. Backoff helps this workload by changing when a send reaches recovery; it creates no worker capacity.",
+    "rubric": [
+      "Uses delays 40 and 80, not absolute send times 40 and 80",
+      "Gives send times 0, 40, 120 ms and success 140 ms",
+      "States workload-specific benefit and added waiting"
+    ],
+    "followUp": "What changes if the overall caller timeout becomes 100 ms?",
+    "sourceIds": ["aws-exponential-jitter"]
+  },
+  {
+    "id": "retry-overall-deadline-blocks-proposal",
+    "topicId": "timeouts-retries",
+    "level": "intermediate",
+    "kind": "prediction",
+    "prompt": "In deadline-before-retry, the second rejection occurs at 40 ms and chooses an 80 ms delay. Overall deadline is 100 ms. What should the trace show at 40 and 100 ms?",
+    "explanation": "At 40 ms Java emits a blocked proposal for 120 ms and enters AWAITING_DEADLINE. It schedules no retry and creates no third attempt row. At the actual 100 ms overall deadline the original fails with OVERALL_DEADLINE. A proposed send time is not an actual scheduled or sent attempt.",
+    "modelAnswer": "At 40 ms Java emits a blocked proposal for 120 ms and enters AWAITING_DEADLINE. It schedules no retry and creates no third attempt row. At the actual 100 ms overall deadline the original fails with OVERALL_DEADLINE. A proposed send time is not an actual scheduled or sent attempt.",
+    "rubric": [
+      "Calculates proposed time 120 ms from 40+80",
+      "Distinguishes blocked proposal from a real plan/attempt",
+      "Reports failure at the actual deadline 100 ms",
+      "Separates the earlier rejection cause from overall policy failure"
+    ],
+    "followUp": "At exact equality with a completion, which declared model phase wins?",
+    "sourceIds": ["grpc-deadlines-cancellation"]
+  },
+  {
+    "id": "retry-shared-budget-dispatch-boundary",
+    "topicId": "timeouts-retries",
+    "level": "intermediate",
+    "kind": "diagnosis",
+    "prompt": "In retry-budget, a and b both arrive at 0 ms, reject and plan sends at 40 ms. One shared retry is allowed. Does planning guarantee both retries will be sent?",
+    "explanation": "No token is reserved by planning. At 40 ms a dispatches first, consumes the only retry token and rejects again before recovery. It cannot plan another retry. b then fails its dispatch budget check without sending b-a2. Both originals fail at 40 ms; the run has three total sends and one retry. This is a finite batch allowance, not a replenishing or rolling-ratio policy.",
+    "modelAnswer": "No token is reserved by planning. At 40 ms a dispatches first, consumes the only retry token and rejects again before recovery. It cannot plan another retry. b then fails its dispatch budget check without sending b-a2. Both originals fail at 40 ms; the run has three total sends and one retry. This is a finite batch allowance, not a replenishing or rolling-ratio policy.",
+    "rubric": [
+      "Rechecks budget at actual dispatch",
+      "Identifies three sends and one retry",
+      "Does not fabricate b-a2",
+      "States deterministic ordering and finite-batch scope"
+    ],
+    "followUp": "What fairness policy might you need if one caller should not consume the available retry allowance first?",
+    "sourceIds": ["google-sre-retry-overload"]
+  },
+  {
+    "id": "retry-seeded-jitter-project-decision",
+    "topicId": "timeouts-retries",
+    "level": "intermediate",
+    "kind": "design-decision",
+    "prompt": "Two report callers retry against a recovering dependency. You enable FULL jitter and change seed 42 to another safe seed. What can you claim from this experiment, and how would you choose a production policy?",
+    "explanation": "The same recorded input, seed and compatible model version replay the same chosen delays and outcomes. A changed seed can change retry times; it does not guarantee spread, success or lower work in every finite run. Compare actual caller outcomes, sends, completed work and deadline use. For production choose a useful deadline, one documented retry owner, bounded attempts/load and effect safety, then validate against real latency and failure data.",
+    "modelAnswer": "The same recorded input, seed and compatible model version replay the same chosen delays and outcomes. A changed seed can change retry times; it does not guarantee spread, success or lower work in every finite run. Compare actual caller outcomes, sends, completed work and deadline use. For production choose a useful deadline, one documented retry owner, bounded attempts/load and effect safety, then validate against real latency and failure data.",
+    "rubric": [
+      "Separates exact replay from an improvement guarantee",
+      "Names the inclusive 0-through-cap delay range",
+      "Uses actual Java evidence rather than invented random outcomes",
+      "Defends deadline/load/effect choices and seeks real measurements"
+    ],
+    "followUp": "What changes when a completed report request may trigger a durable notification?",
+    "sourceIds": ["aws-exponential-jitter", "aws-timeouts-backoff-jitter"]
+  }
+]

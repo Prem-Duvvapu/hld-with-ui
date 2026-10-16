@@ -296,7 +296,7 @@ Original reservation targets and all legacy families remain supported. See
 `RetryInput` owns finite bounds, `RetryValidator` rejects the whole malformed workload,
 `RetrySimulator` owns one invocation's scheduler/random stream and `RetryResult` owns
 immutable initial/event/final snapshots. `RetryPresets` is the single source for its eight
-future teaching inputs. No Spring model registration, API, catalog row or renderer exists yet.
+future teaching inputs. HLD-18A added no Spring model registration, API, catalog row or renderer; HLD-18B integration is recorded below.
 
 One caller's timeout/deadline is separate from queued/running dependency work. A run-local
 priority queue orders completion, overall deadline, attempt timeout, original send and retry
@@ -310,3 +310,27 @@ Java serialization protect the future contract; Java checks semantic relationshi
 This foundation changes no existing OpenAPI/model/schema versions or published capabilities.
 See [decision 0037](decisions/0037-retry-caller-and-server-work.md) and the
 [staged handoff](TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md) for integration and limits.
+
+## Runnable retry draft
+
+[HLD-18B](work-items/HLD-18B.md) integrates the unchanged retry foundation through
+GET `/api/v1/simulations/timeouts-retries` and POST `/api/v1/simulations/timeouts-retries/runs`.
+RetryConfiguration owns framework registration; RetryController performs closed byte-input
+parsing and delegates policy to Java. RetryLimits exposes thirteen bounds derived from
+RetryInput. Descriptor presets remain the pure model's eight inputs, with default ID
+`late-work` (the baseline golden filename is not a preset identity).
+
+Existing request-byte, shared admission and whole-response guards apply. Legal caller failure
+is a completed 200 simulation; transport/model-resource failures remain 400/413/422/503/500.
+No truncated trace substitutes for a rejected whole response. HTTP 1.11.0 exports canonical
+schemas and generates types plus only five reachable descriptor definitions. The client
+captures input before asynchronous loading, then checks shape/reference/reported-history
+consistency; it does not recalculate policy, random choices, work or metrics.
+
+The single new catalog topic is draft, content 1.0.0, with exactly Study/Simulation/Practice.
+Its lazy explicit route renders real editable controls and initial/post-event playback.
+Caller and server-work states are independently inspectable; selected Java IDs highlight
+cards and complete-run metrics remain separate. Shared ModuleShell and Practice storage
+preserve history, drafts and saved answers. No Guided selector family is widened here.
+[Decision 0038](decisions/0038-retry-api-and-playback.md) records boundaries and migration.
+Human/hosted/prerequisite review, Guided/design and publication remain separate gates.
