@@ -1,0 +1,567 @@
+[
+  {
+    "id": "split-abort",
+    "title": "Separate writes leave a partial operation",
+    "presetId": "baseline",
+    "summary": "Split writes \u00b7 Initial stock 1 \u00b7 A requests 1 \u00b7 Stop after publishing stock.",
+    "takeaway": "Changing A to ABORTED does not restore its published stock. Conservation and absence of aborted effects are separate failed checks.",
+    "steps": [
+      {
+        "id": "initial",
+        "title": "One unit, no operation yet",
+        "from": "Submitted workload",
+        "to": "Published starting state",
+        "detail": "Nothing has begun or been allocated.",
+        "remainingUnits": 1,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "NOT_STARTED",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0
+          }
+        ]
+      },
+      {
+        "id": "begin-a",
+        "title": "A captures its base",
+        "from": "Published stock and revision",
+        "to": "A's captured base",
+        "detail": "BEGIN saves stock 1 and revision 0; shared state is unchanged.",
+        "remainingUnits": 1,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "OPEN",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0,
+            "baseRemaining": 1,
+            "baseRevision": 0
+          }
+        ]
+      },
+      {
+        "id": "decrement-a",
+        "title": "Stock becomes visible before its record",
+        "from": "Current published stock",
+        "to": "Published stock only",
+        "detail": "A checks current stock 1, publishes remaining 0 and advances revision to 1. No allocation record exists, so conservation already fails.",
+        "remainingUnits": 0,
+        "allocatedUnits": 0,
+        "revision": 1,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": false,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "OPEN",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 1,
+            "baseRemaining": 1,
+            "baseRevision": 0
+          }
+        ]
+      },
+      {
+        "id": "abort-a",
+        "title": "A aborts; the partial effect remains",
+        "from": "Explicit ABORT",
+        "to": "A status; published stock unchanged",
+        "detail": "USER_ABORT changes A to ABORTED. Its published stock decrement remains. No shared rollback boundary exists in this split-write mode.",
+        "remainingUnits": 0,
+        "allocatedUnits": 0,
+        "revision": 1,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": false,
+        "abortedEffectsAbsent": false,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "ABORTED",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 1,
+            "baseRemaining": 1,
+            "baseRevision": 0,
+            "failureReason": "USER_ABORT"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "staged-publish",
+    "title": "Publish both prepared pieces together",
+    "presetId": "protected-commit",
+    "summary": "Private work with a revision check \u00b7 Initial stock 1 \u00b7 A requests 1 \u00b7 Publish at COMMIT.",
+    "takeaway": "The stock proposal and allocation remain private until the one successful revision check publishes both. Captured base history survives workspace cleanup.",
+    "steps": [
+      {
+        "id": "initial",
+        "title": "One unit, no private proposal",
+        "from": "Submitted workload",
+        "to": "Published starting state",
+        "detail": "Published stock is 1. A has not begun and has no workspace.",
+        "remainingUnits": 1,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "NOT_STARTED",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0
+          }
+        ]
+      },
+      {
+        "id": "begin-a",
+        "title": "A opens a private workspace",
+        "from": "Published stock and revision",
+        "to": "A's private workspace",
+        "detail": "A captures stock 1 and revision 0. Its private working remaining value is 1; published stock is still 1.",
+        "remainingUnits": 1,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "OPEN",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0,
+            "baseRemaining": 1,
+            "baseRevision": 0,
+            "workingRemaining": 1
+          }
+        ]
+      },
+      {
+        "id": "decrement-a",
+        "title": "A prepares zero privately",
+        "from": "Transaction workspace",
+        "to": "A's private stock proposal",
+        "detail": "A checks its captured working value 1 and prepares remaining 0 with one pending stock unit. Published stock and allocation remain 1 and 0.",
+        "remainingUnits": 1,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "OPEN",
+            "pendingStockUnits": 1,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0,
+            "baseRemaining": 1,
+            "baseRevision": 0,
+            "workingRemaining": 0
+          }
+        ]
+      },
+      {
+        "id": "record-a",
+        "title": "A prepares the matching allocation",
+        "from": "Transaction workspace",
+        "to": "A's private allocation",
+        "detail": "The private one-unit allocation now accompanies the private stock decrement. Neither piece has been published.",
+        "remainingUnits": 1,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "OPEN",
+            "pendingStockUnits": 1,
+            "pendingAllocation": true,
+            "appliedStockUnits": 0,
+            "baseRemaining": 1,
+            "baseRevision": 0,
+            "workingRemaining": 0
+          }
+        ]
+      },
+      {
+        "id": "commit-a",
+        "title": "One boundary publishes both pieces",
+        "from": "Revision check and private proposal",
+        "to": "Published stock + allocation A",
+        "detail": "Expected revision 0 equals actual 0. COMMIT publishes remaining 0 and allocation A of 1 together, advancing revision once to 1. A becomes COMMITTED; its private workspace is cleared.",
+        "remainingUnits": 0,
+        "allocatedUnits": 1,
+        "revision": 1,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "COMMITTED",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 1,
+            "baseRemaining": 1,
+            "baseRevision": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "conflict-discard",
+    "title": "Discard a conflicting private proposal",
+    "presetId": "conservative-conflict",
+    "summary": "Private work with a coarse revision check \u00b7 Initial stock 3 \u00b7 A and B request 1 each \u00b7 Both capture revision 0.",
+    "takeaway": "B loses the revision check despite two units remaining. Discarding B leaves A\u2019s published allocation intact. A revision conflict and insufficient stock are different decisions.",
+    "steps": [
+      {
+        "id": "initial",
+        "title": "Three units, two separate transactions",
+        "from": "Submitted workload",
+        "to": "Published starting state",
+        "detail": "A and B each request one unit. Neither has begun.",
+        "remainingUnits": 3,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "NOT_STARTED",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0
+          },
+          {
+            "id": "b",
+            "phase": "NOT_STARTED",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0
+          }
+        ]
+      },
+      {
+        "id": "begin-a",
+        "title": "A captures revision zero",
+        "from": "Transaction workspace",
+        "to": "A's private workspace",
+        "detail": "A opens with captured stock 3 and revision 0; B has no private workspace.",
+        "remainingUnits": 3,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "OPEN",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0,
+            "baseRemaining": 3,
+            "baseRevision": 0,
+            "workingRemaining": 3
+          },
+          {
+            "id": "b",
+            "phase": "NOT_STARTED",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0
+          }
+        ]
+      },
+      {
+        "id": "begin-b",
+        "title": "B captures the same revision",
+        "from": "Transaction workspace",
+        "to": "B's private workspace",
+        "detail": "B also captures stock 3 and revision 0. Two proposals do not mean two published allocations.",
+        "remainingUnits": 3,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "OPEN",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0,
+            "baseRemaining": 3,
+            "baseRevision": 0,
+            "workingRemaining": 3
+          },
+          {
+            "id": "b",
+            "phase": "OPEN",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0,
+            "baseRemaining": 3,
+            "baseRevision": 0,
+            "workingRemaining": 3
+          }
+        ]
+      },
+      {
+        "id": "decrement-a",
+        "title": "A prepares its stock change",
+        "from": "Transaction workspace",
+        "to": "A's private stock proposal",
+        "detail": "A prepares private remaining 2 and one pending stock unit. Published stock remains 3.",
+        "remainingUnits": 3,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "OPEN",
+            "pendingStockUnits": 1,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0,
+            "baseRemaining": 3,
+            "baseRevision": 0,
+            "workingRemaining": 2
+          },
+          {
+            "id": "b",
+            "phase": "OPEN",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0,
+            "baseRemaining": 3,
+            "baseRevision": 0,
+            "workingRemaining": 3
+          }
+        ]
+      },
+      {
+        "id": "decrement-b",
+        "title": "B prepares from its own base",
+        "from": "Transaction workspace",
+        "to": "B's private stock proposal",
+        "detail": "B also prepares remaining 2 privately. These are competing proposals from the same base, not a combined stock change.",
+        "remainingUnits": 3,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "OPEN",
+            "pendingStockUnits": 1,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0,
+            "baseRemaining": 3,
+            "baseRevision": 0,
+            "workingRemaining": 2
+          },
+          {
+            "id": "b",
+            "phase": "OPEN",
+            "pendingStockUnits": 1,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0,
+            "baseRemaining": 3,
+            "baseRevision": 0,
+            "workingRemaining": 2
+          }
+        ]
+      },
+      {
+        "id": "record-a",
+        "title": "A prepares its allocation",
+        "from": "Transaction workspace",
+        "to": "A's private allocation",
+        "detail": "Only A has a prepared private allocation; neither transaction has published anything.",
+        "remainingUnits": 3,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "OPEN",
+            "pendingStockUnits": 1,
+            "pendingAllocation": true,
+            "appliedStockUnits": 0,
+            "baseRemaining": 3,
+            "baseRevision": 0,
+            "workingRemaining": 2
+          },
+          {
+            "id": "b",
+            "phase": "OPEN",
+            "pendingStockUnits": 1,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0,
+            "baseRemaining": 3,
+            "baseRevision": 0,
+            "workingRemaining": 2
+          }
+        ]
+      },
+      {
+        "id": "record-b",
+        "title": "Both private proposals are complete",
+        "from": "Transaction workspace",
+        "to": "B's private allocation",
+        "detail": "B prepares its allocation too. Published state remains stock 3, allocated 0 and revision 0.",
+        "remainingUnits": 3,
+        "allocatedUnits": 0,
+        "revision": 0,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "OPEN",
+            "pendingStockUnits": 1,
+            "pendingAllocation": true,
+            "appliedStockUnits": 0,
+            "baseRemaining": 3,
+            "baseRevision": 0,
+            "workingRemaining": 2
+          },
+          {
+            "id": "b",
+            "phase": "OPEN",
+            "pendingStockUnits": 1,
+            "pendingAllocation": true,
+            "appliedStockUnits": 0,
+            "baseRemaining": 3,
+            "baseRevision": 0,
+            "workingRemaining": 2
+          }
+        ]
+      },
+      {
+        "id": "commit-a",
+        "title": "A publishes first",
+        "from": "A's valid revision check",
+        "to": "Published stock + allocation A",
+        "detail": "A validates revision 0 and publishes remaining 2 with allocation A of 1. Published revision becomes 1; B still retains its revision-0 proposal.",
+        "remainingUnits": 2,
+        "allocatedUnits": 1,
+        "revision": 1,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "COMMITTED",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 1,
+            "baseRemaining": 3,
+            "baseRevision": 0
+          },
+          {
+            "id": "b",
+            "phase": "OPEN",
+            "pendingStockUnits": 1,
+            "pendingAllocation": true,
+            "appliedStockUnits": 0,
+            "baseRemaining": 3,
+            "baseRevision": 0,
+            "workingRemaining": 2
+          }
+        ]
+      },
+      {
+        "id": "commit-b",
+        "title": "B discards its stale proposal",
+        "from": "B's failed revision check",
+        "to": "Discard B's private workspace",
+        "detail": "B expects revision 0 but actual revision is 1. REVISION_CONFLICT aborts B and clears only B\u2019s private work. Published remaining stays 2 and A\u2019s allocation stays 1; B\u2019s captured base remains history.",
+        "remainingUnits": 2,
+        "allocatedUnits": 1,
+        "revision": 1,
+        "remainingNonnegative": true,
+        "allocatedWithinCapacity": true,
+        "unitsConserved": true,
+        "abortedEffectsAbsent": true,
+        "actors": [
+          {
+            "id": "a",
+            "phase": "COMMITTED",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 1,
+            "baseRemaining": 3,
+            "baseRevision": 0
+          },
+          {
+            "id": "b",
+            "phase": "ABORTED",
+            "pendingStockUnits": 0,
+            "pendingAllocation": false,
+            "appliedStockUnits": 0,
+            "baseRemaining": 3,
+            "baseRevision": 0,
+            "failureReason": "REVISION_CONFLICT"
+          }
+        ]
+      }
+    ]
+  }
+]

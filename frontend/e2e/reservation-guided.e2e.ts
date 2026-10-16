@@ -10,7 +10,7 @@ const checkpoints: GuidedCheckpoint[] = JSON.parse(
     new URL(`../../content/topics/${id}/checkpoints.json`, import.meta.url),
     "utf8",
   ),
-);
+).filter((checkpoint: GuidedCheckpoint) => checkpoint.simulationId === id);
 const panel = (page: Page) =>
   page.getByRole("tabpanel", { name: "Guided", exact: true });
 const prediction = (page: Page) =>

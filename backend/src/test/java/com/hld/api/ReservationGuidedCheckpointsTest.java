@@ -95,7 +95,8 @@ class ReservationGuidedCheckpointsTest {
     }
 
     @Test void authoredCoverageUsesFivePresetsAllThreeKindsAndNoInventedTimingOrExtraPresets() {
-        var checkpoints = catalog.draftTopic("transactions-isolation").checkpoints();
+        var checkpoints = catalog.draftTopic("transactions-isolation").checkpoints().stream()
+                .filter(c -> c.simulationId().equals("transactions-isolation")).toList();
         assertThat(checkpoints).extracting(GuidedCheckpoint::id).containsExactly(
                 "read-is-preview", "first-acceptance-looks-safe", "stale-second-acceptance", "current-check-boundary",
                 "stale-preview-rejected", "serial-order-hides-race", "capacity-not-conservation", "empty-stock-valid-rejection");

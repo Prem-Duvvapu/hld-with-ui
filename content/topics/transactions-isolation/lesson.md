@@ -5,10 +5,10 @@ when they happen. The problem is what the system checks when it accepts the rese
 Use this small example to locate the decision that must protect shared state.
 
 This draft contains two named experiments. **Reservation race** teaches stale/current
-acceptance through six views. **Atomicity & abort** adds a separate Playground experiment
-with Study and Practice: what remains when stock and its record are written separately?
-Guided, Architecture and Operation sequence still cover the reservation experiment only;
-atomicity versions of those views remain later work.
+acceptance through six views. **Atomicity & abort** asks what remains when stock and its
+record are written separately. It has its own Playground, eight Guided checkpoints,
+Architecture and three manual Operation sequences, plus the shared Study and Practice.
+Choose the experiment within any of its four experiment-specific views.
 
 Java executes the chosen logical schedule and returns complete snapshots. Neither experiment
 has elapsed time, a database engine, durable storage, crash recovery, retries or idempotency.
@@ -282,6 +282,18 @@ prediction, choose **Run atomicity experiment**, then inspect its initial and po
 Published counts and private work have separate regions. Selected flags describe the current
 snapshot; whole-history metrics cover all returned steps. An API error supplies no new model
 result, so prior evidence remains labelled with its previous submitted input.
+
+[Open atomicity Guided](/draft/topics/transactions-isolation?view=guided&experiment=atomicity)
+to predict eight selected Java steps. Reveal each checkpoint explicitly, then explain the
+published counts, private work, retained base and decision reason. A cached preset still
+needs a separate reveal for another checkpoint; it does not answer the prediction for you.
+Saved reasoning returns on reload; Java results require a new explicit run.
+
+In atomicity Architecture, inspect published ownership, each private workspace and the
+revision-checked publication boundary. Operation sequence offers three authored causal paths:
+split-write abort, staged publication and revision conflict with stock still available.
+These reading views have complete text equivalents and make no Java run. Compare their
+illustrations with actual Playground or Guided evidence before making a production claim.
 
 ## Failures and tradeoffs
 

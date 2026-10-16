@@ -85,7 +85,7 @@ for (const model of ["queue-capacity", "queue-delivery", "data-access"]) {
     );
   }
 }
-// Atomicity is standalone evidence in this slice, without an API or catalog capability.
+// Standalone atomicity fixtures remain canonical evidence alongside the registered draft API.
 for (const variant of ["baseline", "protected", "conflict", "max-boundary"]) {
   for (const kind of ["input", "result"]) {
     const example = `transaction-atomicity-${variant}-${kind}`;
@@ -177,7 +177,7 @@ const publishedWorkshopStages = [
 ];
 
 // Evidence kinds and selectors derive from the actual named run-result collection.
-// Data-access operation and reservation step identities select untimed outcomes; event families retain events.
+// Data-access operation and transaction step identities select untimed outcomes; event families retain events.
 function eventSchema(simulationId, collection = "events") {
   const ref = (schema) => schema?.$ref?.split("/").at(-1);
   const result =

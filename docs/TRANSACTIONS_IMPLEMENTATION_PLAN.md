@@ -2,7 +2,7 @@
 
 Status: **active staged handoff**. The reservation experiment is implemented as a six-view
 draft; the complete transaction curriculum is not implemented. Prepared on 2026-10-13,
-reconciled on 2026-10-14.
+reconciled on 2026-10-16.
 Canonical ID: `transactions-isolation`. Prerequisite: `data-access-models`.
 
 Current implementation: [HLD-16A](work-items/HLD-16A.md) is merged with final CI evidence.
@@ -12,8 +12,9 @@ adds Guided and authored design views, completing six draft views for the bounde
 experiment. [HLD-17A](work-items/HLD-17A.md) implements a separate pure transaction-atomicity
 model and standalone evidence, without API/UI/catalog registration. Actual verification
 and delivery evidence is recorded in its work item and PR. [HLD-17B](work-items/HLD-17B.md)
-integrates the strict API and second named Playground/Study/Practice experiment; its actual
-verification remains in that work item. Broader SQL isolation, retry/idempotency and publication
+integrates the strict API and second named Playground/Study/Practice experiment.
+[HLD-17C](work-items/HLD-17C.md) adds atomicity Guided and authored design views; actual
+verification remains in each work item and PR. Broader SQL isolation, retry/idempotency and publication
 remain pending.
 Phase descriptions below retain their acceptance scope; they are not evidence that every
 phase is done.
@@ -330,9 +331,9 @@ descriptor independently so its error does not break the first experiment. Keep 
 state/private work, selected-prefix flags and whole-history status visibly separate.
 
 Original Study/Practice extensions should carry the one-unit abort example through teammate
-and interview transfer, including the revision-conflict follow-up. Existing eight Guided
-checkpoints and authored design views remain reservation-only until an additional bounded
-contribution supplies actual atomicity targets/views. Human/hosted/publication and full
+and interview transfer, including the revision-conflict follow-up. HLD-17C supplies eight additional atomicity Guided checkpoints, inspectable ownership
+Architecture and three manual causal sequences. Separate adapters avoid mixing run caches
+when both models use the same preset ID. The original reservation targets remain unchanged. Human/hosted/publication and full
 isolation/retry/idempotency teaching remain separate gates.
 
 The six reservation views do not constitute complete transaction coverage. Keep chosen SQL
@@ -416,9 +417,10 @@ contributions and their actual final-head CI/merge before selecting subsequent w
 Create a fresh branch from updated main for one focused work item.
 
 HLD-17A supplies the atomicity model; HLD-17B integrates strict APIs and a second named
-Playground/Study/Practice experiment. Verify actual source and delivery, then complete
-atomicity Guided/design with Java-targeted checkpoints and authored Architecture/Sequence
-views. Existing reservation checkpoints/model/schema/goldens and saved IDs remain valid.
+Playground/Study/Practice experiment. HLD-17C supplies atomicity Guided and authored design
+views; verify its actual source and final-head delivery. Continue the earliest unmet
+transaction/retry/idempotency prerequisite as a new bounded contribution. Existing reservation
+checkpoints/model/schema/goldens and saved IDs remain valid.
 Do not claim full transaction isolation, SQL rollback/recovery, retries or idempotency.
 
 Java owns authoritative states/outcomes/flags/metrics. React projects selected snapshots

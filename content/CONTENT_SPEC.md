@@ -17,10 +17,12 @@ content/topics/<topic-id>/checkpoints.json   # only with the guided capability
 
 Guided checkpoints (`contracts/checkpoints.schema.json`) follow predict → reveal → explain → choose. Each one names a Java preset and a target using exactly one supported semantic selector
 family: cache operation, capacity job ID, paired delivery message/attempt IDs, data-access
-operation ID, or reservation step ID. Legacy families select actual events; data-access and
-reservation select actual ordered outcomes by operation or step ID and kind with occurrence
-exactly one. Reservation selectors belong to the existing reservation model; the standalone
-atomicity foundation does not add Guided targets. No timed event is invented for analysis. Exactly one family is required; both delivery IDs must agree. Delivery targets use actual attempt-bearing event capabilities, so pure consumer/enqueue events cannot claim this pair. Array indexes and narration are not identifiers. A Java test runs every preset and checks that the target exists and that the numbers in the explanation match the returned Java evidence.
+operation ID, or transaction step ID. Legacy families select actual events; data-access and
+transactions select actual ordered outcomes by operation or step ID and kind with occurrence
+exactly one. Step selectors have a closed union of reservation and atomicity outcome kinds. The
+checkpoint simulationId resolves its actual model capabilities: a kind from the other model
+is rejected even if the stepId family itself permits it. Both models share one canonical
+transaction topic with distinct checkpoint IDs and independently cached Guided adapters. No timed event is invented for analysis. Exactly one family is required; both delivery IDs must agree. Delivery targets use actual attempt-bearing event capabilities, so pure consumer/enqueue events cannot claim this pair. Array indexes and narration are not identifiers. A Java test runs every preset and checks that the target exists and that the numbers in the explanation match the returned Java evidence.
 
 Case studies use `content/case-studies/<case-id>/workshop.json` and `resources.json`. A draft can contain one working stage; its full design journey remains unpublished. `contracts/workshop.schema.json` and OpenAPI define the typed resource. Each ordered stage contains `id`, `title`, `prompt`, `reference`, `rubric`, `experimentLinks`, and `sourceIds`; links name a published experiment topic and explicit input instructions. Case metadata uses `workshopPath`, not placeholder lesson/question paths.
 

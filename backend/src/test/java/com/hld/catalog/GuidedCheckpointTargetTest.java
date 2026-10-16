@@ -230,4 +230,24 @@ class GuidedCheckpointTargetTest {
         assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, null, null, "q1", "read-b", "READ_OBSERVED", 1));
         assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, null, null, null, null, "READ_OBSERVED", 1));
     }
+
+    @Test void atomicityTargetsSupportExactlyTheirActualKindsWithinTheExistingStepFamily() {
+        for (var kind : com.hld.atomicity.AtomicityResult.Kind.values()) {
+            var target = new GuidedCheckpoint.Target(null, null, null, null, null, "commit-a", kind.name(), 1);
+            assertThat(target.stepId()).isEqualTo("commit-a");
+            assertThat(target.kind()).isEqualTo(kind.name());
+            assertThat(target.operationId()).isNull();
+        }
+        for (String id : new String[] {"", "Step", "1s", "s\n", "s ", "s".repeat(33), "é"})
+            assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, null, null, null, id, "TRANSACTION_COMMITTED", 1));
+        for (String kind : new String[] {null, "", "TRANSACTION_RECOVERED", "transaction.committed", "TENANT_RANGE", "TRANSACTION_COMMITTED\n"})
+            assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, null, null, null, "commit-a", kind, 1));
+        for (int occurrence : new int[] {-1, 0, 2, 10_000})
+            assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, null, null, null, "commit-a", "TRANSACTION_COMMITTED", occurrence));
+        assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(1, null, null, null, null, "commit-a", "TRANSACTION_COMMITTED", 1));
+        assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, "job-1", null, null, null, "commit-a", "TRANSACTION_COMMITTED", 1));
+        assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, "m1", "m1-a1", null, "commit-a", "TRANSACTION_COMMITTED", 1));
+        assertThatIllegalArgumentException().isThrownBy(() -> new GuidedCheckpoint.Target(null, null, null, null, "q1", "commit-a", "TRANSACTION_COMMITTED", 1));
+    }
+
 }

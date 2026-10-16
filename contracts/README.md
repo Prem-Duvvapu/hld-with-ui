@@ -188,3 +188,15 @@ canonical ReservationOutcome capabilities. It does not widen the data-access ope
 family or three event families. Content associates each selector with its actual model family;
 Java fixtures verify the named step exists in its preset. Legacy constructors, omitted-null
 wire shapes and renderer matchers remain compatible. See [HLD-16C](../docs/work-items/HLD-16C.md).
+
+## Atomicity Guided outcomes
+
+HTTP `1.10.0` extends the fifth stepId family with the nine actual AtomicityOutcome kinds.
+The schema union is checked against both canonical result definitions. Content validation
+resolves each simulationId and rejects cross-model kinds, mixed selector families, missing
+step IDs and occurrence other than one. No sixth target family or synthetic event clock is
+introduced. Content `1.3.0` preserves the original eight reservation checkpoints and appends
+eight atomicity checkpoints, each executed by its model's Java teaching fixture.
+Both model/schema versions and goldens remain unchanged. See
+[HLD-17C](../docs/work-items/HLD-17C.md) and
+[decision0036](../docs/decisions/0036-atomicity-guided-sessions.md).

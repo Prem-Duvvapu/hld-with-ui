@@ -347,6 +347,8 @@ for (const theme of ["light", "dark"] as const)
   test(`reservation Playground Study Practice fit 320 768 1440 with reduced motion in ${theme}`, async ({
     page,
   }, testInfo) => {
+    // Nine view/width combinations include three full-page PNG captures; this is not a latency benchmark.
+    test.setTimeout(90_000);
     await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
     await page.addInitScript(
       (value) => localStorage.setItem("hld-theme", value),

@@ -818,3 +818,122 @@ test("reject an unresolved reservation step-identity schema reference", () => {
     },
   );
 });
+
+function checkAtomicityTarget(
+  target,
+  expected,
+  expectedStatus = 1,
+  mutateApi = () => {},
+) {
+  checkChange(
+    () => {},
+    expected,
+    () => {},
+    (fixture) => {
+      const path = join(
+        fixture,
+        "content/topics/transactions-isolation/checkpoints.json",
+      );
+      const checkpoints = JSON.parse(readFileSync(path, "utf8"));
+      checkpoints[0].simulationId = "transaction-atomicity";
+      checkpoints[0].presetId = "protected-baseline";
+      checkpoints[0].target = target;
+      writeFileSync(path, JSON.stringify(checkpoints));
+      const apiPath = join(fixture, "contracts/openapi.json");
+      const api = JSON.parse(readFileSync(apiPath, "utf8"));
+      mutateApi(api);
+      writeFileSync(apiPath, JSON.stringify(api));
+    },
+    expectedStatus,
+  );
+}
+
+const atomicityTarget = {
+  stepId: "abort-a",
+  kind: "TRANSACTION_ABORTED",
+  occurrence: 1,
+};
+
+test("accept atomicity's actual step outcome selector without introducing another identity family", () => {
+  checkAtomicityTarget(atomicityTarget, /Validated/, 0);
+});
+
+for (const [name, target, expected] of [
+  [
+    "reservation outcome kind on the atomicity model",
+    { ...atomicityTarget, kind: "READ_OBSERVED" },
+    /transaction-atomicity never returns outcome kind READ_OBSERVED/,
+  ],
+  [
+    "unknown atomicity outcome kind",
+    { ...atomicityTarget, kind: "TRANSACTION_RECOVERED" },
+    /transaction-atomicity never returns outcome kind TRANSACTION_RECOVERED/,
+  ],
+  [
+    "atomicity with a data-access selector",
+    { operationId: "q1", kind: "TRANSACTION_ABORTED", occurrence: 1 },
+    /transaction-atomicity outcomes do not support target selector operationId/,
+  ],
+  [
+    "atomicity with a cache event selector",
+    { operation: 1, kind: "cache.fill", occurrence: 1 },
+    /transaction-atomicity events do not support target selector operation/,
+  ],
+  [
+    "atomicity with a queue job selector",
+    { jobId: "job-1", kind: "job.started", occurrence: 1 },
+    /transaction-atomicity events do not support target selector jobId/,
+  ],
+  [
+    "atomicity with delivery attempt selectors",
+    { messageId: "m1", attemptId: "m1-a1", kind: "ack.stale", occurrence: 1 },
+    /transaction-atomicity events do not support target selector messageId/,
+  ],
+  [
+    "atomicity mixed with an access-operation identity",
+    { ...atomicityTarget, operationId: "q1" },
+    /additional properties/,
+  ],
+  [
+    "atomicity repeat occurrence despite unique step IDs",
+    { ...atomicityTarget, occurrence: 2 },
+    /must be equal to constant/,
+  ],
+])
+  test(`reject checkpoint ${name}`, () =>
+    checkAtomicityTarget(target, expected));
+
+test("reject an unresolved atomicity step identity schema reference", () => {
+  checkAtomicityTarget(
+    atomicityTarget,
+    /transaction-atomicity outcomes do not support target selector stepId/,
+    1,
+    (api) => {
+      api.components.schemas.AtomicityOutcome.properties.stepId.$ref =
+        "#/components/schemas/MissingAtomicityStepIdentity";
+    },
+  );
+});
+
+test("reject an optional atomicity step identity even when its property still exists", () => {
+  checkAtomicityTarget(
+    atomicityTarget,
+    /transaction-atomicity outcomes do not support target selector stepId/,
+    1,
+    (api) => {
+      const outcome = api.components.schemas.AtomicityOutcome;
+      outcome.required = outcome.required.filter((field) => field !== "stepId");
+    },
+  );
+});
+
+test("reject a nullable atomicity identity owner instead of guessing selector support", () => {
+  checkAtomicityTarget(
+    atomicityTarget,
+    /transaction-atomicity outcomes do not support target selector stepId/,
+    1,
+    (api) => {
+      api.components.schemas.AtomicityIdentifier.type = ["string", "null"];
+    },
+  );
+});

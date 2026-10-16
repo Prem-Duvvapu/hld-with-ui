@@ -356,3 +356,16 @@ The copied-runtime smoke requires named baseline/protected-baseline/protected-co
 and compares their entire inputs/results with configured Java baseline/protected/conflict
 goldens. The maximum-boundary golden remains standalone stress evidence, not a ninth preset.
 Actual HTTP/UI/accessibility checks and publication limits are recorded in HLD-17B.
+
+## Guided atomicity steps
+
+[HLD-17C](work-items/HLD-17C.md) adds eight selected-prefix checkpoints without changing
+model/schema replay versions or goldens. HTTP1.10 extends the existing stepId/kind/occurrence1
+family with the nine actual AtomicityOutcome kinds. Content validates the kind against its
+simulationId's canonical outcome capabilities; reservation and atomicity kinds cannot cross.
+Java executes every authored target and checks published counts/revision, private workspace,
+retained base, reason and all four flags. React selects the returned outcome, without
+computing model transitions or a whole-history verdict. Atomicity and reservation Guided
+adapters have independent preset caches and distinct saved activities under one topic.
+Three authored manual paths explain split abort, staged publication and conservative conflict;
+they are labeled illustrations and introduce no simulated time or automatic Java requests.

@@ -221,7 +221,7 @@ for (const [kind, component, definitions] of [
     );
   }
 }
-const reservationTarget = checkpoints.items.properties.target.oneOf.find(
+const transactionTarget = checkpoints.items.properties.target.oneOf.find(
   (branch) => branch.required.includes("stepId"),
 );
 const reservationOutcome = read(
@@ -237,12 +237,22 @@ const reservationKinds = kindsSupportingSelectors(
     [`${reservationInputId}#/$defs/identifier`]: reservationIdentifier,
   },
 );
+const atomicityOutcome = read(
+  "contracts/transaction-atomicity.result.schema.json",
+).$defs.outcome;
+const atomicityIdentifier = read(
+  "contracts/transaction-atomicity.input.schema.json",
+).$defs.identifier;
+const atomicityKinds = kindsSupportingSelectors(atomicityOutcome, ["stepId"], {
+  [`${atomicityInputId}#/$defs/identifier`]: atomicityIdentifier,
+});
+const transactionKinds = [...new Set([...reservationKinds, ...atomicityKinds])];
 if (
-  JSON.stringify(reservationTarget?.properties.kind.enum) !==
-  JSON.stringify(reservationKinds)
+  JSON.stringify(transactionTarget?.properties.kind.enum) !==
+  JSON.stringify(transactionKinds)
 )
   throw new Error(
-    "Reservation checkpoint kinds differ from actual outcome selector capabilities.",
+    "Transaction checkpoint kinds differ from actual reservation and atomicity outcome selector capabilities.",
   );
 
 // The lazy delivery client needs only its descriptor's reachable schemas, not the entire API.

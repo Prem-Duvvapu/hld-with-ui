@@ -404,3 +404,32 @@ it("resumes an actual reservation Guided checkpoint by saved activity identity",
     });
   }
 });
+
+it("resumes both atomicity saved activity types using the canonical transaction topic", () => {
+  const detail = {
+    topic: entries.find((entry) => entry.id === "transactions-isolation")!,
+    questions: reservationQuestions,
+    checkpoints: reservationCheckpoints,
+    lessonMarkdown: "Published and private evidence.",
+  } as TopicDetail;
+  const checkpoint = reservationCheckpoints.find(
+    (item) => item.simulationId === "transaction-atomicity",
+  )!;
+  for (const suffix of ["prediction", "tradeoff"]) {
+    expect(
+      draftTopicResumeTarget(
+        {
+          ...saved,
+          topicId: detail.topic.id,
+          activityId: `${checkpoint.id}-${suffix}`,
+          contentVersion: "1.3.0",
+        },
+        detail,
+      ),
+    ).toMatchObject({
+      path: `/draft/topics/transactions-isolation?view=guided&checkpoint=${checkpoint.id}`,
+      activity: checkpoint.title,
+      removed: false,
+    });
+  }
+});

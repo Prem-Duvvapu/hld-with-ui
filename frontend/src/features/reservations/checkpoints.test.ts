@@ -4,7 +4,9 @@ import type { GuidedCheckpoint } from "../../api/types";
 import { result, protectedResult } from "./reservationTestFixtures";
 import { resolveReservationCheckpoint } from "./checkpoints";
 it("resolves the actual unique returned step and kind for both golden schedules", () => {
-  for (const checkpoint of authored as GuidedCheckpoint[]) {
+  for (const checkpoint of (authored as GuidedCheckpoint[]).filter(
+    (item) => item.simulationId === "transactions-isolation",
+  )) {
     const run =
       checkpoint.presetId === "unsafe-baseline"
         ? result
