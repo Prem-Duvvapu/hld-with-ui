@@ -748,6 +748,74 @@ for (const theme of ["light", "dark"] as const) {
           cssWidth: await page.evaluate(() => innerWidth),
           dpr: await page.evaluate(() => devicePixelRatio),
         });
+        for (const name of ["Guided", "Architecture", "Operation sequence"]) {
+          const tab = page.getByRole("tab", { name, exact: true });
+          await tab.focus();
+          await page.keyboard.press("Enter");
+          if (name === "Guided") {
+            await page
+              .getByRole("button", { name: "Run and reveal", exact: true })
+              .click();
+            await expect(
+              page.getByRole("region", {
+                name: "Selected atomicity snapshot",
+                exact: true,
+              }),
+            ).toBeVisible();
+          } else if (name === "Architecture") {
+            const inspect = page.getByRole("button", {
+              name: "Inspect One publication boundary",
+              exact: true,
+            });
+            await inspect.focus();
+            await page.keyboard.press("Enter");
+            await expect(inspect).toBeFocused();
+            await expect(
+              page.getByRole("region", {
+                name: "Selected atomicity responsibility",
+                exact: true,
+              }),
+            ).toContainText("A mismatch aborts and discards");
+          } else {
+            await page
+              .getByRole("radio", {
+                name: "Discard a conflicting private proposal",
+                exact: true,
+              })
+              .check();
+            const next = page.getByRole("button", {
+              name: "Next atomicity path step",
+              exact: true,
+            });
+            await next.focus();
+            await page.keyboard.press("Enter");
+            await expect(next).toBeFocused();
+            await page
+              .getByText("Full atomicity text sequence", { exact: true })
+              .click();
+            await expect(
+              page.getByRole("region", {
+                name: "Authored atomicity sequence",
+                exact: true,
+              }),
+            ).toBeVisible();
+          }
+          await expect
+            .poll(() =>
+              page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth,
+              ),
+            )
+            .toBe(true);
+          observations.push({
+            theme,
+            view: `Atomicity ${name}`,
+            physicalWidth: pixels,
+            zoom: 2,
+            cssWidth: await page.evaluate(() => innerWidth),
+            dpr: await page.evaluate(() => devicePixelRatio),
+          });
+        }
       }
       await testInfo.attach("transaction-native-zoom-observations", {
         body: JSON.stringify(observations, null, 2),

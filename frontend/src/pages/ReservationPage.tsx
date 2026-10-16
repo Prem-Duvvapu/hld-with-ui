@@ -1,9 +1,16 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { api, ApiClientError } from "../api/client";
 import type { ReservationDescriptor, TopicDetail } from "../api/types";
 import { ErrorState, LoadingState } from "../components/AsyncState";
 import { ModuleShell } from "../components/ModuleShell";
-import { TransactionExperiments } from "../features/reservations/TransactionExperiments";
+import {
+  TransactionExperimentProvider,
+  useTransactionExperiment,
+} from "../features/reservations/TransactionExperimentContext";
+import {
+  TransactionExperiments,
+  TransactionExperimentView,
+} from "../features/reservations/TransactionExperiments";
 import { ReservationGuided } from "../features/reservations/ReservationGuided";
 import {
   ReservationArchitectureView,
@@ -12,6 +19,21 @@ import {
 import { PracticeView } from "../features/learning/PracticeView";
 import { StudyView } from "../features/learning/StudyView";
 import { NotFoundPage } from "./NotFoundPage";
+const AtomicityGuided = lazy(() =>
+  import("../features/atomicity/AtomicityGuided").then((module) => ({
+    default: module.AtomicityGuided,
+  })),
+);
+const AtomicityArchitectureView = lazy(() =>
+  import("../features/atomicity/AtomicityConceptViews").then((module) => ({
+    default: module.AtomicityArchitectureView,
+  })),
+);
+const AtomicitySequenceView = lazy(() =>
+  import("../features/atomicity/AtomicityConceptViews").then((module) => ({
+    default: module.AtomicitySequenceView,
+  })),
+);
 const id = "transactions-isolation";
 export function ReservationPage() {
   const [data, setData] = useState<{
@@ -102,85 +124,110 @@ export function ReservationPage() {
           models; publication review remains pending.
         </p>
       </section>
-      <ModuleShell
-        topic={data.topic.topic}
-        tabs={[
-          { id: "playground", label: "Playground" },
-          ...(data.topic.topic.capabilities.includes("guided")
-            ? [{ id: "guided", label: "Guided" }]
-            : []),
-          { id: "architecture", label: "Architecture" },
-          { id: "sequence", label: "Operation sequence" },
-          { id: "study", label: "Study" },
-          { id: "practice", label: "Practice" },
-        ]}
-        defaultView="playground"
-        panels={{
-          playground: (
-            <TransactionExperiments
-              key={`${data.topic.topic.contentVersion}/${data.descriptor.modelVersion}`}
-              reservation={data.descriptor}
-              atomicityAvailable={data.topic.topic.simulationIds.includes(
-                "transaction-atomicity",
-              )}
-            />
-          ),
-          guided: data.topic.topic.capabilities.includes("guided") && (
-            <>
-              <ReservationScope view="Guided checkpoints" />
-              <ReservationGuided
-                checkpoints={data.topic.checkpoints}
-                descriptor={data.descriptor}
-                contentVersion={data.topic.topic.contentVersion}
+      <TransactionExperimentProvider
+        atomicityAvailable={data.topic.topic.simulationIds.includes(
+          "transaction-atomicity",
+        )}
+        checkpoints={data.topic.checkpoints}
+      >
+        <ModuleShell
+          topic={data.topic.topic}
+          tabs={[
+            { id: "playground", label: "Playground" },
+            ...(data.topic.topic.capabilities.includes("guided")
+              ? [{ id: "guided", label: "Guided" }]
+              : []),
+            { id: "architecture", label: "Architecture" },
+            { id: "sequence", label: "Operation sequence" },
+            { id: "study", label: "Study" },
+            { id: "practice", label: "Practice" },
+          ]}
+          defaultView="playground"
+          panels={{
+            playground: (
+              <TransactionExperiments
+                key={`${data.topic.topic.contentVersion}/${data.descriptor.modelVersion}`}
+                reservation={data.descriptor}
               />
-            </>
-          ),
-          architecture: (
-            <>
-              <ReservationScope view="Architecture" />
-              <ReservationArchitectureView />
-            </>
-          ),
-          sequence: (
-            <>
-              <ReservationScope view="Operation sequences" />
-              <ReservationSequenceView />
-            </>
-          ),
-          study: (
-            <StudyView
-              markdown={data.topic.lessonMarkdown}
-              title="Choose the boundary the operation needs."
-              guidance="Trace an earlier read, or related writes that commit or abort. Explain published state, private work, and the guarantees each model leaves unmodeled."
-            />
-          ),
-          practice: (
-            <PracticeView
-              questions={data.topic.questions}
-              topicId={id}
-              contentVersion={data.topic.topic.contentVersion}
-              topicTitle={data.topic.topic.title}
-              title="Explain the race and defend the boundary"
-              description="Explain reservation decisions and atomicity using the named experiment in each prompt. A saved explanation is your own reasoning, not an automatic grade."
-            />
-          ),
-        }}
-      />
+            ),
+            guided: data.topic.topic.capabilities.includes("guided") && (
+              <TransactionExperimentView
+                reservation={
+                  <ReservationGuided
+                    checkpoints={data.topic.checkpoints.filter(
+                      (checkpoint) => checkpoint.simulationId === id,
+                    )}
+                    descriptor={data.descriptor}
+                    contentVersion={data.topic.topic.contentVersion}
+                  />
+                }
+                atomicity={<AtomicityGuidedPanel topic={data.topic} />}
+              />
+            ),
+            architecture: (
+              <TransactionExperimentView
+                reservation={<ReservationArchitectureView />}
+                atomicity={
+                  <Suspense
+                    fallback={
+                      <LoadingState label="Loading atomicity architecture" />
+                    }
+                  >
+                    <AtomicityArchitectureView />
+                  </Suspense>
+                }
+              />
+            ),
+            sequence: (
+              <TransactionExperimentView
+                reservation={<ReservationSequenceView />}
+                atomicity={
+                  <Suspense
+                    fallback={
+                      <LoadingState label="Loading atomicity operation sequence" />
+                    }
+                  >
+                    <AtomicitySequenceView />
+                  </Suspense>
+                }
+              />
+            ),
+            study: (
+              <StudyView
+                markdown={data.topic.lessonMarkdown}
+                title="Choose the boundary the operation needs."
+                guidance="Trace an earlier read, or related writes that commit or abort. Explain published state, private work, and the guarantees each model leaves unmodeled."
+              />
+            ),
+            practice: (
+              <PracticeView
+                questions={data.topic.questions}
+                topicId={id}
+                contentVersion={data.topic.topic.contentVersion}
+                topicTitle={data.topic.topic.title}
+                title="Explain the race and defend the boundary"
+                description="Explain reservation decisions and atomicity using the named experiment in each prompt. A saved explanation is your own reasoning, not an automatic grade."
+              />
+            ),
+          }}
+        />
+      </TransactionExperimentProvider>
     </>
   );
 }
 
-function ReservationScope({ view }: { view: string }) {
+function AtomicityGuidedPanel({ topic }: { topic: TopicDetail }) {
+  const { descriptor, error, retry } = useTransactionExperiment();
+  if (error) return <ErrorState message={error} retry={retry} />;
+  if (!descriptor)
+    return <LoadingState label="Loading the atomicity experiment" />;
   return (
-    <aside
-      className="transaction-reservation-scope"
-      aria-label={`${view} experiment scope`}
-    >
-      <p>
-        <strong>Reservation race.</strong> This view teaches the original
-        reservation experiment. Explore Atomicity &amp; abort in Playground,
-        Study, and Practice; its Guided and design views are pending.
-      </p>
-    </aside>
+    <Suspense fallback={<LoadingState label="Loading atomicity checkpoints" />}>
+      <AtomicityGuided
+        checkpoints={topic.checkpoints}
+        descriptor={descriptor}
+        contentVersion={topic.topic.contentVersion}
+      />
+    </Suspense>
   );
 }

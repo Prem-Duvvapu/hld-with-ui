@@ -268,10 +268,14 @@ canonical inputs. Whole request/response and shared admission guards keep their 
 400/413/422/503/error semantics; valid abort/conflict is a complete 200 analysis.
 
 The single `transactions-isolation` draft catalog row now references both simulation IDs,
-content 1.2.0 and sixteen Practice questions. TransactionExperiments offers a URL-selected
+content 1.3.0 and sixteen Practice questions. TransactionExperiments offers a URL-selected
 choice, keeps visited panels mounted and loads the new descriptor/renderer lazily. Missing,
 unknown and failed atomicity states require an explicit choice/retry, while reservation work
-remains available. Old Guided/design views are visibly scoped to reservation.
+remains available. [HLD-17C](work-items/HLD-17C.md) adds eight atomicity Guided checkpoints and authored design
+views. A topic-scoped lazy descriptor serves both Playground and Guided. Model-filtered
+adapters have separate run caches even when preset IDs overlap, and share only canonical
+topic answer storage. Experiment choice persists across four views; authored checkpoint
+resume identifies its model. Reading Architecture/Sequence starts no descriptor or run.
 
 Canonical schemas own model types; the exporter generates the closed reachable descriptor
 and HTTP components. Client capture happens before its first asynchronous yield. Compatibility
@@ -280,3 +284,8 @@ React does not execute stock rules or recompute Java flags/counters. Initial and
 snapshots separate published data, private workspace and retained base history. Selected
 flags and whole-history metrics remain distinct. [Decision 0035](decisions/0035-two-transaction-experiments.md)
 records ownership, migration and scope. Actual gates remain in HLD-17B.
+
+HTTP1.10 expands the existing step target family to the nine actual atomicity kinds while
+content capability checks enforce each simulationId's own closed outcome vocabulary.
+Original reservation targets and all legacy families remain supported. See
+[decision0036](decisions/0036-atomicity-guided-sessions.md) for migration and verification.

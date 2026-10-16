@@ -29,10 +29,14 @@ bounded transaction-foundation work item. Human/hosted review and publication re
 at `/draft/topics/transactions-isolation`. Eight scenarios and eight questions are implemented;
 full isolation/rollback/retry teaching and human/hosted/publication gates remain pending.
 [HLD-16C](work-items/HLD-16C.md) adds eight Java-verified Guided checkpoints, inspectable
-Architecture and three manual authored sequences, completing six core draft views. Next
-follow the remaining isolation/abort/retry curriculum in the
-[transaction implementation handoff](TRANSACTIONS_IMPLEMENTATION_PLAN.md). Idempotency
-follows this foundation; no idempotency experiment is implemented by the reservation model.
+Architecture and three manual authored sequences, completing six core draft views.
+HLD-17A/B add the separate Java atomicity model and second Playground with Study/Practice.
+[HLD-17C](work-items/HLD-17C.md) adds eight atomicity Guided checkpoints, inspectable
+Architecture and three manual sequences, with model-aware resume and independent caches.
+Consult actual checks/delivery in the work item and PR. Continue the remaining
+transaction/retry/idempotency curriculum in the
+[transaction implementation handoff](TRANSACTIONS_IMPLEMENTATION_PLAN.md), retaining
+human/hosted/publication gates. Neither transaction model deduplicates effects.
 
 ## 1. Objective and scope
 

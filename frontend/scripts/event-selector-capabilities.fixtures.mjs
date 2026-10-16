@@ -308,10 +308,12 @@ test("reservation step target kinds derive from its actual required canonical ou
       ["stepId"],
       references,
     ),
-    target.properties.kind.enum,
+    target.properties.kind.enum.filter((kind) =>
+      schemas.ReservationOutcome.properties.kind.enum.includes(kind),
+    ),
   );
-  assert.equal(target.properties.kind.enum.length, 3);
-  for (const kind of target.properties.kind.enum)
+  assert.equal(schemas.ReservationOutcome.properties.kind.enum.length, 3);
+  for (const kind of schemas.ReservationOutcome.properties.kind.enum)
     assert.equal(
       eventSupportsSelector(
         schemas.ReservationOutcome,
@@ -398,4 +400,139 @@ test("reservation step target stays closed, unique and separate from every legac
     { ...base, extra: true },
   ])
     assert.equal(validatesTarget(value), false, JSON.stringify(value));
+});
+
+test("transaction step target union equals both actual models without allowing cross-model kinds", () => {
+  const target = checkpoints.items.properties.target.oneOf.find((branch) =>
+    branch.required.includes("stepId"),
+  );
+  const references = {
+    "#/components/schemas/ReservationIdentifier": schemas.ReservationIdentifier,
+    "#/components/schemas/AtomicityIdentifier": schemas.AtomicityIdentifier,
+  };
+  const reservationKinds = kindsSupportingSelectors(
+    schemas.ReservationOutcome,
+    ["stepId"],
+    references,
+  );
+  const atomicityKinds = kindsSupportingSelectors(
+    schemas.AtomicityOutcome,
+    ["stepId"],
+    references,
+  );
+  assert.equal(atomicityKinds.length, 9);
+  assert.deepEqual(target.properties.kind.enum, [
+    ...reservationKinds,
+    ...atomicityKinds,
+  ]);
+  const ajv = new Ajv2020({ strict: true, strictRequired: false });
+  const validatesTarget = ajv.compile(checkpoints.items.properties.target);
+  for (const kind of atomicityKinds) {
+    assert.equal(
+      validatesTarget({ stepId: "commit-a", kind, occurrence: 1 }),
+      true,
+    );
+    assert.equal(
+      eventSupportsSelector(
+        schemas.AtomicityOutcome,
+        kind,
+        "stepId",
+        references,
+      ),
+      true,
+    );
+    assert.equal(
+      eventSupportsSelector(
+        schemas.ReservationOutcome,
+        kind,
+        "stepId",
+        references,
+      ),
+      false,
+    );
+    for (const selector of [
+      "operation",
+      "jobId",
+      "messageId",
+      "attemptId",
+      "operationId",
+    ])
+      assert.equal(
+        eventSupportsSelector(
+          schemas.AtomicityOutcome,
+          kind,
+          selector,
+          references,
+        ),
+        false,
+      );
+  }
+  for (const kind of reservationKinds)
+    assert.equal(
+      eventSupportsSelector(
+        schemas.AtomicityOutcome,
+        kind,
+        "stepId",
+        references,
+      ),
+      false,
+    );
+  assert.equal(
+    eventSupportsSelector(
+      schemas.AtomicityOutcome,
+      "TRANSACTION_COMMITTED",
+      "stepId",
+    ),
+    false,
+  );
+  const optional = structuredClone(schemas.AtomicityOutcome);
+  optional.required = optional.required.filter((field) => field !== "stepId");
+  assert.equal(
+    eventSupportsSelector(
+      optional,
+      "TRANSACTION_COMMITTED",
+      "stepId",
+      references,
+    ),
+    false,
+  );
+  for (const owner of [
+    null,
+    { type: ["string", "null"] },
+    { $ref: "#/components/schemas/AtomicityIdentifier" },
+  ])
+    assert.equal(
+      eventSupportsSelector(
+        schemas.AtomicityOutcome,
+        "TRANSACTION_COMMITTED",
+        "stepId",
+        {
+          "#/components/schemas/AtomicityIdentifier": owner,
+        },
+      ),
+      false,
+    );
+});
+
+test("atomicity target rejects malformed identity, unknown kind, mixed family and repeated occurrence", () => {
+  const ajv = new Ajv2020({ strict: true, strictRequired: false });
+  const validatesTarget = ajv.compile(checkpoints.items.properties.target);
+  const base = {
+    stepId: "commit-a",
+    kind: "TRANSACTION_COMMITTED",
+    occurrence: 1,
+  };
+  for (const target of [
+    { ...base, stepId: null },
+    { ...base, stepId: "commit-a\n" },
+    { ...base, stepId: "s".repeat(33) },
+    { ...base, kind: "TRANSACTION_RECOVERED" },
+    { ...base, occurrence: 2 },
+    { ...base, occurrence: 1.5 },
+    { ...base, operation: 1 },
+    { ...base, jobId: "job-1" },
+    { ...base, messageId: "m1", attemptId: "m1-a1" },
+    { ...base, operationId: "q1" },
+  ])
+    assert.equal(validatesTarget(target), false, JSON.stringify(target));
 });

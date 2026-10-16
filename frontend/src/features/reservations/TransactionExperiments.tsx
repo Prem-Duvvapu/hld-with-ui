@@ -1,15 +1,9 @@
-import { lazy, Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { api } from "../../api/client";
-import type {
-  AtomicityDescriptor,
-  ReservationDescriptor,
-} from "../../api/types";
+import { lazy, Suspense, useState, type ReactNode } from "react";
+import type { ReservationDescriptor } from "../../api/types";
 import { ErrorState, LoadingState } from "../../components/AsyncState";
-import { usePanelActive } from "../../components/ModuleShell";
 import { ReservationPlayground } from "./ReservationPlayground";
+import { useTransactionExperiment } from "./TransactionExperimentContext";
 import "./TransactionExperiments.css";
-
 const AtomicityPlayground = lazy(() =>
   import("../atomicity/AtomicityPlayground").then((module) => ({
     default: module.AtomicityPlayground,
@@ -19,66 +13,44 @@ const AtomicityPlayground = lazy(() =>
 /** Named experiments retain independent drafts and results in the same learning module. */
 export function TransactionExperiments({
   reservation,
-  atomicityAvailable,
 }: {
   reservation: ReservationDescriptor;
-  atomicityAvailable: boolean;
 }) {
-  const [params, setParams] = useSearchParams();
-  const active = usePanelActive();
-  const requested = params.get("experiment");
-  const selected =
-    requested === null || requested === "reservation"
-      ? "reservation"
-      : requested === "atomicity"
-        ? "atomicity"
-        : "unknown";
+  const { descriptor, error, retry } = useTransactionExperiment();
+  return (
+    <TransactionExperimentView
+      reservation={<ReservationPlayground descriptor={reservation} />}
+      atomicity={
+        descriptor ? (
+          <Suspense
+            fallback={<LoadingState label="Loading the atomicity workbench" />}
+          >
+            <AtomicityPlayground descriptor={descriptor} />
+          </Suspense>
+        ) : error ? (
+          <ErrorState message={error} retry={retry} />
+        ) : (
+          <LoadingState label="Loading the atomicity experiment" />
+        )
+      }
+    />
+  );
+}
+
+/** Keep each visited sibling mounted: models may share preset names, never run caches. */
+export function TransactionExperimentView({
+  reservation,
+  atomicity,
+}: {
+  reservation: ReactNode;
+  atomicity: ReactNode;
+}) {
+  const { selected, choose, atomicityAvailable } = useTransactionExperiment();
   const [visited, setVisited] = useState<ReadonlySet<string>>(
     () => new Set(selected === "unknown" ? [] : [selected]),
   );
   if (selected !== "unknown" && !visited.has(selected))
     setVisited(new Set(visited).add(selected));
-  const [descriptor, setDescriptor] = useState<AtomicityDescriptor | null>(
-    null,
-  );
-  const [error, setError] = useState("");
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    if (
-      !active ||
-      selected !== "atomicity" ||
-      !atomicityAvailable ||
-      descriptor ||
-      error
-    )
-      return;
-    let mounted = true;
-    api
-      .atomicityDescriptor()
-      .then((value) => {
-        if (mounted) setDescriptor(value);
-      })
-      .catch((cause: unknown) => {
-        if (mounted)
-          setError(
-            cause instanceof Error
-              ? cause.message
-              : "The atomicity experiment could not load. Try again.",
-          );
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [active, selected, atomicityAvailable, descriptor, error, attempt]);
-
-  function choose(value: "reservation" | "atomicity") {
-    if (selected === value) return;
-    const next = new URLSearchParams(params);
-    if (value === "reservation") next.delete("experiment");
-    else next.set("experiment", "atomicity");
-    setParams(next);
-  }
-
   return (
     <div className="transaction-experiments">
       <section
@@ -128,9 +100,7 @@ export function TransactionExperiments({
         </div>
       )}
       {visited.has("reservation") && (
-        <div hidden={selected !== "reservation"}>
-          <ReservationPlayground descriptor={reservation} />
-        </div>
+        <div hidden={selected !== "reservation"}>{reservation}</div>
       )}
       {visited.has("atomicity") && (
         <div hidden={selected !== "atomicity"}>
@@ -142,24 +112,8 @@ export function TransactionExperiments({
                 the frontend and backend together, or choose Reservation race.
               </p>
             </div>
-          ) : descriptor ? (
-            <Suspense
-              fallback={
-                <LoadingState label="Loading the atomicity workbench" />
-              }
-            >
-              <AtomicityPlayground descriptor={descriptor} />
-            </Suspense>
-          ) : error ? (
-            <ErrorState
-              message={error}
-              retry={() => {
-                setError("");
-                setAttempt((value) => value + 1);
-              }}
-            />
           ) : (
-            <LoadingState label="Loading the atomicity experiment" />
+            atomicity
           )}
         </div>
       )}

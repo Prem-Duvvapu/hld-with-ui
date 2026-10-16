@@ -1,5 +1,7 @@
 package com.hld.catalog;
 
+import com.hld.atomicity.AtomicityInput;
+import com.hld.atomicity.AtomicityResult;
 import com.hld.dataaccess.DataAccessInput;
 import com.hld.delivery.DeliveryEvent.Kind;
 import com.hld.delivery.DeliveryInput;
@@ -85,12 +87,15 @@ public record GuidedCheckpoint(
             }
             if (stepId != null) {
                 if (!Pattern.matches(ReservationInput.ID_PATTERN, stepId)
+                        || !Pattern.matches(AtomicityInput.ID_PATTERN, stepId)
                         || kind == null
                         || java.util.Arrays.stream(ReservationResult.Kind.values())
                                 .noneMatch(candidate -> candidate.name().equals(kind))
+                            && java.util.Arrays.stream(AtomicityResult.Kind.values())
+                                .noneMatch(candidate -> candidate.name().equals(kind))
                         || occurrence != 1) {
                     throw new IllegalArgumentException(
-                            "A reservation checkpoint requires a supported stepId, outcome kind"
+                            "A transaction checkpoint requires a supported stepId, outcome kind"
                                     + " and occurrence 1");
                 }
             } else if (operationId != null) {

@@ -561,7 +561,7 @@ export interface components {
       title: string;
       simulationId: string;
       presetId: string;
-      /** @description Select exactly one identity family: cache operation, capacity job ID, delivery messageId/attemptId, data-access operationId, or reservation stepId. Kind and occurrence select actual Java evidence; each untimed operation/step has one outcome. */
+      /** @description Select exactly one identity family: cache operation, capacity job ID, delivery messageId/attemptId, data-access operationId, or transaction stepId (reservation or atomicity). Kind and occurrence select actual Java evidence; each untimed operation/step has one outcome. */
       target:
         | {
             operation: number;
@@ -601,7 +601,18 @@ export interface components {
             stepId: string;
             /** @enum {string} */
             kind:
-              "READ_OBSERVED" | "RESERVATION_ACCEPTED" | "RESERVATION_REJECTED";
+              | "READ_OBSERVED"
+              | "RESERVATION_ACCEPTED"
+              | "RESERVATION_REJECTED"
+              | "TRANSACTION_STARTED"
+              | "STOCK_APPLIED"
+              | "STOCK_STAGED"
+              | "STOCK_REJECTED"
+              | "ALLOCATION_APPLIED"
+              | "ALLOCATION_STAGED"
+              | "WORK_SKIPPED"
+              | "TRANSACTION_COMMITTED"
+              | "TRANSACTION_ABORTED";
             /** @constant */
             occurrence: 1;
           };

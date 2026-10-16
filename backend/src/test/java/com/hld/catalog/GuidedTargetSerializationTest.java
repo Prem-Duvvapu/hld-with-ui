@@ -20,7 +20,8 @@ class GuidedTargetSerializationTest {
         var delivery = new GuidedCheckpoint.Target(null, null, "m1", "m1-a1", "ack.stale", 1);
         var analysis = new GuidedCheckpoint.Target(null, null, null, null, "q1", "TENANT_RANGE", 1);
         var reservation = new GuidedCheckpoint.Target(null, null, null, null, null, "read-b", "READ_OBSERVED", 1);
-        for (var target : List.of(cache, queue, delivery, analysis, reservation)) {
+        var atomicity = new GuidedCheckpoint.Target(null, null, null, null, null, "commit-a", "TRANSACTION_COMMITTED", 1);
+        for (var target : List.of(cache, queue, delivery, analysis, reservation, atomicity)) {
             byte[] json = mapper.writeValueAsBytes(target);
             assertThat(mapper.readValue(json, GuidedCheckpoint.Target.class)).isEqualTo(target);
         }
@@ -29,6 +30,7 @@ class GuidedTargetSerializationTest {
         assertThat(mapper.valueToTree(delivery).propertyNames()).containsExactlyInAnyOrder("messageId", "attemptId", "kind", "occurrence");
         assertThat(mapper.valueToTree(analysis).propertyNames()).containsExactlyInAnyOrder("operationId", "kind", "occurrence");
         assertThat(mapper.valueToTree(reservation).propertyNames()).containsExactlyInAnyOrder("stepId", "kind", "occurrence");
+        assertThat(mapper.valueToTree(atomicity).propertyNames()).containsExactlyInAnyOrder("stepId", "kind", "occurrence");
     }
 
     @Test void reservationTargetSerializationRejectsMalformedMissingUnknownAndMixedSelectors() {
@@ -69,4 +71,16 @@ class GuidedTargetSerializationTest {
             }
         }
     }
+
+    @Test void atomicityStepTargetsRejectMalformedMixedAndUnsupportedWireShapes() {
+        for (String json : List.of(
+                "{\"stepId\":null,\"kind\":\"TRANSACTION_COMMITTED\",\"occurrence\":1}",
+                "{\"stepId\":\"commit-a\",\"kind\":\"TRANSACTION_RECOVERED\",\"occurrence\":1}",
+                "{\"stepId\":\"commit-a\",\"kind\":\"TRANSACTION_COMMITTED\",\"occurrence\":2}",
+                "{\"stepId\":\"commit-a\",\"kind\":\"TRANSACTION_COMMITTED\"}",
+                "{\"stepId\":\"commit-a\",\"kind\":\"TRANSACTION_COMMITTED\",\"occurrence\":1,\"operationId\":\"q1\"}",
+                "{\"stepId\":\"commit-a\",\"kind\":\"TRANSACTION_COMMITTED\",\"occurrence\":1,\"jobId\":\"job-1\"}"))
+            assertThatThrownBy(() -> mapper.readValue(json, GuidedCheckpoint.Target.class)).as(json).isInstanceOf(RuntimeException.class);
+    }
+
 }

@@ -11,13 +11,22 @@ import {
   render,
   screen,
   waitFor,
-  within,
 } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { beforeEach, expect, it, vi } from "vitest";
 import { api, ApiClientError } from "../api/client";
 import type { AtomicityDescriptor, TopicDetail } from "../api/types";
-import { descriptor } from "../features/reservations/reservationTestFixtures";
+import {
+  descriptor,
+  protectedResult as reservationProtectedResult,
+} from "../features/reservations/reservationTestFixtures";
+import { protectedResult as atomicityProtectedResult } from "../features/atomicity/atomicityTestFixtures";
+import { createPracticeStore } from "../features/learning/practiceStorage";
+let store: ReturnType<typeof createPracticeStore>;
+vi.mock("../features/learning/practiceStorage", async (original) => ({
+  ...(await original<typeof import("../features/learning/practiceStorage")>()),
+  getPracticeStore: () => store,
+}));
 import { ReservationPage } from "./ReservationPage";
 
 vi.mock("../api/client", async (original) => ({
@@ -78,6 +87,10 @@ const topic: TopicDetail = {
 };
 beforeEach(() => {
   vi.resetAllMocks();
+  store = createPracticeStore(() => ({
+    getItem: () => null,
+    setItem: () => {},
+  }));
   vi.mocked(api.draftTopic).mockResolvedValue(topic);
   vi.mocked(api.reservationDescriptor).mockResolvedValue(descriptor);
   vi.mocked(api.atomicityDescriptor).mockResolvedValue(atomicityDescriptor);
@@ -422,15 +435,121 @@ it("keeps an unknown experiment visible as unavailable until an explicit choice"
   expect(router.state.location.search).toBe("");
 });
 
-it("scopes the existing Guided and design views to reservation even with atomicity selected", async () => {
+it("opens atomicity architecture without fetching a descriptor or running either model", async () => {
   view(
     "/draft/topics/transactions-isolation?view=architecture&experiment=atomicity",
   );
-  const scope = await screen.findByRole("complementary", {
-    name: "Architecture experiment scope",
-  });
-  expect(within(scope).getByText("Reservation race.")).toBeVisible();
-  expect(scope).toHaveTextContent("its Guided and design views are pending");
+  expect(
+    await screen.findByRole("button", { name: /^Atomicity & abort/ }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await waitFor(() =>
+    expect(screen.queryByRole("status")).not.toBeInTheDocument(),
+  );
   expect(api.atomicityDescriptor).not.toHaveBeenCalled();
+  expect(api.runAtomicity).not.toHaveBeenCalled();
+  expect(api.runReservation).not.toHaveBeenCalled();
+});
+
+it("resumes an atomicity checkpoint without an experiment parameter and never auto-runs", async () => {
+  const checkpoint = topic.checkpoints.find(
+    (item) => item.simulationId === "transaction-atomicity",
+  )!;
+  const router = view(
+    `/draft/topics/transactions-isolation?view=guided&checkpoint=${checkpoint.id}`,
+  );
+  expect(
+    await screen.findByRole("heading", { name: checkpoint.title }),
+  ).toBeVisible();
+  expect(router.state.location.search).toContain("experiment=atomicity");
+  expect(api.atomicityDescriptor).toHaveBeenCalledTimes(1);
+  expect(api.runAtomicity).not.toHaveBeenCalled();
+  expect(api.runReservation).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("tab", { name: "Playground" }));
+  expect(await screen.findByLabelText("Transaction 1 quantity")).toBeVisible();
+  expect(api.atomicityDescriptor).toHaveBeenCalledTimes(1);
+});
+
+it("retains sibling Guided evidence without mixing identical protected-baseline preset IDs", async () => {
+  vi.mocked(api.runReservation).mockResolvedValue(reservationProtectedResult);
+  vi.mocked(api.runAtomicity).mockResolvedValue(atomicityProtectedResult);
+  const reservation = topic.checkpoints.find(
+    (item) => item.id === "read-is-preview",
+  )!;
+  const atomicity = topic.checkpoints.find(
+    (item) =>
+      item.simulationId === "transaction-atomicity" &&
+      item.presetId === "protected-baseline",
+  )!;
+  const router = view(
+    `/draft/topics/transactions-isolation?view=guided&checkpoint=${reservation.id}`,
+  );
+  await screen.findByRole("heading", { name: reservation.title });
+  fireEvent.change(screen.getByRole("textbox", { name: /^Your prediction/ }), {
+    target: { value: "The observation has not reserved stock." },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Run and reveal" }));
+  await screen.findByRole("region", { name: "Selected reservation snapshot" });
+  await act(async () => {
+    await router.navigate(
+      `/draft/topics/transactions-isolation?view=guided&experiment=atomicity&checkpoint=${atomicity.id}`,
+    );
+  });
+  await screen.findByRole("heading", { name: atomicity.title });
+  expect(
+    screen.queryByRole("region", { name: "Selected atomicity snapshot" }),
+  ).not.toBeInTheDocument();
+  fireEvent.change(screen.getByRole("textbox", { name: /^Your prediction/ }), {
+    target: { value: "Discard only private work." },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Run and reveal" }));
+  await screen.findByRole("region", { name: "Selected atomicity snapshot" });
+  expect(api.runReservation).toHaveBeenCalledTimes(1);
+  expect(api.runAtomicity).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole("button", { name: /^Reservation race/ }));
+  expect(
+    screen.getByRole("region", { name: "Selected reservation snapshot" }),
+  ).toBeVisible();
+  expect(screen.getByRole("textbox", { name: /^Your prediction/ })).toHaveValue(
+    "The observation has not reserved stock.",
+  );
+  fireEvent.click(screen.getByRole("button", { name: /^Atomicity & abort/ }));
+  expect(
+    screen.getByRole("region", { name: "Selected atomicity snapshot" }),
+  ).toBeVisible();
+  expect(screen.getByRole("textbox", { name: /^Your prediction/ })).toHaveValue(
+    "Discard only private work.",
+  );
+  expect(api.atomicityDescriptor).toHaveBeenCalledTimes(1);
+  expect(api.runAtomicity).toHaveBeenCalledTimes(1);
+  expect(
+    store
+      .getSnapshot()
+      .answers.every((answer) => answer.topicId === "transactions-isolation"),
+  ).toBe(true);
+});
+
+it("shares a pending descriptor between Playground and Guided and keeps failures local", async () => {
+  let resolve!: (value: AtomicityDescriptor) => void;
+  vi.mocked(api.atomicityDescriptor).mockImplementationOnce(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      }),
+  );
+  view("/draft/topics/transactions-isolation?experiment=atomicity");
+  await screen.findByRole("tab", { name: "Guided" });
+  fireEvent.click(screen.getByRole("tab", { name: "Guided" }));
+  expect(api.atomicityDescriptor).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole("button", { name: /^Reservation race/ }));
+  await act(async () => resolve(atomicityDescriptor));
+  fireEvent.click(screen.getByRole("button", { name: /^Atomicity & abort/ }));
+  expect(
+    await screen.findByRole("heading", {
+      name: topic.checkpoints.find(
+        (item) => item.simulationId === "transaction-atomicity",
+      )!.title,
+    }),
+  ).toBeVisible();
+  expect(api.atomicityDescriptor).toHaveBeenCalledTimes(1);
   expect(api.runAtomicity).not.toHaveBeenCalled();
 });

@@ -234,5 +234,245 @@
       ],
       "recommendedOptionId": "valid-rejection"
     }
+  },
+  {
+    "id": "atomicity-split-abort-leaks",
+    "title": "An abort label cannot undo a published write",
+    "simulationId": "transaction-atomicity",
+    "presetId": "baseline",
+    "target": {
+      "stepId": "abort-a",
+      "kind": "TRANSACTION_ABORTED",
+      "occurrence": 1
+    },
+    "prompt": "One unit is available. A publishes its stock decrement, then aborts before recording an allocation. Predict the remaining stock, visible allocations, revision and two checks: conservation and absence of aborted effects.",
+    "lookFor": "A is ABORTED with USER_ABORT, but its appliedStockUnits is 1. Published remaining is 0, allocated is 0 and revision is 1. Conservation and abortedEffectsAbsent are both false.",
+    "explanation": "At abort-a, Java clears no published stock: the split mode has no common undo boundary. A retains baseRemaining 1 and baseRevision 0 as history, has appliedStockUnits 1 and has no private workspace. The published allocation list is empty, so accounted units are 0 against initial 1. Nonnegative stock and capacity pass; conservation and absence of aborted effects fail. The first whole-history violation was decrement-a, before this abort. Calling a transaction ABORTED does not itself reverse its earlier writes.",
+    "tradeoff": {
+      "prompt": "A teammate adds an ABORTED status after two independent writes fail partway through. What evidence is needed before claiming the operation left no effects?",
+      "options": [
+        {
+          "id": "inspect-effects",
+          "label": "Inspect the actual related writes and their failure boundary",
+          "feedback": "The returned actor is aborted while published stock is still reduced. Verify what is coordinated or undone at the real storage boundary, including each related record."
+        },
+        {
+          "id": "status-is-undo",
+          "label": "Treat the terminal status as proof that nothing changed",
+          "feedback": "Java explicitly reports an aborted actor with a visible stock effect. A status value is evidence about control flow, not automatic undo of earlier independent writes."
+        }
+      ],
+      "recommendedOptionId": "inspect-effects"
+    }
+  },
+  {
+    "id": "atomicity-private-abort-discards",
+    "title": "Discard a proposal without changing shared stock",
+    "simulationId": "transaction-atomicity",
+    "presetId": "protected-baseline",
+    "target": {
+      "stepId": "abort-a",
+      "kind": "TRANSACTION_ABORTED",
+      "occurrence": 1
+    },
+    "prompt": "Run the same BEGIN, decrement, ABORT program with private preparation. Predict the published state after abort and what remains of A's private work and captured base.",
+    "lookFor": "Published remaining stays 1, allocated stays 0 and revision stays 0. A is ABORTED with USER_ABORT; pending stock is 0, workingRemaining and pendingAllocation are absent, while baseRemaining 1 and baseRevision 0 remain.",
+    "explanation": "The decrement prepared workingRemaining 0 privately; it never published stock. At abort-a, Java discards A's workspace and reports appliedStockUnits 0 and pendingStockUnits 0. Captured base 1 at revision 0 remains as history, not pending work. Published remaining 1 plus allocated 0 still accounts for the initial unit. All four checks and the whole-history invariant status are preserved. This is discard of unpublished local work, not a demonstration of real database rollback or crash recovery.",
+    "tradeoff": {
+      "prompt": "How would you explain the unchanged public state to a teammate?",
+      "options": [
+        {
+          "id": "private-discard",
+          "label": "The private proposal was discarded before any publication",
+          "feedback": "The published revision never advanced. There was no public stock decrement to reverse in this mode; the retained base only explains where the proposal began."
+        },
+        {
+          "id": "undo-public-write",
+          "label": "A public decrement was applied and later reversed",
+          "feedback": "Java never published the staged decrement. Describing an undo would teach a storage operation that this model does not perform."
+        }
+      ],
+      "recommendedOptionId": "private-discard"
+    }
+  },
+  {
+    "id": "atomicity-private-stock-is-not-public",
+    "title": "A private zero is a proposal, not visible stock",
+    "simulationId": "transaction-atomicity",
+    "presetId": "protected-commit",
+    "target": {
+      "stepId": "decrement-a",
+      "kind": "STOCK_STAGED",
+      "occurrence": 1
+    },
+    "prompt": "A began with one unit at revision 0 and privately decrements one. Before RECORD or COMMIT, predict shared stock, A's working stock, pending stock and allocation records.",
+    "lookFor": "Java checks WORKING_COPY 1. Shared remaining is 1 with revision 0 and no allocation. A is OPEN with workingRemaining 0 and pendingStockUnits 1, but no pending allocation yet.",
+    "explanation": "At decrement-a, Java reports STOCK_STAGED: A's captured base remains 1 at revision 0, workingRemaining is the known value 0, and pendingStockUnits is 1. appliedStockUnits is 0 and pendingAllocation is absent. Published remaining 1 and allocated 0 preserve all four checks. The later full run commits one transaction and finishes with remaining 0 and allocated 1; those whole-run facts must not be presented as already visible at this selected step.",
+    "tradeoff": {
+      "prompt": "A reviewer sees workingRemaining 0 and says other callers must now see stock 0. What should you clarify?",
+      "options": [
+        {
+          "id": "separate-visibility",
+          "label": "Separate A's private proposal from published inventory",
+          "feedback": "The selected Java state has private workingRemaining 0 beside public remainingUnits 1. Only a successful publication boundary makes the prepared pair visible."
+        },
+        {
+          "id": "private-is-public",
+          "label": "Use the private value as the current public stock",
+          "feedback": "The public value is still 1 at revision 0. Substituting the private number would invent an earlier visible write and hide the purpose of staging."
+        }
+      ],
+      "recommendedOptionId": "separate-visibility"
+    }
+  },
+  {
+    "id": "atomicity-publish-pair",
+    "title": "Publish both related changes at one boundary",
+    "simulationId": "transaction-atomicity",
+    "presetId": "protected-commit",
+    "target": {
+      "stepId": "commit-a",
+      "kind": "TRANSACTION_COMMITTED",
+      "occurrence": 1
+    },
+    "prompt": "A has privately prepared the stock decrement and allocation from revision 0. Predict the expected and actual revision checked by COMMIT, the published pair, and what happens to private work.",
+    "lookFor": "COMMIT checks expected revision 0 against actual revision 0. Published remaining becomes 0 and allocated becomes 1 together, at revision 1. A is COMMITTED and its workspace is cleared.",
+    "explanation": "Java publishes A's prepared stock and allocation in one modeled transition after the revisions match. The allocation was prepared at record-a and published at commit-a. A retains baseRemaining 1 and baseRevision 0, records appliedStockUnits 1, and clears workingRemaining, pendingAllocation and pendingStockUnits. All four checks are true, accounted units are 1, and no earlier public prefix violated them. COMMITTED names this local publication; it does not establish durability, database isolation or an external side effect.",
+    "tradeoff": {
+      "prompt": "A service must change a quota and insert its usage record. What should the engineer establish before promising this example's guarantee?",
+      "options": [
+        {
+          "id": "name-boundary",
+          "label": "Identify the real boundary that coordinates both changes and handles failure",
+          "feedback": "The model includes both stock and allocation in one publication. A real design needs evidence for its own storage transaction and failure behavior; a method name alone does not establish that boundary."
+        },
+        {
+          "id": "commit-label",
+          "label": "Rename the last method commit and assume durable atomic behavior",
+          "feedback": "A label cannot extend the actual protected scope. This Java analysis deliberately omits disks, crashes, recovery and external effects."
+        }
+      ],
+      "recommendedOptionId": "name-boundary"
+    }
+  },
+  {
+    "id": "atomicity-final-state-has-history",
+    "title": "A repaired final state keeps its earlier breach",
+    "simulationId": "transaction-atomicity",
+    "presetId": "split-commit",
+    "target": {
+      "stepId": "commit-a",
+      "kind": "TRANSACTION_COMMITTED",
+      "occurrence": 1
+    },
+    "prompt": "With split writes, A decrements stock, records its allocation and finishes COMMITTED. Predict the final four flags and revision. Does that green final state erase the earlier stock-only prefix?",
+    "lookFor": "Final remaining is 0, allocated is 1 and revision is 2; all four final flags are true. Whole-history invariantStatus is VIOLATED, with firstViolationStepId decrement-a.",
+    "explanation": "The split decrement immediately made public remaining 0 while no allocation existed, breaking conservation at decrement-a. RECORD later published the row and repaired the arithmetic; COMMIT changes status only, leaving revision 2. The row was both prepared and published at record-a. At the selected commit, A is COMMITTED with appliedStockUnits 1, no private workspace and no failure reason. All final checks pass, but Java still reports the earlier violated prefix. Inspecting final values alone cannot establish that every public intermediate state was consistent.",
+    "tradeoff": {
+      "prompt": "A final reconciliation shows correct totals. What additional question follows from this run?",
+      "options": [
+        {
+          "id": "inspect-prefixes",
+          "label": "Ask whether a consumer could have observed an inconsistent intermediate state",
+          "feedback": "The whole-history summary preserves the first public breach even after totals recover. Review the actual visibility boundary and what intermediate readers or failures can expose."
+        },
+        {
+          "id": "erase-history",
+          "label": "Declare every intermediate state safe because the final totals match",
+          "feedback": "The stock-only prefix already failed conservation. Later repair changes final state; it does not remove that earlier evidence."
+        }
+      ],
+      "recommendedOptionId": "inspect-prefixes"
+    }
+  },
+  {
+    "id": "atomicity-aborted-row-still-counts",
+    "title": "Conserved totals can still contain aborted effects",
+    "simulationId": "transaction-atomicity",
+    "presetId": "split-abort-after-record",
+    "target": {
+      "stepId": "abort-a",
+      "kind": "TRANSACTION_ABORTED",
+      "occurrence": 1
+    },
+    "prompt": "A has independently published both its stock decrement and allocation, then aborts. Predict whether the allocation still counts and which final check distinguishes this case from a clean abort.",
+    "lookFor": "The published row remains: remaining 0 plus allocated 1 still accounts for initial 1 at revision 2. Conservation is true, but abortedEffectsAbsent is false and one aborted transaction has visible effects.",
+    "explanation": "At abort-a, A becomes ABORTED with USER_ABORT but retains appliedStockUnits 1. Its allocation, prepared and published at record-a, stays in the public list and counts toward allocatedUnits 1. Nonnegative stock, capacity and conservation are true; absence of aborted effects is false. Private work is absent and base history remains 1 at revision 0. The earlier stock-only prefix also violated conservation. Excluding an aborted actor's visible row from the display would conceal the effect instead of undoing it.",
+    "tradeoff": {
+      "prompt": "A dashboard proposes hiding allocation rows whose actor status is ABORTED. What is the more useful engineering response?",
+      "options": [
+        {
+          "id": "reconcile-visible-effects",
+          "label": "Keep visible effects counted and investigate the actual failure boundary",
+          "feedback": "The record still exists and the stock effect remains. Correct accounting must reflect the evidence, then establish how the real system prevents or handles those effects."
+        },
+        {
+          "id": "hide-aborted-rows",
+          "label": "Hide the row and treat the abort as effect free",
+          "feedback": "Filtering a row out of a report does not remove its published stock or allocation effect. It would also misrepresent the Java state."
+        }
+      ],
+      "recommendedOptionId": "reconcile-visible-effects"
+    }
+  },
+  {
+    "id": "atomicity-blocked-work-is-skipped",
+    "title": "Blocked work is an explicit business outcome",
+    "simulationId": "transaction-atomicity",
+    "presetId": "empty-stock",
+    "target": {
+      "stepId": "record-a",
+      "kind": "WORK_SKIPPED",
+      "occurrence": 1
+    },
+    "prompt": "Stock begins at zero. A's stock command was rejected, and the legal program now reaches RECORD_ALLOCATION. Predict A's phase, pending values, public records and the outcome reason before its terminal command.",
+    "lookFor": "RECORD reports WORK_SKIPPED with INSUFFICIENT_STOCK. A is still BLOCKED with workingRemaining 0, pendingStockUnits 0 and no pending allocation. Public remaining, allocated and revision are all 0; all four checks pass.",
+    "explanation": "The earlier decrement checked WORKING_COPY 0 and blocked A. The selected record-a step explicitly skips the allocation rather than inventing success or dropping the step. A retains baseRemaining 0 and baseRevision 0, has no applied stock, and remains BLOCKED with INSUFFICIENT_STOCK. Its workingRemaining is the known value 0, not absent workspace. The later COMMIT becomes TRANSACTION_ABORTED with the same reason and clears that workspace. The valid model run completes; a business abort is different from invalid input or an unavailable API.",
+    "tradeoff": {
+      "prompt": "How should an app present this returned analysis?",
+      "options": [
+        {
+          "id": "show-valid-decision",
+          "label": "Show the explicit skipped work and let the learner change the workload",
+          "feedback": "The legal program was evaluated and no allocation was published. Its business reason is useful evidence and must remain distinct from network or validation errors."
+        },
+        {
+          "id": "generic-server-error",
+          "label": "Replace the analysis with a generic server failure",
+          "feedback": "No execution failure occurred. A generic error would hide the modeled stock rejection, skipped step and later abort."
+        }
+      ],
+      "recommendedOptionId": "show-valid-decision"
+    }
+  },
+  {
+    "id": "atomicity-conflict-with-spare-stock",
+    "title": "Enough stock does not make a stale base current",
+    "simulationId": "transaction-atomicity",
+    "presetId": "conservative-conflict",
+    "target": {
+      "stepId": "commit-b",
+      "kind": "TRANSACTION_ABORTED",
+      "occurrence": 1
+    },
+    "prompt": "A and B each prepared one unit from stock 3 at revision 0. A has published first, leaving stock 2 at revision 1. Predict B's revision check, result and private-work cleanup. Does sufficient current stock guarantee its commit?",
+    "lookFor": "B expects revision 0 but sees 1 and aborts with REVISION_CONFLICT. Published remaining stays 2 and allocated stays 1, with only A's allocation. B's private workspace is cleared; all four checks remain true.",
+    "explanation": "The coarse revision covers visible inventory and allocation mutations. A's publication changed it from 0 to 1, so B's captured base is no longer current even though B's quantity 1 would fit public stock 2. At commit-b, B is ABORTED with appliedStockUnits 0, pendingStockUnits 0 and absent workingRemaining and pendingAllocation. B retains baseRemaining 3 and baseRevision 0 as history. A remains COMMITTED; its allocation was prepared at record-a and published at commit-a. Java reports one commit, one conflicted abort, no aborted transaction with effects and no violated prefix. This conservative conflict rule models neither automatic retry nor a SQL isolation level.",
+    "tradeoff": {
+      "prompt": "The product wants B to try again when capacity still exists. What additional design work is needed?",
+      "options": [
+        {
+          "id": "fresh-attempt-policy",
+          "label": "Design a fresh attempt with explicit retry and duplicate-effect rules",
+          "feedback": "The model only discards this stale proposal. A real retry needs a fresh read plus bounded policy and handling of uncertain prior effects; none follows automatically from spare stock."
+        },
+        {
+          "id": "ignore-revision",
+          "label": "Ignore the revision mismatch because quantity 1 fits stock 2",
+          "feedback": "That replaces the modeled validation rule without proving that its prepared stock and allocation remain valid. The returned abort preserves another transaction's published data."
+        }
+      ],
+      "recommendedOptionId": "fresh-attempt-policy"
+    }
   }
 ]

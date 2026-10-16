@@ -39,9 +39,10 @@ contains two named Java experiments: Reservation race and **Atomicity & abort**.
 eight editable scenarios and initial/post-step evidence. Open
 `/draft/topics/transactions-isolation?experiment=atomicity` to inspect separately published
 writes versus private changes that publish together or are discarded. Study and sixteen
-Practice questions cover both examples. The eight Guided checkpoints, Architecture and
-Operation sequence remain scoped to reservation; atomicity Guided/design views are pending.
-See [HLD-17B](docs/work-items/HLD-17B.md) for implementation and verification status.
+Practice questions cover both examples. Each experiment now has eight Guided checkpoints, inspectable Architecture and three
+manual Operation sequence paths. The same experiment choice applies across all four
+interactive/design views; saved checkpoint links open the correct example. Study and
+Practice cover both. See [HLD-17C](docs/work-items/HLD-17C.md) for actual verification status.
 
 Both models retain schema 1.0 / model 1.0.0. This is bounded local behavior, with no SQL
 isolation-level, durable recovery, retry or idempotency guarantee. Human/hosted review and
@@ -315,7 +316,10 @@ inspectable Architecture and three authored manual Operation sequence paths.
 
 [HLD-17B](docs/work-items/HLD-17B.md) adds Atomicity & abort as a second named Playground
 with eight scenarios, private/published evidence and eight added Practice questions (sixteen
-total). Study covers both examples; the existing Guided/design views remain reservation scoped.
+total). [HLD-17C](docs/work-items/HLD-17C.md) adds the atomicity Guided and design views:
+eight additional Java-targeted checkpoints and three manual causal paths, with an experiment
+selector shared across Playground/Guided/Architecture/Operation sequence. Saved checkpoint
+links identify the correct experiment; model run caches remain independent.
 
 The reservation experiment compares stale-read assignment with an atomic current-stock
 condition. Atomicity compares split writes with private preparation and revision-checked

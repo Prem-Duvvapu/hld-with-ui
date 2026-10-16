@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "HLD with UI API",
-    "version": "1.9.0",
+    "version": "1.10.0",
     "description": "Versioned contract for the HLD learning application. Simulation results are illustrative modeled runs."
   },
   "servers": [
@@ -1473,7 +1473,7 @@
             "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
           },
           "target": {
-            "description": "Select exactly one identity family: cache operation, capacity job ID, delivery messageId/attemptId, data-access operationId, or reservation stepId. Kind and occurrence select actual Java evidence; each untimed operation/step has one outcome.",
+            "description": "Select exactly one identity family: cache operation, capacity job ID, delivery messageId/attemptId, data-access operationId, or transaction stepId (reservation or atomicity). Kind and occurrence select actual Java evidence; each untimed operation/step has one outcome.",
             "oneOf": [
               {
                 "type": "object",
@@ -1608,7 +1608,16 @@
                     "enum": [
                       "READ_OBSERVED",
                       "RESERVATION_ACCEPTED",
-                      "RESERVATION_REJECTED"
+                      "RESERVATION_REJECTED",
+                      "TRANSACTION_STARTED",
+                      "STOCK_APPLIED",
+                      "STOCK_STAGED",
+                      "STOCK_REJECTED",
+                      "ALLOCATION_APPLIED",
+                      "ALLOCATION_STAGED",
+                      "WORK_SKIPPED",
+                      "TRANSACTION_COMMITTED",
+                      "TRANSACTION_ABORTED"
                     ]
                   },
                   "occurrence": {
@@ -1616,7 +1625,7 @@
                     "const": 1
                   }
                 },
-                "description": "Select the one actual reservation outcome for a unique scheduled step ID and its returned kind. Outcomes are untimed; unique step IDs require occurrence 1, without a fabricated event or authored array position."
+                "description": "Select the one actual reservation or atomicity outcome for a unique scheduled step ID and its returned kind. Content validation checks the selected model's own closed kind vocabulary and required step identity. Outcomes are untimed; unique step IDs require occurrence 1, without a fabricated event or authored array position."
               }
             ]
           },
