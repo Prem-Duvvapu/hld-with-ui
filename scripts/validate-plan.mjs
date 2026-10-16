@@ -4,6 +4,11 @@ import { dirname, join, resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const errors = [];
 const read = (relative) => readFileSync(join(root, relative), 'utf8');
+const catalogPath = 'content/catalog.json';
+const catalog = existsSync(join(root, catalogPath)) ? JSON.parse(read(catalogPath)) : [];
+const draftTopicRoutes = new Set(catalog
+  .filter((entry) => entry.kind === 'topic' && entry.status === 'draft')
+  .map((entry) => '/draft/topics/' + entry.id));
 
 function markdownFiles(directory) {
   if (!existsSync(join(root, directory))) return [];
@@ -39,6 +44,14 @@ for (const source of docs) {
     const url = link[1];
     if (/^(https?:|mailto:)/.test(url)) continue;
     localLinkCount++;
+    // A concrete draft lesson can link to its catalog-backed app route and choice query.
+    // Filesystem links keep the existing file/heading checks below.
+    if (url.startsWith('/draft/topics/')) {
+      const path = url.split(/[?#]/, 1)[0];
+      if (!draftTopicRoutes.has(path)) errors.push(source + ': unknown draft topic route ' + url);
+      if (url.includes('#')) errors.push(source + ': draft app links must not claim unimplemented heading anchors ' + url);
+      continue;
+    }
     const [target, anchor] = url.split('#', 2);
     const destination = target ? resolve(root, dirname(source), target) : join(root, source);
     if (!existsSync(destination)) {
@@ -90,10 +103,8 @@ function visit(id) {
 for (const id of topics.keys()) visit(id);
 
 // The catalog publishes curriculum modules; the two must agree on identity and kind.
-const catalogPath = 'content/catalog.json';
 let catalogCount = 0;
 if (existsSync(join(root, catalogPath))) {
-  const catalog = JSON.parse(read(catalogPath));
   catalogCount = catalog.length;
   for (const entry of catalog) {
     if (!topics.has(entry.id)) {

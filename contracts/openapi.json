@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "HLD with UI API",
-    "version": "1.8.0",
+    "version": "1.9.0",
     "description": "Versioned contract for the HLD learning application. Simulation results are illustrative modeled runs."
   },
   "servers": [
@@ -1085,6 +1085,113 @@
           }
         },
         "description": "Strict closed reservation input with full schedule validation before execution. Business rejection and deliberate unsafe invariant breach are successful completed analyses, not HTTP errors. Shared HTTP admission, raw-body and bounded complete-result serialization guards apply outside the model. No partial result, database isolation emulator, elapsed time or automatic retry."
+      }
+    },
+    "/api/v1/simulations/transaction-atomicity": {
+      "get": {
+        "operationId": "getAtomicityDescriptor",
+        "summary": "Read the Java atomicity and abort descriptor for the existing draft transactions module",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtomicityDescriptor"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/transaction-atomicity/runs": {
+      "post": {
+        "operationId": "runAtomicity",
+        "summary": "Evaluate a complete untimed atomicity program and return authoritative public/private snapshots",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtomicityInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtomicityResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "internal_error: unexpected model or serialization failure, distinct from intentional whole-result byte limits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Retry hint in seconds. Capacity may remain occupied.",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[0-9]+$",
+                  "examples": ["1"]
+                }
+              }
+            }
+          }
+        },
+        "description": "Strict closed input, exact integer JSON tokens and complete actor programs. Legal abort, stock rejection and skipped work return completed analysis with HTTP 200. No database engine, durable commit, retries or elapsed time is modeled."
       }
     }
   },
@@ -8301,6 +8408,1162 @@
           },
           "firstViolationStepId": {
             "$ref": "#/components/schemas/ReservationIdentifier"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "invariantStatus": {
+                  "const": "VIOLATED"
+                }
+              }
+            },
+            "then": {
+              "required": ["firstViolationStepId"]
+            },
+            "else": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["firstViolationStepId"]
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "AtomicityLimits": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "maxInitialUnits",
+          "minTransactions",
+          "maxTransactions",
+          "maxQuantity",
+          "minSteps",
+          "maxSteps",
+          "maxIdLength"
+        ],
+        "properties": {
+          "maxInitialUnits": {
+            "type": "integer",
+            "const": 20
+          },
+          "minTransactions": {
+            "type": "integer",
+            "const": 1
+          },
+          "maxTransactions": {
+            "type": "integer",
+            "const": 3
+          },
+          "maxQuantity": {
+            "type": "integer",
+            "const": 20
+          },
+          "minSteps": {
+            "type": "integer",
+            "const": 2
+          },
+          "maxSteps": {
+            "type": "integer",
+            "const": 12
+          },
+          "maxIdLength": {
+            "type": "integer",
+            "const": 32
+          }
+        }
+      },
+      "AtomicityPreset": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "description", "input"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          },
+          "input": {
+            "$ref": "#/components/schemas/AtomicityInput"
+          }
+        }
+      },
+      "AtomicityDescriptor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "modelVersion",
+          "description",
+          "limits",
+          "presets",
+          "assumptions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "const": "transaction-atomicity"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "kind": {
+            "type": "string",
+            "const": "simulation"
+          },
+          "modelVersion": {
+            "type": "string",
+            "const": "1.0.0"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "limits": {
+            "$ref": "#/components/schemas/AtomicityLimits"
+          },
+          "presets": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/AtomicityPreset"
+            }
+          },
+          "assumptions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 600
+            }
+          }
+        }
+      },
+      "AtomicityInput": {
+        "title": "Transaction atomicity model input",
+        "description": "Canonical finite complete interleaving for illustrative split writes and staged revision-checked publication. Java validates unique transaction/step IDs, references and the four legal complete per-actor programs before execution. Aborting or encountering insufficient stock in a legal program is a modeled result, not malformed input. JSON Schema validates parsed shape and bounds, not protocol order, duplicate JSON keys or integer token spelling. No clock, database or random choices are modeled.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "modelVersion",
+          "mode",
+          "initialUnits",
+          "transactions",
+          "schedule"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "const": "1.0.0"
+          },
+          "mode": {
+            "enum": ["SPLIT_WRITES", "STAGED_VERSION_CHECK"]
+          },
+          "initialUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "transactions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/components/schemas/AtomicityTransaction"
+            }
+          },
+          "schedule": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/AtomicityStep"
+            }
+          }
+        }
+      },
+      "AtomicityIdentifier": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 32,
+        "pattern": "^[a-z][a-z0-9-]{0,31}$",
+        "not": {
+          "pattern": "\\s"
+        }
+      },
+      "AtomicityTransaction": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "quantity"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/AtomicityIdentifier"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        }
+      },
+      "AtomicityStep": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "transactionId", "action"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/AtomicityIdentifier"
+          },
+          "transactionId": {
+            "$ref": "#/components/schemas/AtomicityIdentifier"
+          },
+          "action": {
+            "enum": [
+              "BEGIN",
+              "DECREMENT_STOCK",
+              "RECORD_ALLOCATION",
+              "COMMIT",
+              "ABORT"
+            ]
+          }
+        }
+      },
+      "AtomicityResult": {
+        "title": "Transaction atomicity model result",
+        "description": "Complete authoritative untimed atomicity analysis. Public remaining and allocated units are guarded and together cannot exceed initial units; split writes may lose units and leak aborted effects but cannot create them. State bounds are 0..20, including unsafe partial states. Captured input and all IDs refer to the canonical input owner. Java owns mode-dependent private workspace presence, identity relationships, revision arithmetic, final/snapshot equality and invariant calculations. JSON Schema enforces closed local phase/outcome evidence and retained/cleared fields; it does not emulate transactions or promise durability.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "simulationId",
+          "schemaVersion",
+          "modelVersion",
+          "kind",
+          "status",
+          "input",
+          "initialState",
+          "outcomes",
+          "finalState",
+          "metrics",
+          "assumptions"
+        ],
+        "properties": {
+          "simulationId": {
+            "const": "transaction-atomicity"
+          },
+          "schemaVersion": {
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "const": "1.0.0"
+          },
+          "kind": {
+            "const": "analysis"
+          },
+          "status": {
+            "const": "completed"
+          },
+          "input": {
+            "$ref": "#/components/schemas/AtomicityInput"
+          },
+          "initialState": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AtomicityState"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "allocatedUnits": {
+                    "const": 0
+                  },
+                  "revision": {
+                    "const": 0
+                  },
+                  "allocations": {
+                    "type": "array",
+                    "maxItems": 0
+                  },
+                  "transactions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "phase": {
+                          "const": "NOT_STARTED"
+                        }
+                      }
+                    }
+                  },
+                  "invariants": {
+                    "type": "object",
+                    "properties": {
+                      "remainingNonnegative": {
+                        "const": true
+                      },
+                      "allocatedWithinCapacity": {
+                        "const": true
+                      },
+                      "unitsConserved": {
+                        "const": true
+                      },
+                      "abortedEffectsAbsent": {
+                        "const": true
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "outcomes": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/AtomicityOutcome"
+            }
+          },
+          "finalState": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AtomicityState"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "transactions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "phase": {
+                          "enum": ["COMMITTED", "ABORTED"]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/AtomicityMetrics"
+          },
+          "assumptions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 600
+            }
+          }
+        }
+      },
+      "AtomicityPendingAllocation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["transactionId", "quantity", "stepId"],
+        "properties": {
+          "transactionId": {
+            "$ref": "#/components/schemas/AtomicityIdentifier"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "stepId": {
+            "$ref": "#/components/schemas/AtomicityIdentifier"
+          }
+        }
+      },
+      "AtomicityAllocation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "transactionId",
+          "quantity",
+          "preparedAtStepId",
+          "publishedAtStepId"
+        ],
+        "properties": {
+          "transactionId": {
+            "$ref": "#/components/schemas/AtomicityIdentifier"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "preparedAtStepId": {
+            "$ref": "#/components/schemas/AtomicityIdentifier"
+          },
+          "publishedAtStepId": {
+            "$ref": "#/components/schemas/AtomicityIdentifier"
+          }
+        }
+      },
+      "AtomicityTransactionState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "quantity",
+          "phase",
+          "appliedStockUnits",
+          "pendingStockUnits"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/AtomicityIdentifier"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          },
+          "phase": {
+            "enum": ["NOT_STARTED", "OPEN", "BLOCKED", "COMMITTED", "ABORTED"]
+          },
+          "appliedStockUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "pendingStockUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "baseRemaining": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "baseRevision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+          },
+          "workingRemaining": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "pendingAllocation": {
+            "$ref": "#/components/schemas/AtomicityPendingAllocation"
+          },
+          "failureReason": {
+            "enum": ["INSUFFICIENT_STOCK", "USER_ABORT", "REVISION_CONFLICT"]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "phase": {
+                  "const": "NOT_STARTED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "appliedStockUnits": {
+                  "const": 0
+                },
+                "pendingStockUnits": {
+                  "const": 0
+                }
+              },
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["baseRemaining"]
+                  },
+                  {
+                    "required": ["baseRevision"]
+                  },
+                  {
+                    "required": ["workingRemaining"]
+                  },
+                  {
+                    "required": ["pendingAllocation"]
+                  },
+                  {
+                    "required": ["failureReason"]
+                  }
+                ]
+              }
+            },
+            "else": {
+              "required": ["baseRemaining", "baseRevision"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "phase": {
+                  "enum": ["NOT_STARTED", "OPEN", "COMMITTED"]
+                }
+              }
+            },
+            "then": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["failureReason"]
+                  }
+                ]
+              }
+            },
+            "else": {
+              "required": ["failureReason"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "phase": {
+                  "enum": ["NOT_STARTED", "COMMITTED", "ABORTED"]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "pendingStockUnits": {
+                  "const": 0
+                }
+              },
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["workingRemaining"]
+                  },
+                  {
+                    "required": ["pendingAllocation"]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "phase": {
+                  "const": "BLOCKED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "failureReason": {
+                  "const": "INSUFFICIENT_STOCK"
+                },
+                "appliedStockUnits": {
+                  "const": 0
+                },
+                "pendingStockUnits": {
+                  "const": 0
+                }
+              },
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["pendingAllocation"]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "phase": {
+                  "const": "COMMITTED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "appliedStockUnits": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 20
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "required": ["pendingAllocation"]
+            },
+            "then": {
+              "required": ["workingRemaining"],
+              "properties": {
+                "phase": {
+                  "const": "OPEN"
+                },
+                "pendingStockUnits": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 20
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "pendingStockUnits": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 20
+                }
+              }
+            },
+            "then": {
+              "required": ["workingRemaining"],
+              "properties": {
+                "phase": {
+                  "const": "OPEN"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "required": ["workingRemaining"]
+            },
+            "then": {
+              "properties": {
+                "phase": {
+                  "enum": ["OPEN", "BLOCKED"]
+                },
+                "appliedStockUnits": {
+                  "const": 0
+                }
+              }
+            }
+          }
+        ]
+      },
+      "AtomicityInvariants": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "remainingNonnegative",
+          "allocatedWithinCapacity",
+          "unitsConserved",
+          "abortedEffectsAbsent",
+          "accountedUnits"
+        ],
+        "properties": {
+          "remainingNonnegative": {
+            "type": "boolean"
+          },
+          "allocatedWithinCapacity": {
+            "type": "boolean"
+          },
+          "unitsConserved": {
+            "type": "boolean"
+          },
+          "abortedEffectsAbsent": {
+            "type": "boolean"
+          },
+          "accountedUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          }
+        }
+      },
+      "AtomicityState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "remainingUnits",
+          "allocatedUnits",
+          "revision",
+          "transactions",
+          "allocations",
+          "invariants"
+        ],
+        "properties": {
+          "remainingUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "allocatedUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+          },
+          "transactions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/components/schemas/AtomicityTransactionState"
+            }
+          },
+          "allocations": {
+            "type": "array",
+            "minItems": 0,
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/components/schemas/AtomicityAllocation"
+            }
+          },
+          "invariants": {
+            "$ref": "#/components/schemas/AtomicityInvariants"
+          }
+        }
+      },
+      "AtomicityOutcome": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sequence",
+          "stepId",
+          "transactionId",
+          "action",
+          "kind",
+          "postState",
+          "explanation"
+        ],
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "stepId": {
+            "$ref": "#/components/schemas/AtomicityIdentifier"
+          },
+          "transactionId": {
+            "$ref": "#/components/schemas/AtomicityIdentifier"
+          },
+          "action": {
+            "enum": [
+              "BEGIN",
+              "DECREMENT_STOCK",
+              "RECORD_ALLOCATION",
+              "COMMIT",
+              "ABORT"
+            ]
+          },
+          "kind": {
+            "enum": [
+              "TRANSACTION_STARTED",
+              "STOCK_APPLIED",
+              "STOCK_STAGED",
+              "STOCK_REJECTED",
+              "ALLOCATION_APPLIED",
+              "ALLOCATION_STAGED",
+              "WORK_SKIPPED",
+              "TRANSACTION_COMMITTED",
+              "TRANSACTION_ABORTED"
+            ]
+          },
+          "postState": {
+            "$ref": "#/components/schemas/AtomicityState"
+          },
+          "explanation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          },
+          "checkedRemaining": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "checkSource": {
+            "enum": ["CURRENT", "WORKING_COPY"]
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+          },
+          "actualRevision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+          },
+          "reason": {
+            "enum": ["INSUFFICIENT_STOCK", "USER_ABORT", "REVISION_CONFLICT"]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "TRANSACTION_STARTED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "action": {
+                  "const": "BEGIN"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["STOCK_APPLIED", "STOCK_STAGED", "STOCK_REJECTED"]
+                }
+              }
+            },
+            "then": {
+              "required": ["checkedRemaining", "checkSource"],
+              "properties": {
+                "action": {
+                  "const": "DECREMENT_STOCK"
+                }
+              }
+            },
+            "else": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["checkedRemaining"]
+                  },
+                  {
+                    "required": ["checkSource"]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "STOCK_APPLIED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "checkSource": {
+                  "const": "CURRENT"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "STOCK_STAGED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "checkSource": {
+                  "const": "WORKING_COPY"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "ALLOCATION_APPLIED",
+                    "ALLOCATION_STAGED",
+                    "WORK_SKIPPED"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "action": {
+                  "const": "RECORD_ALLOCATION"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "TRANSACTION_COMMITTED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "action": {
+                  "const": "COMMIT"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "TRANSACTION_ABORTED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "action": {
+                  "enum": ["COMMIT", "ABORT"]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "STOCK_REJECTED",
+                    "WORK_SKIPPED",
+                    "TRANSACTION_ABORTED"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "required": ["reason"]
+            },
+            "else": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["reason"]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["STOCK_REJECTED", "WORK_SKIPPED"]
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "reason": {
+                  "const": "INSUFFICIENT_STOCK"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "enum": ["TRANSACTION_COMMITTED", "TRANSACTION_ABORTED"]
+                }
+              }
+            },
+            "then": {},
+            "else": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["expectedRevision"]
+                  },
+                  {
+                    "required": ["actualRevision"]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "required": ["expectedRevision"]
+            },
+            "then": {
+              "required": ["actualRevision"],
+              "properties": {
+                "action": {
+                  "const": "COMMIT"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "required": ["actualRevision"]
+            },
+            "then": {
+              "required": ["expectedRevision"],
+              "properties": {
+                "action": {
+                  "const": "COMMIT"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "TRANSACTION_ABORTED"
+                },
+                "reason": {
+                  "const": "REVISION_CONFLICT"
+                }
+              },
+              "required": ["reason"]
+            },
+            "then": {
+              "required": ["expectedRevision", "actualRevision"],
+              "properties": {
+                "action": {
+                  "const": "COMMIT"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "reason": {
+                  "enum": ["USER_ABORT", "INSUFFICIENT_STOCK"]
+                }
+              },
+              "required": ["reason"]
+            },
+            "then": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": ["expectedRevision"]
+                  },
+                  {
+                    "required": ["actualRevision"]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "reason": {
+                  "const": "USER_ABORT"
+                }
+              },
+              "required": ["reason"]
+            },
+            "then": {
+              "properties": {
+                "kind": {
+                  "const": "TRANSACTION_ABORTED"
+                },
+                "action": {
+                  "const": "ABORT"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "AtomicityMetrics": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "committedTransactions",
+          "abortedTransactions",
+          "conflictedTransactions",
+          "abortedTransactionsWithEffects",
+          "finalRemainingUnits",
+          "finalAllocatedUnits",
+          "invariantStatus"
+        ],
+        "properties": {
+          "committedTransactions": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "abortedTransactions": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "conflictedTransactions": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "abortedTransactionsWithEffects": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "finalRemainingUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "finalAllocatedUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "invariantStatus": {
+            "enum": ["PRESERVED", "VIOLATED"]
+          },
+          "firstViolationStepId": {
+            "$ref": "#/components/schemas/AtomicityIdentifier"
           }
         },
         "allOf": [

@@ -86,6 +86,41 @@ class PackagedRuntimeFailures(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, message):
                     smoke.verify_draft_model("http://example.invalid", "transactions-isolation")
 
+    def test_atomicity_named_comparisons_preserve_all_java_evidence(self):
+        fixtures = ROOT / "contracts/examples"
+        variants = [("baseline", "baseline"), ("protected-baseline", "protected"),
+                    ("protected-conflict", "conflict")]
+        inputs = [json.loads((fixtures / f"transaction-atomicity-{variant}-input.json").read_text())
+                  for _, variant in variants]
+        results = [json.loads((fixtures / f"transaction-atomicity-{variant}-result.json").read_text())
+                   for _, variant in variants]
+        presets = [{"id": identifier, "input": value} for (identifier, _), value in zip(variants, inputs)]
+        descriptor = {"presets": list(reversed(presets))}
+        with patch.object(smoke, "api", side_effect=[descriptor, *results]) as api:
+            smoke.verify_draft_model("http://example.invalid", "transaction-atomicity")
+        self.assertEqual([call.args[2] for call in api.call_args_list[1:]], inputs)
+        for index, (identifier, variant) in enumerate(variants):
+            missing = {"presets": [preset for preset in presets if preset["id"] != identifier]}
+            with self.subTest(missing=identifier), patch.object(smoke, "api", side_effect=[missing, *results[:index]]):
+                with self.assertRaisesRegex(RuntimeError, f"no {identifier}"):
+                    smoke.verify_draft_model("http://example.invalid", "transaction-atomicity")
+            changed = copy.deepcopy(descriptor)
+            next(preset for preset in changed["presets"] if preset["id"] == identifier)["input"]["initialUnits"] += 1
+            with self.subTest(changed=identifier), patch.object(smoke, "api", side_effect=[changed, *results[:index]]) as api:
+                with self.assertRaisesRegex(RuntimeError, f"{variant} input differs"):
+                    smoke.verify_draft_model("http://example.invalid", "transaction-atomicity")
+                self.assertEqual(api.call_count, index + 1)
+            wrong = copy.deepcopy(results[index])
+            if variant == "baseline":
+                wrong["finalState"]["invariants"]["abortedEffectsAbsent"] = True
+            elif variant == "protected":
+                wrong["finalState"]["transactions"][0]["workingRemaining"] = 0
+            else:
+                wrong["outcomes"][-1]["actualRevision"] = 0
+            with self.subTest(stale=identifier), patch.object(smoke, "api", side_effect=[descriptor, *results[:index], wrong]):
+                with self.assertRaisesRegex(RuntimeError, f"{variant} full result differs"):
+                    smoke.verify_draft_model("http://example.invalid", "transaction-atomicity")
+
     def test_readiness_retries_transient_connection_failures_then_cleans_its_container(self):
         for failure in (ConnectionResetError("starting"), TimeoutError("starting"), URLError("starting")):
             args = argparse.Namespace(jar=None, image="hld-test-image", port=free_port())

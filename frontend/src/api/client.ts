@@ -8,6 +8,9 @@ import {
   CacheCompatibilityError,
 } from "./cacheCompatibility";
 import type {
+  AtomicityInput,
+  AtomicityResult,
+  AtomicityDescriptor,
   ReservationInput,
   ReservationResult,
   ReservationDescriptor,
@@ -108,6 +111,39 @@ async function request<T>(
 }
 
 export const api = {
+  atomicityDescriptor: async () => {
+    const { assertAtomicityDescriptor } =
+      await import("./atomicityCompatibility");
+    return request<AtomicityDescriptor>(
+      "/api/v1/simulations/transaction-atomicity",
+      undefined,
+      deliveryValidation(assertAtomicityDescriptor),
+    );
+  },
+  runAtomicity: async (input: AtomicityInput) => {
+    const payload = JSON.stringify(input);
+    const submitted: AtomicityInput = JSON.parse(payload);
+    const { assertAtomicityInput, assertAtomicityResult } =
+      await import("./atomicityCompatibility");
+    try {
+      assertAtomicityInput(submitted);
+    } catch (cause: unknown) {
+      throw new ApiClientError(
+        cause instanceof Error
+          ? cause.message
+          : "Check the submitted atomicity input.",
+      );
+    }
+    return request<AtomicityResult>(
+      "/api/v1/simulations/transaction-atomicity/runs",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      },
+      deliveryValidation((body) => assertAtomicityResult(body, submitted)),
+    );
+  },
   reservationDescriptor: async () => {
     const { assertReservationDescriptor } =
       await import("./reservationCompatibility");

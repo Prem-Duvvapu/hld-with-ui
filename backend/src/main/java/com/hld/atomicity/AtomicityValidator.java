@@ -18,8 +18,8 @@ public final class AtomicityValidator {
         require(AtomicityInput.MODEL_VERSION.equals(input.modelVersion()), "modelVersion must be 1.0.0");
         require(input.mode() != null, "mode is required");
         range(input.initialUnits(), 0, AtomicityInput.MAX_INITIAL_UNITS, "initialUnits");
-        size(input.transactions(), 1, AtomicityInput.MAX_TRANSACTIONS, "transactions");
-        size(input.schedule(), 2, AtomicityInput.MAX_STEPS, "schedule");
+        size(input.transactions(), AtomicityInput.MIN_TRANSACTIONS, AtomicityInput.MAX_TRANSACTIONS, "transactions");
+        size(input.schedule(), AtomicityInput.MIN_STEPS, AtomicityInput.MAX_STEPS, "schedule");
         Map<String, ProgramPhase> phases = new HashMap<>();
         for (var transaction : input.transactions()) {
             require(transaction != null, "transactions must not contain null");
@@ -67,8 +67,9 @@ public final class AtomicityValidator {
     }
 
     private static void identity(String value, String label) {
-        require(value != null && ID.matcher(value).matches(),
-                label + " must contain 1–32 lowercase ASCII letters, digits or hyphens and start with a letter");
+        require(value != null && value.length() <= AtomicityInput.MAX_ID_LENGTH && ID.matcher(value).matches(),
+                label + " must contain 1–" + AtomicityInput.MAX_ID_LENGTH
+                        + " lowercase ASCII letters, digits or hyphens and start with a letter");
     }
     private static void range(Integer value, int minimum, int maximum, String label) {
         require(value != null && value >= minimum && value <= maximum,

@@ -237,8 +237,9 @@ run. See [decision 0033](decisions/0033-guided-reservation-step-targets.md).
 ## Transaction atomicity foundation
 
 [HLD-17A](work-items/HLD-17A.md) implements a separate pure `com.hld.atomicity` analysis,
-`transaction-atomicity` schema 1.0 / model 1.0.0. This foundation has no HTTP/OpenAPI path,
-Spring registration, catalog simulation ID or frontend integration in this slice. Its actual
+`transaction-atomicity` schema 1.0 / model 1.0.0. At its delivery, this foundation added no HTTP/OpenAPI path,
+Spring registration, catalog simulation ID or frontend integration. HLD-17B integrates those
+artifacts as a second experiment without changing the model. Its actual
 verification remains in the work item; the existing reservation experiment is unchanged.
 
 One through three complete transaction programs interleave within at most twelve untimed
@@ -258,3 +259,24 @@ or external effects are introduced. [Decision 0034](decisions/0034-transaction-a
 records this original local publication/discard boundary. A later verified API/UI slice can
 expose a second named experiment inside the existing draft topic; its old Guided coverage
 does not automatically extend to this new model.
+
+## Two transaction experiments
+
+[HLD-17B](work-items/HLD-17B.md) connects `transaction-atomicity` to a strict direct descriptor/
+run namespace under HTTP 1.9. AtomicityDescriptor exposes seven Java-derived limits and eight
+canonical inputs. Whole request/response and shared admission guards keep their existing
+400/413/422/503/error semantics; valid abort/conflict is a complete 200 analysis.
+
+The single `transactions-isolation` draft catalog row now references both simulation IDs,
+content 1.2.0 and sixteen Practice questions. TransactionExperiments offers a URL-selected
+choice, keeps visited panels mounted and loads the new descriptor/renderer lazily. Missing,
+unknown and failed atomicity states require an explicit choice/retry, while reservation work
+remains available. Old Guided/design views are visibly scoped to reservation.
+
+Canonical schemas own model types; the exporter generates the closed reachable descriptor
+and HTTP components. Client capture happens before its first asynchronous yield. Compatibility
+checks validate shape, static program/identity/reference relationships and reported equality;
+React does not execute stock rules or recompute Java flags/counters. Initial and post-step
+snapshots separate published data, private workspace and retained base history. Selected
+flags and whole-history metrics remain distinct. [Decision 0035](decisions/0035-two-transaction-experiments.md)
+records ownership, migration and scope. Actual gates remain in HLD-17B.

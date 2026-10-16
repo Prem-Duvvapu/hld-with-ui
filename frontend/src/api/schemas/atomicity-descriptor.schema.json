@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "kind",
+    "modelVersion",
+    "description",
+    "limits",
+    "presets",
+    "assumptions"
+  ],
+  "properties": {
+    "id": { "type": "string", "const": "transaction-atomicity" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "kind": { "type": "string", "const": "simulation" },
+    "modelVersion": { "type": "string", "const": "1.0.0" },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "limits": { "$ref": "#/$defs/AtomicityLimits" },
+    "presets": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 12,
+      "items": { "$ref": "#/$defs/AtomicityPreset" }
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": { "type": "string", "minLength": 1, "maxLength": 600 }
+    }
+  },
+  "$defs": {
+    "AtomicityIdentifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "pattern": "^[a-z][a-z0-9-]{0,31}$",
+      "not": { "pattern": "\\s" }
+    },
+    "AtomicityTransaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "quantity"],
+      "properties": {
+        "id": { "$ref": "#/$defs/AtomicityIdentifier" },
+        "quantity": { "type": "integer", "minimum": 1, "maximum": 20 }
+      }
+    },
+    "AtomicityStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "transactionId", "action"],
+      "properties": {
+        "id": { "$ref": "#/$defs/AtomicityIdentifier" },
+        "transactionId": { "$ref": "#/$defs/AtomicityIdentifier" },
+        "action": {
+          "enum": [
+            "BEGIN",
+            "DECREMENT_STOCK",
+            "RECORD_ALLOCATION",
+            "COMMIT",
+            "ABORT"
+          ]
+        }
+      }
+    },
+    "AtomicityInput": {
+      "title": "Transaction atomicity model input",
+      "description": "Canonical finite complete interleaving for illustrative split writes and staged revision-checked publication. Java validates unique transaction/step IDs, references and the four legal complete per-actor programs before execution. Aborting or encountering insufficient stock in a legal program is a modeled result, not malformed input. JSON Schema validates parsed shape and bounds, not protocol order, duplicate JSON keys or integer token spelling. No clock, database or random choices are modeled.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "modelVersion",
+        "mode",
+        "initialUnits",
+        "transactions",
+        "schedule"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "1.0" },
+        "modelVersion": { "const": "1.0.0" },
+        "mode": { "enum": ["SPLIT_WRITES", "STAGED_VERSION_CHECK"] },
+        "initialUnits": { "type": "integer", "minimum": 0, "maximum": 20 },
+        "transactions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": { "$ref": "#/$defs/AtomicityTransaction" }
+        },
+        "schedule": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 12,
+          "items": { "$ref": "#/$defs/AtomicityStep" }
+        }
+      }
+    },
+    "AtomicityLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maxInitialUnits",
+        "minTransactions",
+        "maxTransactions",
+        "maxQuantity",
+        "minSteps",
+        "maxSteps",
+        "maxIdLength"
+      ],
+      "properties": {
+        "maxInitialUnits": { "type": "integer", "const": 20 },
+        "minTransactions": { "type": "integer", "const": 1 },
+        "maxTransactions": { "type": "integer", "const": 3 },
+        "maxQuantity": { "type": "integer", "const": 20 },
+        "minSteps": { "type": "integer", "const": 2 },
+        "maxSteps": { "type": "integer", "const": 12 },
+        "maxIdLength": { "type": "integer", "const": 32 }
+      }
+    },
+    "AtomicityPreset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "description", "input"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "not": { "pattern": "\\s" }
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "description": { "type": "string", "minLength": 1, "maxLength": 600 },
+        "input": { "$ref": "#/$defs/AtomicityInput" }
+      }
+    }
+  }
+}

@@ -52,6 +52,22 @@ const reservationResultNames = {
   outcome: "ReservationOutcome",
   metrics: "ReservationMetrics",
 };
+const atomicityInputId =
+  "https://hld-with-ui.dev/schemas/transaction-atomicity.input.schema.json";
+const atomicityInputNames = {
+  identifier: "AtomicityIdentifier",
+  transaction: "AtomicityTransaction",
+  step: "AtomicityStep",
+};
+const atomicityResultNames = {
+  pendingAllocation: "AtomicityPendingAllocation",
+  allocation: "AtomicityAllocation",
+  transactionState: "AtomicityTransactionState",
+  invariants: "AtomicityInvariants",
+  state: "AtomicityState",
+  outcome: "AtomicityOutcome",
+  metrics: "AtomicityMetrics",
+};
 
 // Canonical schemas own model evidence and guided content. Export normal internal OpenAPI refs
 // so existing generation and response validators need no remote resolution.
@@ -82,6 +98,16 @@ function exportSchema(value, definitions = names) {
             ];
       if (!name)
         throw new Error(`Unsupported reservation input reference: ${child}`);
+      result[key] = `#/components/schemas/${name}`;
+    } else if (key === "$ref" && child.startsWith(atomicityInputId)) {
+      const name =
+        child === atomicityInputId
+          ? "AtomicityInput"
+          : atomicityInputNames[
+              child.slice(`${atomicityInputId}#/$defs/`.length)
+            ];
+      if (!name)
+        throw new Error(`Unsupported atomicity input reference: ${child}`);
       result[key] = `#/components/schemas/${name}`;
     } else result[key] = exportSchema(child, definitions);
   }
@@ -181,6 +207,20 @@ for (const [kind, component, definitions] of [
     );
   }
 }
+for (const [kind, component, definitions] of [
+  ["input", "AtomicityInput", atomicityInputNames],
+  ["result", "AtomicityResult", atomicityResultNames],
+]) {
+  const schema = read(`contracts/transaction-atomicity.${kind}.schema.json`);
+  openapi.components.schemas[component] = exportSchema(schema, definitions);
+  for (const [definition, name] of Object.entries(definitions)) {
+    if (!schema.$defs[definition]) throw new Error(`Missing ${definition}`);
+    openapi.components.schemas[name] = exportSchema(
+      schema.$defs[definition],
+      definitions,
+    );
+  }
+}
 const reservationTarget = checkpoints.items.properties.target.oneOf.find(
   (branch) => branch.required.includes("stepId"),
 );
@@ -267,6 +307,27 @@ const reservationDescriptorSchema = {
 writeFileSync(
   resolve(root, "frontend/src/api/schemas/reservation-descriptor.schema.json"),
   JSON.stringify(reservationDescriptorSchema).replaceAll(
+    "#/components/schemas/",
+    "#/$defs/",
+  ) + "\n",
+);
+const atomicityDescriptorSchema = {
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  ...openapi.components.schemas.AtomicityDescriptor,
+  $defs: Object.fromEntries(
+    [
+      "AtomicityIdentifier",
+      "AtomicityTransaction",
+      "AtomicityStep",
+      "AtomicityInput",
+      "AtomicityLimits",
+      "AtomicityPreset",
+    ].map((name) => [name, openapi.components.schemas[name]]),
+  ),
+};
+writeFileSync(
+  resolve(root, "frontend/src/api/schemas/atomicity-descriptor.schema.json"),
+  JSON.stringify(atomicityDescriptorSchema).replaceAll(
     "#/components/schemas/",
     "#/$defs/",
   ) + "\n",

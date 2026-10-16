@@ -35,15 +35,17 @@ complete its six draft views; see [HLD-15B](docs/work-items/HLD-15B.md). Human/h
 review and publication remain pending.
 
 The draft **Transactions & Isolation** topic at `/draft/topics/transactions-isolation`
-provides eight editable reservation scenarios, Java snapshot evidence, Study and eight Practice
-questions. Its six draft views are described in [HLD-16C](docs/work-items/HLD-16C.md); broader
-transaction teaching and publication remain pending.
+contains two named Java experiments: Reservation race and **Atomicity & abort**. Each has
+eight editable scenarios and initial/post-step evidence. Open
+`/draft/topics/transactions-isolation?experiment=atomicity` to inspect separately published
+writes versus private changes that publish together or are discarded. Study and sixteen
+Practice questions cover both examples. The eight Guided checkpoints, Architecture and
+Operation sequence remain scoped to reservation; atomicity Guided/design views are pending.
+See [HLD-17B](docs/work-items/HLD-17B.md) for implementation and verification status.
 
-The additional transaction foundation, `transaction-atomicity`, is implemented as a
-separate pure Java model with standalone contracts ([HLD-17A](docs/work-items/HLD-17A.md)).
-It is not yet available through the API or UI and is not a published module. It compares
-individually visible writes with staged publication and explicit abort. The existing
-reservation experiment keeps its recorded model version.
+Both models retain schema 1.0 / model 1.0.0. This is bounded local behavior, with no SQL
+isolation-level, durable recovery, retry or idempotency guarantee. Human/hosted review and
+publication remain pending; the catalog still has four published modules.
 
 ## Record your learning
 
@@ -311,7 +313,12 @@ post-step snapshots. Eight original questions support locally saved interview ex
 [HLD-16C](docs/work-items/HLD-16C.md) adds eight Java-verified Guided checkpoints,
 inspectable Architecture and three authored manual Operation sequence paths.
 
-The draft compares stale-read assignment with an atomic current-stock condition, and labels
-capacity and conservation separately. It does not emulate a database engine or implement
+[HLD-17B](docs/work-items/HLD-17B.md) adds Atomicity & abort as a second named Playground
+with eight scenarios, private/published evidence and eight added Practice questions (sixteen
+total). Study covers both examples; the existing Guided/design views remain reservation scoped.
+
+The reservation experiment compares stale-read assignment with an atomic current-stock
+condition. Atomicity compares split writes with private preparation and revision-checked
+publication/discard, with separate conservation and aborted-effect history. It does not emulate a database engine or implement
 isolation levels, rollback, retries, durability or idempotency. Human/hosted/publication gates remain pending. Follow the
 [transaction handoff](docs/TRANSACTIONS_IMPLEMENTATION_PLAN.md) for the next bounded contribution.

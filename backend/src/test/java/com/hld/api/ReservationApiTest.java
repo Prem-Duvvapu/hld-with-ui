@@ -268,7 +268,7 @@ class ReservationApiTest {
         var detail = success(get("/api/v1/draft/topics/transactions-isolation"));
         assertThat(detail.at("/topic/id").asString()).isEqualTo("transactions-isolation");
         assertThat(detail.at("/topic/status").asString()).isEqualTo("draft");
-        assertThat(detail.at("/topic/contentVersion").asString()).isEqualTo("1.1.0");
+        assertThat(detail.at("/topic/contentVersion").asString()).isEqualTo("1.2.0");
         var capabilities = new ArrayList<String>();
         for (JsonNode value : detail.at("/topic/capabilities")) capabilities.add(value.asString());
         assertThat(capabilities).containsExactlyInAnyOrder("study", "simulation", "guided", "practice");
@@ -280,7 +280,7 @@ class ReservationApiTest {
             assertThat(checkpoint.at("/target/kind").asString()).isIn("READ_OBSERVED", "RESERVATION_ACCEPTED", "RESERVATION_REJECTED");
         }
         assertThat(detail.path("lessonMarkdown").asString()).isNotBlank();
-        assertThat(detail.path("questions").size()).isGreaterThan(0);
+        assertThat(detail.path("questions").size()).isEqualTo(16);
         assertThat(get("/api/v1/topics/transactions-isolation").statusCode()).isEqualTo(404);
         for (JsonNode entry : success(get("/api/v1/topics"))) assertThat(entry.path("id").asString()).isNotEqualTo("transactions-isolation");
         for (String query : List.of("reservation", "transactions", "isolation")) {
