@@ -152,3 +152,22 @@ while browser servers are live.
 - Add sources and original explanations to lessons. Keep example assumptions and model limits visible.
 - Update docs, roadmap evidence, and tests with behavior changes. Record consequential design decisions in `docs/decisions/` when that directory is established.
 - Keep secrets, generated files, IDE metadata, and unrelated user files out of PRs.
+
+## Standalone retry foundation examples
+
+HLD-18A does not expose a retry API or UI. Its four input/result golden pairs are captured
+from the configured Java mapper. Ordinary `./mvnw -B verify` compares them without writing.
+When intentionally changing this model and reviewing its replay compatibility, author only
+these new-model pairs explicitly:
+
+```bash
+(cd backend && ./mvnw -B -Dtest=RetrySerializationTest -Dhld.writeRetryGoldens=true test)
+(cd frontend && npx prettier --write ../contracts/examples/timeouts-retries-*.json)
+(cd backend && ./mvnw -B verify)
+(cd frontend && npm run contracts:check)
+```
+
+Review the resulting semantic diff. Do not use the authoring flag in CI or to mask a failing
+assertion. The maximum-boundary stress result is measured in memory and is not committed as
+a giant golden. The [retry plan](docs/TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md) separates the
+completed foundation checks from pending API, renderer and publication gates.

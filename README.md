@@ -48,6 +48,15 @@ Both models retain schema 1.0 / model 1.0.0. This is bounded local behavior, wit
 isolation-level, durable recovery, retry or idempotency guarantee. Human/hosted review and
 publication remain pending; the catalog still has four published modules.
 
+## Retry model foundation
+
+[HLD-18A](docs/work-items/HLD-18A.md) adds a separate pure Java `timeouts-retries`
+foundation with eight scenarios, immutable caller/work snapshots, backoff, seeded jitter,
+overall deadlines and a finite shared retry budget. Standalone contracts and four
+Java-generated examples cover its behavior. It is not registered as an API or topic and
+has no learning UI yet. See the [retry implementation plan](docs/TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md)
+for the API/Playground and Guided/design contributions. Published counts are unchanged.
+
 ## Record your learning
 
 The first learning path separates saved answers from progress you explicitly record. Expand

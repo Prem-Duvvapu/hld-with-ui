@@ -369,3 +369,30 @@ computing model transitions or a whole-history verdict. Atomicity and reservatio
 adapters have independent preset caches and distinct saved activities under one topic.
 Three authored manual paths explain split abort, staged publication and conservative conflict;
 they are labeled illustrations and introduce no simulated time or automatic Java requests.
+
+## Timeouts and retries foundation
+
+[HLD-18A](work-items/HLD-18A.md) implements pure `timeouts-retries` model 1.0.0 / schema 1.0,
+with canonical standalone input/result schemas and four actual Java golden pairs. It is not
+registered or exposed over HTTP yet. The [retry handoff](TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md)
+freezes exact fields, eight presets, callback phases, bounds and subsequent API/UI gates.
+
+At most 12 ordered originals and five attempts per original feed one finite worker/FIFO
+queue. Timeout begins at send, including queue wait. Caller timeout/overall deadline leave
+accepted work alive. Only the current waiting attempt can succeed; completion at either
+deadline wins. Originals precede same-time retries and completed work promotes FIFO before
+new sends. Retry policy checks attempts, shared finite budget, then delay/deadline eligibility;
+budget is rechecked and consumed only at actual retry dispatch.
+
+Snapshots include READY, PENDING_ADMISSION, DECIDING_RETRY and completion-before-response
+microsteps. RETRY_SCHEDULED reports a real plan; RETRY_BLOCKED_BY_DEADLINE reports only a
+proposal while awaiting the actual deadline. All identities reference sent rows. Historical
+causes/timestamps persist; selected snapshots do not borrow whole-result metrics. Java ratios
+are sends/originals and completed work/originals, not persisted effects or production latency.
+
+Complete drainage is bounded by 60 sends, 192 callbacks, 384 events and 80000 virtual ms;
+internal bug assertions replace silent truncation. No-op timers cannot extend final time.
+Jitter uses one run-local recorded seeded generator, and ordinary golden checks never rewrite.
+Maximum-boundary in-memory serialization is evidence for that fixture only; HTTP byte/token/
+admission guards and real UI accessibility checks require HLD-18B. Cancellation, idempotency,
+multiple retry layers, actual networking and durability are outside this model.

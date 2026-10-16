@@ -1,0 +1,414 @@
+{
+  "simulationId": "timeouts-retries",
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "kind": "simulation",
+  "status": "completed",
+  "input": {
+    "schemaVersion": "1.0",
+    "modelVersion": "1.0.0",
+    "seed": 42,
+    "workers": 1,
+    "queueCapacity": 2,
+    "attemptTimeoutMs": 50,
+    "overallTimeoutMs": 100,
+    "maxAttempts": 3,
+    "backoff": "EXPONENTIAL",
+    "baseDelayMs": 40,
+    "maxDelayMs": 80,
+    "jitter": "NONE",
+    "retryBudget": 48,
+    "unavailableUntilMs": 60,
+    "requests": [{ "id": "a", "arrivalTimeMs": 0, "serviceTimeMs": 20 }]
+  },
+  "randomAlgorithm": "SplittableRandom",
+  "initialState": {
+    "requests": [
+      {
+        "id": "a",
+        "overallDeadlineAtMs": 100,
+        "phase": "NOT_ARRIVED",
+        "attemptsSent": 0
+      }
+    ],
+    "attempts": [],
+    "workers": [{ "id": "worker-1" }],
+    "queue": [],
+    "retryBudgetRemaining": 48
+  },
+  "events": [
+    {
+      "sequence": 1,
+      "timeMs": 0,
+      "kind": "REQUEST_ARRIVED",
+      "requestId": "a",
+      "explanation": "a arrives. Its overall deadline is 100 ms.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 100,
+            "phase": "READY",
+            "attemptsSent": 0
+          }
+        ],
+        "attempts": [],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 48
+      }
+    },
+    {
+      "sequence": 2,
+      "timeMs": 0,
+      "kind": "ATTEMPT_SENT",
+      "requestId": "a",
+      "attemptId": "a-a1",
+      "explanation": "a-a1 is sent at 0 ms; server admission has not yet decided.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 100,
+            "phase": "WAITING",
+            "attemptsSent": 1,
+            "activeAttemptId": "a-a1"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "WAITING",
+            "workState": "PENDING_ADMISSION"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 48
+      }
+    },
+    {
+      "sequence": 3,
+      "timeMs": 0,
+      "kind": "ATTEMPT_REJECTED",
+      "requestId": "a",
+      "attemptId": "a-a1",
+      "explanation": "a-a1 is rejected with DEPENDENCY_UNAVAILABLE; no server work was accepted.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 100,
+            "phase": "DECIDING_RETRY",
+            "attemptsSent": 1,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 48
+      }
+    },
+    {
+      "sequence": 4,
+      "timeMs": 0,
+      "kind": "RETRY_SCHEDULED",
+      "requestId": "a",
+      "attemptId": "a-a1",
+      "delayMs": 40,
+      "retryAtMs": 40,
+      "explanation": "Chosen delay 40 ms schedules a retry at 40 ms. Its budget token is checked and consumed only at dispatch.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 100,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 1,
+            "nextRetryAtMs": 40,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 48
+      }
+    },
+    {
+      "sequence": 5,
+      "timeMs": 40,
+      "kind": "ATTEMPT_SENT",
+      "requestId": "a",
+      "attemptId": "a-a2",
+      "explanation": "a-a2 is sent at 40 ms; server admission has not yet decided.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 100,
+            "phase": "WAITING",
+            "attemptsSent": 2,
+            "activeAttemptId": "a-a2",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 40,
+            "callerState": "WAITING",
+            "workState": "PENDING_ADMISSION"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 47
+      }
+    },
+    {
+      "sequence": 6,
+      "timeMs": 40,
+      "kind": "ATTEMPT_REJECTED",
+      "requestId": "a",
+      "attemptId": "a-a2",
+      "explanation": "a-a2 is rejected with DEPENDENCY_UNAVAILABLE; no server work was accepted.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 100,
+            "phase": "DECIDING_RETRY",
+            "attemptsSent": 2,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 40,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 40,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 47
+      }
+    },
+    {
+      "sequence": 7,
+      "timeMs": 40,
+      "kind": "RETRY_BLOCKED_BY_DEADLINE",
+      "requestId": "a",
+      "attemptId": "a-a2",
+      "delayMs": 80,
+      "proposedRetryAtMs": 120,
+      "explanation": "Chosen delay 80 ms proposes 120 ms, at or after overall deadline 100 ms. No retry is scheduled; wait for the actual deadline.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 100,
+            "phase": "AWAITING_DEADLINE",
+            "attemptsSent": 2,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 40,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 40,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 47
+      }
+    },
+    {
+      "sequence": 8,
+      "timeMs": 100,
+      "kind": "REQUEST_FAILED",
+      "requestId": "a",
+      "explanation": "The overall deadline stops caller waiting and future retries; accepted server work continues.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 100,
+            "phase": "FAILED",
+            "attemptsSent": 2,
+            "finishedAtMs": 100,
+            "failureReason": "OVERALL_DEADLINE",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 40,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 40,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 47
+      }
+    }
+  ],
+  "finalState": {
+    "requests": [
+      {
+        "id": "a",
+        "overallDeadlineAtMs": 100,
+        "phase": "FAILED",
+        "attemptsSent": 2,
+        "finishedAtMs": 100,
+        "failureReason": "OVERALL_DEADLINE",
+        "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+      }
+    ],
+    "attempts": [
+      {
+        "id": "a-a1",
+        "requestId": "a",
+        "number": 1,
+        "sentAtMs": 0,
+        "callerState": "REJECTED",
+        "workState": "NOT_ACCEPTED",
+        "callerFinishedAtMs": 0,
+        "failureCause": "DEPENDENCY_UNAVAILABLE"
+      },
+      {
+        "id": "a-a2",
+        "requestId": "a",
+        "number": 2,
+        "sentAtMs": 40,
+        "callerState": "REJECTED",
+        "workState": "NOT_ACCEPTED",
+        "callerFinishedAtMs": 40,
+        "failureCause": "DEPENDENCY_UNAVAILABLE"
+      }
+    ],
+    "workers": [{ "id": "worker-1" }],
+    "queue": [],
+    "retryBudgetRemaining": 47
+  },
+  "metrics": {
+    "originalRequests": 1,
+    "succeededRequests": 0,
+    "failedRequests": 1,
+    "attemptsSent": 2,
+    "retriesSent": 1,
+    "rejectedAttempts": 2,
+    "acceptedServerWork": 0,
+    "completedServerWork": 0,
+    "lateCompletions": 0,
+    "attemptTimeouts": 0,
+    "retryBudgetUsed": 1,
+    "peakQueueDepth": 0,
+    "peakRunningWork": 0,
+    "finalTimeMs": 100,
+    "attemptAmplification": 2.0,
+    "executionAmplification": 0.0
+  },
+  "assumptions": [
+    "This illustrative model separates a caller's waiting from accepted server work; it does not model business effects or durable storage.",
+    "Authored arrivals and per-request service times determine work; networking and response delivery take zero time.",
+    "Attempt timeout begins at send and includes queue wait. Timeout and overall deadline never cancel accepted queued or running work.",
+    "Server workers run accepted work to completion in FIFO order; queue capacity excludes running work and idle workers can start with queue capacity zero.",
+    "Dependency unavailability and a full waiting queue reject immediately without accepting server work.",
+    "Only a response to the currently waiting attempt can succeed its logical request. Late completions cannot revive a caller or satisfy a newer attempt.",
+    "Completion wins equality with the overall deadline or attempt timeout; overall deadline wins equality with attempt timeout.",
+    "Existing FIFO work is promoted before same-time arrivals, and original sends precede same-time retry sends.",
+    "Maximum attempts includes the original. The finite batch retry budget is consumed only by dispatched retries, including immediately rejected ones.",
+    "Exponential backoff is capped; FULL jitter draws an inclusive integer delay from one run-local versioned seeded generator.",
+    "A proposed retry at or after its arrival-relative overall deadline is not scheduled; the caller waits until that deadline to fail.",
+    "All accepted server work drains before the result ends. No-op future timers do not extend the reported final time.",
+    "Cancellation, idempotency, actual networking, retry trees, persistence and production latency measurements are excluded."
+  ]
+}

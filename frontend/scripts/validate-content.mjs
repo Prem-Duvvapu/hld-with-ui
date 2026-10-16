@@ -97,6 +97,18 @@ for (const variant of ["baseline", "protected", "conflict", "max-boundary"]) {
   }
 }
 
+// Standalone retry foundation evidence does not register an endpoint or catalog capability.
+for (const variant of ["baseline", "backoff", "deadline", "jitter"]) {
+  for (const kind of ["input", "result"]) {
+    const example = `timeouts-retries-${variant}-${kind}`;
+    validateSchema(
+      `contracts/timeouts-retries.${kind}.schema.json`,
+      readJson(`contracts/examples/${example}.json`),
+      example,
+    );
+  }
+}
+
 unique(
   catalog.map((entry) => entry.id),
   "catalog",

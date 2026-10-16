@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "seed": 42,
+  "workers": 1,
+  "queueCapacity": 2,
+  "attemptTimeoutMs": 50,
+  "overallTimeoutMs": 500,
+  "maxAttempts": 2,
+  "backoff": "IMMEDIATE",
+  "baseDelayMs": 0,
+  "maxDelayMs": 0,
+  "jitter": "NONE",
+  "retryBudget": 48,
+  "unavailableUntilMs": 0,
+  "requests": [{ "id": "a", "arrivalTimeMs": 0, "serviceTimeMs": 80 }]
+}

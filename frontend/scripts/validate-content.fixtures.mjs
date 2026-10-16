@@ -18,6 +18,7 @@ import "./validate-data-access-contract.fixtures.mjs";
 import "./validate-reservation-contract.fixtures.mjs";
 import "./validate-reservation-http-contract.fixtures.mjs";
 import "./validate-content-atomicity.fixtures.mjs";
+import "./validate-retries-contract.fixtures.mjs";
 import "./validate-atomicity-http-contract.fixtures.mjs";
 import "./event-selector-capabilities.fixtures.mjs";
 

@@ -1,0 +1,617 @@
+{
+  "simulationId": "timeouts-retries",
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "kind": "simulation",
+  "status": "completed",
+  "input": {
+    "schemaVersion": "1.0",
+    "modelVersion": "1.0.0",
+    "seed": 42,
+    "workers": 1,
+    "queueCapacity": 2,
+    "attemptTimeoutMs": 50,
+    "overallTimeoutMs": 500,
+    "maxAttempts": 2,
+    "backoff": "IMMEDIATE",
+    "baseDelayMs": 0,
+    "maxDelayMs": 0,
+    "jitter": "NONE",
+    "retryBudget": 48,
+    "unavailableUntilMs": 0,
+    "requests": [{ "id": "a", "arrivalTimeMs": 0, "serviceTimeMs": 80 }]
+  },
+  "randomAlgorithm": "SplittableRandom",
+  "initialState": {
+    "requests": [
+      {
+        "id": "a",
+        "overallDeadlineAtMs": 500,
+        "phase": "NOT_ARRIVED",
+        "attemptsSent": 0
+      }
+    ],
+    "attempts": [],
+    "workers": [{ "id": "worker-1" }],
+    "queue": [],
+    "retryBudgetRemaining": 48
+  },
+  "events": [
+    {
+      "sequence": 1,
+      "timeMs": 0,
+      "kind": "REQUEST_ARRIVED",
+      "requestId": "a",
+      "explanation": "a arrives. Its overall deadline is 500 ms.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 500,
+            "phase": "READY",
+            "attemptsSent": 0
+          }
+        ],
+        "attempts": [],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 48
+      }
+    },
+    {
+      "sequence": 2,
+      "timeMs": 0,
+      "kind": "ATTEMPT_SENT",
+      "requestId": "a",
+      "attemptId": "a-a1",
+      "explanation": "a-a1 is sent at 0 ms; server admission has not yet decided.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 500,
+            "phase": "WAITING",
+            "attemptsSent": 1,
+            "activeAttemptId": "a-a1"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "WAITING",
+            "workState": "PENDING_ADMISSION"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 48
+      }
+    },
+    {
+      "sequence": 3,
+      "timeMs": 0,
+      "kind": "WORK_STARTED",
+      "requestId": "a",
+      "attemptId": "a-a1",
+      "explanation": "a-a1 starts on worker-1 at 0 ms. Caller state is WAITING.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 500,
+            "phase": "WAITING",
+            "attemptsSent": 1,
+            "activeAttemptId": "a-a1"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "WAITING",
+            "workState": "RUNNING",
+            "startedAtMs": 0,
+            "timeoutAtMs": 50
+          }
+        ],
+        "workers": [{ "id": "worker-1", "attemptId": "a-a1" }],
+        "queue": [],
+        "retryBudgetRemaining": 48
+      }
+    },
+    {
+      "sequence": 4,
+      "timeMs": 50,
+      "kind": "ATTEMPT_TIMED_OUT",
+      "requestId": "a",
+      "attemptId": "a-a1",
+      "explanation": "a-a1 reaches its caller timeout at 50 ms. Accepted server work remains RUNNING.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 500,
+            "phase": "DECIDING_RETRY",
+            "attemptsSent": 1,
+            "lastFailureCause": "ATTEMPT_TIMEOUT"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "TIMED_OUT",
+            "workState": "RUNNING",
+            "startedAtMs": 0,
+            "callerFinishedAtMs": 50,
+            "timeoutAtMs": 50,
+            "failureCause": "ATTEMPT_TIMEOUT"
+          }
+        ],
+        "workers": [{ "id": "worker-1", "attemptId": "a-a1" }],
+        "queue": [],
+        "retryBudgetRemaining": 48
+      }
+    },
+    {
+      "sequence": 5,
+      "timeMs": 50,
+      "kind": "RETRY_SCHEDULED",
+      "requestId": "a",
+      "attemptId": "a-a1",
+      "delayMs": 0,
+      "retryAtMs": 50,
+      "explanation": "Chosen delay 0 ms schedules a retry at 50 ms. Its budget token is checked and consumed only at dispatch.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 500,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 1,
+            "nextRetryAtMs": 50,
+            "lastFailureCause": "ATTEMPT_TIMEOUT"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "TIMED_OUT",
+            "workState": "RUNNING",
+            "startedAtMs": 0,
+            "callerFinishedAtMs": 50,
+            "timeoutAtMs": 50,
+            "failureCause": "ATTEMPT_TIMEOUT"
+          }
+        ],
+        "workers": [{ "id": "worker-1", "attemptId": "a-a1" }],
+        "queue": [],
+        "retryBudgetRemaining": 48
+      }
+    },
+    {
+      "sequence": 6,
+      "timeMs": 50,
+      "kind": "ATTEMPT_SENT",
+      "requestId": "a",
+      "attemptId": "a-a2",
+      "explanation": "a-a2 is sent at 50 ms; server admission has not yet decided.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 500,
+            "phase": "WAITING",
+            "attemptsSent": 2,
+            "activeAttemptId": "a-a2",
+            "lastFailureCause": "ATTEMPT_TIMEOUT"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "TIMED_OUT",
+            "workState": "RUNNING",
+            "startedAtMs": 0,
+            "callerFinishedAtMs": 50,
+            "timeoutAtMs": 50,
+            "failureCause": "ATTEMPT_TIMEOUT"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 50,
+            "callerState": "WAITING",
+            "workState": "PENDING_ADMISSION"
+          }
+        ],
+        "workers": [{ "id": "worker-1", "attemptId": "a-a1" }],
+        "queue": [],
+        "retryBudgetRemaining": 47
+      }
+    },
+    {
+      "sequence": 7,
+      "timeMs": 50,
+      "kind": "WORK_QUEUED",
+      "requestId": "a",
+      "attemptId": "a-a2",
+      "explanation": "a-a2 is accepted into FIFO waiting. Its caller timeout is 100 ms.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 500,
+            "phase": "WAITING",
+            "attemptsSent": 2,
+            "activeAttemptId": "a-a2",
+            "lastFailureCause": "ATTEMPT_TIMEOUT"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "TIMED_OUT",
+            "workState": "RUNNING",
+            "startedAtMs": 0,
+            "callerFinishedAtMs": 50,
+            "timeoutAtMs": 50,
+            "failureCause": "ATTEMPT_TIMEOUT"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 50,
+            "callerState": "WAITING",
+            "workState": "QUEUED",
+            "timeoutAtMs": 100
+          }
+        ],
+        "workers": [{ "id": "worker-1", "attemptId": "a-a1" }],
+        "queue": ["a-a2"],
+        "retryBudgetRemaining": 47
+      }
+    },
+    {
+      "sequence": 8,
+      "timeMs": 80,
+      "kind": "WORK_COMPLETED",
+      "requestId": "a",
+      "attemptId": "a-a1",
+      "explanation": "a-a1 completes server work at 80 ms. Its caller is no longer waiting; this completion is late.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 500,
+            "phase": "WAITING",
+            "attemptsSent": 2,
+            "activeAttemptId": "a-a2",
+            "lastFailureCause": "ATTEMPT_TIMEOUT"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "TIMED_OUT",
+            "workState": "COMPLETED",
+            "startedAtMs": 0,
+            "completedAtMs": 80,
+            "callerFinishedAtMs": 50,
+            "timeoutAtMs": 50,
+            "failureCause": "ATTEMPT_TIMEOUT"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 50,
+            "callerState": "WAITING",
+            "workState": "QUEUED",
+            "timeoutAtMs": 100
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": ["a-a2"],
+        "retryBudgetRemaining": 47
+      }
+    },
+    {
+      "sequence": 9,
+      "timeMs": 80,
+      "kind": "WORK_STARTED",
+      "requestId": "a",
+      "attemptId": "a-a2",
+      "explanation": "a-a2 starts on worker-1 at 80 ms. Caller state is WAITING.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 500,
+            "phase": "WAITING",
+            "attemptsSent": 2,
+            "activeAttemptId": "a-a2",
+            "lastFailureCause": "ATTEMPT_TIMEOUT"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "TIMED_OUT",
+            "workState": "COMPLETED",
+            "startedAtMs": 0,
+            "completedAtMs": 80,
+            "callerFinishedAtMs": 50,
+            "timeoutAtMs": 50,
+            "failureCause": "ATTEMPT_TIMEOUT"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 50,
+            "callerState": "WAITING",
+            "workState": "RUNNING",
+            "startedAtMs": 80,
+            "timeoutAtMs": 100
+          }
+        ],
+        "workers": [{ "id": "worker-1", "attemptId": "a-a2" }],
+        "queue": [],
+        "retryBudgetRemaining": 47
+      }
+    },
+    {
+      "sequence": 10,
+      "timeMs": 100,
+      "kind": "ATTEMPT_TIMED_OUT",
+      "requestId": "a",
+      "attemptId": "a-a2",
+      "explanation": "a-a2 reaches its caller timeout at 100 ms. Accepted server work remains RUNNING.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 500,
+            "phase": "DECIDING_RETRY",
+            "attemptsSent": 2,
+            "lastFailureCause": "ATTEMPT_TIMEOUT"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "TIMED_OUT",
+            "workState": "COMPLETED",
+            "startedAtMs": 0,
+            "completedAtMs": 80,
+            "callerFinishedAtMs": 50,
+            "timeoutAtMs": 50,
+            "failureCause": "ATTEMPT_TIMEOUT"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 50,
+            "callerState": "TIMED_OUT",
+            "workState": "RUNNING",
+            "startedAtMs": 80,
+            "callerFinishedAtMs": 100,
+            "timeoutAtMs": 100,
+            "failureCause": "ATTEMPT_TIMEOUT"
+          }
+        ],
+        "workers": [{ "id": "worker-1", "attemptId": "a-a2" }],
+        "queue": [],
+        "retryBudgetRemaining": 47
+      }
+    },
+    {
+      "sequence": 11,
+      "timeMs": 100,
+      "kind": "REQUEST_FAILED",
+      "requestId": "a",
+      "explanation": "Maximum attempts includes the original; no further attempt is allowed.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 500,
+            "phase": "FAILED",
+            "attemptsSent": 2,
+            "finishedAtMs": 100,
+            "failureReason": "ATTEMPTS_EXHAUSTED",
+            "lastFailureCause": "ATTEMPT_TIMEOUT"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "TIMED_OUT",
+            "workState": "COMPLETED",
+            "startedAtMs": 0,
+            "completedAtMs": 80,
+            "callerFinishedAtMs": 50,
+            "timeoutAtMs": 50,
+            "failureCause": "ATTEMPT_TIMEOUT"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 50,
+            "callerState": "TIMED_OUT",
+            "workState": "RUNNING",
+            "startedAtMs": 80,
+            "callerFinishedAtMs": 100,
+            "timeoutAtMs": 100,
+            "failureCause": "ATTEMPT_TIMEOUT"
+          }
+        ],
+        "workers": [{ "id": "worker-1", "attemptId": "a-a2" }],
+        "queue": [],
+        "retryBudgetRemaining": 47
+      }
+    },
+    {
+      "sequence": 12,
+      "timeMs": 160,
+      "kind": "WORK_COMPLETED",
+      "requestId": "a",
+      "attemptId": "a-a2",
+      "explanation": "a-a2 completes server work at 160 ms. Its caller is no longer waiting; this completion is late.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 500,
+            "phase": "FAILED",
+            "attemptsSent": 2,
+            "finishedAtMs": 100,
+            "failureReason": "ATTEMPTS_EXHAUSTED",
+            "lastFailureCause": "ATTEMPT_TIMEOUT"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "TIMED_OUT",
+            "workState": "COMPLETED",
+            "startedAtMs": 0,
+            "completedAtMs": 80,
+            "callerFinishedAtMs": 50,
+            "timeoutAtMs": 50,
+            "failureCause": "ATTEMPT_TIMEOUT"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 50,
+            "callerState": "TIMED_OUT",
+            "workState": "COMPLETED",
+            "startedAtMs": 80,
+            "completedAtMs": 160,
+            "callerFinishedAtMs": 100,
+            "timeoutAtMs": 100,
+            "failureCause": "ATTEMPT_TIMEOUT"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 47
+      }
+    }
+  ],
+  "finalState": {
+    "requests": [
+      {
+        "id": "a",
+        "overallDeadlineAtMs": 500,
+        "phase": "FAILED",
+        "attemptsSent": 2,
+        "finishedAtMs": 100,
+        "failureReason": "ATTEMPTS_EXHAUSTED",
+        "lastFailureCause": "ATTEMPT_TIMEOUT"
+      }
+    ],
+    "attempts": [
+      {
+        "id": "a-a1",
+        "requestId": "a",
+        "number": 1,
+        "sentAtMs": 0,
+        "callerState": "TIMED_OUT",
+        "workState": "COMPLETED",
+        "startedAtMs": 0,
+        "completedAtMs": 80,
+        "callerFinishedAtMs": 50,
+        "timeoutAtMs": 50,
+        "failureCause": "ATTEMPT_TIMEOUT"
+      },
+      {
+        "id": "a-a2",
+        "requestId": "a",
+        "number": 2,
+        "sentAtMs": 50,
+        "callerState": "TIMED_OUT",
+        "workState": "COMPLETED",
+        "startedAtMs": 80,
+        "completedAtMs": 160,
+        "callerFinishedAtMs": 100,
+        "timeoutAtMs": 100,
+        "failureCause": "ATTEMPT_TIMEOUT"
+      }
+    ],
+    "workers": [{ "id": "worker-1" }],
+    "queue": [],
+    "retryBudgetRemaining": 47
+  },
+  "metrics": {
+    "originalRequests": 1,
+    "succeededRequests": 0,
+    "failedRequests": 1,
+    "attemptsSent": 2,
+    "retriesSent": 1,
+    "rejectedAttempts": 0,
+    "acceptedServerWork": 2,
+    "completedServerWork": 2,
+    "lateCompletions": 2,
+    "attemptTimeouts": 2,
+    "retryBudgetUsed": 1,
+    "peakQueueDepth": 1,
+    "peakRunningWork": 1,
+    "finalTimeMs": 160,
+    "attemptAmplification": 2.0,
+    "executionAmplification": 2.0
+  },
+  "assumptions": [
+    "This illustrative model separates a caller's waiting from accepted server work; it does not model business effects or durable storage.",
+    "Authored arrivals and per-request service times determine work; networking and response delivery take zero time.",
+    "Attempt timeout begins at send and includes queue wait. Timeout and overall deadline never cancel accepted queued or running work.",
+    "Server workers run accepted work to completion in FIFO order; queue capacity excludes running work and idle workers can start with queue capacity zero.",
+    "Dependency unavailability and a full waiting queue reject immediately without accepting server work.",
+    "Only a response to the currently waiting attempt can succeed its logical request. Late completions cannot revive a caller or satisfy a newer attempt.",
+    "Completion wins equality with the overall deadline or attempt timeout; overall deadline wins equality with attempt timeout.",
+    "Existing FIFO work is promoted before same-time arrivals, and original sends precede same-time retry sends.",
+    "Maximum attempts includes the original. The finite batch retry budget is consumed only by dispatched retries, including immediately rejected ones.",
+    "Exponential backoff is capped; FULL jitter draws an inclusive integer delay from one run-local versioned seeded generator.",
+    "A proposed retry at or after its arrival-relative overall deadline is not scheduled; the caller waits until that deadline to fail.",
+    "All accepted server work drains before the result ends. No-op future timers do not extend the reported final time.",
+    "Cancellation, idempotency, actual networking, retry trees, persistence and production latency measurements are excluded."
+  ]
+}

@@ -200,3 +200,18 @@ eight atomicity checkpoints, each executed by its model's Java teaching fixture.
 Both model/schema versions and goldens remain unchanged. See
 [HLD-17C](../docs/work-items/HLD-17C.md) and
 [decision0036](../docs/decisions/0036-atomicity-guided-sessions.md).
+
+## Standalone timeouts and retries foundation
+
+`timeouts-retries.input.schema.json` and `.result.schema.json` define the bounded,
+completed-only Java caller/dependency experiment, schema 1.0/model 1.0.0. The four
+`examples/timeouts-retries-{baseline,backoff,deadline,jitter}-{input,result}.json` pairs
+are serialized from the actual Java model. They distinguish caller timeout, accepted
+work that continues, bounded retry scheduling, backoff recovery, deadline-blocked proposals
+and seeded jitter. The standalone schemas and Node fixtures validate closed shapes,
+local state categories, event field capabilities and bounds. Java owns policy execution,
+identity relationships, ordering, arithmetic, snapshot history and final metrics.
+
+These standalone artifacts add no endpoint, OpenAPI component, catalog capability or
+React renderer. They establish no business-effect deduplication, real network behavior,
+server cancellation, database isolation or durable recovery guarantee.

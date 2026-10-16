@@ -47,7 +47,7 @@ external effects or publication are added.
 
 ## Verification evidence
 
-Implementation and remaining checks are in progress.
+Local verification and required final-head CI are complete; this contribution is merged.
 
 | Actual check | Result | Evidence |
 | --- | --- | --- |
@@ -65,8 +65,14 @@ Native 200% zoom passed both theme journeys across physical 1440/640 windows
 interactions. See `/tmp/hld-17c-zoom.log`. The initial Quality CI run38934289710 exposed an existing data-access test reading
 `document.title` before its passive React effect. Its assertion now waits for the actual
 title rather than asserting synchronously; no product behavior or expected title changed.
-Required final-head CI/delivery remain pending;
-actual remote run and merge evidence will be recorded in the PR.
+Final head `5746719b5645b3d91a4cd8ec7b5d272b34d1f732` passed all three required jobs
+in CI run `38934926502`: Quality, Browser journeys and Packaged runtime. Actual remote
+results include 685 executed Java tests (one existing opt-in skip), 693 frontend tests,
+445 contract fixtures, 231 browser journeys, 20 browser performance and 20 reading checks.
+[PR #77](https://github.com/Prem-Duvvapu/hld-with-ui/pull/77) squash merged on
+2026-10-16 at 17:01:27 UTC as `ff0daa1dcfc04d9967dd742239890871ce11e9ad`.
+Owner main was updated and the owned feature branch deleted. The PR records detailed
+remote evidence and hosted health probe timeouts; hosted recovery was not verified.
 
 Representative actual review captures:
 
