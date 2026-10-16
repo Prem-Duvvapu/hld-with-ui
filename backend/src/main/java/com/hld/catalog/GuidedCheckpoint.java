@@ -6,6 +6,8 @@ import com.hld.dataaccess.DataAccessInput;
 import com.hld.delivery.DeliveryEvent.Kind;
 import com.hld.delivery.DeliveryInput;
 import com.hld.simulation.engine.SimulationBudget;
+import com.hld.retries.RetryInput;
+import com.hld.retries.RetryResult;
 import com.hld.transactions.ReservationInput;
 import com.hld.transactions.ReservationResult;
 
@@ -37,6 +39,7 @@ public record GuidedCheckpoint(
             String attemptId,
             String operationId,
             String stepId,
+            String requestId,
             String kind,
             int occurrence) {
         private static final Set<Kind> DELIVERY_KINDS =
@@ -54,29 +57,36 @@ public record GuidedCheckpoint(
 
         /** Existing cache and capacity callers retain their source and wire shape. */
         public Target(Integer operation, String jobId, String kind, int occurrence) {
-            this(operation, jobId, null, null, null, null, kind, occurrence);
+            this(operation, jobId, null, null, null, null, null, kind, occurrence);
         }
 
         /** Existing delivery callers retain their source and wire shape. */
         public Target(Integer operation, String jobId, String messageId, String attemptId,
                 String kind, int occurrence) {
-            this(operation, jobId, messageId, attemptId, null, null, kind, occurrence);
+            this(operation, jobId, messageId, attemptId, null, null, null, kind, occurrence);
         }
 
         /** Existing data-access callers retain their source and wire shape. */
         public Target(Integer operation, String jobId, String messageId, String attemptId,
                 String operationId, String kind, int occurrence) {
-            this(operation, jobId, messageId, attemptId, operationId, null, kind, occurrence);
+            this(operation, jobId, messageId, attemptId, operationId, null, null, kind, occurrence);
+        }
+
+        /** Existing transaction callers retain their source and wire shape. */
+        public Target(Integer operation, String jobId, String messageId, String attemptId,
+                String operationId, String stepId, String kind, int occurrence) {
+            this(operation, jobId, messageId, attemptId, operationId, stepId, null, kind, occurrence);
         }
 
         public Target {
-            boolean delivery = messageId != null || attemptId != null;
+            boolean retry = requestId != null;
+            boolean delivery = messageId != null || attemptId != null && !retry;
             int groups = (operation == null ? 0 : 1) + (jobId == null ? 0 : 1)
-                    + (delivery ? 1 : 0) + (operationId == null ? 0 : 1) + (stepId == null ? 0 : 1);
+                    + (delivery ? 1 : 0) + (operationId == null ? 0 : 1) + (stepId == null ? 0 : 1) + (retry ? 1 : 0);
             if (groups != 1) {
                 throw new IllegalArgumentException(
                         "A checkpoint requires exactly one operation, jobId, messageId/attemptId"
-                            + " pair, operationId, or stepId");
+                            + " pair, operationId, stepId, or retry requestId");
             }
             if (operation != null && operation < 1) {
                 throw new IllegalArgumentException("A checkpoint operation must be 1-based");
@@ -85,7 +95,24 @@ public record GuidedCheckpoint(
                 throw new IllegalArgumentException(
                         "A checkpoint jobId must be a supported job identity");
             }
-            if (stepId != null) {
+            if (retry) {
+                if (!Pattern.matches(RetryInput.ID_PATTERN, requestId)
+                        || kind == null
+                        || java.util.Arrays.stream(RetryResult.Kind.values())
+                                .noneMatch(candidate -> candidate.name().equals(kind))
+                        || occurrence < 1 || occurrence > RetryInput.MAX_EVENTS) {
+                    throw new IllegalArgumentException(
+                            "A retry checkpoint requires a supported requestId, event kind and occurrence 1–384");
+                }
+                boolean requestScoped = kind.equals(RetryResult.Kind.REQUEST_ARRIVED.name())
+                        || kind.equals(RetryResult.Kind.REQUEST_SUCCEEDED.name())
+                        || kind.equals(RetryResult.Kind.REQUEST_FAILED.name());
+                if (requestScoped ? attemptId != null
+                        : attemptId == null || !Pattern.matches(Pattern.quote(requestId) + "-a[1-5]", attemptId)) {
+                    throw new IllegalArgumentException(
+                            "A retry checkpoint needs a matching attemptId only for attempt-scoped events");
+                }
+            } else if (stepId != null) {
                 if (!Pattern.matches(ReservationInput.ID_PATTERN, stepId)
                         || !Pattern.matches(AtomicityInput.ID_PATTERN, stepId)
                         || kind == null

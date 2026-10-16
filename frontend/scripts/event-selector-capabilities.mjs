@@ -36,19 +36,24 @@ export function eventSupportsSelector(schema, kind, selector, references = {}) {
   const constraints = [base];
   for (const branch of schema.allOf ?? []) {
     if (
-      branch.else?.properties?.[selector] ||
+      Object.hasOwn(branch.else?.properties ?? {}, selector) ||
       branch.else?.required?.includes(selector)
     )
       return false;
+    const hasConstraint = Object.hasOwn(
+      branch.then?.properties ?? {},
+      selector,
+    );
     const constraint = branch.then?.properties?.[selector];
     const requires = branch.then?.required?.includes(selector) ?? false;
-    if (!constraint && !requires) continue;
+    if (!hasConstraint && !requires) continue;
     const condition = branch.if?.properties?.kind;
     if (
       !condition ||
       Object.keys(branch.if).some(
-        (key) => !["properties", "required"].includes(key),
+        (key) => !["properties", "required", "type"].includes(key),
       ) ||
+      (Object.hasOwn(branch.if, "type") && branch.if.type !== "object") ||
       branch.if.required?.some((field) => field !== "kind") ||
       Object.keys(branch.if.properties).some((field) => field !== "kind") ||
       (!Array.isArray(condition.enum) && typeof condition.const !== "string")
@@ -56,7 +61,8 @@ export function eventSupportsSelector(schema, kind, selector, references = {}) {
       return false;
     const applies = condition.enum?.includes(kind) ?? condition.const === kind;
     if (!applies) continue;
-    if (constraint) {
+    if (hasConstraint) {
+      if (constraint === false) return false;
       const resolved = selectorConstraint(constraint, references);
       if (!resolved) return false;
       constraints.push(resolved);

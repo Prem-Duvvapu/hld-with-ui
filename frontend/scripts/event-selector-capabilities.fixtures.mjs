@@ -536,3 +536,159 @@ test("atomicity target rejects malformed identity, unknown kind, mixed family an
   ])
     assert.equal(validatesTarget(target), false, JSON.stringify(target));
 });
+
+test("retry request and attempt selector branches derive exactly the actual eleven event capabilities", () => {
+  const references = {
+    "#/components/schemas/RetryIdentifier": schemas.RetryIdentifier,
+    "#/components/schemas/RetryAttemptIdentifier":
+      schemas.RetryAttemptIdentifier,
+  };
+  const attemptKinds = kindsSupportingSelectors(
+    schemas.RetryEvent,
+    ["requestId", "attemptId"],
+    references,
+  );
+  const requestKinds = kindsSupportingSelectors(
+    schemas.RetryEvent,
+    ["requestId"],
+    references,
+  ).filter((kind) => !attemptKinds.includes(kind));
+  assert.equal(requestKinds.length, 3);
+  assert.equal(attemptKinds.length, 8);
+  for (const [withAttempt, kinds] of [
+    [false, requestKinds],
+    [true, attemptKinds],
+  ]) {
+    const target = checkpoints.items.properties.target.oneOf.find(
+      (branch) =>
+        branch.required.includes("requestId") &&
+        branch.required.includes("attemptId") === withAttempt,
+    );
+    assert.deepEqual(target.properties.kind.enum, kinds);
+  }
+  for (const kind of schemas.RetryEvent.properties.kind.enum) {
+    assert.equal(
+      eventSupportsSelector(schemas.RetryEvent, kind, "requestId", references),
+      true,
+    );
+    assert.equal(
+      eventSupportsSelector(schemas.RetryEvent, kind, "attemptId", references),
+      attemptKinds.includes(kind),
+    );
+    for (const selector of [
+      "operation",
+      "jobId",
+      "messageId",
+      "operationId",
+      "stepId",
+    ])
+      assert.equal(
+        eventSupportsSelector(schemas.RetryEvent, kind, selector, references),
+        false,
+      );
+  }
+});
+test("retry capabilities require resolved scalar identities and reject unknown conditional shapes", () => {
+  const references = {
+    "#/components/schemas/RetryIdentifier": schemas.RetryIdentifier,
+    "#/components/schemas/RetryAttemptIdentifier":
+      schemas.RetryAttemptIdentifier,
+  };
+  assert.equal(
+    eventSupportsSelector(schemas.RetryEvent, "WORK_COMPLETED", "attemptId"),
+    false,
+  );
+  for (const mutate of [
+    (event) => {
+      event.properties.requestId.$ref = "#/components/schemas/UnknownRequest";
+    },
+    (event) => {
+      event.required = event.required.filter((field) => field !== "requestId");
+    },
+  ]) {
+    const event = structuredClone(schemas.RetryEvent);
+    mutate(event);
+    assert.equal(
+      eventSupportsSelector(event, "WORK_COMPLETED", "requestId", references),
+      false,
+    );
+  }
+  for (const mutate of [
+    (event) => {
+      event.allOf.find((branch) =>
+        branch.then.required?.includes("attemptId"),
+      ).if.type = "array";
+    },
+    (event) => {
+      event.allOf.find((branch) =>
+        branch.then.required?.includes("attemptId"),
+      ).if.properties.extra = { const: true };
+    },
+    (event) => {
+      event.allOf.find((branch) =>
+        branch.then.required?.includes("attemptId"),
+      ).then.properties = { attemptId: false };
+    },
+  ]) {
+    const event = structuredClone(schemas.RetryEvent);
+    mutate(event);
+    assert.equal(
+      eventSupportsSelector(event, "WORK_COMPLETED", "attemptId", references),
+      false,
+    );
+  }
+});
+test("retry target shapes accept all closed kinds and keep request-only versus paired identities separate", () => {
+  const ajv = new Ajv2020({ strict: true, strictRequired: false }),
+    validate = ajv.compile(checkpoints.items.properties.target);
+  const requestKinds = [
+    "REQUEST_ARRIVED",
+    "REQUEST_SUCCEEDED",
+    "REQUEST_FAILED",
+  ];
+  for (const kind of schemas.RetryEvent.properties.kind.enum) {
+    const target = {
+      requestId: "a",
+      kind,
+      occurrence: 1,
+      ...(requestKinds.includes(kind) ? {} : { attemptId: "a-a1" }),
+    };
+    assert.equal(validate(target), true, JSON.stringify(validate.errors));
+    assert.equal(validate({ ...target, occurrence: 384 }), true);
+    assert.equal(
+      validate(
+        requestKinds.includes(kind)
+          ? { ...target, attemptId: "a-a1" }
+          : { requestId: "a", kind, occurrence: 1 },
+      ),
+      false,
+    );
+  }
+  const base = {
+    requestId: "a",
+    attemptId: "a-a1",
+    kind: "WORK_COMPLETED",
+    occurrence: 1,
+  };
+  for (const target of [
+    { ...base, requestId: null },
+    { ...base, requestId: "a\n" },
+    { ...base, requestId: "a".repeat(33) },
+    { ...base, attemptId: null },
+    { ...base, attemptId: "a-a6" },
+    { ...base, attemptId: "a-a1\n" },
+    { ...base, occurrence: 0 },
+    { ...base, occurrence: 385 },
+    { ...base, occurrence: 1.5 },
+    { ...base, occurrence: "1" },
+    { ...base, kind: "READ_OBSERVED" },
+    { ...base, operation: 1 },
+    { ...base, jobId: "j1" },
+    { ...base, messageId: "m1" },
+    { ...base, operationId: "q1" },
+    { ...base, stepId: "s1" },
+    { ...base, unknown: true },
+    { attemptId: "a-a1", kind: "WORK_COMPLETED", occurrence: 1 },
+  ])
+    assert.equal(validate(target), false, JSON.stringify(target));
+});

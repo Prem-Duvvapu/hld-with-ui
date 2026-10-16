@@ -314,13 +314,14 @@
       "Compare bounded immediate, backoff, jitter and shared retry-budget policies.",
       "Defend a retry decision while stating business-effect and cancellation limits."
     ],
-    "capabilities": ["study", "simulation", "practice"],
+    "capabilities": ["study", "simulation", "guided", "practice"],
+    "checkpointsPath": "topics/timeouts-retries/checkpoints.json",
     "lessonPath": "topics/timeouts-retries/lesson.md",
     "questionsPath": "topics/timeouts-retries/questions.json",
     "resourcesPath": "topics/timeouts-retries/resources.json",
     "simulationIds": ["timeouts-retries"],
     "estimatorIds": [],
-    "contentVersion": "1.0.0",
+    "contentVersion": "1.1.0",
     "reviewedAt": "2026-10-16",
     "sourceIds": [
       "aws-timeouts-backoff-jitter",

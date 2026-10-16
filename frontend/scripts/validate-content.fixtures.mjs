@@ -939,3 +939,147 @@ test("reject a nullable atomicity identity owner instead of guessing selector su
     },
   );
 });
+
+function checkRetryCheckpoint(
+  target,
+  expected,
+  expectedStatus = 1,
+  mutateApi = () => {},
+) {
+  checkChange(
+    () => {},
+    expected,
+    () => {},
+    (fixture) => {
+      const path = join(
+        fixture,
+        "content/topics/timeouts-retries/checkpoints.json",
+      );
+      const checkpoints = JSON.parse(readFileSync(path, "utf8"));
+      checkpoints[0].target = target;
+      writeFileSync(path, JSON.stringify(checkpoints));
+      const apiPath = join(fixture, "contracts/openapi.json");
+      const api = JSON.parse(readFileSync(apiPath, "utf8"));
+      mutateApi(api);
+      writeFileSync(apiPath, JSON.stringify(api));
+    },
+    expectedStatus,
+  );
+}
+const retryRequestTarget = {
+  requestId: "a",
+  kind: "REQUEST_FAILED",
+  occurrence: 1,
+};
+const retryAttemptTarget = {
+  requestId: "a",
+  attemptId: "a-a1",
+  kind: "ATTEMPT_TIMED_OUT",
+  occurrence: 1,
+};
+test("accept actual retry request-level checkpoint capability without an attempt selector", () => {
+  checkRetryCheckpoint(retryRequestTarget, /Validated/, 0);
+});
+test("accept actual retry attempt-level checkpoint capability with its original request identity", () => {
+  checkRetryCheckpoint(retryAttemptTarget, /Validated/, 0);
+});
+for (const [name, target, expected] of [
+  [
+    "retry attempt belonging to another request",
+    { ...retryAttemptTarget, attemptId: "b-a1" },
+    /attemptId must belong to the selected requestId/,
+  ],
+  [
+    "retry request kind with an attempt selector",
+    { ...retryRequestTarget, attemptId: "a-a1" },
+    /must match exactly one schema/,
+  ],
+  [
+    "retry attempt kind without an attempt identity",
+    { requestId: "a", kind: "WORK_COMPLETED", occurrence: 1 },
+    /required property 'attemptId'/,
+  ],
+  [
+    "retry orphan attempt without request identity",
+    { attemptId: "a-a1", kind: "WORK_COMPLETED", occurrence: 1 },
+    /required property 'requestId'/,
+  ],
+  [
+    "retry malformed whitespace identity",
+    { ...retryAttemptTarget, requestId: "a\n" },
+    /must NOT be valid/,
+  ],
+  [
+    "retry out-of-bounds occurrence",
+    { ...retryAttemptTarget, occurrence: 385 },
+    /must be <= 384/,
+  ],
+  [
+    "retry mixed reservation selector",
+    { ...retryAttemptTarget, stepId: "s1" },
+    /additional properties/,
+  ],
+  [
+    "retry unknown outcome kind",
+    { ...retryAttemptTarget, kind: "TRANSACTION_COMMITTED" },
+    /timeouts-retries never emits TRANSACTION_COMMITTED/,
+  ],
+])
+  test(`reject checkpoint ${name}`, () =>
+    checkRetryCheckpoint(target, expected));
+for (const topic of [
+  "cache-aside",
+  "queues-tail-latency",
+  "queues-delivery",
+  "data-access-models",
+  "transactions-isolation",
+])
+  test(`reject retry request identity target on ${topic} without its event capability`, () => {
+    rejectCheckpointTarget(
+      topic,
+      retryRequestTarget,
+      /events do not support target selector requestId/,
+    );
+  });
+test("reject a delivery identity target on retry events", () => {
+  checkRetryCheckpoint(
+    { messageId: "m1", attemptId: "m1-a1", kind: "ack.stale", occurrence: 1 },
+    /timeouts-retries events do not support target selector messageId/,
+  );
+});
+test("reject a reservation step target on retry evidence", () => {
+  checkRetryCheckpoint(
+    { stepId: "attempt-b", kind: "READ_OBSERVED", occurrence: 1 },
+    /timeouts-retries outcomes do not support target selector stepId/,
+  );
+});
+for (const [selector, component] of [
+  ["requestId", "RetryIdentifier"],
+  ["attemptId", "RetryAttemptIdentifier"],
+])
+  test(`reject unresolved retry ${selector} identity reference`, () => {
+    checkRetryCheckpoint(
+      retryAttemptTarget,
+      new RegExp(`events do not support target selector ${selector}`),
+      1,
+      (api) => {
+        api.components.schemas.RetryEvent.properties[selector].$ref =
+          `#/components/schemas/Missing${component}`;
+      },
+    );
+  });
+test("reject a retry attempt capability made optional by a contract drift", () => {
+  checkRetryCheckpoint(
+    retryAttemptTarget,
+    /events do not support target selector attemptId/,
+    1,
+    (api) => {
+      for (const branch of api.components.schemas.RetryEvent.allOf) {
+        if (branch.then.required)
+          branch.then.required = branch.then.required.filter(
+            (field) => field !== "attemptId",
+          );
+      }
+    },
+  );
+});

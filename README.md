@@ -56,8 +56,10 @@ Study and eight Practice questions. Change timeout, deadline, workload, backoff,
 a finite batch retry budget, then inspect what Java actually reports. Caller failure and
 accepted server-work completion stay separate; completed work is not a business-effect guarantee.
 
-[HLD-18B](docs/work-items/HLD-18B.md) records actual verification. Guided and authored
-design views, human/hosted/prerequisite release review and publication remain pending.
+[HLD-18B](docs/work-items/HLD-18B.md) records the merged runnable draft.
+[HLD-18C](docs/work-items/HLD-18C.md) adds eight Java-targeted Guided checkpoints,
+inspectable Architecture and three authored manual Request sequences, completing its six
+core draft views. Human/hosted/prerequisite release review and publication remain pending.
 The model has no cancellation, durable storage, actual networking or idempotency. There
 are still four published modules. See the [retry plan](docs/TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md).
 

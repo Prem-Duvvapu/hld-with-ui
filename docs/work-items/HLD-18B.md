@@ -85,7 +85,12 @@ next blank question. Debug evidence proves the answer was saved and restored; th
 uses its semantic question ID and textbox role, retaining an explicit durable-storage check.
 Temporary diagnostic logging was removed. Final plan validation passes: 123 documents, 651
 local links, 59 curriculum IDs and ten catalog identities; launcher syntax and whitespace pass.
-Required final-head CI/delivery remain pending; actual remote evidence belongs in the PR.
+Required final-head CI run `38942545292` passed: all 793 executed Java cases (one existing
+opt-in skip), 740 frontend tests / 79 files, 601 contract fixtures, 238 browser journeys,
+20 UI performance and 20 reading/cache groups, jar/container and cleanup gates. PR #79
+squash merged as `dd5946e` at 2026-10-16 18:00:18 UTC. Owner main was synchronized, unrelated
+`output/` preserved and only the completed owned branch removed. The PR records full remote
+delivery evidence; subsequent HLD-18C source does not change that historical verification.
 
 Representative review captures:
 

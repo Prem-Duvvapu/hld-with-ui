@@ -401,6 +401,7 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
         "attemptId",
         "operationId",
         "stepId",
+        "requestId",
       ]) {
         if (
           Object.hasOwn(checkpoint.target ?? {}, selector) &&
@@ -426,6 +427,18 @@ for (const entry of catalog.filter((item) => item.status !== "planned")) {
       )
         errors.push(
           `${checkpoint.id}: attemptId must belong to the selected messageId and supported attempt range`,
+        );
+      if (
+        typeof checkpoint.target?.requestId === "string" &&
+        typeof checkpoint.target?.attemptId === "string" &&
+        ![1, 2, 3, 4, 5].some(
+          (attempt) =>
+            checkpoint.target.attemptId ===
+            `${checkpoint.target.requestId}-a${attempt}`,
+        )
+      )
+        errors.push(
+          `${checkpoint.id}: attemptId must belong to the selected requestId and supported attempt range`,
         );
       const optionIds = (checkpoint.tradeoff?.options ?? []).map(
         (option) => option.id,

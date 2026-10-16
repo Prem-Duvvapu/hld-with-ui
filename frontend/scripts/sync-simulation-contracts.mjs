@@ -257,6 +257,40 @@ for (const [kind, component, definitions] of [
     );
   }
 }
+const retryEventSchema = read("contracts/timeouts-retries.result.schema.json")
+  .$defs.event;
+const retryReferences = {
+  [`${retryInputId}#/$defs/identifier`]: read(
+    "contracts/timeouts-retries.input.schema.json",
+  ).$defs.identifier,
+  "#/$defs/attemptIdentifier": read(
+    "contracts/timeouts-retries.result.schema.json",
+  ).$defs.attemptIdentifier,
+};
+const retryAttemptKinds = kindsSupportingSelectors(
+  retryEventSchema,
+  ["requestId", "attemptId"],
+  retryReferences,
+);
+const retryRequestKinds = kindsSupportingSelectors(
+  retryEventSchema,
+  ["requestId"],
+  retryReferences,
+).filter((kind) => !retryAttemptKinds.includes(kind));
+for (const [attempt, kinds] of [
+  [false, retryRequestKinds],
+  [true, retryAttemptKinds],
+]) {
+  const target = checkpoints.items.properties.target.oneOf.find(
+    (branch) =>
+      branch.required.includes("requestId") &&
+      branch.required.includes("attemptId") === attempt,
+  );
+  if (JSON.stringify(target?.properties.kind.enum) !== JSON.stringify(kinds))
+    throw new Error(
+      "Retry checkpoint kinds differ from actual request/attempt selector capabilities.",
+    );
+}
 const transactionTarget = checkpoints.items.properties.target.oneOf.find(
   (branch) => branch.required.includes("stepId"),
 );
