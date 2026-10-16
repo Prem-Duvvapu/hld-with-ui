@@ -1,0 +1,247 @@
+[
+  {
+    "id": "retry-timeout-keeps-work",
+    "title": "Caller waiting ends while work continues",
+    "simulationId": "timeouts-retries",
+    "presetId": "late-work",
+    "target": {
+      "requestId": "a",
+      "attemptId": "a-a1",
+      "kind": "ATTEMPT_TIMED_OUT",
+      "occurrence": 1
+    },
+    "prompt": "One request arrives at 0 ms. Its first attempt needs 80 ms of server work and has a 50 ms caller timeout. At the timeout, predict the caller state, server state, worker ownership and how many attempts actually exist.",
+    "lookFor": "At 50 ms, the caller stops waiting for a-a1, but worker-1 is still running it. Only one attempt exists. The retry policy has not decided what to do next, and all 48 retry allowances remain.",
+    "explanation": "The first attempt was sent and started at 0 ms. At its 50 ms timeout, the caller stops waiting and Java records an attempt-timeout failure. The work has not finished: worker-1 still owns it, and the queue is empty. There is no active caller wait and no second attempt yet; the overall deadline is still 500 ms. Later events send a-a2. The full run eventually has two late completions, at 80 and 160 ms. Keep those later results separate from what is known at this checkpoint. Stopping the wait did not cancel work, and completing work does not prove that a real business write happened.",
+    "tradeoff": {
+      "prompt": "A teammate wants to retry because the first wait ended. What should the team inspect first?",
+      "options": [
+        {
+          "id": "inspect-load",
+          "label": "Check whether earlier accepted work still occupies server capacity",
+          "feedback": "The selected state still assigns a-a1 to worker-1. A new send may add accepted work while that earlier attempt runs; also review the real operation's effect safety."
+        },
+        {
+          "id": "timeout-cancels",
+          "label": "Assume the timeout removed the first attempt from the server",
+          "feedback": "Java reports TIMED_OUT and RUNNING together. This model has no cancellation, and a caller timeout alone does not prove that an actual server stopped its work."
+        }
+      ],
+      "recommendedOptionId": "inspect-load"
+    }
+  },
+  {
+    "id": "retry-current-response-succeeds",
+    "title": "A current response ends the caller successfully",
+    "simulationId": "timeouts-retries",
+    "presetId": "healthy-timeout",
+    "target": {
+      "requestId": "a",
+      "kind": "REQUEST_SUCCEEDED",
+      "occurrence": 1
+    },
+    "prompt": "Keep the 80 ms service but wait up to 100 ms for an attempt. At the request-success event, predict the number of sends, the attempt's caller and work states, and the remaining queue and worker work.",
+    "lookFor": "At 80 ms, the caller succeeds after one send. a-a1 has finished its work and delivered its response. The worker is idle, the queue is empty and all 48 retry allowances remain.",
+    "explanation": "The response arrives while the caller still waits for a-a1. Java first records the work finishing, then records the caller receiving that response. Those are separate steps at the same 80 ms time. This selected event describes the whole request, rather than naming one attempt. The caller has no active wait or scheduled retry. The full run has one completion and no retry. Its unused 100 ms attempt timeout and 500 ms overall deadline do not extend the result beyond 80 ms. Waiting longer helps this particular 80 ms workload; it does not establish the right timeout for a production service.",
+    "tradeoff": {
+      "prompt": "Which conclusion can you defend from this comparison?",
+      "options": [
+        {
+          "id": "workload-bound",
+          "label": "The 100 ms wait avoids an unnecessary retry for this 80 ms workload",
+          "feedback": "The observed response arrives at 80 ms before the configured wait ends. Real timeout choices still need latency distributions, user deadlines and resource costs."
+        },
+        {
+          "id": "always-longer",
+          "label": "Make every timeout longer because it always improves the system",
+          "feedback": "A longer wait can retain caller resources and miss usefulness requirements. This single fixed-service example does not establish a universal setting."
+        }
+      ],
+      "recommendedOptionId": "workload-bound"
+    }
+  },
+  {
+    "id": "retry-rejected-is-not-accepted",
+    "title": "A rejected retry adds a send without new work",
+    "simulationId": "timeouts-retries",
+    "presetId": "queue-full",
+    "target": {
+      "requestId": "a",
+      "attemptId": "a-a2",
+      "kind": "ATTEMPT_REJECTED",
+      "occurrence": 1
+    },
+    "prompt": "The first 80 ms work is still running when its 50 ms caller wait ends. Waiting capacity is zero, so the immediate retry meets a busy worker. At its rejection, predict the two attempt states and the logical request phase.",
+    "lookFor": "At 50 ms, a-a2 is rejected because there is no waiting space. It never starts work and has no accepted-work timeout. a-a1 is still running after its caller timed out. Two sends exist, 47 retry allowances remain, and the policy is deciding what happens next.",
+    "explanation": "Zero waiting spaces still allow an idle worker to start, so the first attempt was accepted at 0 ms. At this checkpoint, that attempt still occupies the worker. The retry cannot wait, so it is rejected at 50 ms without starting or completing work. Java records the full queue as the retry's failure reason; there is no accepted-work timeout for that rejected send. The caller has stopped waiting, but the policy has not yet declared the request failed. The next event fails it because both allowed attempts were used. Later, only the first attempt finishes, at 80 ms. Two sends therefore produced one accepted work unit, not two.",
+    "tradeoff": {
+      "prompt": "A dashboard shows two sends. Which load claim follows from this trace?",
+      "options": [
+        {
+          "id": "separate-populations",
+          "label": "Report two sends but only one accepted server-work unit",
+          "feedback": "The second attempt was rejected before work acceptance. Attempts per original is 2, while completed work per original is 1 for the whole run."
+        },
+        {
+          "id": "two-effects",
+          "label": "Report two completed operations because two requests were sent",
+          "feedback": "The rejected row never starts or completes work. This model also has no business-effect ledger, so neither sends nor completions establish durable operation counts."
+        }
+      ],
+      "recommendedOptionId": "separate-populations"
+    }
+  },
+  {
+    "id": "retry-immediate-spends-attempts",
+    "title": "Repeated immediate sends do not advance time",
+    "simulationId": "timeouts-retries",
+    "presetId": "immediate-outage",
+    "target": {
+      "requestId": "a",
+      "kind": "REQUEST_FAILED",
+      "occurrence": 1
+    },
+    "prompt": "The dependency is unavailable until 60 ms. Maximum attempts is three, including the original, and retries have no delay. At logical failure, predict the time, actual sends, accepted work and policy versus last failure reason.",
+    "lookFor": "The caller fails at 0 ms after three sends: one original and two retries. Every send is rejected while the dependency is unavailable. No work enters a worker or queue, and 46 retry allowances remain.",
+    "explanation": "An immediate retry sends again without advancing virtual time. All three sends therefore reach the dependency at 0 ms, before its recovery at 60 ms. Each is rejected without accepting work or starting an attempt-timeout timer. The caller gives up because the maximum attempt count is reached. That policy reason is separate from the latest send's failure reason: the dependency was unavailable. This event describes the whole request and does not name an individual attempt. Nothing needs to drain at the server. The unused overall deadline at 200 ms does not extend the result: the caller already finished at 0 ms. Extra sends did not create recovery or capacity.",
+    "tradeoff": {
+      "prompt": "What change directly challenges the repeated outage rejections in this authored workload?",
+      "options": [
+        {
+          "id": "change-timing",
+          "label": "Try an explicit bounded delay that reaches the recovery interval",
+          "feedback": "Changing when an attempt is sent can reach an available dependency. Keep the overall deadline and extra-load budget visible; a retry delay is not a guarantee of success."
+        },
+        {
+          "id": "count-is-time",
+          "label": "Assume sending more immediate attempts makes time pass toward recovery",
+          "feedback": "The model shows three sends at 0 ms. Repeated zero-delay work does not advance virtual time or alter the authored unavailable-until boundary."
+        }
+      ],
+      "recommendedOptionId": "change-timing"
+    }
+  },
+  {
+    "id": "retry-delay-is-relative",
+    "title": "An 80 ms delay schedules a send at 120 ms",
+    "simulationId": "timeouts-retries",
+    "presetId": "backoff-recovery",
+    "target": {
+      "requestId": "a",
+      "attemptId": "a-a2",
+      "kind": "RETRY_SCHEDULED",
+      "occurrence": 1
+    },
+    "prompt": "The original rejected at 0 ms, and the first 40 ms delay led to another rejection at 40 ms. Backoff now chooses 80 ms. At the schedule event, predict the next send time, existing attempt rows and remaining budget.",
+    "lookFor": "At 40 ms, Java chooses an 80 ms delay, so the next send is scheduled for 120 ms. Only the two rejected attempts exist. No server work is accepted, and 47 retry allowances remain.",
+    "explanation": "Add the chosen delay to the current time: 40 + 80 = 120 ms. The schedule event refers to the failed attempt a-a2; it does not mean a-a3 has already been sent. The first actual retry used one allowance at 40 ms. Planning the next retry uses none yet, so 47 remain. At this checkpoint, the worker is idle, the queue is empty and the caller has not finished: it is waiting for the scheduled retry. Later in this full run, a-a3 sends at 120 ms, uses another allowance and succeeds after 20 ms of service, at 140 ms. That later success is not part of the selected snapshot.",
+    "tradeoff": {
+      "prompt": "A teammate reads the cap as an absolute retry time of 80 ms. How should you explain it?",
+      "options": [
+        {
+          "id": "relative-delay",
+          "label": "Add the chosen 80 ms delay to the current 40 ms time",
+          "feedback": "The output distinguishes delayMs 80 from retryAtMs 120. Absolute send time depends on the earlier failed attempt and its chosen delays."
+        },
+        {
+          "id": "absolute-cap",
+          "label": "Send at absolute time 80 ms because that is the delay cap",
+          "feedback": "The cap bounds one waiting duration, not the global clock. Treating it as an absolute timestamp would change the authored retry sequence."
+        }
+      ],
+      "recommendedOptionId": "relative-delay"
+    }
+  },
+  {
+    "id": "retry-proposal-is-not-scheduled",
+    "title": "A blocked proposal is not a future attempt",
+    "simulationId": "timeouts-retries",
+    "presetId": "deadline-before-retry",
+    "target": {
+      "requestId": "a",
+      "attemptId": "a-a2",
+      "kind": "RETRY_BLOCKED_BY_DEADLINE",
+      "occurrence": 1
+    },
+    "prompt": "At 40 ms, a second rejection chooses an 80 ms delay. The overall deadline is 100 ms. Predict the policy state at this event and whether a third attempt or pending retry callback exists.",
+    "lookFor": "At 40 ms, the chosen 80 ms delay would put the next send at 120 ms, beyond the 100 ms overall deadline. No retry is scheduled and no third attempt exists. The caller is still waiting for its deadline, with 47 retry allowances remaining.",
+    "explanation": "The proposed send would arrive too late to be useful, so Java records the chosen 80 ms delay and proposed time of 120 ms but does not schedule a retry. At this 40 ms checkpoint, the caller has two rejected attempts and no active attempt wait. The latest send failed because the dependency was unavailable; the whole request has not failed or finished yet. There is no pending retry, the worker and queue are empty, and 47 allowances remain. Later, the caller fails when its actual 100 ms overall deadline arrives. No server work is accepted in this run. A proposed send, a scheduled retry and an actual send are three different facts.",
+    "tradeoff": {
+      "prompt": "What should the UI tell the learner at this selected event?",
+      "options": [
+        {
+          "id": "show-wait",
+          "label": "Show the blocked proposal and waiting until the real deadline",
+          "feedback": "AWAITING_DEADLINE is current evidence. Keep the later 100 ms request failure in the whole-run summary or its own selected event."
+        },
+        {
+          "id": "fail-now",
+          "label": "Claim the original already failed at 40 ms or that a third send happened",
+          "feedback": "The selected state has neither terminal failure nor a third row. Java reports actual failure only when the overall deadline occurs at 100 ms."
+        }
+      ],
+      "recommendedOptionId": "show-wait"
+    }
+  },
+  {
+    "id": "retry-budget-is-checked-at-dispatch",
+    "title": "A planned retry can lose the shared token",
+    "simulationId": "timeouts-retries",
+    "presetId": "retry-budget",
+    "target": {
+      "requestId": "b",
+      "kind": "REQUEST_FAILED",
+      "occurrence": 1
+    },
+    "prompt": "Both originals reject at 0 ms and plan retries for 40 ms. Only one retry token is available. At b's request failure, predict its attempt history, the total sends and which failure cause is retained.",
+    "lookFor": "At 40 ms, b gives up because the shared retry allowance is exhausted. Only b-a1 exists; b-a2 was never sent. a-a2 used the only allowance and was rejected. The batch has three sends, no accepted work and zero retry allowances left.",
+    "explanation": "Planning did not reserve the shared allowance. At 40 ms, a dispatches first under the model's fixed input order. Its retry uses the only allowance and is rejected again before recovery. With no allowance left, a then gives up. When b checks at its own dispatch, it also gives up without sending b-a2. This selected event describes b's whole request, rather than naming an attempt. b's first send stopped waiting at 0 ms because the dependency was unavailable; its request finishes at 40 ms because no retry allowance remains. Both callers are now failed, the workers are idle and the queue is empty. This fixed batch allowance does not replenish or promise fairness.",
+    "tradeoff": {
+      "prompt": "Does a planned retry guarantee that the caller owns a retry allowance?",
+      "options": [
+        {
+          "id": "dispatch-boundary",
+          "label": "Recheck the shared allowance at actual dispatch",
+          "feedback": "Another caller can consume it after planning. The returned state is evidence that no extra send occurred, not a rejected imaginary b-a2."
+        },
+        {
+          "id": "plan-reserves",
+          "label": "Reserve an allowance implicitly whenever a retry is planned",
+          "feedback": "That is a different policy. This model has no reservation on planning and explicitly shows two plans competing for one dispatched retry."
+        }
+      ],
+      "recommendedOptionId": "dispatch-boundary"
+    }
+  },
+  {
+    "id": "retry-seeded-delay-is-evidence",
+    "title": "Read a seeded delay without promising spread",
+    "simulationId": "timeouts-retries",
+    "presetId": "jittered-recovery",
+    "target": {
+      "requestId": "a",
+      "attemptId": "a-a1",
+      "kind": "RETRY_SCHEDULED",
+      "occurrence": 1
+    },
+    "prompt": "FULL jitter uses seed 42 and a first retry cap of 40 ms for two originals. At a's first schedule event, predict what Java actually chose and which attempt and other-original states already exist.",
+    "lookFor": "At 0 ms, Java chooses a 7 ms delay for a and schedules its retry for 7 ms. Only the rejected a-a1 exists. b has not reached its arrival step yet in this snapshot. No retry allowance has been spent, so all 8 remain.",
+    "explanation": "The first retry delay can be any whole number from 0 through 40 ms. With seed 42, the recorded SplittableRandom generator chooses 7 ms. The schedule refers to the failed a-a1; a-a2 does not exist yet. b also has a configured arrival of 0 ms, but its arrival is a separate callback that has not run at this selected step. Several steps can share one time without being the same step. Planning uses no allowance, so all 8 remain until actual retries dispatch. Replaying the same input, seed and compatible model version repeats the choices. A different seed may change them; it does not guarantee more spread, more successes or less completed work in every run.",
+    "tradeoff": {
+      "prompt": "How should a teammate evaluate jitter after changing the seed?",
+      "options": [
+        {
+          "id": "inspect-outcomes",
+          "label": "Compare actual chosen delays, caller outcomes and work for each run",
+          "feedback": "Seed replay gives reproducible evidence, while changes are experiments. Check the returned events and metrics rather than treating randomness as extra capacity or a safety guarantee."
+        },
+        {
+          "id": "guarantee-spread",
+          "label": "Promise that enabling jitter makes every pair of retries different and successful",
+          "feedback": "Inclusive draws can coincide or be zero, and the dependency or deadline can still reject work. The model makes no universal jitter improvement claim."
+        }
+      ],
+      "recommendedOptionId": "inspect-outcomes"
+    }
+  }
+]

@@ -6,6 +6,12 @@ import { ModuleShell } from "../components/ModuleShell";
 import { StudyView } from "../features/learning/StudyView";
 import { PracticeView } from "../features/learning/PracticeView";
 import { RetryPlayground } from "../features/retries/RetryPlayground";
+import { RetryGuided } from "../features/retries/RetryGuided";
+import {
+  RetryArchitectureView,
+  RetrySequenceView,
+} from "../features/retries/RetryDesign";
+import { retryEventLabels } from "../features/retries/retryLabels";
 import { NotFoundPage } from "./NotFoundPage";
 const id = "timeouts-retries";
 export function RetryPage() {
@@ -26,7 +32,7 @@ export function RetryPage() {
           topic.topic.kind !== "topic" ||
           topic.topic.status !== "draft" ||
           !Array.isArray(topic.topic.capabilities) ||
-          !(["study", "simulation", "practice"] as const).every((c) =>
+          !(["study", "simulation", "practice", "guided"] as const).every((c) =>
             topic.topic.capabilities.includes(c),
           ) ||
           !Array.isArray(topic.topic.simulationIds) ||
@@ -36,6 +42,17 @@ export function RetryPage() {
           !Array.isArray(topic.questions) ||
           topic.questions.length === 0 ||
           !Array.isArray(topic.checkpoints) ||
+          topic.checkpoints.length === 0 ||
+          !topic.checkpoints.every(
+            (checkpoint) =>
+              checkpoint.simulationId === id &&
+              checkpoint.target &&
+              "requestId" in checkpoint.target &&
+              Object.prototype.hasOwnProperty.call(
+                retryEventLabels,
+                checkpoint.target.kind,
+              ),
+          ) ||
           descriptor.id !== id ||
           !descriptor.presets.some((p) => p.id === "late-work")
         ) {
@@ -99,6 +116,9 @@ export function RetryPage() {
         topic={data.topic.topic}
         tabs={[
           { id: "playground", label: "Playground" },
+          { id: "guided", label: "Guided" },
+          { id: "architecture", label: "Architecture" },
+          { id: "sequence", label: "Request sequence" },
           { id: "study", label: "Study" },
           { id: "practice", label: "Practice" },
         ]}
@@ -110,6 +130,15 @@ export function RetryPage() {
               descriptor={data.descriptor}
             />
           ),
+          guided: (
+            <RetryGuided
+              checkpoints={data.topic.checkpoints}
+              descriptor={data.descriptor}
+              contentVersion={data.topic.topic.contentVersion}
+            />
+          ),
+          architecture: <RetryArchitectureView />,
+          sequence: <RetrySequenceView />,
           study: (
             <StudyView
               markdown={data.topic.lessonMarkdown}

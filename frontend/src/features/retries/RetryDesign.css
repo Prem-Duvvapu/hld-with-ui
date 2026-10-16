@@ -1,0 +1,295 @@
+.retry-design {
+  min-width: 0;
+  padding-block: 24px;
+}
+.retry-design
+  :is(h2, h3, h4, p, li, dt, dd, label, span, button, small, strong, summary) {
+  overflow-wrap: anywhere;
+}
+.retry-design-intro {
+  max-width: 900px;
+  margin-bottom: 24px;
+}
+.retry-design-intro h2 {
+  margin: 6px 0 12px;
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+}
+.retry-design-intro p {
+  line-height: 1.65;
+}
+.retry-design-scope {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.65;
+}
+.retry-ownership {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.retry-ownership button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  min-height: 170px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.retry-ownership button[aria-pressed="true"] {
+  border-color: var(--green);
+  background: color-mix(in srgb, var(--green) 6%, var(--surface));
+  box-shadow: inset 0 3px var(--green);
+}
+.retry-ownership strong {
+  font-size: 1.05rem;
+}
+.retry-ownership button > span:not(.eyebrow) {
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.retry-ownership small {
+  margin-top: auto;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.retry-design-card,
+.retry-full-sequence {
+  min-width: 0;
+  padding: 22px;
+  margin-bottom: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.retry-design-card :is(h3, h4) {
+  margin-top: 0;
+}
+.retry-design-card p,
+.retry-design-card li,
+.retry-full-sequence p {
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+.retry-design-card ol {
+  padding-left: 22px;
+}
+.retry-design-card ol li {
+  margin-block: 12px;
+  padding-left: 4px;
+}
+.retry-design-takeaway {
+  padding: 12px 16px;
+  border-left: 3px solid var(--green);
+  background: var(--surface-2);
+}
+.retry-path-choice {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  min-width: 0;
+  padding: 0;
+  margin: 0 0 24px;
+  border: 0;
+}
+.retry-path-choice legend {
+  padding: 0 0 12px;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+.retry-path-choice label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.retry-path-choice label:has(input:checked) {
+  border-color: var(--green);
+  background: color-mix(in srgb, var(--green) 6%, var(--surface));
+}
+.retry-path-choice input {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  accent-color: var(--green);
+}
+.retry-scene-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.retry-scene-heading p {
+  margin: 0;
+}
+.retry-scene-heading > span {
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--muted);
+  font: 0.75rem var(--mono);
+}
+.retry-path-edge {
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.retry-authored-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-block: 20px;
+}
+.retry-authored-values > div {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.retry-authored-values dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.retry-authored-values dd {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+.retry-authored-attempts {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  padding: 0;
+}
+.retry-authored-attempts li {
+  display: grid;
+  grid-template-columns: 0.6fr 1fr 1fr;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+.retry-path-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+.retry-path-controls button {
+  min-height: 42px;
+  max-width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.retry-path-controls button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.retry-design :is(button, input, summary):focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}
+.retry-full-sequence summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.6;
+}
+.retry-full-sequence section {
+  margin-top: 22px;
+}
+.retry-full-sequence ol {
+  padding-left: 22px;
+}
+.retry-full-sequence ol > li {
+  padding: 16px;
+  margin-bottom: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.retry-full-sequence ol > li[aria-current="step"] {
+  border-color: var(--green);
+  background: var(--surface-2);
+}
+.retry-full-sequence h4 {
+  margin: 6px 0 10px;
+}
+@media (max-width: 900px) {
+  .retry-ownership {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .retry-path-choice {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .retry-ownership {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .retry-ownership button,
+  .retry-design-card,
+  .retry-full-sequence {
+    padding: 16px;
+  }
+  .retry-ownership button {
+    min-height: 145px;
+  }
+  .retry-authored-attempts li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+  }
+}
+@media (max-width: 400px) {
+  .retry-authored-values {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .retry-full-sequence ol {
+    padding-left: 16px;
+  }
+  .retry-full-sequence ol > li {
+    padding: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .retry-design * {
+    scroll-behavior: auto;
+  }
+}
+
+.retry-ownership-flow {
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  border: 1px dashed var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+}
+.retry-ownership-flow p {
+  margin-block: 10px;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+.retry-ownership-flow strong {
+  display: block;
+  margin-bottom: 3px;
+}

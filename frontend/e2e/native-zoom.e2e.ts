@@ -904,12 +904,62 @@ for (const theme of ["light", "dark"] as const) {
             exact: true,
           }),
         ).toContainText("Timed out");
-        for (const view of ["Playground", "Study", "Practice"]) {
+        for (const view of [
+          "Playground",
+          "Guided",
+          "Architecture",
+          "Request sequence",
+          "Study",
+          "Practice",
+        ]) {
           const tab = page.getByRole("tab", { name: view, exact: true });
           await tab.focus();
           await page.keyboard.press("Enter");
           await expect(tab).toBeFocused();
           await expect(tab).toHaveAttribute("aria-selected", "true");
+          const panel = page.getByRole("tabpanel", { name: view, exact: true });
+          if (view === "Guided") {
+            const reveal = panel.getByRole("button", {
+              name: "Run and reveal",
+              exact: true,
+            });
+            await reveal.focus();
+            await page.keyboard.press("Enter");
+            await expect(
+              panel.getByRole("region", {
+                name: "Java retry evidence at this checkpoint",
+                exact: true,
+              }),
+            ).toBeVisible();
+          } else if (view === "Architecture") {
+            const inspect = panel.getByRole("button", {
+              name: "Inspect Business-effect boundary",
+              exact: true,
+            });
+            await inspect.focus();
+            await page.keyboard.press("Enter");
+            await expect(inspect).toBeFocused();
+            await expect(
+              panel.getByRole("region", {
+                name: "Selected retry responsibility",
+                exact: true,
+              }),
+            ).toContainText("business writes");
+          } else if (view === "Request sequence") {
+            const next = panel.getByRole("button", {
+              name: "Next retry path step",
+              exact: true,
+            });
+            await next.focus();
+            await page.keyboard.press("Enter");
+            await expect(next).toBeFocused();
+            await expect(
+              panel.getByRole("region", {
+                name: "Selected retry path step",
+                exact: true,
+              }),
+            ).toContainText("a-a1");
+          }
           await expect
             .poll(() =>
               page.evaluate(

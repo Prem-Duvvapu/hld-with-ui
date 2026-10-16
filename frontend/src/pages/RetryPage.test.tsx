@@ -1,5 +1,6 @@
 import catalog from "../../../content/catalog.json";
 import questions from "../../../content/topics/timeouts-retries/questions.json";
+import checkpoints from "../../../content/topics/timeouts-retries/checkpoints.json";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, expect, it, vi } from "vitest";
@@ -17,7 +18,7 @@ const topic: TopicDetail = {
   )! as TopicDetail["topic"],
   lessonMarkdown: "# Timeouts\n\nCaller patience and server work are separate.",
   questions: questions as TopicDetail["questions"],
-  checkpoints: [],
+  checkpoints: checkpoints as TopicDetail["checkpoints"],
 };
 const view = (route = "/draft/topics/timeouts-retries") =>
   render(
@@ -30,15 +31,14 @@ beforeEach(() => {
   vi.mocked(api.draftTopic).mockResolvedValue(topic);
   vi.mocked(api.retryDescriptor).mockResolvedValue(descriptor);
 });
-it("shows only the three implemented views and never runs on load", async () => {
+it("shows all six implemented draft views and never runs on load", async () => {
   view();
   expect(
     await screen.findByRole("region", { name: "Draft retry module" }),
   ).toBeVisible();
-  expect(screen.getAllByRole("tab")).toHaveLength(3);
-  expect(
-    screen.queryByRole("tab", { name: /Guided|Architecture|Sequence/ }),
-  ).not.toBeInTheDocument();
+  expect(screen.getAllByRole("tab")).toHaveLength(6);
+  for (const label of ["Guided", "Architecture", "Request sequence"])
+    expect(screen.getByRole("tab", { name: label })).toBeVisible();
   expect(api.runRetry).not.toHaveBeenCalled();
   expect(api.draftTopic).toHaveBeenCalledWith("timeouts-retries");
 });
@@ -117,4 +117,46 @@ it("rejects an empty Practice payload instead of advertising an unusable Practic
   expect(
     screen.queryByRole("button", { name: "Run retry experiment" }),
   ).not.toBeInTheDocument();
+});
+
+it("rejects missing Guided capability and empty or wrong-model checkpoints", async () => {
+  for (const incompatible of [
+    {
+      ...topic,
+      topic: {
+        ...topic.topic,
+        capabilities: topic.topic.capabilities.filter(
+          (capability) => capability !== "guided",
+        ),
+      },
+    },
+    { ...topic, checkpoints: [] },
+    {
+      ...topic,
+      checkpoints: [
+        { ...topic.checkpoints[0]!, simulationId: "queues-tail-latency" },
+      ],
+    },
+  ]) {
+    vi.mocked(api.draftTopic).mockResolvedValueOnce(incompatible);
+    const page = view();
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "draft retry module is incompatible",
+    );
+    expect(
+      screen.queryByRole("button", { name: "Run retry experiment" }),
+    ).not.toBeInTheDocument();
+    page.unmount();
+  }
+});
+it("opens authored design deep links without running Java", async () => {
+  view("/draft/topics/timeouts-retries?view=sequence");
+  expect(
+    await screen.findByRole("region", { name: "Selected retry path step" }),
+  ).toBeVisible();
+  expect(screen.getByRole("tab", { name: "Request sequence" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  expect(api.runRetry).not.toHaveBeenCalled();
 });

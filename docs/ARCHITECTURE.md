@@ -327,10 +327,27 @@ schemas and generates types plus only five reachable descriptor definitions. The
 captures input before asynchronous loading, then checks shape/reference/reported-history
 consistency; it does not recalculate policy, random choices, work or metrics.
 
-The single new catalog topic is draft, content 1.0.0, with exactly Study/Simulation/Practice.
+At HLD-18B, the new catalog topic was draft, content 1.0.0, with Study/Simulation/Practice.
 Its lazy explicit route renders real editable controls and initial/post-event playback.
 Caller and server-work states are independently inspectable; selected Java IDs highlight
 cards and complete-run metrics remain separate. Shared ModuleShell and Practice storage
 preserve history, drafts and saved answers. No Guided selector family is widened here.
 [Decision 0038](decisions/0038-retry-api-and-playback.md) records boundaries and migration.
 Human/hosted/prerequisite review, Guided/design and publication remain separate gates.
+
+## Retry Guided and authored design
+
+[HLD-18C](work-items/HLD-18C.md) extends the shared checkpoint union with a separate
+request identity family. Three request-level retry kinds omit attempt identity; eight
+attempt-level kinds require the actual associated attempt. Closed schemas and exporter
+capability checks agree with the Java enum, content validator and React resolver. Existing
+target constructors and wire shapes remain supported; HTTP is 1.12.0, retry content 1.1.0.
+Model/schema replay versions and the four input/result golden pairs are unchanged.
+
+The retry adapter uses shared Guided answer/reset/version behavior and selects an actual
+event post-state without future events or final metrics. Explicit reveal is the only run
+action; reload restores reasoning without a trace. Inspectable Architecture and three manual
+Request sequences describe the bounded model with complete text equivalents. Their authored
+facts are checked against the actual Java goldens, not recomputed by React. The six-view
+topic remains draft; human/hosted/prerequisite/publication gates remain separate. See
+[decision 0039](decisions/0039-retry-guided-semantic-targets.md).

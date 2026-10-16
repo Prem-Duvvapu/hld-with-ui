@@ -118,7 +118,31 @@ The workload editor lets you change IDs, arrivals and service times; arrivals mu
 Select initial state and individual events, then seek backward and forward. Inspect caller,
 waiting queue, workers and actual sent attempts. Whole-run metrics stay separate from the
 selected snapshot. Play speed changes presentation only; manual controls remain available.
-Study and Practice are available; Guided and authored design views are a later contribution.
+Use Guided to predict a selected event, Architecture to inspect ownership, Request sequence
+to follow authored causal paths, and Study/Practice to explain and apply what you observed.
+
+### Predict one decision in Guided
+
+Open **Guided** to predict one event before revealing Java's evidence. Eight checkpoints
+follow the same eight scenarios. At the 50 ms timeout checkpoint, `a-a1` is timed out for
+its caller and still running at the server. The retry has not been sent in that selected
+microstep: the next policy and send events occur later in the trace, even at the same time.
+Use the selected snapshot to say what is known now; whole-run totals answer a different question.
+
+Your prediction and tradeoff choice save locally. Reload restores your reasoning, then
+asks you to run explicitly to regenerate evidence; it does not restore or run a simulation.
+
+### Connect the evidence to a design
+
+In **Architecture**, inspect who owns the logical request, retry policy, admission and
+accepted work. Stopping a caller's wait and completing work are different responsibilities.
+The business-effect boundary is visibly outside this experiment.
+
+In **Request sequence**, follow three authored paths: late work, recovery with backoff,
+and a blocked retry proposal. Step manually or read the full text sequence. These are
+explanations of named presets, not another execution engine. In the deadline path, the
+120 ms proposal is blocked at 40 ms; the caller fails at its actual 100 ms deadline.
+Changing a Playground input does not change an authored sequence.
 
 ## Failures and tradeoffs
 

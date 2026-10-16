@@ -250,4 +250,31 @@ class RetryApiTest {
             assertThat(result.at("/metrics/retryBudgetUsed").asInt()).isZero();
         }
     }
+
+    @Test void draftGuidedContentDeliversCanonicalTargetsWhilePublishedDiscoveryStillExcludesIt() throws Exception {
+        var detail = success(get("/api/v1/draft/topics/timeouts-retries"));
+        assertThat(detail.at("/topic/id").asString()).isEqualTo("timeouts-retries");
+        assertThat(detail.at("/topic/status").asString()).isEqualTo("draft");
+        assertThat(detail.at("/topic/contentVersion").asString()).isEqualTo("1.1.0");
+        assertThat(detail.at("/topic/checkpointsPath").asString()).isEqualTo("topics/timeouts-retries/checkpoints.json");
+        var capabilities = new ArrayList<String>();
+        for (JsonNode capability : detail.at("/topic/capabilities")) capabilities.add(capability.asString());
+        assertThat(capabilities).containsExactlyInAnyOrder("study", "simulation", "guided", "practice");
+        assertThat(detail.path("checkpoints")).isEqualTo(mapper.readTree(Files.readAllBytes(
+                Path.of("../content/topics/timeouts-retries/checkpoints.json"))));
+        assertThat(detail.path("checkpoints").size()).isEqualTo(8);
+        assertThat(detail.path("questions").size()).isEqualTo(8);
+        assertThat(detail.path("lessonMarkdown").asString()).isNotBlank();
+        for (JsonNode checkpoint : detail.path("checkpoints")) {
+            assertThat(checkpoint.path("simulationId").asString()).isEqualTo("timeouts-retries");
+            assertThat(checkpoint.at("/target/occurrence").asInt()).isEqualTo(1);
+            assertThat(checkpoint.at("/target/requestId").asString()).isIn("a", "b");
+        }
+        assertThat(get("/api/v1/topics/timeouts-retries").statusCode()).isEqualTo(404);
+        for (JsonNode entry : success(get("/api/v1/topics")))
+            assertThat(entry.path("id").asString()).isNotEqualTo("timeouts-retries");
+        for (JsonNode hit : success(get("/api/v1/search?q=retry")).path("results"))
+            assertThat(hit.at("/entry/id").asString()).isNotEqualTo("timeouts-retries");
+    }
+
 }

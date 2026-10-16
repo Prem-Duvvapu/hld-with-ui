@@ -45,8 +45,10 @@ evidence. [HLD-18B](work-items/HLD-18B.md) connects strict APIs, generated contr
 explicit `/draft/topics/timeouts-retries` Playground/Study/Practice experience. Eight editable
 scenarios and eight questions distinguish caller waiting from accepted server work. The
 [retry plan](TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md) freezes behavior and remaining gates.
-Next is HLD-18C Guided/design, followed by idempotency as a separate effect/result correctness
-module. No cancellation, business-effect ledger or real networking is modeled. Human/hosted/
+[HLD-18C](work-items/HLD-18C.md) adds eight Java-targeted Guided checkpoints, inspectable
+Architecture and three manual Request sequence paths, completing six core draft views.
+Consult its actual verification evidence before the next bounded contribution: idempotency
+as a separate effect/result correctness module. No cancellation, business-effect ledger or real networking is modeled. Human/hosted/
 prerequisite/publication gates remain open; four modules are published.
 
 ## 1. Objective and scope

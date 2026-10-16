@@ -1,7 +1,9 @@
 # Timeouts & Retries implementation plan
 
-Prepared 2026-10-16. **HLD-18A is merged; HLD-18B integration is in verification.**
-[HLD-18B](work-items/HLD-18B.md) records actual APIs/UI checks. Guided/design and publication remain pending.
+Prepared 2026-10-16. **HLD-18A and HLD-18B are merged. HLD-18C adds Guided/design.**
+[HLD-18B](work-items/HLD-18B.md) records API/UI checks and PR #79 delivery as `dd5946e`
+after required CI run `38942545292` passed. [HLD-18C](work-items/HLD-18C.md) records its
+subsequent eight checkpoints and authored views; publication reviews remain pending.
 The starting baseline is PR #77, squash `ff0daa1`, with required CI run `38934926502` passing.
 Follow `AGENTS.md` and `CONTRIBUTING.md`; use a fresh branch for each contribution.
 Foundation results belong in [HLD-18A](work-items/HLD-18A.md), merged in PR #78 as `4c8cdd8`

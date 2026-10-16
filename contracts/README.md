@@ -228,6 +228,16 @@ The exporter derives RetryInput, RetryResult and their definitions from canonica
 generated TypeScript aliases expose them. The lazy `retry-descriptor.schema.json` includes
 only its five reachable definitions. Actual Java descriptor and all four input/result pairs
 are validated as evidence. Its named default is `late-work`; `baseline` is only a golden
-artifact name. The direct draft topic has Study, Simulation and Practice, with no Guided
-capability yet. See [HLD-18B](../docs/work-items/HLD-18B.md) and
+artifact name. HLD-18B initially exposed Study, Simulation and Practice. See
+[HLD-18B](../docs/work-items/HLD-18B.md) and
 [decision 0038](../docs/decisions/0038-retry-api-and-playback.md) for actual gates and limits.
+
+HLD-18C adds HTTP 1.12.0 checkpoint target branches for actual retry requests and attempts.
+The three request-level kinds require `requestId`, `kind` and `occurrence`; eight attempt-level
+kinds also require a matching `attemptId`. Each branch is closed and bounded to occurrence
+1–384. Generation reconciles both kind partitions with the canonical result schema's actual
+selector capabilities. Content checks enforce request/attempt association and model-specific
+support; Java executes all eight authored checkpoint presets. Existing target families remain
+unchanged. Retry content 1.1.0 declares Guided with its actual checkpoint resource. The model
+and schema replay versions remain unchanged; the draft is not published. See
+[HLD-18C](../docs/work-items/HLD-18C.md) and [decision 0039](../docs/decisions/0039-retry-guided-semantic-targets.md).

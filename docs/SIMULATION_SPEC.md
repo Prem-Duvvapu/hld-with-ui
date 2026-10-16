@@ -418,3 +418,19 @@ identities highlight actual caller/attempt cards. No frontend scheduling, retry 
 random draws, metrics or server-state transitions are computed. Whole-run metrics retain
 explicit denominators and exclude business effects. Source, compatibility, changed-input,
 browser and copied-runtime evidence belongs in HLD-18B; human/hosted publication is pending.
+
+## Retry Guided selection
+
+HLD-18C selects retry events with semantic `requestId`, `kind` and one-based `occurrence`.
+REQUEST_ARRIVED, REQUEST_SUCCEEDED and REQUEST_FAILED forbid `attemptId`; the other eight
+event kinds require an actual sent attempt belonging to that request. Mixed identity families,
+unknown fields/kinds, mismatched attempts and occurrence outside 1–384 reject. No narration
+or authored event offset is an identity. Java tests resolve every checkpoint against its
+named preset and assert the selected numerical facts. Frontend selection returns no evidence
+when a target is absent; it cannot borrow another event.
+
+Guided displays the selected event and its post-state only. A complete response may be
+cached for explicit session reveals, but a saved answer is never a saved trace or an
+automatic POST. The three authored manual sequences remain separate illustrations with
+facts checked against actual Java serialization. They cannot react to Playground edits.
+See [HLD-18C](work-items/HLD-18C.md) for actual verification; model/schema versions are unchanged.
