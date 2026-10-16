@@ -70,7 +70,9 @@ it("loads exactly six working draft views without running Java or exposing a boo
   expect(
     screen.queryByRole("button", { name: "Save module" }),
   ).not.toBeInTheDocument();
-  expect(document.title).toContain("Study · Data Models & Access Patterns");
+  await waitFor(() =>
+    expect(document.title).toContain("Study · Data Models & Access Patterns"),
+  );
 });
 
 it("keeps unsaved design and prediction through tabs and browser history without refetching", async () => {

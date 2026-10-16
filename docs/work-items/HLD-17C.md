@@ -62,7 +62,10 @@ Implementation and remaining checks are in progress.
 
 Native 200% zoom passed both theme journeys across physical 1440/640 windows
 (CSS720/320), both experiments and all six views, including new atomicity Guided/design
-interactions. See `/tmp/hld-17c-zoom.log`. Required final-head CI/delivery remain pending;
+interactions. See `/tmp/hld-17c-zoom.log`. The initial Quality CI run38934289710 exposed an existing data-access test reading
+`document.title` before its passive React effect. Its assertion now waits for the actual
+title rather than asserting synchronously; no product behavior or expected title changed.
+Required final-head CI/delivery remain pending;
 actual remote run and merge evidence will be recorded in the PR.
 
 Representative actual review captures:
