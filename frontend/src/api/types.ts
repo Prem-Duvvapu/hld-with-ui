@@ -134,3 +134,16 @@ export type AtomicityInvariants = components["schemas"]["AtomicityInvariants"];
 export type AtomicityState = components["schemas"]["AtomicityState"];
 export type AtomicityOutcome = components["schemas"]["AtomicityOutcome"];
 export type AtomicityMetrics = components["schemas"]["AtomicityMetrics"];
+
+export type RetryInput = components["schemas"]["RetryInput"];
+export type RetryResult = components["schemas"]["RetryResult"];
+export type RetryDescriptor = components["schemas"]["RetryDescriptor"];
+export type RetryLimits = components["schemas"]["RetryLimits"];
+export type RetryPreset = components["schemas"]["RetryPreset"];
+export type RetryRequest = components["schemas"]["RetryRequest"];
+export type RetryState = components["schemas"]["RetryState"];
+export type RetryRequestState = components["schemas"]["RetryRequestState"];
+export type RetryAttemptState = components["schemas"]["RetryAttemptState"];
+export type RetryWorkerState = components["schemas"]["RetryWorkerState"];
+export type RetryEvent = components["schemas"]["RetryEvent"];
+export type RetryMetrics = RetryResult["metrics"];

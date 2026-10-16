@@ -171,3 +171,15 @@ Review the resulting semantic diff. Do not use the authoring flag in CI or to ma
 assertion. The maximum-boundary stress result is measured in memory and is not committed as
 a giant golden. The [retry plan](docs/TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md) separates the
 completed foundation checks from pending API, renderer and publication gates.
+
+The runnable retry draft also checks an actual GET descriptor example. Intentionally author
+only that new artifact through the explicit method/flag, then format and verify normally:
+
+```bash
+(cd backend && ./mvnw -B -Dtest=RetryApiTest#descriptorSnapshotMatchesActualGetAndOnlyExplicitAuthoringCanWriteIt -Dhld.writeRetryDescriptor=true test)
+(cd frontend && npx prettier --write ../contracts/examples/timeouts-retries-descriptor.json)
+```
+
+Never enable authoring flags in ordinary CI or regenerate the four model goldens to mask an
+API mismatch. New-module gates and remaining release review are recorded in
+[HLD-18B](docs/work-items/HLD-18B.md).

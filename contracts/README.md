@@ -215,3 +215,19 @@ identity relationships, ordering, arithmetic, snapshot history and final metrics
 These standalone artifacts add no endpoint, OpenAPI component, catalog capability or
 React renderer. They establish no business-effect deduplication, real network behavior,
 server cancellation, database isolation or durable recovery guarantee.
+
+## Retry HTTP and learning draft
+
+HLD-18B connects the standalone foundation to HTTP 1.11.0 without changing model/schema
+replay versions. GET `/api/v1/simulations/timeouts-retries` returns RetryDescriptor with
+thirteen Java-derived limits and eight presets. POST `/runs` accepts the canonical input
+and returns the complete RetryResult. Strict token/closed-field parsing, byte/admission
+limits and existing structured errors apply. Legal caller failures are completed 200 results.
+
+The exporter derives RetryInput, RetryResult and their definitions from canonical schemas;
+generated TypeScript aliases expose them. The lazy `retry-descriptor.schema.json` includes
+only its five reachable definitions. Actual Java descriptor and all four input/result pairs
+are validated as evidence. Its named default is `late-work`; `baseline` is only a golden
+artifact name. The direct draft topic has Study, Simulation and Practice, with no Guided
+capability yet. See [HLD-18B](../docs/work-items/HLD-18B.md) and
+[decision 0038](../docs/decisions/0038-retry-api-and-playback.md) for actual gates and limits.

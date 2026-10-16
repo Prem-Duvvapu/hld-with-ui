@@ -38,15 +38,16 @@ transaction/retry/idempotency curriculum in the
 [transaction implementation handoff](TRANSACTIONS_IMPLEMENTATION_PLAN.md), retaining
 human/hosted/publication gates. Neither transaction model deduplicates effects.
 
-## Current retry foundation
+## Current retry draft
 
-[HLD-18A](work-items/HLD-18A.md) adds the pure Java `timeouts-retries` foundation,
-standalone contracts, four Java-generated golden pairs and semantic tests. It has no API,
-registered draft topic or UI. Verification/delivery evidence belongs in its work item.
-The [retry implementation plan](TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md) freezes the
-caller/server-work boundary and eight scenarios. Next deliver HLD-18B strict APIs and
-Playground/Study/Practice, then HLD-18C Guided/design views. Idempotency follows as a
-separate effect/result correctness module. Human/hosted/publication gates remain open.
+[HLD-18A](work-items/HLD-18A.md) supplies the merged pure Java foundation and standalone
+evidence. [HLD-18B](work-items/HLD-18B.md) connects strict APIs, generated contracts and the
+explicit `/draft/topics/timeouts-retries` Playground/Study/Practice experience. Eight editable
+scenarios and eight questions distinguish caller waiting from accepted server work. The
+[retry plan](TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md) freezes behavior and remaining gates.
+Next is HLD-18C Guided/design, followed by idempotency as a separate effect/result correctness
+module. No cancellation, business-effect ledger or real networking is modeled. Human/hosted/
+prerequisite/publication gates remain open; four modules are published.
 
 ## 1. Objective and scope
 

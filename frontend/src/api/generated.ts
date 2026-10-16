@@ -479,6 +479,43 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/simulations/timeouts-retries": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read the Java timeouts and retries descriptor */
+    get: operations["getRetryDescriptor"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/simulations/timeouts-retries/runs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Run a bounded caller retry policy and return independent caller and server work snapshots
+     * @description Strict closed retry input with exact integral JSON tokens, duplicate-key and trailing-root rejection. Logical caller failure, timeout and dependency rejection return a complete simulation with HTTP200; shared raw-body, in-flight admission and complete-result serialization guards remain outside the pure finite model. No real network, cancellation or business-effect deduplication is modeled.
+     */
+    post: operations["runRetry"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2177,6 +2214,249 @@ export interface components {
       invariantStatus: "PRESERVED" | "VIOLATED";
       firstViolationStepId?: components["schemas"]["AtomicityIdentifier"];
     } & unknown;
+    RetryLimits: {
+      /** @constant */
+      maxSafeSeed: 9007199254740991;
+      /** @constant */
+      maxWorkers: 3;
+      /** @constant */
+      maxQueueCapacity: 12;
+      /** @constant */
+      maxRequests: 12;
+      /** @constant */
+      maxArrivalTimeMs: 10000;
+      /** @constant */
+      maxServiceTimeMs: 1000;
+      /** @constant */
+      maxAttemptTimeoutMs: 1000;
+      /** @constant */
+      maxOverallTimeoutMs: 10000;
+      /** @constant */
+      maxAttempts: 5;
+      /** @constant */
+      maxDelayMs: 1000;
+      /** @constant */
+      maxRetryBudget: 48;
+      /** @constant */
+      maxUnavailableUntilMs: 10000;
+      /** @constant */
+      maxIdLength: 32;
+    };
+    RetryPreset: {
+      id: string;
+      title: string;
+      description: string;
+      input: components["schemas"]["RetryInput"];
+    };
+    RetryDescriptor: {
+      /** @constant */
+      id: "timeouts-retries";
+      title: string;
+      /** @constant */
+      kind: "simulation";
+      /** @constant */
+      modelVersion: "1.0.0";
+      description: string;
+      limits: components["schemas"]["RetryLimits"];
+      presets: components["schemas"]["RetryPreset"][];
+      assumptions: string[];
+    };
+    /**
+     * Timeouts and retries model input
+     * @description Canonical finite input for an illustrative caller retry policy and shared dependency worker queue. Java additionally validates unique original IDs, chronological arrival order and maxDelayMs >= baseDelayMs before any transition. Parsed JSON shape is not transport token spelling, duplicate-key or trailing-root validation. One run-local recorded random stream selects bounded FULL jitter delays; no network, cancellation, business effect, database or durability is modeled.
+     */
+    RetryInput: {
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      modelVersion: "1.0.0";
+      seed: number;
+      workers: number;
+      queueCapacity: number;
+      attemptTimeoutMs: number;
+      overallTimeoutMs: number;
+      maxAttempts: number;
+      /** @enum {unknown} */
+      backoff: "IMMEDIATE" | "EXPONENTIAL";
+      baseDelayMs: number;
+      maxDelayMs: number;
+      /** @enum {unknown} */
+      jitter: "NONE" | "FULL";
+      retryBudget: number;
+      unavailableUntilMs: number;
+      requests: components["schemas"]["RetryRequest"][];
+    } & (unknown & unknown);
+    RetryIdentifier: string;
+    RetryRequest: {
+      id: components["schemas"]["RetryIdentifier"];
+      arrivalTimeMs: number;
+      serviceTimeMs: number;
+    };
+    /**
+     * Timeouts and retries model result
+     * @description Complete finite Java simulation evidence for caller wait state and independent dependency work. Captured input owns original IDs and controls. Initial and complete final state, closed event field categories and local caller/work phases are constrained here. Java owns identity/reference correspondence, scheduler ordering, arithmetic, exact event-prefix/final-state equality, policy behavior, metrics and replay. Same-callback causal microsteps may show completed work whose caller is still WAITING, before the following explicit request success; no other callback interleaves. No artificial partial result, business effect, idempotency, actual networking or durability is modeled.
+     */
+    RetryResult: {
+      /** @constant */
+      simulationId: "timeouts-retries";
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      modelVersion: "1.0.0";
+      /** @constant */
+      kind: "simulation";
+      /** @constant */
+      status: "completed";
+      input: components["schemas"]["RetryInput"];
+      /** @constant */
+      randomAlgorithm: "SplittableRandom";
+      initialState: components["schemas"]["RetryState"] & {
+        requests?: {
+          /** @constant */
+          phase?: "NOT_ARRIVED";
+          /** @constant */
+          attemptsSent?: 0;
+        }[];
+        attempts?: unknown[];
+        workers?: {
+          attemptId?: never;
+        }[];
+        queue?: unknown[];
+      };
+      events: components["schemas"]["RetryEvent"][];
+      finalState: components["schemas"]["RetryState"] & {
+        requests?: {
+          /** @enum {unknown} */
+          phase?: "SUCCEEDED" | "FAILED";
+        }[];
+        attempts?: {
+          /** @enum {unknown} */
+          workState?: "NOT_ACCEPTED" | "COMPLETED";
+          /** @enum {unknown} */
+          callerState?:
+            "REJECTED" | "TIMED_OUT" | "DEADLINE_EXCEEDED" | "RESPONDED";
+        }[];
+        workers?: {
+          attemptId?: never;
+        }[];
+        queue?: unknown[];
+      };
+      metrics: {
+        originalRequests: number;
+        succeededRequests: number;
+        failedRequests: number;
+        attemptsSent: number;
+        retriesSent: number;
+        rejectedAttempts: number;
+        acceptedServerWork: number;
+        completedServerWork: number;
+        lateCompletions: number;
+        attemptTimeouts: number;
+        retryBudgetUsed: number;
+        peakQueueDepth: number;
+        peakRunningWork: number;
+        finalTimeMs: number;
+        attemptAmplification: number;
+        executionAmplification: number;
+      };
+      assumptions: string[];
+    };
+    RetryAttemptIdentifier: string;
+    RetryRequestState: {
+      id: components["schemas"]["RetryIdentifier"];
+      overallDeadlineAtMs: number;
+      /** @enum {unknown} */
+      phase:
+        | "NOT_ARRIVED"
+        | "READY"
+        | "WAITING"
+        | "DECIDING_RETRY"
+        | "BACKING_OFF"
+        | "AWAITING_DEADLINE"
+        | "SUCCEEDED"
+        | "FAILED";
+      attemptsSent: number;
+      activeAttemptId?: components["schemas"]["RetryAttemptIdentifier"];
+      nextRetryAtMs?: number;
+      finishedAtMs?: number;
+      /** @enum {unknown} */
+      failureReason?:
+        "ATTEMPTS_EXHAUSTED" | "RETRY_BUDGET_EXHAUSTED" | "OVERALL_DEADLINE";
+      /** @enum {unknown} */
+      lastFailureCause?:
+        "DEPENDENCY_UNAVAILABLE" | "QUEUE_FULL" | "ATTEMPT_TIMEOUT";
+    } & (unknown & unknown & unknown & unknown & unknown & unknown & unknown);
+    RetryAttemptState: {
+      id: components["schemas"]["RetryAttemptIdentifier"];
+      requestId: components["schemas"]["RetryIdentifier"];
+      number: number;
+      sentAtMs: number;
+      /** @enum {unknown} */
+      callerState:
+        | "WAITING"
+        | "REJECTED"
+        | "TIMED_OUT"
+        | "DEADLINE_EXCEEDED"
+        | "RESPONDED";
+      /** @enum {unknown} */
+      workState:
+        | "PENDING_ADMISSION"
+        | "NOT_ACCEPTED"
+        | "QUEUED"
+        | "RUNNING"
+        | "COMPLETED";
+      startedAtMs?: number;
+      completedAtMs?: number;
+      callerFinishedAtMs?: number;
+      timeoutAtMs?: number;
+      /** @enum {unknown} */
+      failureCause?:
+        "DEPENDENCY_UNAVAILABLE" | "QUEUE_FULL" | "ATTEMPT_TIMEOUT";
+    } & (unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown);
+    RetryWorkerState: {
+      id: string;
+      attemptId?: components["schemas"]["RetryAttemptIdentifier"];
+    };
+    RetryState: {
+      requests: components["schemas"]["RetryRequestState"][];
+      attempts: components["schemas"]["RetryAttemptState"][];
+      workers: components["schemas"]["RetryWorkerState"][];
+      queue: components["schemas"]["RetryAttemptIdentifier"][];
+      retryBudgetRemaining: number;
+    };
+    RetryEvent: {
+      sequence: number;
+      timeMs: number;
+      /** @enum {unknown} */
+      kind:
+        | "REQUEST_ARRIVED"
+        | "ATTEMPT_SENT"
+        | "WORK_QUEUED"
+        | "WORK_STARTED"
+        | "ATTEMPT_REJECTED"
+        | "ATTEMPT_TIMED_OUT"
+        | "WORK_COMPLETED"
+        | "RETRY_SCHEDULED"
+        | "RETRY_BLOCKED_BY_DEADLINE"
+        | "REQUEST_SUCCEEDED"
+        | "REQUEST_FAILED";
+      requestId: components["schemas"]["RetryIdentifier"];
+      attemptId?: components["schemas"]["RetryAttemptIdentifier"];
+      delayMs?: number;
+      retryAtMs?: number;
+      proposedRetryAtMs?: number;
+      explanation: string;
+      postState: components["schemas"]["RetryState"];
+    } & (unknown & unknown & unknown & unknown);
   };
   responses: never;
   parameters: {
@@ -3135,6 +3415,97 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["AtomicityResult"];
+        };
+      };
+      /** @description Structured error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description internal_error: unexpected model or serialization failure, distinct from intentional whole-result byte limits. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free. */
+      503: {
+        headers: {
+          /** @description Retry hint in seconds. Capacity may remain occupied. */
+          "Retry-After"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  getRetryDescriptor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RetryDescriptor"];
+        };
+      };
+    };
+  };
+  runRetry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RetryInput"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RetryResult"];
         };
       };
       /** @description Structured error */

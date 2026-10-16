@@ -373,8 +373,8 @@ they are labeled illustrations and introduce no simulated time or automatic Java
 ## Timeouts and retries foundation
 
 [HLD-18A](work-items/HLD-18A.md) implements pure `timeouts-retries` model 1.0.0 / schema 1.0,
-with canonical standalone input/result schemas and four actual Java golden pairs. It is not
-registered or exposed over HTTP yet. The [retry handoff](TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md)
+with canonical standalone input/result schemas and four actual Java golden pairs. That foundation contribution did not
+register or expose HTTP; HLD-18B integration is recorded below. The [retry handoff](TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md)
 freezes exact fields, eight presets, callback phases, bounds and subsequent API/UI gates.
 
 At most 12 ordered originals and five attempts per original feed one finite worker/FIFO
@@ -396,3 +396,25 @@ Jitter uses one run-local recorded seeded generator, and ordinary golden checks 
 Maximum-boundary in-memory serialization is evidence for that fixture only; HTTP byte/token/
 admission guards and real UI accessibility checks require HLD-18B. Cancellation, idempotency,
 multiple retry layers, actual networking and durability are outside this model.
+
+## Retry transport and playback
+
+[HLD-18B](work-items/HLD-18B.md) adds strict descriptor/run delivery and the explicit draft
+Playground/Study/Practice. Model/schema replay versions remain 1.0.0 / 1.0; HTTP is 1.11.0.
+The descriptor has thirteen Java-derived limits and eight canonical presets. Its actual GET
+example is authored only with `-Dhld.writeRetryDescriptor=true`; ordinary API verification
+compares without writing. The four pure input/result golden pairs remain unchanged.
+
+All fifteen input fields and each request's three fields are exact. Integral seed tokens
+must fit long and the JavaScript-safe range; other numeric controls require integral int
+values. Duplicate/trailing JSON, nulls, unknowns and coercions reject before execution.
+Existing body, whole-result and shared-admission protections preserve failure/retry semantics.
+A valid caller timeout or attempts-exhausted outcome is complete simulation evidence, not
+an HTTP service failure. A response over the byte cap is rejected whole, never truncated.
+
+React selects `initialState` or the actual event's `postState`. Zero-time causal steps remain
+separate; playback speed changes presentation only and hidden playback pauses. Selected event
+identities highlight actual caller/attempt cards. No frontend scheduling, retry decisions,
+random draws, metrics or server-state transitions are computed. Whole-run metrics retain
+explicit denominators and exclude business effects. Source, compatibility, changed-input,
+browser and copied-runtime evidence belongs in HLD-18B; human/hosted publication is pending.

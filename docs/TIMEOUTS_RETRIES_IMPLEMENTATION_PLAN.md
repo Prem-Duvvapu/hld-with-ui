@@ -1,9 +1,11 @@
 # Timeouts & Retries implementation plan
 
-Prepared 2026-10-16. **HLD-18A is in verification; API, UI and publication are pending.**
+Prepared 2026-10-16. **HLD-18A is merged; HLD-18B integration is in verification.**
+[HLD-18B](work-items/HLD-18B.md) records actual APIs/UI checks. Guided/design and publication remain pending.
 The starting baseline is PR #77, squash `ff0daa1`, with required CI run `38934926502` passing.
 Follow `AGENTS.md` and `CONTRIBUTING.md`; use a fresh branch for each contribution.
-Actual results belong in [HLD-18A](work-items/HLD-18A.md), not in a proposed checklist.
+Foundation results belong in [HLD-18A](work-items/HLD-18A.md), merged in PR #78 as `4c8cdd8`
+after required CI run `38937779374` passed. A proposed checklist is not verification evidence.
 
 ## 1. Learning outcome and boundaries
 

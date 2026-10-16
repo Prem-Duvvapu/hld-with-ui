@@ -27,6 +27,7 @@ MODEL_BASELINE_FIXTURES = {
     "data-access-models": "data-access",
     "transactions-isolation": "transactions-isolation",
     "transaction-atomicity": "transaction-atomicity",
+    "timeouts-retries": "timeouts-retries",
 }
 
 
@@ -74,6 +75,9 @@ def verify_draft_model(base, model_id):
     elif model_id == "transaction-atomicity":
         variants = [("baseline", "baseline"), ("protected-baseline", "protected"),
                     ("protected-conflict", "conflict")]
+    elif model_id == "timeouts-retries":
+        variants = [("late-work", "baseline"), ("backoff-recovery", "backoff"),
+                    ("deadline-before-retry", "deadline"), ("jittered-recovery", "jitter")]
     else:
         variants = [("baseline", "baseline")]
     for preset_id, variant in variants:
@@ -134,7 +138,7 @@ def verify(base):
         for model_id in entry["simulationIds"]:
             verify_draft_model(base, model_id)
             api(base, "/api/v1/draft/topics/request-flow", expected=404)
-            for query in ("queues", "delivery", "ACK", "data", "models", "transactions", "isolation"):
+            for query in ("queues", "delivery", "ACK", "data", "models", "transactions", "isolation", "timeouts", "retries"):
                 check(all(hit["entry"]["status"] == "published" and hit["entry"]["id"] not in draft_topic_ids
                           for hit in api(base, f"/api/v1/search?q={query}")["results"]), "Draft topic leaked into published search")
     check([entry["id"] for entry in api(base, "/api/v1/case-studies")] == [entry["id"] for entry in cases], "Case publication differs from catalog")

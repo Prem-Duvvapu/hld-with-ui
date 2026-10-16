@@ -9,7 +9,7 @@ Learn high-level system design by reading, experimenting, diagnosing failures, a
 
 The idea is simple: **see a system work, change one condition, explain what happened, then choose a design.** Each module will help you answer both “How does this work?” and “How would I explain it to my team or in an interview?”
 
-**Status: four published modules, four draft topics and one draft workshop.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers ten authored stages from Requirements through Defense by direct link; publication checks and later roadmap modules remain pending.
+**Status: four published modules, five draft topics and one draft workshop.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers ten authored stages from Requirements through Defense by direct link; publication checks and later roadmap modules remain pending.
 
 A draft **Queues & Tail Latency** module is available at
 `/draft/topics/queues-tail-latency`. It connects a strict Java API to editable worker/buffer/job
@@ -48,14 +48,18 @@ Both models retain schema 1.0 / model 1.0.0. This is bounded local behavior, wit
 isolation-level, durable recovery, retry or idempotency guarantee. Human/hosted review and
 publication remain pending; the catalog still has four published modules.
 
-## Retry model foundation
+## Timeouts & Retries draft
 
-[HLD-18A](docs/work-items/HLD-18A.md) adds a separate pure Java `timeouts-retries`
-foundation with eight scenarios, immutable caller/work snapshots, backoff, seeded jitter,
-overall deadlines and a finite shared retry budget. Standalone contracts and four
-Java-generated examples cover its behavior. It is not registered as an API or topic and
-has no learning UI yet. See the [retry implementation plan](docs/TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md)
-for the API/Playground and Guided/design contributions. Published counts are unchanged.
+The direct draft `/draft/topics/timeouts-retries` connects the separate Java model to
+strict APIs, eight editable scenarios, caller/queue/worker/attempt snapshot playback,
+Study and eight Practice questions. Change timeout, deadline, workload, backoff, jitter or
+a finite batch retry budget, then inspect what Java actually reports. Caller failure and
+accepted server-work completion stay separate; completed work is not a business-effect guarantee.
+
+[HLD-18B](docs/work-items/HLD-18B.md) records actual verification. Guided and authored
+design views, human/hosted/prerequisite release review and publication remain pending.
+The model has no cancellation, durable storage, actual networking or idempotency. There
+are still four published modules. See the [retry plan](docs/TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md).
 
 ## Record your learning
 

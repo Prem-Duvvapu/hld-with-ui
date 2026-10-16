@@ -59,9 +59,16 @@ queue and worker ownership checks; the full rerun passed. The first format check
 formatting only in contracts/README; the corrected full format check passed. Existing model
 versions, inputs/results, saved IDs, catalog, generated API and frontend application code are unchanged.
 
-Final plan validation passes (120 documents, 637 local links, 59 curriculum IDs and nine
-catalog identities); launcher syntax and whitespace checks pass. Required final-head CI and
-delivery remain pending; actual remote results and squash evidence will be recorded in the PR. No new UI was added, so new-module keyboard,
+Final plan validation passed (120 documents, 637 local links, 59 curriculum IDs and nine
+catalog identities); launcher syntax and whitespace checks passed. Final head
+`fecce60e0fd9fc7dd4b0353f04b5e23ba0450be7` passed all required jobs in CI run `38937779374`:
+Quality, Browser journeys and Packaged runtime. Remote evidence includes 779 executed Java
+tests with one existing opt-in skip, 596 contract fixtures, 693 frontend tests, 231 browser
+journeys, 20 browser performance and 20 reading checks. Jar/container/memory and cleanup gates passed.
+[PR #78](https://github.com/Prem-Duvvapu/hld-with-ui/pull/78) squash merged at
+2026-10-16 17:22:41 UTC as `4c8cdd852f8f69e2abca6ab22fb0eb023b7614e0`. Owner main was
+updated, unrelated `output/` preserved and the owned feature branch deleted. The PR records
+full delivery evidence; `/tmp/hld-18a-final-ci.log` retains the actual downloaded run. No new UI was added, so new-module keyboard,
 responsive, theme, reduced-motion and learning-flow checks belong to HLD-18B. Existing app
 regressions remain covered by required browser CI. Human/hosted/publication gates remain open.
 
