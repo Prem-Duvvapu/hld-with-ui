@@ -1,0 +1,2469 @@
+{
+  "simulationId": "timeouts-retries",
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "kind": "simulation",
+  "status": "completed",
+  "input": {
+    "schemaVersion": "1.0",
+    "modelVersion": "1.0.0",
+    "seed": 42,
+    "workers": 1,
+    "queueCapacity": 2,
+    "attemptTimeoutMs": 50,
+    "overallTimeoutMs": 300,
+    "maxAttempts": 5,
+    "backoff": "EXPONENTIAL",
+    "baseDelayMs": 40,
+    "maxDelayMs": 80,
+    "jitter": "FULL",
+    "retryBudget": 8,
+    "unavailableUntilMs": 60,
+    "requests": [
+      { "id": "a", "arrivalTimeMs": 0, "serviceTimeMs": 20 },
+      { "id": "b", "arrivalTimeMs": 0, "serviceTimeMs": 20 }
+    ]
+  },
+  "randomAlgorithm": "SplittableRandom",
+  "initialState": {
+    "requests": [
+      {
+        "id": "a",
+        "overallDeadlineAtMs": 300,
+        "phase": "NOT_ARRIVED",
+        "attemptsSent": 0
+      },
+      {
+        "id": "b",
+        "overallDeadlineAtMs": 300,
+        "phase": "NOT_ARRIVED",
+        "attemptsSent": 0
+      }
+    ],
+    "attempts": [],
+    "workers": [{ "id": "worker-1" }],
+    "queue": [],
+    "retryBudgetRemaining": 8
+  },
+  "events": [
+    {
+      "sequence": 1,
+      "timeMs": 0,
+      "kind": "REQUEST_ARRIVED",
+      "requestId": "a",
+      "explanation": "a arrives. Its overall deadline is 300 ms.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "READY",
+            "attemptsSent": 0
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "NOT_ARRIVED",
+            "attemptsSent": 0
+          }
+        ],
+        "attempts": [],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 8
+      }
+    },
+    {
+      "sequence": 2,
+      "timeMs": 0,
+      "kind": "ATTEMPT_SENT",
+      "requestId": "a",
+      "attemptId": "a-a1",
+      "explanation": "a-a1 is sent at 0 ms; server admission has not yet decided.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 1,
+            "activeAttemptId": "a-a1"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "NOT_ARRIVED",
+            "attemptsSent": 0
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "WAITING",
+            "workState": "PENDING_ADMISSION"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 8
+      }
+    },
+    {
+      "sequence": 3,
+      "timeMs": 0,
+      "kind": "ATTEMPT_REJECTED",
+      "requestId": "a",
+      "attemptId": "a-a1",
+      "explanation": "a-a1 is rejected with DEPENDENCY_UNAVAILABLE; no server work was accepted.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "DECIDING_RETRY",
+            "attemptsSent": 1,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "NOT_ARRIVED",
+            "attemptsSent": 0
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 8
+      }
+    },
+    {
+      "sequence": 4,
+      "timeMs": 0,
+      "kind": "RETRY_SCHEDULED",
+      "requestId": "a",
+      "attemptId": "a-a1",
+      "delayMs": 7,
+      "retryAtMs": 7,
+      "explanation": "Chosen delay 7 ms schedules a retry at 7 ms. Its budget token is checked and consumed only at dispatch.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 1,
+            "nextRetryAtMs": 7,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "NOT_ARRIVED",
+            "attemptsSent": 0
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 8
+      }
+    },
+    {
+      "sequence": 5,
+      "timeMs": 0,
+      "kind": "REQUEST_ARRIVED",
+      "requestId": "b",
+      "explanation": "b arrives. Its overall deadline is 300 ms.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 1,
+            "nextRetryAtMs": 7,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "READY",
+            "attemptsSent": 0
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 8
+      }
+    },
+    {
+      "sequence": 6,
+      "timeMs": 0,
+      "kind": "ATTEMPT_SENT",
+      "requestId": "b",
+      "attemptId": "b-a1",
+      "explanation": "b-a1 is sent at 0 ms; server admission has not yet decided.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 1,
+            "nextRetryAtMs": 7,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 1,
+            "activeAttemptId": "b-a1"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "WAITING",
+            "workState": "PENDING_ADMISSION"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 8
+      }
+    },
+    {
+      "sequence": 7,
+      "timeMs": 0,
+      "kind": "ATTEMPT_REJECTED",
+      "requestId": "b",
+      "attemptId": "b-a1",
+      "explanation": "b-a1 is rejected with DEPENDENCY_UNAVAILABLE; no server work was accepted.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 1,
+            "nextRetryAtMs": 7,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "DECIDING_RETRY",
+            "attemptsSent": 1,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 8
+      }
+    },
+    {
+      "sequence": 8,
+      "timeMs": 0,
+      "kind": "RETRY_SCHEDULED",
+      "requestId": "b",
+      "attemptId": "b-a1",
+      "delayMs": 12,
+      "retryAtMs": 12,
+      "explanation": "Chosen delay 12 ms schedules a retry at 12 ms. Its budget token is checked and consumed only at dispatch.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 1,
+            "nextRetryAtMs": 7,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 1,
+            "nextRetryAtMs": 12,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 8
+      }
+    },
+    {
+      "sequence": 9,
+      "timeMs": 7,
+      "kind": "ATTEMPT_SENT",
+      "requestId": "a",
+      "attemptId": "a-a2",
+      "explanation": "a-a2 is sent at 7 ms; server admission has not yet decided.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 2,
+            "activeAttemptId": "a-a2",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 1,
+            "nextRetryAtMs": 12,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "WAITING",
+            "workState": "PENDING_ADMISSION"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 7
+      }
+    },
+    {
+      "sequence": 10,
+      "timeMs": 7,
+      "kind": "ATTEMPT_REJECTED",
+      "requestId": "a",
+      "attemptId": "a-a2",
+      "explanation": "a-a2 is rejected with DEPENDENCY_UNAVAILABLE; no server work was accepted.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "DECIDING_RETRY",
+            "attemptsSent": 2,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 1,
+            "nextRetryAtMs": 12,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 7
+      }
+    },
+    {
+      "sequence": 11,
+      "timeMs": 7,
+      "kind": "RETRY_SCHEDULED",
+      "requestId": "a",
+      "attemptId": "a-a2",
+      "delayMs": 27,
+      "retryAtMs": 34,
+      "explanation": "Chosen delay 27 ms schedules a retry at 34 ms. Its budget token is checked and consumed only at dispatch.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 2,
+            "nextRetryAtMs": 34,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 1,
+            "nextRetryAtMs": 12,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 7
+      }
+    },
+    {
+      "sequence": 12,
+      "timeMs": 12,
+      "kind": "ATTEMPT_SENT",
+      "requestId": "b",
+      "attemptId": "b-a2",
+      "explanation": "b-a2 is sent at 12 ms; server admission has not yet decided.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 2,
+            "nextRetryAtMs": 34,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 2,
+            "activeAttemptId": "b-a2",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "WAITING",
+            "workState": "PENDING_ADMISSION"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 6
+      }
+    },
+    {
+      "sequence": 13,
+      "timeMs": 12,
+      "kind": "ATTEMPT_REJECTED",
+      "requestId": "b",
+      "attemptId": "b-a2",
+      "explanation": "b-a2 is rejected with DEPENDENCY_UNAVAILABLE; no server work was accepted.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 2,
+            "nextRetryAtMs": 34,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "DECIDING_RETRY",
+            "attemptsSent": 2,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 6
+      }
+    },
+    {
+      "sequence": 14,
+      "timeMs": 12,
+      "kind": "RETRY_SCHEDULED",
+      "requestId": "b",
+      "attemptId": "b-a2",
+      "delayMs": 39,
+      "retryAtMs": 51,
+      "explanation": "Chosen delay 39 ms schedules a retry at 51 ms. Its budget token is checked and consumed only at dispatch.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 2,
+            "nextRetryAtMs": 34,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 2,
+            "nextRetryAtMs": 51,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 6
+      }
+    },
+    {
+      "sequence": 15,
+      "timeMs": 34,
+      "kind": "ATTEMPT_SENT",
+      "requestId": "a",
+      "attemptId": "a-a3",
+      "explanation": "a-a3 is sent at 34 ms; server admission has not yet decided.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 3,
+            "activeAttemptId": "a-a3",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 2,
+            "nextRetryAtMs": 51,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a3",
+            "requestId": "a",
+            "number": 3,
+            "sentAtMs": 34,
+            "callerState": "WAITING",
+            "workState": "PENDING_ADMISSION"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 5
+      }
+    },
+    {
+      "sequence": 16,
+      "timeMs": 34,
+      "kind": "ATTEMPT_REJECTED",
+      "requestId": "a",
+      "attemptId": "a-a3",
+      "explanation": "a-a3 is rejected with DEPENDENCY_UNAVAILABLE; no server work was accepted.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "DECIDING_RETRY",
+            "attemptsSent": 3,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 2,
+            "nextRetryAtMs": 51,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a3",
+            "requestId": "a",
+            "number": 3,
+            "sentAtMs": 34,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 34,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 5
+      }
+    },
+    {
+      "sequence": 17,
+      "timeMs": 34,
+      "kind": "RETRY_SCHEDULED",
+      "requestId": "a",
+      "attemptId": "a-a3",
+      "delayMs": 65,
+      "retryAtMs": 99,
+      "explanation": "Chosen delay 65 ms schedules a retry at 99 ms. Its budget token is checked and consumed only at dispatch.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 3,
+            "nextRetryAtMs": 99,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 2,
+            "nextRetryAtMs": 51,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a3",
+            "requestId": "a",
+            "number": 3,
+            "sentAtMs": 34,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 34,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 5
+      }
+    },
+    {
+      "sequence": 18,
+      "timeMs": 51,
+      "kind": "ATTEMPT_SENT",
+      "requestId": "b",
+      "attemptId": "b-a3",
+      "explanation": "b-a3 is sent at 51 ms; server admission has not yet decided.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 3,
+            "nextRetryAtMs": 99,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 3,
+            "activeAttemptId": "b-a3",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a3",
+            "requestId": "a",
+            "number": 3,
+            "sentAtMs": 34,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 34,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a3",
+            "requestId": "b",
+            "number": 3,
+            "sentAtMs": 51,
+            "callerState": "WAITING",
+            "workState": "PENDING_ADMISSION"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 4
+      }
+    },
+    {
+      "sequence": 19,
+      "timeMs": 51,
+      "kind": "ATTEMPT_REJECTED",
+      "requestId": "b",
+      "attemptId": "b-a3",
+      "explanation": "b-a3 is rejected with DEPENDENCY_UNAVAILABLE; no server work was accepted.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 3,
+            "nextRetryAtMs": 99,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "DECIDING_RETRY",
+            "attemptsSent": 3,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a3",
+            "requestId": "a",
+            "number": 3,
+            "sentAtMs": 34,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 34,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a3",
+            "requestId": "b",
+            "number": 3,
+            "sentAtMs": 51,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 51,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 4
+      }
+    },
+    {
+      "sequence": 20,
+      "timeMs": 51,
+      "kind": "RETRY_SCHEDULED",
+      "requestId": "b",
+      "attemptId": "b-a3",
+      "delayMs": 62,
+      "retryAtMs": 113,
+      "explanation": "Chosen delay 62 ms schedules a retry at 113 ms. Its budget token is checked and consumed only at dispatch.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 3,
+            "nextRetryAtMs": 99,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 3,
+            "nextRetryAtMs": 113,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a3",
+            "requestId": "a",
+            "number": 3,
+            "sentAtMs": 34,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 34,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a3",
+            "requestId": "b",
+            "number": 3,
+            "sentAtMs": 51,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 51,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 4
+      }
+    },
+    {
+      "sequence": 21,
+      "timeMs": 99,
+      "kind": "ATTEMPT_SENT",
+      "requestId": "a",
+      "attemptId": "a-a4",
+      "explanation": "a-a4 is sent at 99 ms; server admission has not yet decided.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 4,
+            "activeAttemptId": "a-a4",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 3,
+            "nextRetryAtMs": 113,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a3",
+            "requestId": "a",
+            "number": 3,
+            "sentAtMs": 34,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 34,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a3",
+            "requestId": "b",
+            "number": 3,
+            "sentAtMs": 51,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 51,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a4",
+            "requestId": "a",
+            "number": 4,
+            "sentAtMs": 99,
+            "callerState": "WAITING",
+            "workState": "PENDING_ADMISSION"
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 3
+      }
+    },
+    {
+      "sequence": 22,
+      "timeMs": 99,
+      "kind": "WORK_STARTED",
+      "requestId": "a",
+      "attemptId": "a-a4",
+      "explanation": "a-a4 starts on worker-1 at 99 ms. Caller state is WAITING.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 4,
+            "activeAttemptId": "a-a4",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "BACKING_OFF",
+            "attemptsSent": 3,
+            "nextRetryAtMs": 113,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a3",
+            "requestId": "a",
+            "number": 3,
+            "sentAtMs": 34,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 34,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a3",
+            "requestId": "b",
+            "number": 3,
+            "sentAtMs": 51,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 51,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a4",
+            "requestId": "a",
+            "number": 4,
+            "sentAtMs": 99,
+            "callerState": "WAITING",
+            "workState": "RUNNING",
+            "startedAtMs": 99,
+            "timeoutAtMs": 149
+          }
+        ],
+        "workers": [{ "id": "worker-1", "attemptId": "a-a4" }],
+        "queue": [],
+        "retryBudgetRemaining": 3
+      }
+    },
+    {
+      "sequence": 23,
+      "timeMs": 113,
+      "kind": "ATTEMPT_SENT",
+      "requestId": "b",
+      "attemptId": "b-a4",
+      "explanation": "b-a4 is sent at 113 ms; server admission has not yet decided.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 4,
+            "activeAttemptId": "a-a4",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 4,
+            "activeAttemptId": "b-a4",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a3",
+            "requestId": "a",
+            "number": 3,
+            "sentAtMs": 34,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 34,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a3",
+            "requestId": "b",
+            "number": 3,
+            "sentAtMs": 51,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 51,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a4",
+            "requestId": "a",
+            "number": 4,
+            "sentAtMs": 99,
+            "callerState": "WAITING",
+            "workState": "RUNNING",
+            "startedAtMs": 99,
+            "timeoutAtMs": 149
+          },
+          {
+            "id": "b-a4",
+            "requestId": "b",
+            "number": 4,
+            "sentAtMs": 113,
+            "callerState": "WAITING",
+            "workState": "PENDING_ADMISSION"
+          }
+        ],
+        "workers": [{ "id": "worker-1", "attemptId": "a-a4" }],
+        "queue": [],
+        "retryBudgetRemaining": 2
+      }
+    },
+    {
+      "sequence": 24,
+      "timeMs": 113,
+      "kind": "WORK_QUEUED",
+      "requestId": "b",
+      "attemptId": "b-a4",
+      "explanation": "b-a4 is accepted into FIFO waiting. Its caller timeout is 163 ms.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 4,
+            "activeAttemptId": "a-a4",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 4,
+            "activeAttemptId": "b-a4",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a3",
+            "requestId": "a",
+            "number": 3,
+            "sentAtMs": 34,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 34,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a3",
+            "requestId": "b",
+            "number": 3,
+            "sentAtMs": 51,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 51,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a4",
+            "requestId": "a",
+            "number": 4,
+            "sentAtMs": 99,
+            "callerState": "WAITING",
+            "workState": "RUNNING",
+            "startedAtMs": 99,
+            "timeoutAtMs": 149
+          },
+          {
+            "id": "b-a4",
+            "requestId": "b",
+            "number": 4,
+            "sentAtMs": 113,
+            "callerState": "WAITING",
+            "workState": "QUEUED",
+            "timeoutAtMs": 163
+          }
+        ],
+        "workers": [{ "id": "worker-1", "attemptId": "a-a4" }],
+        "queue": ["b-a4"],
+        "retryBudgetRemaining": 2
+      }
+    },
+    {
+      "sequence": 25,
+      "timeMs": 119,
+      "kind": "WORK_COMPLETED",
+      "requestId": "a",
+      "attemptId": "a-a4",
+      "explanation": "a-a4 completes server work at 119 ms. Its current caller is still waiting.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 4,
+            "activeAttemptId": "a-a4",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 4,
+            "activeAttemptId": "b-a4",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a3",
+            "requestId": "a",
+            "number": 3,
+            "sentAtMs": 34,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 34,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a3",
+            "requestId": "b",
+            "number": 3,
+            "sentAtMs": 51,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 51,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a4",
+            "requestId": "a",
+            "number": 4,
+            "sentAtMs": 99,
+            "callerState": "WAITING",
+            "workState": "COMPLETED",
+            "startedAtMs": 99,
+            "completedAtMs": 119,
+            "timeoutAtMs": 149
+          },
+          {
+            "id": "b-a4",
+            "requestId": "b",
+            "number": 4,
+            "sentAtMs": 113,
+            "callerState": "WAITING",
+            "workState": "QUEUED",
+            "timeoutAtMs": 163
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": ["b-a4"],
+        "retryBudgetRemaining": 2
+      }
+    },
+    {
+      "sequence": 26,
+      "timeMs": 119,
+      "kind": "REQUEST_SUCCEEDED",
+      "requestId": "a",
+      "explanation": "a succeeds from its waiting attempt's response at 119 ms.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "SUCCEEDED",
+            "attemptsSent": 4,
+            "finishedAtMs": 119,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 4,
+            "activeAttemptId": "b-a4",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a3",
+            "requestId": "a",
+            "number": 3,
+            "sentAtMs": 34,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 34,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a3",
+            "requestId": "b",
+            "number": 3,
+            "sentAtMs": 51,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 51,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a4",
+            "requestId": "a",
+            "number": 4,
+            "sentAtMs": 99,
+            "callerState": "RESPONDED",
+            "workState": "COMPLETED",
+            "startedAtMs": 99,
+            "completedAtMs": 119,
+            "callerFinishedAtMs": 119,
+            "timeoutAtMs": 149
+          },
+          {
+            "id": "b-a4",
+            "requestId": "b",
+            "number": 4,
+            "sentAtMs": 113,
+            "callerState": "WAITING",
+            "workState": "QUEUED",
+            "timeoutAtMs": 163
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": ["b-a4"],
+        "retryBudgetRemaining": 2
+      }
+    },
+    {
+      "sequence": 27,
+      "timeMs": 119,
+      "kind": "WORK_STARTED",
+      "requestId": "b",
+      "attemptId": "b-a4",
+      "explanation": "b-a4 starts on worker-1 at 119 ms. Caller state is WAITING.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "SUCCEEDED",
+            "attemptsSent": 4,
+            "finishedAtMs": 119,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 4,
+            "activeAttemptId": "b-a4",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a3",
+            "requestId": "a",
+            "number": 3,
+            "sentAtMs": 34,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 34,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a3",
+            "requestId": "b",
+            "number": 3,
+            "sentAtMs": 51,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 51,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a4",
+            "requestId": "a",
+            "number": 4,
+            "sentAtMs": 99,
+            "callerState": "RESPONDED",
+            "workState": "COMPLETED",
+            "startedAtMs": 99,
+            "completedAtMs": 119,
+            "callerFinishedAtMs": 119,
+            "timeoutAtMs": 149
+          },
+          {
+            "id": "b-a4",
+            "requestId": "b",
+            "number": 4,
+            "sentAtMs": 113,
+            "callerState": "WAITING",
+            "workState": "RUNNING",
+            "startedAtMs": 119,
+            "timeoutAtMs": 163
+          }
+        ],
+        "workers": [{ "id": "worker-1", "attemptId": "b-a4" }],
+        "queue": [],
+        "retryBudgetRemaining": 2
+      }
+    },
+    {
+      "sequence": 28,
+      "timeMs": 139,
+      "kind": "WORK_COMPLETED",
+      "requestId": "b",
+      "attemptId": "b-a4",
+      "explanation": "b-a4 completes server work at 139 ms. Its current caller is still waiting.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "SUCCEEDED",
+            "attemptsSent": 4,
+            "finishedAtMs": 119,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "WAITING",
+            "attemptsSent": 4,
+            "activeAttemptId": "b-a4",
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a3",
+            "requestId": "a",
+            "number": 3,
+            "sentAtMs": 34,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 34,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a3",
+            "requestId": "b",
+            "number": 3,
+            "sentAtMs": 51,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 51,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a4",
+            "requestId": "a",
+            "number": 4,
+            "sentAtMs": 99,
+            "callerState": "RESPONDED",
+            "workState": "COMPLETED",
+            "startedAtMs": 99,
+            "completedAtMs": 119,
+            "callerFinishedAtMs": 119,
+            "timeoutAtMs": 149
+          },
+          {
+            "id": "b-a4",
+            "requestId": "b",
+            "number": 4,
+            "sentAtMs": 113,
+            "callerState": "WAITING",
+            "workState": "COMPLETED",
+            "startedAtMs": 119,
+            "completedAtMs": 139,
+            "timeoutAtMs": 163
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 2
+      }
+    },
+    {
+      "sequence": 29,
+      "timeMs": 139,
+      "kind": "REQUEST_SUCCEEDED",
+      "requestId": "b",
+      "explanation": "b succeeds from its waiting attempt's response at 139 ms.",
+      "postState": {
+        "requests": [
+          {
+            "id": "a",
+            "overallDeadlineAtMs": 300,
+            "phase": "SUCCEEDED",
+            "attemptsSent": 4,
+            "finishedAtMs": 119,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b",
+            "overallDeadlineAtMs": 300,
+            "phase": "SUCCEEDED",
+            "attemptsSent": 4,
+            "finishedAtMs": 139,
+            "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a-a1",
+            "requestId": "a",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a1",
+            "requestId": "b",
+            "number": 1,
+            "sentAtMs": 0,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 0,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a2",
+            "requestId": "a",
+            "number": 2,
+            "sentAtMs": 7,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 7,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a2",
+            "requestId": "b",
+            "number": 2,
+            "sentAtMs": 12,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 12,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a3",
+            "requestId": "a",
+            "number": 3,
+            "sentAtMs": 34,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 34,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "b-a3",
+            "requestId": "b",
+            "number": 3,
+            "sentAtMs": 51,
+            "callerState": "REJECTED",
+            "workState": "NOT_ACCEPTED",
+            "callerFinishedAtMs": 51,
+            "failureCause": "DEPENDENCY_UNAVAILABLE"
+          },
+          {
+            "id": "a-a4",
+            "requestId": "a",
+            "number": 4,
+            "sentAtMs": 99,
+            "callerState": "RESPONDED",
+            "workState": "COMPLETED",
+            "startedAtMs": 99,
+            "completedAtMs": 119,
+            "callerFinishedAtMs": 119,
+            "timeoutAtMs": 149
+          },
+          {
+            "id": "b-a4",
+            "requestId": "b",
+            "number": 4,
+            "sentAtMs": 113,
+            "callerState": "RESPONDED",
+            "workState": "COMPLETED",
+            "startedAtMs": 119,
+            "completedAtMs": 139,
+            "callerFinishedAtMs": 139,
+            "timeoutAtMs": 163
+          }
+        ],
+        "workers": [{ "id": "worker-1" }],
+        "queue": [],
+        "retryBudgetRemaining": 2
+      }
+    }
+  ],
+  "finalState": {
+    "requests": [
+      {
+        "id": "a",
+        "overallDeadlineAtMs": 300,
+        "phase": "SUCCEEDED",
+        "attemptsSent": 4,
+        "finishedAtMs": 119,
+        "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+      },
+      {
+        "id": "b",
+        "overallDeadlineAtMs": 300,
+        "phase": "SUCCEEDED",
+        "attemptsSent": 4,
+        "finishedAtMs": 139,
+        "lastFailureCause": "DEPENDENCY_UNAVAILABLE"
+      }
+    ],
+    "attempts": [
+      {
+        "id": "a-a1",
+        "requestId": "a",
+        "number": 1,
+        "sentAtMs": 0,
+        "callerState": "REJECTED",
+        "workState": "NOT_ACCEPTED",
+        "callerFinishedAtMs": 0,
+        "failureCause": "DEPENDENCY_UNAVAILABLE"
+      },
+      {
+        "id": "b-a1",
+        "requestId": "b",
+        "number": 1,
+        "sentAtMs": 0,
+        "callerState": "REJECTED",
+        "workState": "NOT_ACCEPTED",
+        "callerFinishedAtMs": 0,
+        "failureCause": "DEPENDENCY_UNAVAILABLE"
+      },
+      {
+        "id": "a-a2",
+        "requestId": "a",
+        "number": 2,
+        "sentAtMs": 7,
+        "callerState": "REJECTED",
+        "workState": "NOT_ACCEPTED",
+        "callerFinishedAtMs": 7,
+        "failureCause": "DEPENDENCY_UNAVAILABLE"
+      },
+      {
+        "id": "b-a2",
+        "requestId": "b",
+        "number": 2,
+        "sentAtMs": 12,
+        "callerState": "REJECTED",
+        "workState": "NOT_ACCEPTED",
+        "callerFinishedAtMs": 12,
+        "failureCause": "DEPENDENCY_UNAVAILABLE"
+      },
+      {
+        "id": "a-a3",
+        "requestId": "a",
+        "number": 3,
+        "sentAtMs": 34,
+        "callerState": "REJECTED",
+        "workState": "NOT_ACCEPTED",
+        "callerFinishedAtMs": 34,
+        "failureCause": "DEPENDENCY_UNAVAILABLE"
+      },
+      {
+        "id": "b-a3",
+        "requestId": "b",
+        "number": 3,
+        "sentAtMs": 51,
+        "callerState": "REJECTED",
+        "workState": "NOT_ACCEPTED",
+        "callerFinishedAtMs": 51,
+        "failureCause": "DEPENDENCY_UNAVAILABLE"
+      },
+      {
+        "id": "a-a4",
+        "requestId": "a",
+        "number": 4,
+        "sentAtMs": 99,
+        "callerState": "RESPONDED",
+        "workState": "COMPLETED",
+        "startedAtMs": 99,
+        "completedAtMs": 119,
+        "callerFinishedAtMs": 119,
+        "timeoutAtMs": 149
+      },
+      {
+        "id": "b-a4",
+        "requestId": "b",
+        "number": 4,
+        "sentAtMs": 113,
+        "callerState": "RESPONDED",
+        "workState": "COMPLETED",
+        "startedAtMs": 119,
+        "completedAtMs": 139,
+        "callerFinishedAtMs": 139,
+        "timeoutAtMs": 163
+      }
+    ],
+    "workers": [{ "id": "worker-1" }],
+    "queue": [],
+    "retryBudgetRemaining": 2
+  },
+  "metrics": {
+    "originalRequests": 2,
+    "succeededRequests": 2,
+    "failedRequests": 0,
+    "attemptsSent": 8,
+    "retriesSent": 6,
+    "rejectedAttempts": 6,
+    "acceptedServerWork": 2,
+    "completedServerWork": 2,
+    "lateCompletions": 0,
+    "attemptTimeouts": 0,
+    "retryBudgetUsed": 6,
+    "peakQueueDepth": 1,
+    "peakRunningWork": 1,
+    "finalTimeMs": 139,
+    "attemptAmplification": 4.0,
+    "executionAmplification": 1.0
+  },
+  "assumptions": [
+    "This illustrative model separates a caller's waiting from accepted server work; it does not model business effects or durable storage.",
+    "Authored arrivals and per-request service times determine work; networking and response delivery take zero time.",
+    "Attempt timeout begins at send and includes queue wait. Timeout and overall deadline never cancel accepted queued or running work.",
+    "Server workers run accepted work to completion in FIFO order; queue capacity excludes running work and idle workers can start with queue capacity zero.",
+    "Dependency unavailability and a full waiting queue reject immediately without accepting server work.",
+    "Only a response to the currently waiting attempt can succeed its logical request. Late completions cannot revive a caller or satisfy a newer attempt.",
+    "Completion wins equality with the overall deadline or attempt timeout; overall deadline wins equality with attempt timeout.",
+    "Existing FIFO work is promoted before same-time arrivals, and original sends precede same-time retry sends.",
+    "Maximum attempts includes the original. The finite batch retry budget is consumed only by dispatched retries, including immediately rejected ones.",
+    "Exponential backoff is capped; FULL jitter draws an inclusive integer delay from one run-local versioned seeded generator.",
+    "A proposed retry at or after its arrival-relative overall deadline is not scheduled; the caller waits until that deadline to fail.",
+    "All accepted server work drains before the result ends. No-op future timers do not extend the reported final time.",
+    "Cancellation, idempotency, actual networking, retry trees, persistence and production latency measurements are excluded."
+  ]
+}

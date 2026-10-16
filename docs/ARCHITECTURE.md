@@ -289,3 +289,24 @@ HTTP1.10 expands the existing step target family to the nine actual atomicity ki
 content capability checks enforce each simulationId's own closed outcome vocabulary.
 Original reservation targets and all legacy families remain supported. See
 [decision0036](decisions/0036-atomicity-guided-sessions.md) for migration and verification.
+
+## Caller retries and accepted server work
+
+[HLD-18A](work-items/HLD-18A.md) implements a separate pure `com.hld.retries` foundation.
+`RetryInput` owns finite bounds, `RetryValidator` rejects the whole malformed workload,
+`RetrySimulator` owns one invocation's scheduler/random stream and `RetryResult` owns
+immutable initial/event/final snapshots. `RetryPresets` is the single source for its eight
+future teaching inputs. No Spring model registration, API, catalog row or renderer exists yet.
+
+One caller's timeout/deadline is separate from queued/running dependency work. A run-local
+priority queue orders completion, overall deadline, attempt timeout, original send and retry
+send, with stable input/attempt/insertion ties. Accepted work drains; stale timers and late
+responses cannot revive a caller or cancel a sibling. Retry plans do not reserve batch budget;
+only actual dispatch consumes it. One recorded seeded stream chooses inclusive FULL jitter.
+
+The complete finite run asserts 60 attempts, 192 callbacks, 384 events and 80000 virtual ms
+as proven ceilings, rather than silently truncating. Standalone schemas and actual configured
+Java serialization protect the future contract; Java checks semantic relationships and metrics.
+This foundation changes no existing OpenAPI/model/schema versions or published capabilities.
+See [decision 0037](decisions/0037-retry-caller-and-server-work.md) and the
+[staged handoff](TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md) for integration and limits.
