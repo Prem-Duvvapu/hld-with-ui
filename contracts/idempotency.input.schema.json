@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hld-with-ui.dev/schemas/idempotency.input.schema.json",
+  "title": "Idempotency model input",
+  "description": "Canonical closed input for one illustrative ledger-add endpoint, schema 1.0/model 1.0.0. The same complete authored program can run under no deduplication, split effect/result writes or atomic publication. Java validates unique IDs, typed tenant/key scope, audit-intent payload consistency, references, nondecreasing times and complete per-call grammar before any execution. JSON Schema validates parsed shape and bounds, not program order, execution semantics, duplicate JSON keys or integer token spelling. There is no randomness, real database, provider, broker, process crash or durability guarantee.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "modelVersion",
+    "mode",
+    "retentionMs",
+    "calls",
+    "schedule"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "modelVersion": { "const": "1.0.0" },
+    "mode": {
+      "type": "string",
+      "enum": ["NO_DEDUP", "SPLIT_EFFECT_RECORD", "ATOMIC_EFFECT_RECORD"]
+    },
+    "retentionMs": { "type": "integer", "minimum": 1, "maximum": 10000 },
+    "calls": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": { "$ref": "#/$defs/call" }
+    },
+    "schedule": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 48,
+      "items": { "$ref": "#/$defs/step" }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "pattern": "^[a-z][a-z0-9-]{0,31}$",
+      "not": { "pattern": "\\s" }
+    },
+    "units": { "type": "integer", "minimum": 1, "maximum": 1000 },
+    "timeMs": { "type": "integer", "minimum": 0, "maximum": 10000 },
+    "action": {
+      "type": "string",
+      "enum": [
+        "LOOKUP",
+        "WRITE_EFFECT",
+        "SAVE_RESULT",
+        "RESPOND",
+        "LOSE_RESPONSE",
+        "CRASH_HANDLER"
+      ]
+    },
+    "call": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "operationId", "tenantId", "key", "units"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "operationId": {
+          "$ref": "#/$defs/identifier",
+          "description": "Audit-only intent identity within its tenant; it never participates in server deduplication."
+        },
+        "tenantId": { "$ref": "#/$defs/identifier" },
+        "key": {
+          "$ref": "#/$defs/identifier",
+          "description": "Server lookup uses the typed tenant/key tuple for this single fixed endpoint."
+        },
+        "units": { "$ref": "#/$defs/units" }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "callId", "timeMs", "action"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "callId": { "$ref": "#/$defs/identifier" },
+        "timeMs": { "$ref": "#/$defs/timeMs" },
+        "action": { "$ref": "#/$defs/action" }
+      }
+    }
+  }
+}

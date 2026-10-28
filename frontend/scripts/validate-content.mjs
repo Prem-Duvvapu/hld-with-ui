@@ -109,6 +109,28 @@ for (const variant of ["baseline", "backoff", "deadline", "jitter"]) {
   }
 }
 
+// Pure idempotency evidence remains standalone: no endpoint or topic capability is registered.
+for (const scenario of [
+  "unprotected-response-loss",
+  "split-crash-gap",
+  "split-race",
+  "atomic-response-loss",
+  "atomic-race",
+  "payload-conflict",
+  "atomic-payload-race",
+  "retention-boundary",
+  "key-and-tenant-scope",
+]) {
+  for (const kind of ["input", "result"]) {
+    const example = `idempotency-${scenario}-${kind}`;
+    validateSchema(
+      `contracts/idempotency.${kind}.schema.json`,
+      readJson(`contracts/examples/${example}.json`),
+      example,
+    );
+  }
+}
+
 unique(
   catalog.map((entry) => entry.id),
   "catalog",

@@ -183,3 +183,22 @@ only that new artifact through the explicit method/flag, then format and verify 
 Never enable authoring flags in ordinary CI or regenerate the four model goldens to mask an
 API mismatch. New-module gates and remaining release review are recorded in
 [HLD-18B](docs/work-items/HLD-18B.md).
+
+## Standalone idempotency examples
+
+HLD-19A adds pure Java and standalone schemas, without exposing an API or topic. Its nine
+input/result pairs are actual configured-mapper evidence. Ordinary verification compares
+without writing. After separately checking the model's semantic tests, intentionally author
+only this new model's examples with the explicit method/flag:
+
+```bash
+(cd backend && ./mvnw -B -Dtest=IdempotencySerializationTest#nineActualJavaPairsCompareWithoutWritingAndCoverEveryOutcomeKind -Dhld.writeIdempotencyGoldens=true test)
+(cd frontend && npx prettier --write ../contracts/examples/idempotency-*.json)
+(cd backend && ./mvnw -B verify)
+(cd frontend && npm run contracts:check)
+```
+
+Never enable the authoring flag in CI or repair mismatches by rewriting evidence. Existing
+model goldens remain unchanged. Maximum-boundary serialization stays in memory/logs; see
+[HLD-19A](docs/work-items/HLD-19A.md) and the
+[idempotency plan](docs/IDEMPOTENCY_IMPLEMENTATION_PLAN.md) for actual checks and pending APIs/UI.

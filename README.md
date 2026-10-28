@@ -63,6 +63,16 @@ core draft views. Human/hosted/prerequisite release review and publication remai
 The model has no cancellation, durable storage, actual networking or idempotency. There
 are still four published modules. See the [retry plan](docs/TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md).
 
+## Idempotency foundation
+
+The separate [idempotency foundation](docs/work-items/HLD-19A.md) adds a bounded Java
+model for lost responses, repeated effects, split writes, atomic publication, payload
+conflicts, key retention and tenant scope. Nine scenarios and standalone contracts establish
+the behavior before an API or learning UI is registered. It is not another runnable topic
+yet; published/draft counts above are unchanged. The
+[implementation plan](docs/IDEMPOTENCY_IMPLEMENTATION_PLAN.md) defines the remaining API,
+Playground, teaching and Guided/design work. No real database or provider is used.
+
 ## Record your learning
 
 The first learning path separates saved answers from progress you explicitly record. Expand

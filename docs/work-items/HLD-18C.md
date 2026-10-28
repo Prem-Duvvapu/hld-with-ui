@@ -91,7 +91,12 @@ The additional Guided and authored views increase the lazy retry route chunk fro
 28.48 kB / 9 kB gzip to 51.18 kB / 14.87 kB gzip. This is a production build-size observation,
 not a runtime or hosted performance benchmark. The user benefit is the complete six-view
 learning flow. Initial application routing remains split by topic. Required final-head CI
-and actual squash delivery belong in the PR after they occur.
+and delivery are recorded in PR #80: CI `38946555748` passed all 810 executed Java
+cases (one existing opt-in skip), 785 frontend tests, 624 contract fixtures, 244 browser
+journeys, 20 UI performance and 20 reading/cache groups, jar/container and cleanup checks.
+Squash merged 2026-10-16 at 18:31:50 UTC as `bdf18dc`. Owner main was synchronized and
+the completed owned branch removed, preserving unrelated `output/`. This is historical
+evidence, not a substitute for each later contribution's checks.
 
 ## Handoff
 

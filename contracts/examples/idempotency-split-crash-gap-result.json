@@ -1,0 +1,459 @@
+{
+  "simulationId": "idempotency",
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "kind": "simulation",
+  "status": "completed",
+  "input": {
+    "schemaVersion": "1.0",
+    "modelVersion": "1.0.0",
+    "mode": "SPLIT_EFFECT_RECORD",
+    "retentionMs": 100,
+    "calls": [
+      {
+        "id": "a",
+        "operationId": "op",
+        "tenantId": "t",
+        "key": "k",
+        "units": 1
+      },
+      {
+        "id": "b",
+        "operationId": "op",
+        "tenantId": "t",
+        "key": "k",
+        "units": 1
+      }
+    ],
+    "schedule": [
+      { "id": "lookup-a", "callId": "a", "timeMs": 0, "action": "LOOKUP" },
+      { "id": "write-a", "callId": "a", "timeMs": 0, "action": "WRITE_EFFECT" },
+      {
+        "id": "crash-a",
+        "callId": "a",
+        "timeMs": 0,
+        "action": "CRASH_HANDLER"
+      },
+      { "id": "lookup-b", "callId": "b", "timeMs": 10, "action": "LOOKUP" },
+      {
+        "id": "write-b",
+        "callId": "b",
+        "timeMs": 10,
+        "action": "WRITE_EFFECT"
+      },
+      { "id": "save-b", "callId": "b", "timeMs": 10, "action": "SAVE_RESULT" },
+      { "id": "respond-b", "callId": "b", "timeMs": 10, "action": "RESPOND" }
+    ]
+  },
+  "initialState": {
+    "calls": [
+      { "id": "a", "phase": "NOT_STARTED", "pendingUnits": 0 },
+      { "id": "b", "phase": "NOT_STARTED", "pendingUnits": 0 }
+    ],
+    "effects": [],
+    "keyRecords": [],
+    "publishedUnits": 0,
+    "activeKeyCount": 0,
+    "expiredKeyCount": 0
+  },
+  "outcomes": [
+    {
+      "sequence": 1,
+      "stepId": "lookup-a",
+      "callId": "a",
+      "timeMs": 0,
+      "action": "LOOKUP",
+      "kind": "LOOKUP_MISSED",
+      "postState": {
+        "calls": [
+          {
+            "id": "a",
+            "phase": "LOOKED_UP",
+            "lookupDisposition": "MISSING",
+            "pendingUnits": 0
+          },
+          { "id": "b", "phase": "NOT_STARTED", "pendingUnits": 0 }
+        ],
+        "effects": [],
+        "keyRecords": [],
+        "publishedUnits": 0,
+        "activeKeyCount": 0,
+        "expiredKeyCount": 0
+      },
+      "explanation": "Call a finds no active result for its tenant/key. This observation does not reserve the key."
+    },
+    {
+      "sequence": 2,
+      "stepId": "write-a",
+      "callId": "a",
+      "timeMs": 0,
+      "action": "WRITE_EFFECT",
+      "kind": "EFFECT_PUBLISHED",
+      "postState": {
+        "calls": [
+          {
+            "id": "a",
+            "phase": "WORK_DONE",
+            "lookupDisposition": "MISSING",
+            "pendingUnits": 0,
+            "publishedEffectId": "effect-a"
+          },
+          { "id": "b", "phase": "NOT_STARTED", "pendingUnits": 0 }
+        ],
+        "effects": [
+          {
+            "id": "effect-a",
+            "callId": "a",
+            "operationId": "op",
+            "tenantId": "t",
+            "units": 1,
+            "publishedAtMs": 0
+          }
+        ],
+        "keyRecords": [],
+        "publishedUnits": 1,
+        "activeKeyCount": 0,
+        "expiredKeyCount": 0
+      },
+      "explanation": "Call a publishes 1 units as effect-a before saving any retained result."
+    },
+    {
+      "sequence": 3,
+      "stepId": "crash-a",
+      "callId": "a",
+      "timeMs": 0,
+      "action": "CRASH_HANDLER",
+      "kind": "HANDLER_CRASHED",
+      "postState": {
+        "calls": [
+          {
+            "id": "a",
+            "phase": "CRASHED",
+            "lookupDisposition": "MISSING",
+            "pendingUnits": 0,
+            "publishedEffectId": "effect-a"
+          },
+          { "id": "b", "phase": "NOT_STARTED", "pendingUnits": 0 }
+        ],
+        "effects": [
+          {
+            "id": "effect-a",
+            "callId": "a",
+            "operationId": "op",
+            "tenantId": "t",
+            "units": 1,
+            "publishedAtMs": 0
+          }
+        ],
+        "keyRecords": [],
+        "publishedUnits": 1,
+        "activeKeyCount": 0,
+        "expiredKeyCount": 0
+      },
+      "explanation": "Call a stops. Its private units and cached response are discarded; public ledger effects, retained results and prior observations remain as modeled history."
+    },
+    {
+      "sequence": 4,
+      "stepId": "lookup-b",
+      "callId": "b",
+      "timeMs": 10,
+      "action": "LOOKUP",
+      "kind": "LOOKUP_MISSED",
+      "postState": {
+        "calls": [
+          {
+            "id": "a",
+            "phase": "CRASHED",
+            "lookupDisposition": "MISSING",
+            "pendingUnits": 0,
+            "publishedEffectId": "effect-a"
+          },
+          {
+            "id": "b",
+            "phase": "LOOKED_UP",
+            "lookupDisposition": "MISSING",
+            "pendingUnits": 0
+          }
+        ],
+        "effects": [
+          {
+            "id": "effect-a",
+            "callId": "a",
+            "operationId": "op",
+            "tenantId": "t",
+            "units": 1,
+            "publishedAtMs": 0
+          }
+        ],
+        "keyRecords": [],
+        "publishedUnits": 1,
+        "activeKeyCount": 0,
+        "expiredKeyCount": 0
+      },
+      "explanation": "Call b finds no active result for its tenant/key. This observation does not reserve the key."
+    },
+    {
+      "sequence": 5,
+      "stepId": "write-b",
+      "callId": "b",
+      "timeMs": 10,
+      "action": "WRITE_EFFECT",
+      "kind": "EFFECT_PUBLISHED",
+      "postState": {
+        "calls": [
+          {
+            "id": "a",
+            "phase": "CRASHED",
+            "lookupDisposition": "MISSING",
+            "pendingUnits": 0,
+            "publishedEffectId": "effect-a"
+          },
+          {
+            "id": "b",
+            "phase": "WORK_DONE",
+            "lookupDisposition": "MISSING",
+            "pendingUnits": 0,
+            "publishedEffectId": "effect-b"
+          }
+        ],
+        "effects": [
+          {
+            "id": "effect-a",
+            "callId": "a",
+            "operationId": "op",
+            "tenantId": "t",
+            "units": 1,
+            "publishedAtMs": 0
+          },
+          {
+            "id": "effect-b",
+            "callId": "b",
+            "operationId": "op",
+            "tenantId": "t",
+            "units": 1,
+            "publishedAtMs": 10
+          }
+        ],
+        "keyRecords": [],
+        "publishedUnits": 2,
+        "activeKeyCount": 0,
+        "expiredKeyCount": 0
+      },
+      "explanation": "Call b publishes 1 units as effect-b before saving any retained result."
+    },
+    {
+      "sequence": 6,
+      "stepId": "save-b",
+      "callId": "b",
+      "timeMs": 10,
+      "action": "SAVE_RESULT",
+      "kind": "RESULT_STORED",
+      "postState": {
+        "calls": [
+          {
+            "id": "a",
+            "phase": "CRASHED",
+            "lookupDisposition": "MISSING",
+            "pendingUnits": 0,
+            "publishedEffectId": "effect-a"
+          },
+          {
+            "id": "b",
+            "phase": "RESULT_READY",
+            "lookupDisposition": "MISSING",
+            "resolvedRecordId": "record-b",
+            "pendingUnits": 0,
+            "publishedEffectId": "effect-b",
+            "receipt": { "effectId": "effect-b", "units": 1 },
+            "resolution": "EXECUTED"
+          }
+        ],
+        "effects": [
+          {
+            "id": "effect-a",
+            "callId": "a",
+            "operationId": "op",
+            "tenantId": "t",
+            "units": 1,
+            "publishedAtMs": 0
+          },
+          {
+            "id": "effect-b",
+            "callId": "b",
+            "operationId": "op",
+            "tenantId": "t",
+            "units": 1,
+            "publishedAtMs": 10
+          }
+        ],
+        "keyRecords": [
+          {
+            "id": "record-b",
+            "tenantId": "t",
+            "key": "k",
+            "units": 1,
+            "receipt": { "effectId": "effect-b", "units": 1 },
+            "createdAtMs": 10,
+            "expiresAtMs": 110,
+            "status": "ACTIVE"
+          }
+        ],
+        "publishedUnits": 2,
+        "activeKeyCount": 1,
+        "expiredKeyCount": 0
+      },
+      "explanation": "Call b stores its published effect's receipt as record-b. The separate earlier write remains a distinct boundary."
+    },
+    {
+      "sequence": 7,
+      "stepId": "respond-b",
+      "callId": "b",
+      "timeMs": 10,
+      "action": "RESPOND",
+      "kind": "RESPONSE_RECEIVED",
+      "postState": {
+        "calls": [
+          {
+            "id": "a",
+            "phase": "CRASHED",
+            "lookupDisposition": "MISSING",
+            "pendingUnits": 0,
+            "publishedEffectId": "effect-a"
+          },
+          {
+            "id": "b",
+            "phase": "RESPONDED",
+            "lookupDisposition": "MISSING",
+            "resolvedRecordId": "record-b",
+            "pendingUnits": 0,
+            "publishedEffectId": "effect-b",
+            "receipt": { "effectId": "effect-b", "units": 1 },
+            "resolution": "EXECUTED"
+          }
+        ],
+        "effects": [
+          {
+            "id": "effect-a",
+            "callId": "a",
+            "operationId": "op",
+            "tenantId": "t",
+            "units": 1,
+            "publishedAtMs": 0
+          },
+          {
+            "id": "effect-b",
+            "callId": "b",
+            "operationId": "op",
+            "tenantId": "t",
+            "units": 1,
+            "publishedAtMs": 10
+          }
+        ],
+        "keyRecords": [
+          {
+            "id": "record-b",
+            "tenantId": "t",
+            "key": "k",
+            "units": 1,
+            "receipt": { "effectId": "effect-b", "units": 1 },
+            "createdAtMs": 10,
+            "expiresAtMs": 110,
+            "status": "ACTIVE"
+          }
+        ],
+        "publishedUnits": 2,
+        "activeKeyCount": 1,
+        "expiredKeyCount": 0
+      },
+      "explanation": "Call b receives the receipt for effect-b containing 1 units."
+    }
+  ],
+  "finalState": {
+    "calls": [
+      {
+        "id": "a",
+        "phase": "CRASHED",
+        "lookupDisposition": "MISSING",
+        "pendingUnits": 0,
+        "publishedEffectId": "effect-a"
+      },
+      {
+        "id": "b",
+        "phase": "RESPONDED",
+        "lookupDisposition": "MISSING",
+        "resolvedRecordId": "record-b",
+        "pendingUnits": 0,
+        "publishedEffectId": "effect-b",
+        "receipt": { "effectId": "effect-b", "units": 1 },
+        "resolution": "EXECUTED"
+      }
+    ],
+    "effects": [
+      {
+        "id": "effect-a",
+        "callId": "a",
+        "operationId": "op",
+        "tenantId": "t",
+        "units": 1,
+        "publishedAtMs": 0
+      },
+      {
+        "id": "effect-b",
+        "callId": "b",
+        "operationId": "op",
+        "tenantId": "t",
+        "units": 1,
+        "publishedAtMs": 10
+      }
+    ],
+    "keyRecords": [
+      {
+        "id": "record-b",
+        "tenantId": "t",
+        "key": "k",
+        "units": 1,
+        "receipt": { "effectId": "effect-b", "units": 1 },
+        "createdAtMs": 10,
+        "expiresAtMs": 110,
+        "status": "ACTIVE"
+      }
+    ],
+    "publishedUnits": 2,
+    "activeKeyCount": 1,
+    "expiredKeyCount": 0
+  },
+  "metrics": {
+    "calls": 2,
+    "logicalOperations": 1,
+    "publishedEffects": 2,
+    "publishedUnits": 2,
+    "operationsWithRepeatedEffects": 1,
+    "extraEffects": 1,
+    "activeKeyRecords": 1,
+    "expiredKeyRecords": 0,
+    "replayedCalls": 0,
+    "payloadConflicts": 0,
+    "resultSaveConflicts": 0,
+    "responsesReceived": 1,
+    "responsesLost": 0,
+    "crashedCalls": 1,
+    "crashedCallsWithEffects": 1,
+    "receiptsReceived": 1,
+    "finalTimeMs": 10
+  },
+  "assumptions": [
+    "This is an illustrative add-units endpoint, not a database, payment, provider or broker implementation.",
+    "The complete authored schedule determines virtual time and equal-time order; no threads, clocks or randomness decide outcomes.",
+    "Server duplicate lookup uses the typed tenant/key pair for one fixed endpoint; operationId is audit-only intent metadata.",
+    "A lookup miss is an observation, not permission to publish a later protected effect without rechecking.",
+    "Atomic mode privately prepares work, then rechecks the current key and publishes its effect and retained receipt in one transition.",
+    "Split mode publishes the effect first; losing the later insert-if-absent result save cannot undo that effect.",
+    "Key protection expires at time greater than or equal to its publication time plus retention; replay does not refresh retention.",
+    "Expired key rows remain only as teaching history and cannot protect new calls; their public ledger effects remain.",
+    "A cached replay decision can still return its original receipt after the key expires, without performing another write.",
+    "Response loss hides the response from its caller; it does not undo published data or change the original stored receipt.",
+    "A modeled handler crash clears private units and its cached receipt only; retained public data and recorded observations remain by model rule.",
+    "Changed keys or retention expiry can permit repeated intended work; extra effects are evidence, not a universal invariant violation.",
+    "Completed means every validated program step was evaluated; no actual SQL isolation, physical durability, crash recovery or exactly-once guarantee follows."
+  ]
+}

@@ -434,3 +434,24 @@ cached for explicit session reveals, but a saved answer is never a saved trace o
 automatic POST. The three authored manual sequences remain separate illustrations with
 facts checked against actual Java serialization. They cannot react to Playground edits.
 See [HLD-18C](work-items/HLD-18C.md) for actual verification; model/schema versions are unchanged.
+
+## Standalone idempotency foundation
+
+HLD-19A adds the pure `idempotency` model, schema 1.0 / model 1.0.0. Its complete bounded
+program has 1–12 calls and 2–48 authored actions at nondecreasing virtual times. No engine
+callbacks or random choices are needed. All programs are validated before execution;
+one immutable outcome follows each step. Only completed, fully processed programs return.
+
+Atomic SAVE_RESULT rechecks the current typed tenant/key before publishing the prepared
+effect and retained receipt together. Split publication writes the effect first and then
+uses insert-if-absent; a late save conflict leaves that public effect intact. Response loss
+does not undo data. Handler crash clears private units/receipt while leaving public state
+and historical observations by an explicit rule, without real durability claims.
+
+Key protection expires before each action at equality. Expired history stays inspectable
+but cannot serve new lookups. A cached replay can return its original receipt after expiry;
+changed keys and expired protection can permit repeated intent effects. The model reports
+those counts rather than claiming a universal once-only invariant. Java owns identity,
+receipt, arithmetic, execution and metrics; no frontend model exists yet. See
+[HLD-19A](work-items/HLD-19A.md) for actual checks and the
+[staged handoff](IDEMPOTENCY_IMPLEMENTATION_PLAN.md) for API/UI work and bounds.
