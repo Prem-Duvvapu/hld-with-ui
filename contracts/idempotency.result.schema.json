@@ -1,0 +1,936 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hld-with-ui.dev/schemas/idempotency.result.schema.json",
+  "title": "Idempotency model result",
+  "description": "Complete finite Java evidence for one illustrative ledger-add endpoint. Closed state/phase/action capabilities distinguish public effects, retained or expired key history, private preparation and caller observation. Java owns identity association, typed scopes, exact input/outcome correspondence, arithmetic, receipt ownership, expiry ordering, atomic execution, metrics and exact replay. Historical record references may point to expired rows; a cached replay is not invalidated by later expiry. A modeled handler crash retains public state by rule, not physical durability. No global one-effect-per-intent guarantee follows from retained-key protection.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "simulationId",
+    "schemaVersion",
+    "modelVersion",
+    "kind",
+    "status",
+    "input",
+    "initialState",
+    "outcomes",
+    "finalState",
+    "metrics",
+    "assumptions"
+  ],
+  "properties": {
+    "simulationId": { "const": "idempotency" },
+    "schemaVersion": { "const": "1.0" },
+    "modelVersion": { "const": "1.0.0" },
+    "kind": { "const": "simulation" },
+    "status": { "const": "completed" },
+    "input": {
+      "$ref": "https://hld-with-ui.dev/schemas/idempotency.input.schema.json"
+    },
+    "initialState": {
+      "allOf": [
+        { "$ref": "#/$defs/state" },
+        {
+          "type": "object",
+          "properties": {
+            "calls": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": { "phase": { "const": "NOT_STARTED" } }
+              }
+            },
+            "effects": { "type": "array", "maxItems": 0 },
+            "keyRecords": { "type": "array", "maxItems": 0 },
+            "publishedUnits": { "const": 0 },
+            "activeKeyCount": { "const": 0 },
+            "expiredKeyCount": { "const": 0 }
+          }
+        }
+      ]
+    },
+    "outcomes": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 48,
+      "items": { "$ref": "#/$defs/outcome" }
+    },
+    "finalState": {
+      "allOf": [
+        { "$ref": "#/$defs/state" },
+        {
+          "type": "object",
+          "properties": {
+            "calls": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "phase": {
+                    "enum": ["RESPONDED", "RESPONSE_LOST", "CRASHED"]
+                  },
+                  "pendingUnits": { "const": 0 }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "metrics": { "$ref": "#/$defs/metrics" },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": { "type": "string", "minLength": 1, "maxLength": 2000 }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "object",
+            "properties": { "mode": { "const": "NO_DEDUP" } },
+            "required": ["mode"]
+          }
+        },
+        "required": ["input"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "initialState": { "$ref": "#/$defs/noDedupState" },
+          "finalState": { "$ref": "#/$defs/noDedupState" },
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "postState": { "$ref": "#/$defs/noDedupState" },
+                "kind": {
+                  "enum": [
+                    "LOOKUP_BYPASSED",
+                    "EFFECT_PUBLISHED",
+                    "RESULT_READY",
+                    "RESPONSE_RECEIVED",
+                    "RESPONSE_LOST",
+                    "HANDLER_CRASHED"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "object",
+            "properties": { "mode": { "const": "SPLIT_EFFECT_RECORD" } },
+            "required": ["mode"]
+          }
+        },
+        "required": ["input"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "initialState": { "$ref": "#/$defs/splitState" },
+          "finalState": { "$ref": "#/$defs/splitState" },
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "postState": { "$ref": "#/$defs/splitState" },
+                "kind": {
+                  "enum": [
+                    "LOOKUP_MISSED",
+                    "LOOKUP_REPLAYED",
+                    "LOOKUP_CONFLICT",
+                    "EFFECT_PUBLISHED",
+                    "ACTION_SKIPPED",
+                    "RESULT_STORED",
+                    "RESULT_SAVE_CONFLICT",
+                    "RESPONSE_RECEIVED",
+                    "RESPONSE_LOST",
+                    "HANDLER_CRASHED"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "object",
+            "properties": { "mode": { "const": "ATOMIC_EFFECT_RECORD" } },
+            "required": ["mode"]
+          }
+        },
+        "required": ["input"]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "initialState": { "$ref": "#/$defs/atomicState" },
+          "finalState": { "$ref": "#/$defs/atomicState" },
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "postState": { "$ref": "#/$defs/atomicState" },
+                "kind": {
+                  "enum": [
+                    "LOOKUP_MISSED",
+                    "LOOKUP_REPLAYED",
+                    "LOOKUP_CONFLICT",
+                    "EFFECT_PREPARED",
+                    "ACTION_SKIPPED",
+                    "ATOMIC_COMMITTED",
+                    "REPLAYED_AT_COMMIT",
+                    "CONFLICT_AT_COMMIT",
+                    "RESPONSE_RECEIVED",
+                    "RESPONSE_LOST",
+                    "HANDLER_CRASHED"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "identifier": {
+      "$ref": "https://hld-with-ui.dev/schemas/idempotency.input.schema.json#/$defs/identifier"
+    },
+    "units": {
+      "$ref": "https://hld-with-ui.dev/schemas/idempotency.input.schema.json#/$defs/units"
+    },
+    "timeMs": {
+      "$ref": "https://hld-with-ui.dev/schemas/idempotency.input.schema.json#/$defs/timeMs"
+    },
+    "effectIdentifier": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 39,
+      "pattern": "^effect-[a-z][a-z0-9-]{0,31}$",
+      "not": { "pattern": "\\s" }
+    },
+    "recordIdentifier": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 39,
+      "pattern": "^record-[a-z][a-z0-9-]{0,31}$",
+      "not": { "pattern": "\\s" }
+    },
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["effectId", "units"],
+      "properties": {
+        "effectId": { "$ref": "#/$defs/effectIdentifier" },
+        "units": { "$ref": "#/$defs/units" }
+      }
+    },
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "callId",
+        "operationId",
+        "tenantId",
+        "units",
+        "publishedAtMs"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/effectIdentifier" },
+        "callId": { "$ref": "#/$defs/identifier" },
+        "operationId": { "$ref": "#/$defs/identifier" },
+        "tenantId": { "$ref": "#/$defs/identifier" },
+        "units": { "$ref": "#/$defs/units" },
+        "publishedAtMs": { "$ref": "#/$defs/timeMs" }
+      }
+    },
+    "keyRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "tenantId",
+        "key",
+        "units",
+        "receipt",
+        "createdAtMs",
+        "expiresAtMs",
+        "status"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/recordIdentifier" },
+        "tenantId": { "$ref": "#/$defs/identifier" },
+        "key": { "$ref": "#/$defs/identifier" },
+        "units": { "$ref": "#/$defs/units" },
+        "receipt": { "$ref": "#/$defs/receipt" },
+        "createdAtMs": { "$ref": "#/$defs/timeMs" },
+        "expiresAtMs": { "type": "integer", "minimum": 1, "maximum": 20000 },
+        "status": { "type": "string", "enum": ["ACTIVE", "EXPIRED"] }
+      }
+    },
+    "callState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "phase", "pendingUnits"],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "phase": {
+          "type": "string",
+          "enum": [
+            "NOT_STARTED",
+            "LOOKED_UP",
+            "WORK_DONE",
+            "RESULT_READY",
+            "RESPONDED",
+            "RESPONSE_LOST",
+            "CRASHED"
+          ]
+        },
+        "lookupDisposition": {
+          "type": "string",
+          "enum": ["BYPASSED", "MISSING", "MATCHED", "CONFLICT"]
+        },
+        "observedRecordId": { "$ref": "#/$defs/recordIdentifier" },
+        "resolvedRecordId": { "$ref": "#/$defs/recordIdentifier" },
+        "pendingUnits": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "publishedEffectId": { "$ref": "#/$defs/effectIdentifier" },
+        "receipt": { "$ref": "#/$defs/receipt" },
+        "resolution": {
+          "type": "string",
+          "enum": [
+            "EXECUTED",
+            "REPLAYED",
+            "PAYLOAD_CONFLICT",
+            "RESULT_SAVE_CONFLICT"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": { "phase": { "const": "NOT_STARTED" } },
+            "required": ["phase"]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "pendingUnits": { "const": 0 },
+              "lookupDisposition": false,
+              "observedRecordId": false,
+              "resolvedRecordId": false,
+              "publishedEffectId": false,
+              "receipt": false,
+              "resolution": false
+            }
+          },
+          "else": { "type": "object", "required": ["lookupDisposition"] }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "lookupDisposition": { "enum": ["BYPASSED", "MISSING"] }
+            },
+            "required": ["lookupDisposition"]
+          },
+          "then": {
+            "type": "object",
+            "properties": { "observedRecordId": false }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "lookupDisposition": { "const": "BYPASSED" } },
+            "required": ["lookupDisposition"]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "resolvedRecordId": false,
+              "pendingUnits": { "const": 0 },
+              "resolution": { "const": "EXECUTED" }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "lookupDisposition": { "const": "MATCHED" } },
+            "required": ["lookupDisposition"]
+          },
+          "then": {
+            "type": "object",
+            "required": ["observedRecordId", "resolvedRecordId", "resolution"],
+            "properties": { "resolution": { "const": "REPLAYED" } }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "lookupDisposition": { "const": "CONFLICT" } },
+            "required": ["lookupDisposition"]
+          },
+          "then": {
+            "type": "object",
+            "required": ["observedRecordId", "resolvedRecordId", "resolution"],
+            "properties": { "resolution": { "const": "PAYLOAD_CONFLICT" } }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "phase": { "const": "LOOKED_UP" } },
+            "required": ["phase"]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "pendingUnits": { "const": 0 },
+              "publishedEffectId": false
+            },
+            "allOf": [
+              {
+                "if": {
+                  "type": "object",
+                  "properties": {
+                    "lookupDisposition": { "enum": ["BYPASSED", "MISSING"] }
+                  },
+                  "required": ["lookupDisposition"]
+                },
+                "then": {
+                  "type": "object",
+                  "properties": {
+                    "resolvedRecordId": false,
+                    "receipt": false,
+                    "resolution": false
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "phase": { "const": "WORK_DONE" },
+              "lookupDisposition": { "enum": ["BYPASSED", "MISSING"] }
+            },
+            "required": ["phase", "lookupDisposition"]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "resolvedRecordId": false,
+              "receipt": false,
+              "resolution": false
+            },
+            "oneOf": [
+              {
+                "type": "object",
+                "required": ["publishedEffectId"],
+                "properties": { "pendingUnits": { "const": 0 } }
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "pendingUnits": { "type": "integer", "minimum": 1 },
+                  "publishedEffectId": false
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "phase": {
+                "enum": ["RESULT_READY", "RESPONDED", "RESPONSE_LOST"]
+              }
+            },
+            "required": ["phase"]
+          },
+          "then": {
+            "type": "object",
+            "required": ["resolution"],
+            "properties": { "pendingUnits": { "const": 0 } }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "phase": { "const": "CRASHED" } },
+            "required": ["phase"]
+          },
+          "then": {
+            "type": "object",
+            "properties": { "pendingUnits": { "const": 0 }, "receipt": false }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "resolution": { "const": "EXECUTED" } },
+            "required": ["resolution"]
+          },
+          "then": {
+            "type": "object",
+            "required": ["publishedEffectId"],
+            "properties": { "pendingUnits": { "const": 0 } },
+            "allOf": [
+              {
+                "if": {
+                  "type": "object",
+                  "properties": {
+                    "phase": {
+                      "enum": [
+                        "LOOKED_UP",
+                        "WORK_DONE",
+                        "RESULT_READY",
+                        "RESPONDED",
+                        "RESPONSE_LOST"
+                      ]
+                    }
+                  },
+                  "required": ["phase"]
+                },
+                "then": { "type": "object", "required": ["receipt"] }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "resolution": { "const": "REPLAYED" } },
+            "required": ["resolution"]
+          },
+          "then": {
+            "type": "object",
+            "required": ["resolvedRecordId"],
+            "properties": {
+              "pendingUnits": { "const": 0 },
+              "publishedEffectId": false
+            },
+            "allOf": [
+              {
+                "if": {
+                  "type": "object",
+                  "properties": {
+                    "phase": {
+                      "enum": [
+                        "LOOKED_UP",
+                        "WORK_DONE",
+                        "RESULT_READY",
+                        "RESPONDED",
+                        "RESPONSE_LOST"
+                      ]
+                    }
+                  },
+                  "required": ["phase"]
+                },
+                "then": { "type": "object", "required": ["receipt"] }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "resolution": { "const": "PAYLOAD_CONFLICT" } },
+            "required": ["resolution"]
+          },
+          "then": {
+            "type": "object",
+            "required": ["resolvedRecordId"],
+            "properties": {
+              "pendingUnits": { "const": 0 },
+              "publishedEffectId": false,
+              "receipt": false
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "resolution": { "const": "RESULT_SAVE_CONFLICT" } },
+            "required": ["resolution"]
+          },
+          "then": {
+            "type": "object",
+            "required": ["resolvedRecordId", "publishedEffectId"],
+            "properties": { "pendingUnits": { "const": 0 }, "receipt": false }
+          }
+        }
+      ]
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "calls",
+        "effects",
+        "keyRecords",
+        "publishedUnits",
+        "activeKeyCount",
+        "expiredKeyCount"
+      ],
+      "properties": {
+        "calls": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": { "$ref": "#/$defs/callState" }
+        },
+        "effects": {
+          "type": "array",
+          "maxItems": 12,
+          "items": { "$ref": "#/$defs/effect" }
+        },
+        "keyRecords": {
+          "type": "array",
+          "maxItems": 12,
+          "items": { "$ref": "#/$defs/keyRecord" }
+        },
+        "publishedUnits": { "type": "integer", "minimum": 0, "maximum": 12000 },
+        "activeKeyCount": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "expiredKeyCount": { "type": "integer", "minimum": 0, "maximum": 12 }
+      }
+    },
+    "noDedupState": {
+      "type": "object",
+      "properties": {
+        "keyRecords": { "type": "array", "maxItems": 0 },
+        "activeKeyCount": { "const": 0 },
+        "expiredKeyCount": { "const": 0 },
+        "calls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "pendingUnits": { "const": 0 },
+              "lookupDisposition": { "const": "BYPASSED" },
+              "observedRecordId": false,
+              "resolvedRecordId": false,
+              "resolution": { "const": "EXECUTED" }
+            }
+          }
+        }
+      }
+    },
+    "splitState": {
+      "type": "object",
+      "properties": {
+        "calls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "pendingUnits": { "const": 0 },
+              "lookupDisposition": {
+                "enum": ["MISSING", "MATCHED", "CONFLICT"]
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "type": "object",
+                  "properties": { "resolution": { "const": "EXECUTED" } },
+                  "required": ["resolution"]
+                },
+                "then": {
+                  "type": "object",
+                  "required": ["resolvedRecordId"]
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "atomicState": {
+      "type": "object",
+      "properties": {
+        "calls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lookupDisposition": {
+                "enum": ["MISSING", "MATCHED", "CONFLICT"]
+              },
+              "resolution": {
+                "enum": ["EXECUTED", "REPLAYED", "PAYLOAD_CONFLICT"]
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "type": "object",
+                  "properties": {
+                    "phase": { "enum": ["LOOKED_UP", "WORK_DONE"] }
+                  },
+                  "required": ["phase"]
+                },
+                "then": {
+                  "type": "object",
+                  "properties": { "publishedEffectId": false }
+                }
+              },
+              {
+                "if": {
+                  "type": "object",
+                  "properties": { "resolution": { "const": "EXECUTED" } },
+                  "required": ["resolution"]
+                },
+                "then": {
+                  "type": "object",
+                  "required": ["resolvedRecordId"]
+                }
+              },
+              {
+                "if": {
+                  "type": "object",
+                  "required": ["publishedEffectId"]
+                },
+                "then": {
+                  "type": "object",
+                  "required": ["resolution", "resolvedRecordId"],
+                  "properties": { "resolution": { "const": "EXECUTED" } }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequence",
+        "stepId",
+        "callId",
+        "timeMs",
+        "action",
+        "kind",
+        "postState",
+        "explanation"
+      ],
+      "properties": {
+        "sequence": { "type": "integer", "minimum": 1, "maximum": 48 },
+        "stepId": { "$ref": "#/$defs/identifier" },
+        "callId": { "$ref": "#/$defs/identifier" },
+        "timeMs": { "$ref": "#/$defs/timeMs" },
+        "action": {
+          "$ref": "https://hld-with-ui.dev/schemas/idempotency.input.schema.json#/$defs/action"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "LOOKUP_BYPASSED",
+            "LOOKUP_MISSED",
+            "LOOKUP_REPLAYED",
+            "LOOKUP_CONFLICT",
+            "EFFECT_PUBLISHED",
+            "EFFECT_PREPARED",
+            "ACTION_SKIPPED",
+            "RESULT_READY",
+            "RESULT_STORED",
+            "RESULT_SAVE_CONFLICT",
+            "ATOMIC_COMMITTED",
+            "REPLAYED_AT_COMMIT",
+            "CONFLICT_AT_COMMIT",
+            "RESPONSE_RECEIVED",
+            "RESPONSE_LOST",
+            "HANDLER_CRASHED"
+          ]
+        },
+        "postState": { "$ref": "#/$defs/state" },
+        "explanation": { "type": "string", "minLength": 1, "maxLength": 2000 }
+      },
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "LOOKUP_BYPASSED",
+                  "LOOKUP_MISSED",
+                  "LOOKUP_REPLAYED",
+                  "LOOKUP_CONFLICT"
+                ]
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "type": "object",
+            "properties": { "action": { "const": "LOOKUP" } }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "kind": { "enum": ["EFFECT_PUBLISHED", "EFFECT_PREPARED"] }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "type": "object",
+            "properties": { "action": { "const": "WRITE_EFFECT" } }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "kind": { "const": "ACTION_SKIPPED" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "action": { "enum": ["WRITE_EFFECT", "SAVE_RESULT"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "RESULT_READY",
+                  "RESULT_STORED",
+                  "RESULT_SAVE_CONFLICT",
+                  "ATOMIC_COMMITTED",
+                  "REPLAYED_AT_COMMIT",
+                  "CONFLICT_AT_COMMIT"
+                ]
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "type": "object",
+            "properties": { "action": { "const": "SAVE_RESULT" } }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "kind": { "const": "RESPONSE_RECEIVED" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "type": "object",
+            "properties": { "action": { "const": "RESPOND" } }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "kind": { "const": "RESPONSE_LOST" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "type": "object",
+            "properties": { "action": { "const": "LOSE_RESPONSE" } }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": { "kind": { "const": "HANDLER_CRASHED" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "type": "object",
+            "properties": { "action": { "const": "CRASH_HANDLER" } }
+          }
+        }
+      ]
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "calls",
+        "logicalOperations",
+        "publishedEffects",
+        "publishedUnits",
+        "operationsWithRepeatedEffects",
+        "extraEffects",
+        "activeKeyRecords",
+        "expiredKeyRecords",
+        "replayedCalls",
+        "payloadConflicts",
+        "resultSaveConflicts",
+        "responsesReceived",
+        "responsesLost",
+        "crashedCalls",
+        "crashedCallsWithEffects",
+        "receiptsReceived",
+        "finalTimeMs"
+      ],
+      "properties": {
+        "calls": { "type": "integer", "minimum": 1, "maximum": 12 },
+        "logicalOperations": { "type": "integer", "minimum": 1, "maximum": 12 },
+        "publishedEffects": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "publishedUnits": { "type": "integer", "minimum": 0, "maximum": 12000 },
+        "operationsWithRepeatedEffects": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 12
+        },
+        "extraEffects": { "type": "integer", "minimum": 0, "maximum": 11 },
+        "activeKeyRecords": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "expiredKeyRecords": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "replayedCalls": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "payloadConflicts": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "resultSaveConflicts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 12
+        },
+        "responsesReceived": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "responsesLost": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "crashedCalls": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "crashedCallsWithEffects": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 12
+        },
+        "receiptsReceived": { "type": "integer", "minimum": 0, "maximum": 12 },
+        "finalTimeMs": { "$ref": "#/$defs/timeMs" }
+      }
+    }
+  }
+}

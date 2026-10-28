@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0",
+  "modelVersion": "1.0.0",
+  "mode": "ATOMIC_EFFECT_RECORD",
+  "retentionMs": 100,
+  "calls": [
+    { "id": "a", "operationId": "op", "tenantId": "t", "key": "k", "units": 1 },
+    { "id": "b", "operationId": "op", "tenantId": "t", "key": "k", "units": 1 },
+    { "id": "c", "operationId": "op", "tenantId": "t", "key": "k", "units": 1 }
+  ],
+  "schedule": [
+    { "id": "lookup-a", "callId": "a", "timeMs": 0, "action": "LOOKUP" },
+    { "id": "write-a", "callId": "a", "timeMs": 0, "action": "WRITE_EFFECT" },
+    { "id": "save-a", "callId": "a", "timeMs": 0, "action": "SAVE_RESULT" },
+    { "id": "respond-a", "callId": "a", "timeMs": 0, "action": "RESPOND" },
+    { "id": "lookup-b", "callId": "b", "timeMs": 99, "action": "LOOKUP" },
+    { "id": "write-b", "callId": "b", "timeMs": 99, "action": "WRITE_EFFECT" },
+    { "id": "save-b", "callId": "b", "timeMs": 99, "action": "SAVE_RESULT" },
+    { "id": "respond-b", "callId": "b", "timeMs": 99, "action": "RESPOND" },
+    { "id": "lookup-c", "callId": "c", "timeMs": 100, "action": "LOOKUP" },
+    { "id": "write-c", "callId": "c", "timeMs": 100, "action": "WRITE_EFFECT" },
+    { "id": "save-c", "callId": "c", "timeMs": 100, "action": "SAVE_RESULT" },
+    { "id": "respond-c", "callId": "c", "timeMs": 100, "action": "RESPOND" }
+  ]
+}

@@ -51,6 +51,17 @@ Consult its actual verification evidence before the next bounded contribution: i
 as a separate effect/result correctness module. No cancellation, business-effect ledger or real networking is modeled. Human/hosted/
 prerequisite/publication gates remain open; four modules are published.
 
+## Current idempotency foundation
+
+[HLD-19A](work-items/HLD-19A.md) establishes the separate pure Java model and standalone
+contract evidence for nine scenarios. The same authored calls/steps compare no protection,
+split effect/result publication and one atomic current-key recheck. Operation identity is
+audit-only; tenant/key scope, stored receipts and expiry define the protection boundary.
+No API, catalog entry or React capability exists for this foundation yet. Follow the
+[frozen idempotency plan](IDEMPOTENCY_IMPLEMENTATION_PLAN.md) for HLD-19B strict APIs and
+runnable Playground/Study/Practice, then HLD-19C Guided/design and Notification composition.
+Physical durability, SQL isolation, external providers and publication remain separate.
+
 ## 1. Objective and scope
 
 Deliver an excellent first learning path:

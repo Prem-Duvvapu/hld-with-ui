@@ -241,3 +241,24 @@ support; Java executes all eight authored checkpoint presets. Existing target fa
 unchanged. Retry content 1.1.0 declares Guided with its actual checkpoint resource. The model
 and schema replay versions remain unchanged; the draft is not published. See
 [HLD-18C](../docs/work-items/HLD-18C.md) and [decision 0039](../docs/decisions/0039-retry-guided-semantic-targets.md).
+
+## Idempotency standalone foundation
+
+`idempotency.input.schema.json` and `idempotency.result.schema.json` freeze the separate
+schema 1.0 / model 1.0.0 foundation. Nine actual configured-Java input/result pairs compare
+unprotected writes, split effect/result publication and atomic current-key recheck. These
+artifacts do not register an HTTP endpoint, OpenAPI component, catalog topic or React view.
+
+Input fields, enums, identities and bounds are closed. Result schemas distinguish private
+preparation, published effects, active/expired retained-key history, stable receipts and
+caller observation. Mode-specific capability rules prevent a split crash gap from masquerading
+as atomic publication. Java owns complete program grammar, ordered time, scoped references,
+payload/effect/receipt association, expiry, transitions, metrics and exact replay. JSON Schema
+checks parsed values; strict HTTP token/body parsing is a later integration gate.
+
+Ordinary Java verification compares all nine pairs without writing; the explicit authoring
+command is in [CONTRIBUTING](../CONTRIBUTING.md#standalone-idempotency-examples). Maximum-boundary
+serialization is measured without committing a giant trace. Consult
+[HLD-19A](../docs/work-items/HLD-19A.md), [the staged plan](../docs/IDEMPOTENCY_IMPLEMENTATION_PLAN.md)
+and [decision 0040](../docs/decisions/0040-idempotency-effect-and-result-boundary.md) for actual
+checks and pending API/UI work. No real storage, provider or physical durability is claimed.

@@ -351,3 +351,19 @@ Request sequences describe the bounded model with complete text equivalents. The
 facts are checked against the actual Java goldens, not recomputed by React. The six-view
 topic remains draft; human/hosted/prerequisite/publication gates remain separate. See
 [decision 0039](decisions/0039-retry-guided-semantic-targets.md).
+
+## Idempotency foundation
+
+HLD-19A introduces pure `com.hld.idempotency` input, validator, result, simulator and presets.
+There is no Spring registration, HTTP endpoint, catalog entry or React capability yet.
+Standalone schemas and actual configured Java examples are separate from existing OpenAPI.
+See [the frozen plan](IDEMPOTENCY_IMPLEMENTATION_PLAN.md) and
+[decision 0040](decisions/0040-idempotency-effect-and-result-boundary.md).
+
+The same finite authored program compares unprotected writes, split effect/result publication
+and one atomic current-key recheck plus joint publication. Server identity is a typed tenant/key
+tuple; operation identity is audit-only. Append-only effects, active/expired result history,
+private preparation and caller response visibility remain distinct. One immutable outcome
+captures each step; virtual time and equal-time order come from the validated schedule.
+No randomness, real network, SQL transaction, storage persistence or process recovery is implied.
+The runnable API/Playground/Study/Practice and later Guided/design contributions remain pending.
