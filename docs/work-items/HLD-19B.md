@@ -50,8 +50,10 @@ transport errors retain inputs for explicit retry. See decision 0041 for the int
 | Final lesson package and API/content agreement | PASS: all eleven IdempotencyApiTest cases after final prose revision; jar repackaged | `/tmp/hld-19b-final-content-java.log` |
 | Canonical generation, generated-file drift comparison and `npm run contracts:validate` | PASS: 1052 fixtures; eleven catalog identities, 76 questions, 56 checkpoints and ten workshop stages | `/tmp/hld-19b-generate-final.log`, `/tmp/hld-19b-contracts-validate.log`; generated HTTP/types/lazy schema matched the index |
 | Frontend typecheck, lint, format and unit tests | PASS: full 856-test/87-file suite after input-label fixes; thirty affected shared Practice/page/Playground cases after the final shared-label/layout fix | `/tmp/hld-19b-fe-tests.log`, `/tmp/hld-19b-final-types.log`, `/tmp/hld-19b-final-lint.log`, `/tmp/hld-19b-final-focused.log`; required CI covers the final complete suite |
-| Final production build and complete format check | PASS on the final source | `/tmp/hld-19b-build-verified.log`, `/tmp/hld-19b-format-release.log` |
+| Final production build and complete format check | PASS on the final source | `/tmp/hld-19b-resume-build-final.log`, `/tmp/hld-19b-resume-format-final.log` |
 | Plan, content, launcher syntax and whitespace | PASS: 131 docs, 689 local links, 59 curriculum IDs and eleven catalog identities; final content/prerequisite/capability validation | `node scripts/validate-plan.mjs`, `node frontend/scripts/validate-content.mjs`, `bash -n start.sh`, `git diff --check` |
+| Draft saved-work registration and final complete unit suite | PASS: 863 tests / 87 files after registering both implemented reliability draft routes; exact Practice and retry Guided links, stale/removed/capability guards and storage nonmutation | `/tmp/hld-19b-units-complete.log`, `/tmp/hld-19b-resume-registration-types.log`, `/tmp/hld-19b-resume-registration-lint.log` |
+| Home resume integration | PASS: eight actual-browser flows, including idempotency saved-answer reload → Home → exact Practice question without any simulation POST | `/tmp/hld-19b-resume-integration.log` |
 | Real Java and production-browser flows | PASS: all 22 new journeys, including all nine exact Java runs and every initial/post-step snapshot; mode-only comparisons, meaningful edits, invalid order/focus, pending/error/explicit retry, saved-answer reload/history and hidden playback pause | `/tmp/hld-19b-browser-final.log` |
 | Responsive/themes/reduced motion and native zoom | PASS: Playground/Study at 320/768/1440 in both themes; all three views at actual 200% zoom, physical widths 640/1440 and verified CSS widths 320/720 and doubled DPR; six responsive checks refreshed after the primary-button style change | `/tmp/hld-19b-browser-final.log`, `/tmp/hld-19b-visual-final.log` |
 | Copied executable jar and failure harness | PASS: final exact draft content, all nine full model results, discovery exclusions and owned cleanup; twelve harness tests including missing/changed preset and altered snapshot rejection | `/tmp/hld-19b-runtime-final.log`, `/tmp/hld-19b-runtime-harness.log` |
@@ -71,7 +73,16 @@ The captured DOM replays at 320/320 with no overflow; ten unchanged local repeti
 also passed. The check now waits for the requested viewport and the same strict
 `scrollWidth <= innerWidth` condition rather than taking one resize-frame sample.
 Ten repeated checks passed after that synchronization change, with scoped lint/format
-checks. No Home layout or pixel tolerance was changed. Final-source CI remains the
+checks. No Home layout or pixel tolerance was changed.
+Parallel review then found that the explicit saved-work renderer registry omitted the
+implemented idempotency and retry draft routes. Both are now registered against their
+actual topic details. Six new unit cases protect exact links and capability guards;
+the shared answer format and existing activity IDs remain unchanged. The final full
+unit suite has 863 cases, and the browser round trip retains the original explanation.
+The intermediate `c425573` run encountered Maven distribution-download failures in
+Quality and Packaged runtime before compilation; the subsequent source receives a
+fresh complete CI run. No test result is inferred from a failed bootstrap download.
+ Final-source CI remains the
 merge gate and its actual result belongs in the PR delivery record.
 
 

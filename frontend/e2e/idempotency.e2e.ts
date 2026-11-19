@@ -273,6 +273,23 @@ test("idempotency Study and Practice preserve local answers and never run implic
   await expect(
     page.getByRole("tab", { name: "Practice", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
+  await page.goto("/");
+  const savedWork = page.getByRole("region", {
+    name: "Continue learning",
+    exact: true,
+  });
+  await expect(savedWork).toContainText("Idempotency & Retained Results");
+  await savedWork
+    .getByRole("link", { name: "Continue saved work", exact: true })
+    .click();
+  await expect(page).toHaveURL(
+    /\/draft\/topics\/idempotency\?view=practice&question=idem-lost-response-public-effect$/,
+  );
+  await expect(
+    page
+      .locator('[data-question-id="idem-lost-response-public-effect"]')
+      .getByLabel("Your explanation", { exact: true }),
+  ).toHaveValue(/original receipt/);
   expect(bodies).toEqual([]);
 });
 

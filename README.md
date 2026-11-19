@@ -69,7 +69,9 @@ The direct draft `/draft/topics/idempotency` connects the separate Java foundati
 strict APIs, nine editable scenarios, initial/post-step playback, Study and nine Practice
 questions. Compare unprotected writes, split effect/result writes and atomic current-key
 publication using the same calls. Inspect private units, the public ledger, retained key
-history, original receipts and caller observations separately.
+history, original receipts and caller observations separately. Saved Practice
+answers can resume their exact question through Continue Learning; retry draft answers
+and Guided checkpoints also use their implemented routes.
 
 [HLD-19B](docs/work-items/HLD-19B.md) records actual integration checks and remaining gates.
 Guided checkpoints and authored design views are the next bounded contribution. Four modules
