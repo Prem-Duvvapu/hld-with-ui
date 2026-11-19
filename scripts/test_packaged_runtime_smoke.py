@@ -151,6 +151,36 @@ class PackagedRuntimeFailures(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, f"{variant} full result differs"):
                     smoke.verify_draft_model("http://example.invalid", "timeouts-retries")
 
+    def test_idempotency_presets_compare_complete_evidence_and_reject_changed_snapshots(self):
+        identifiers = ["unprotected-response-loss", "split-crash-gap", "split-race",
+                       "atomic-response-loss", "atomic-race", "payload-conflict",
+                       "atomic-payload-race", "retention-boundary", "key-and-tenant-scope"]
+        folder = ROOT / "contracts/examples"
+        inputs = [json.loads((folder / f"idempotency-{key}-input.json").read_text()) for key in identifiers]
+        results = [json.loads((folder / f"idempotency-{key}-result.json").read_text()) for key in identifiers]
+        # Descriptor order is not preset identity.
+        descriptor = {"presets": list(reversed([
+            {"id": key, "input": value} for key, value in zip(identifiers, inputs)]))}
+        with patch.object(smoke, "api", side_effect=[descriptor, *results]) as api:
+            smoke.verify_draft_model("http://example.invalid", "idempotency")
+        self.assertEqual([call.args[2] for call in api.call_args_list[1:]], inputs)
+        for index, key in enumerate(identifiers):
+            missing = copy.deepcopy(descriptor)
+            missing["presets"] = [p for p in missing["presets"] if p["id"] != key]
+            with self.subTest(missing=key), patch.object(smoke, "api", side_effect=[missing, *results[:index]]):
+                with self.assertRaisesRegex(RuntimeError, f"no {key}"):
+                    smoke.verify_draft_model("http://example.invalid", "idempotency")
+            changed = copy.deepcopy(descriptor)
+            next(p for p in changed["presets"] if p["id"] == key)["input"]["retentionMs"] += 1
+            with self.subTest(changed=key), patch.object(smoke, "api", side_effect=[changed, *results[:index]]):
+                with self.assertRaisesRegex(RuntimeError, f"{key} input differs"):
+                    smoke.verify_draft_model("http://example.invalid", "idempotency")
+            wrong = copy.deepcopy(results[index])
+            wrong["outcomes"][0]["postState"]["publishedUnits"] += 1
+            with self.subTest(snapshot=key), patch.object(smoke, "api", side_effect=[descriptor, *results[:index], wrong]):
+                with self.assertRaisesRegex(RuntimeError, f"{key} full result differs"):
+                    smoke.verify_draft_model("http://example.invalid", "idempotency")
+
     def test_readiness_retries_transient_connection_failures_then_cleans_its_container(self):
         for failure in (ConnectionResetError("starting"), TimeoutError("starting"), URLError("starting")):
             args = argparse.Namespace(jar=None, image="hld-test-image", port=free_port())

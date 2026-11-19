@@ -452,6 +452,21 @@ Key protection expires before each action at equality. Expired history stays ins
 but cannot serve new lookups. A cached replay can return its original receipt after expiry;
 changed keys and expired protection can permit repeated intent effects. The model reports
 those counts rather than claiming a universal once-only invariant. Java owns identity,
-receipt, arithmetic, execution and metrics; no frontend model exists yet. See
+receipt, arithmetic, execution and metrics. HLD-19B renders that evidence without a frontend
+model. See
 [HLD-19A](work-items/HLD-19A.md) for actual checks and the
 [staged handoff](IDEMPOTENCY_IMPLEMENTATION_PLAN.md) for API/UI work and bounds.
+
+## Idempotency transport and learning integration
+
+HLD-19B adds strict descriptor/run APIs and a direct draft Playground/Study/Practice while
+preserving schema 1.0, model 1.0.0 and all nine input/result pairs. Java-derived bounds and
+closed tokens protect the complete program before execution. Existing shared HTTP guards
+apply independently; a rejected whole response is not replaced with a partial trace.
+
+Editable calls and keyboard-ordered steps explicitly define the program. Mode-only changes
+preserve that program for comparison. React shows only returned initial/post-step snapshots;
+equal-time actions remain separate and no browser expiry event is invented. Public effects,
+private units, active/expired key history, cached receipt identity and caller observations
+remain distinguishable. Final counters cover the whole program, not the selected prefix.
+See [HLD-19B](work-items/HLD-19B.md) for actual integration evidence and remaining review.

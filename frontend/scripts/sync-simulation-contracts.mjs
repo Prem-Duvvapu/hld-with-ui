@@ -84,6 +84,38 @@ const retryResultNames = {
   event: "RetryEvent",
 };
 
+const idempotencyInputId =
+  "https://hld-with-ui.dev/schemas/idempotency.input.schema.json";
+const idempotencyInputNames = {
+  identifier: "IdempotencyIdentifier",
+  units: "IdempotencyUnits",
+  timeMs: "IdempotencyTimeMs",
+  action: "IdempotencyAction",
+  call: "IdempotencyCall",
+  step: "IdempotencyStep",
+};
+const idempotencyResultNames = {
+  identifier: "IdempotencyIdentifier",
+  units: "IdempotencyUnits",
+  timeMs: "IdempotencyTimeMs",
+  effectIdentifier: "IdempotencyEffectIdentifier",
+  recordIdentifier: "IdempotencyRecordIdentifier",
+  receipt: "IdempotencyReceipt",
+  effect: "IdempotencyEffect",
+  keyRecord: "IdempotencyKeyRecord",
+  callState: "IdempotencyCallState",
+  state: "IdempotencyState",
+  noDedupState: "IdempotencyNoDedupState",
+  splitState: "IdempotencySplitState",
+  atomicState: "IdempotencyAtomicState",
+  outcome: "IdempotencyOutcome",
+  metrics: "IdempotencyMetrics",
+};
+const idempotencyDescriptorNames = {
+  limits: "IdempotencyLimits",
+  preset: "IdempotencyPreset",
+};
+
 // Canonical schemas own model evidence and guided content. Export normal internal OpenAPI refs
 // so existing generation and response validators need no remote resolution.
 function exportSchema(value, definitions = names) {
@@ -130,6 +162,16 @@ function exportSchema(value, definitions = names) {
           ? "RetryInput"
           : retryInputNames[child.slice(`${retryInputId}#/$defs/`.length)];
       if (!name) throw new Error(`Unsupported retry input reference: ${child}`);
+      result[key] = `#/components/schemas/${name}`;
+    } else if (key === "$ref" && child.startsWith(idempotencyInputId)) {
+      const name =
+        child === idempotencyInputId
+          ? "IdempotencyInput"
+          : idempotencyInputNames[
+              child.slice(`${idempotencyInputId}#/$defs/`.length)
+            ];
+      if (!name)
+        throw new Error(`Unsupported idempotency input reference: ${child}`);
       result[key] = `#/components/schemas/${name}`;
     } else result[key] = exportSchema(child, definitions);
   }
@@ -257,6 +299,24 @@ for (const [kind, component, definitions] of [
     );
   }
 }
+for (const [kind, component, definitions] of [
+  ["input", "IdempotencyInput", idempotencyInputNames],
+  ["result", "IdempotencyResult", idempotencyResultNames],
+  ["descriptor", "IdempotencyDescriptor", idempotencyDescriptorNames],
+]) {
+  const schema = read(`contracts/idempotency.${kind}.schema.json`);
+  openapi.components.schemas[component] = exportSchema(schema, definitions);
+  for (const [definition, name] of Object.entries(definitions)) {
+    if (!schema.$defs[definition]) throw new Error(`Missing ${definition}`);
+    if (kind === "result" && Object.hasOwn(idempotencyInputNames, definition))
+      continue;
+    openapi.components.schemas[name] = exportSchema(
+      schema.$defs[definition],
+      definitions,
+    );
+  }
+}
+
 const retryEventSchema = read("contracts/timeouts-retries.result.schema.json")
   .$defs.event;
 const retryReferences = {
@@ -431,5 +491,36 @@ writeFileSync(
     "#/components/schemas/",
     "#/$defs/",
   ) + "\n",
+);
+// Include exactly the schemas reachable from the descriptor; result-only state stays lazy.
+const idempotencyDependencies = new Map();
+function collectIdempotencyDependencies(value) {
+  if (value === null || typeof value !== "object") return;
+  if (typeof value.$ref === "string") {
+    const prefix = "#/components/schemas/";
+    if (!value.$ref.startsWith(prefix))
+      throw new Error(`External descriptor ref: ${value.$ref}`);
+    const name = value.$ref.slice(prefix.length);
+    if (!Object.hasOwn(openapi.components.schemas, name))
+      throw new Error(`Missing descriptor dependency: ${name}`);
+    if (!idempotencyDependencies.has(name)) {
+      const schema = openapi.components.schemas[name];
+      idempotencyDependencies.set(name, schema);
+      collectIdempotencyDependencies(schema);
+    }
+  }
+  for (const child of Object.values(value))
+    collectIdempotencyDependencies(child);
+}
+collectIdempotencyDependencies(
+  openapi.components.schemas.IdempotencyDescriptor,
+);
+writeFileSync(
+  resolve(root, "frontend/src/api/schemas/idempotency-descriptor.schema.json"),
+  JSON.stringify({
+    $schema: "https://json-schema.org/draft/2020-12/schema",
+    ...openapi.components.schemas.IdempotencyDescriptor,
+    $defs: Object.fromEntries(idempotencyDependencies),
+  }).replaceAll("#/components/schemas/", "#/$defs/") + "\n",
 );
 writeFileSync(apiPath, JSON.stringify(openapi, null, 2) + "\n");

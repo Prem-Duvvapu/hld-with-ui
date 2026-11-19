@@ -33,6 +33,19 @@ Recommendations here come from source inspection. Published counts in those READ
 
 Use the collection to discover material, then verify the underlying resource. Availability and quality vary by link. Its repository license does not grant permission to reproduce every linked article, book, diagram, or video. Keep core lessons self-contained and cite the specific source used.
 
+## Additional interview coverage reference
+
+On 2026-11-19 the owner supplied [Alex Xu, System Design Interview: An Insider’s Guide](https://github.com/aasthas2022/SDE-Interview-and-Prep-Roadmap/blob/main/System%20Design/Resources/System%20Design%20Interview%20by%20Alex%20Xu.pdf).
+The front matter and contents were inspected to compare interview coverage. Its rate limiter,
+URL shortener, notification, news feed and chat chapters overlap the requested case studies.
+Estimation and interview structure are useful editorial cross-checks. Booking and the exact
+Java experiments still follow this project's own curriculum and acceptance criteria.
+
+Use this as optional reading and a coverage reference. Keep all lessons understandable without
+it. Technical behavior requires the relevant primary sources and executed model evidence.
+No book PDF, chapter, diagram, code or exercise is copied into this repository; availability
+of a third-party mirror does not establish redistribution permission.
+
 ## Technical reference register
 
 These sources were opened during planning. “Reviewed” means relevant material was inspected for planning; it does not substitute for a claim-by-claim review when writing a lesson or implementing a protocol.

@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Idempotency model descriptor",
+  "description": "Closed metadata for the bounded original Java idempotency model. Preset references and input identities are checked separately; Java owns valid program execution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "kind",
+    "schemaVersion",
+    "modelVersion",
+    "description",
+    "defaultPresetId",
+    "limits",
+    "presets",
+    "assumptions"
+  ],
+  "properties": {
+    "id": { "const": "idempotency" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "kind": { "const": "simulation" },
+    "schemaVersion": { "const": "1.0" },
+    "modelVersion": { "const": "1.0.0" },
+    "description": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "defaultPresetId": { "const": "unprotected-response-loss" },
+    "limits": { "$ref": "#/$defs/IdempotencyLimits" },
+    "presets": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "items": { "$ref": "#/$defs/IdempotencyPreset" }
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": { "type": "string", "minLength": 1, "maxLength": 2000 }
+    }
+  },
+  "$defs": {
+    "IdempotencyLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minCalls",
+        "maxCalls",
+        "minSteps",
+        "maxSteps",
+        "maxUnits",
+        "maxRetentionMs",
+        "maxTimeMs",
+        "maxIdLength",
+        "maxDerivedIdLength",
+        "maxExpiresAtMs",
+        "maxPublishedUnits"
+      ],
+      "properties": {
+        "minCalls": { "type": "integer", "const": 1 },
+        "maxCalls": { "type": "integer", "const": 12 },
+        "minSteps": { "type": "integer", "const": 2 },
+        "maxSteps": { "type": "integer", "const": 48 },
+        "maxUnits": { "type": "integer", "const": 1000 },
+        "maxRetentionMs": { "type": "integer", "const": 10000 },
+        "maxTimeMs": { "type": "integer", "const": 10000 },
+        "maxIdLength": { "type": "integer", "const": 32 },
+        "maxDerivedIdLength": { "type": "integer", "const": 39 },
+        "maxExpiresAtMs": { "type": "integer", "const": 20000 },
+        "maxPublishedUnits": { "type": "integer", "const": 12000 }
+      }
+    },
+    "IdempotencyPreset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "question", "input"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "enum": [
+            "unprotected-response-loss",
+            "split-crash-gap",
+            "split-race",
+            "atomic-response-loss",
+            "atomic-race",
+            "payload-conflict",
+            "atomic-payload-race",
+            "retention-boundary",
+            "key-and-tenant-scope"
+          ]
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "question": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "input": { "$ref": "#/$defs/IdempotencyInput" }
+      }
+    },
+    "IdempotencyInput": {
+      "title": "Idempotency model input",
+      "description": "Canonical closed input for one illustrative ledger-add endpoint, schema 1.0/model 1.0.0. The same complete authored program can run under no deduplication, split effect/result writes or atomic publication. Java validates unique IDs, typed tenant/key scope, audit-intent payload consistency, references, nondecreasing times and complete per-call grammar before any execution. JSON Schema validates parsed shape and bounds, not program order, execution semantics, duplicate JSON keys or integer token spelling. There is no randomness, real database, provider, broker, process crash or durability guarantee.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "modelVersion",
+        "mode",
+        "retentionMs",
+        "calls",
+        "schedule"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "1.0" },
+        "modelVersion": { "const": "1.0.0" },
+        "mode": {
+          "type": "string",
+          "enum": ["NO_DEDUP", "SPLIT_EFFECT_RECORD", "ATOMIC_EFFECT_RECORD"]
+        },
+        "retentionMs": { "type": "integer", "minimum": 1, "maximum": 10000 },
+        "calls": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": { "$ref": "#/$defs/IdempotencyCall" }
+        },
+        "schedule": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 48,
+          "items": { "$ref": "#/$defs/IdempotencyStep" }
+        }
+      }
+    },
+    "IdempotencyCall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "operationId", "tenantId", "key", "units"],
+      "properties": {
+        "id": { "$ref": "#/$defs/IdempotencyIdentifier" },
+        "operationId": {
+          "$ref": "#/$defs/IdempotencyIdentifier",
+          "description": "Audit-only intent identity within its tenant; it never participates in server deduplication."
+        },
+        "tenantId": { "$ref": "#/$defs/IdempotencyIdentifier" },
+        "key": {
+          "$ref": "#/$defs/IdempotencyIdentifier",
+          "description": "Server lookup uses the typed tenant/key tuple for this single fixed endpoint."
+        },
+        "units": { "$ref": "#/$defs/IdempotencyUnits" }
+      }
+    },
+    "IdempotencyIdentifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "pattern": "^[a-z][a-z0-9-]{0,31}$",
+      "not": { "pattern": "\\s" }
+    },
+    "IdempotencyUnits": { "type": "integer", "minimum": 1, "maximum": 1000 },
+    "IdempotencyStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "callId", "timeMs", "action"],
+      "properties": {
+        "id": { "$ref": "#/$defs/IdempotencyIdentifier" },
+        "callId": { "$ref": "#/$defs/IdempotencyIdentifier" },
+        "timeMs": { "$ref": "#/$defs/IdempotencyTimeMs" },
+        "action": { "$ref": "#/$defs/IdempotencyAction" }
+      }
+    },
+    "IdempotencyTimeMs": { "type": "integer", "minimum": 0, "maximum": 10000 },
+    "IdempotencyAction": {
+      "type": "string",
+      "enum": [
+        "LOOKUP",
+        "WRITE_EFFECT",
+        "SAVE_RESULT",
+        "RESPOND",
+        "LOSE_RESPONSE",
+        "CRASH_HANDLER"
+      ]
+    }
+  }
+}

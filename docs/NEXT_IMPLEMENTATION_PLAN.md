@@ -57,9 +57,11 @@ prerequisite/publication gates remain open; four modules are published.
 contract evidence for nine scenarios. The same authored calls/steps compare no protection,
 split effect/result publication and one atomic current-key recheck. Operation identity is
 audit-only; tenant/key scope, stored receipts and expiry define the protection boundary.
-No API, catalog entry or React capability exists for this foundation yet. Follow the
-[frozen idempotency plan](IDEMPOTENCY_IMPLEMENTATION_PLAN.md) for HLD-19B strict APIs and
-runnable Playground/Study/Practice, then HLD-19C Guided/design and Notification composition.
+[HLD-19B](work-items/HLD-19B.md) adds strict APIs and the direct draft Playground/Study/Practice,
+with editable calls/steps and actual initial/post-step snapshots. Its work item records actual
+checks; publication remains separate. Follow the
+[frozen idempotency plan](IDEMPOTENCY_IMPLEMENTATION_PLAN.md) next for HLD-19C Guided/design,
+then Notification composition.
 Physical durability, SQL isolation, external providers and publication remain separate.
 
 ## 1. Objective and scope

@@ -355,7 +355,8 @@ topic remains draft; human/hosted/prerequisite/publication gates remain separate
 ## Idempotency foundation
 
 HLD-19A introduces pure `com.hld.idempotency` input, validator, result, simulator and presets.
-There is no Spring registration, HTTP endpoint, catalog entry or React capability yet.
+HLD-19A registered no Spring bean, HTTP endpoint, catalog entry or React capability;
+HLD-19B supplies the integration below.
 Standalone schemas and actual configured Java examples are separate from existing OpenAPI.
 See [the frozen plan](IDEMPOTENCY_IMPLEMENTATION_PLAN.md) and
 [decision 0040](decisions/0040-idempotency-effect-and-result-boundary.md).
@@ -367,3 +368,18 @@ private preparation and caller response visibility remain distinct. One immutabl
 captures each step; virtual time and equal-time order come from the validated schedule.
 No randomness, real network, SQL transaction, storage persistence or process recovery is implied.
 The runnable API/Playground/Study/Practice and later Guided/design contributions remain pending.
+
+## Runnable idempotency draft
+
+[HLD-19B](work-items/HLD-19B.md) connects GET `/api/v1/simulations/idempotency` and
+POST `/api/v1/simulations/idempotency/runs` to the unchanged model. Descriptor limits derive
+from Java constants; its nine presets use the existing pure source. Strict byte parsing and
+shared request, result and admission guards preserve 400/413/422/503 semantics; modeled
+conflicts, response loss and handler crashes are completed 200 simulation evidence.
+
+HTTP 1.13 adds canonical schema exports and generated/lazy validation. The draft catalog
+advertises only Study/Simulation/Practice. React captures input before asynchronous loading,
+then selects initialState or an actual step postState. It renders private work, public ledger,
+key history and caller observations separately. Whole-run metrics stay distinct from selected
+prefix evidence. See [decision 0041](decisions/0041-idempotency-api-and-playback.md).
+Guided/design, human/hosted/prerequisite review and publication remain separate gates.

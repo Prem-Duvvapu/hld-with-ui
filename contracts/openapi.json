@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "HLD with UI API",
-    "version": "1.12.0",
+    "version": "1.13.0",
     "description": "Versioned contract for the HLD learning application. Simulation results are illustrative modeled runs."
   },
   "servers": [
@@ -1299,6 +1299,113 @@
           }
         },
         "description": "Strict closed retry input with exact integral JSON tokens, duplicate-key and trailing-root rejection. Logical caller failure, timeout and dependency rejection return a complete simulation with HTTP200; shared raw-body, in-flight admission and complete-result serialization guards remain outside the pure finite model. No real network, cancellation or business-effect deduplication is modeled."
+      }
+    },
+    "/api/v1/simulations/idempotency": {
+      "get": {
+        "operationId": "getIdempotencyDescriptor",
+        "summary": "Read the bounded Java idempotency descriptor",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdempotencyDescriptor"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulations/idempotency/runs": {
+      "post": {
+        "operationId": "runIdempotency",
+        "summary": "Run a complete bounded ledger-add program and inspect effects, receipts and retained key history",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdempotencyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdempotencyResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Structured error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "internal_error: unexpected model or serialization failure, distinct from intentional whole-result byte limits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Retry hint in seconds. Capacity may remain occupied.",
+                "schema": {
+                  "type": "string",
+                  "pattern": "^[0-9]+$",
+                  "examples": ["1"]
+                }
+              }
+            }
+          }
+        },
+        "description": "Strict closed versioned input with exact integral JSON tokens, duplicate-key and trailing-root rejection. Java validates the entire manually ordered program before execution. Lost responses, logical handler crashes, payload conflicts and split-write result-save conflicts return complete HTTP 200 evidence. Shared raw-body, process-local admission and whole-result serialization limits apply outside the pure model. No actual database, provider, networking, physical durability or exactly-once external effect is modeled."
       }
     }
   },
@@ -11123,6 +11230,1610 @@
             }
           }
         ]
+      },
+      "IdempotencyInput": {
+        "title": "Idempotency model input",
+        "description": "Canonical closed input for one illustrative ledger-add endpoint, schema 1.0/model 1.0.0. The same complete authored program can run under no deduplication, split effect/result writes or atomic publication. Java validates unique IDs, typed tenant/key scope, audit-intent payload consistency, references, nondecreasing times and complete per-call grammar before any execution. JSON Schema validates parsed shape and bounds, not program order, execution semantics, duplicate JSON keys or integer token spelling. There is no randomness, real database, provider, broker, process crash or durability guarantee.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "modelVersion",
+          "mode",
+          "retentionMs",
+          "calls",
+          "schedule"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "const": "1.0.0"
+          },
+          "mode": {
+            "type": "string",
+            "enum": ["NO_DEDUP", "SPLIT_EFFECT_RECORD", "ATOMIC_EFFECT_RECORD"]
+          },
+          "retentionMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "calls": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/IdempotencyCall"
+            }
+          },
+          "schedule": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 48,
+            "items": {
+              "$ref": "#/components/schemas/IdempotencyStep"
+            }
+          }
+        }
+      },
+      "IdempotencyIdentifier": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 32,
+        "pattern": "^[a-z][a-z0-9-]{0,31}$",
+        "not": {
+          "pattern": "\\s"
+        }
+      },
+      "IdempotencyUnits": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 1000
+      },
+      "IdempotencyTimeMs": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 10000
+      },
+      "IdempotencyAction": {
+        "type": "string",
+        "enum": [
+          "LOOKUP",
+          "WRITE_EFFECT",
+          "SAVE_RESULT",
+          "RESPOND",
+          "LOSE_RESPONSE",
+          "CRASH_HANDLER"
+        ]
+      },
+      "IdempotencyCall": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "operationId", "tenantId", "key", "units"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/IdempotencyIdentifier"
+          },
+          "operationId": {
+            "$ref": "#/components/schemas/IdempotencyIdentifier",
+            "description": "Audit-only intent identity within its tenant; it never participates in server deduplication."
+          },
+          "tenantId": {
+            "$ref": "#/components/schemas/IdempotencyIdentifier"
+          },
+          "key": {
+            "$ref": "#/components/schemas/IdempotencyIdentifier",
+            "description": "Server lookup uses the typed tenant/key tuple for this single fixed endpoint."
+          },
+          "units": {
+            "$ref": "#/components/schemas/IdempotencyUnits"
+          }
+        }
+      },
+      "IdempotencyStep": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "callId", "timeMs", "action"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/IdempotencyIdentifier"
+          },
+          "callId": {
+            "$ref": "#/components/schemas/IdempotencyIdentifier"
+          },
+          "timeMs": {
+            "$ref": "#/components/schemas/IdempotencyTimeMs"
+          },
+          "action": {
+            "$ref": "#/components/schemas/IdempotencyAction"
+          }
+        }
+      },
+      "IdempotencyResult": {
+        "title": "Idempotency model result",
+        "description": "Complete finite Java evidence for one illustrative ledger-add endpoint. Closed state/phase/action capabilities distinguish public effects, retained or expired key history, private preparation and caller observation. Java owns identity association, typed scopes, exact input/outcome correspondence, arithmetic, receipt ownership, expiry ordering, atomic execution, metrics and exact replay. Historical record references may point to expired rows; a cached replay is not invalidated by later expiry. A modeled handler crash retains public state by rule, not physical durability. No global one-effect-per-intent guarantee follows from retained-key protection.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "simulationId",
+          "schemaVersion",
+          "modelVersion",
+          "kind",
+          "status",
+          "input",
+          "initialState",
+          "outcomes",
+          "finalState",
+          "metrics",
+          "assumptions"
+        ],
+        "properties": {
+          "simulationId": {
+            "const": "idempotency"
+          },
+          "schemaVersion": {
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "const": "1.0.0"
+          },
+          "kind": {
+            "const": "simulation"
+          },
+          "status": {
+            "const": "completed"
+          },
+          "input": {
+            "$ref": "#/components/schemas/IdempotencyInput"
+          },
+          "initialState": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IdempotencyState"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "calls": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "phase": {
+                          "const": "NOT_STARTED"
+                        }
+                      }
+                    }
+                  },
+                  "effects": {
+                    "type": "array",
+                    "maxItems": 0
+                  },
+                  "keyRecords": {
+                    "type": "array",
+                    "maxItems": 0
+                  },
+                  "publishedUnits": {
+                    "const": 0
+                  },
+                  "activeKeyCount": {
+                    "const": 0
+                  },
+                  "expiredKeyCount": {
+                    "const": 0
+                  }
+                }
+              }
+            ]
+          },
+          "outcomes": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 48,
+            "items": {
+              "$ref": "#/components/schemas/IdempotencyOutcome"
+            }
+          },
+          "finalState": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IdempotencyState"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "calls": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "phase": {
+                          "enum": ["RESPONDED", "RESPONSE_LOST", "CRASHED"]
+                        },
+                        "pendingUnits": {
+                          "const": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/IdempotencyMetrics"
+          },
+          "assumptions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "const": "NO_DEDUP"
+                    }
+                  },
+                  "required": ["mode"]
+                }
+              },
+              "required": ["input"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "initialState": {
+                  "$ref": "#/components/schemas/IdempotencyNoDedupState"
+                },
+                "finalState": {
+                  "$ref": "#/components/schemas/IdempotencyNoDedupState"
+                },
+                "outcomes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "postState": {
+                        "$ref": "#/components/schemas/IdempotencyNoDedupState"
+                      },
+                      "kind": {
+                        "enum": [
+                          "LOOKUP_BYPASSED",
+                          "EFFECT_PUBLISHED",
+                          "RESULT_READY",
+                          "RESPONSE_RECEIVED",
+                          "RESPONSE_LOST",
+                          "HANDLER_CRASHED"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "const": "SPLIT_EFFECT_RECORD"
+                    }
+                  },
+                  "required": ["mode"]
+                }
+              },
+              "required": ["input"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "initialState": {
+                  "$ref": "#/components/schemas/IdempotencySplitState"
+                },
+                "finalState": {
+                  "$ref": "#/components/schemas/IdempotencySplitState"
+                },
+                "outcomes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "postState": {
+                        "$ref": "#/components/schemas/IdempotencySplitState"
+                      },
+                      "kind": {
+                        "enum": [
+                          "LOOKUP_MISSED",
+                          "LOOKUP_REPLAYED",
+                          "LOOKUP_CONFLICT",
+                          "EFFECT_PUBLISHED",
+                          "ACTION_SKIPPED",
+                          "RESULT_STORED",
+                          "RESULT_SAVE_CONFLICT",
+                          "RESPONSE_RECEIVED",
+                          "RESPONSE_LOST",
+                          "HANDLER_CRASHED"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "const": "ATOMIC_EFFECT_RECORD"
+                    }
+                  },
+                  "required": ["mode"]
+                }
+              },
+              "required": ["input"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "initialState": {
+                  "$ref": "#/components/schemas/IdempotencyAtomicState"
+                },
+                "finalState": {
+                  "$ref": "#/components/schemas/IdempotencyAtomicState"
+                },
+                "outcomes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "postState": {
+                        "$ref": "#/components/schemas/IdempotencyAtomicState"
+                      },
+                      "kind": {
+                        "enum": [
+                          "LOOKUP_MISSED",
+                          "LOOKUP_REPLAYED",
+                          "LOOKUP_CONFLICT",
+                          "EFFECT_PREPARED",
+                          "ACTION_SKIPPED",
+                          "ATOMIC_COMMITTED",
+                          "REPLAYED_AT_COMMIT",
+                          "CONFLICT_AT_COMMIT",
+                          "RESPONSE_RECEIVED",
+                          "RESPONSE_LOST",
+                          "HANDLER_CRASHED"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "IdempotencyEffectIdentifier": {
+        "type": "string",
+        "minLength": 8,
+        "maxLength": 39,
+        "pattern": "^effect-[a-z][a-z0-9-]{0,31}$",
+        "not": {
+          "pattern": "\\s"
+        }
+      },
+      "IdempotencyRecordIdentifier": {
+        "type": "string",
+        "minLength": 8,
+        "maxLength": 39,
+        "pattern": "^record-[a-z][a-z0-9-]{0,31}$",
+        "not": {
+          "pattern": "\\s"
+        }
+      },
+      "IdempotencyReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["effectId", "units"],
+        "properties": {
+          "effectId": {
+            "$ref": "#/components/schemas/IdempotencyEffectIdentifier"
+          },
+          "units": {
+            "$ref": "#/components/schemas/IdempotencyUnits"
+          }
+        }
+      },
+      "IdempotencyEffect": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "callId",
+          "operationId",
+          "tenantId",
+          "units",
+          "publishedAtMs"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/IdempotencyEffectIdentifier"
+          },
+          "callId": {
+            "$ref": "#/components/schemas/IdempotencyIdentifier"
+          },
+          "operationId": {
+            "$ref": "#/components/schemas/IdempotencyIdentifier"
+          },
+          "tenantId": {
+            "$ref": "#/components/schemas/IdempotencyIdentifier"
+          },
+          "units": {
+            "$ref": "#/components/schemas/IdempotencyUnits"
+          },
+          "publishedAtMs": {
+            "$ref": "#/components/schemas/IdempotencyTimeMs"
+          }
+        }
+      },
+      "IdempotencyKeyRecord": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "tenantId",
+          "key",
+          "units",
+          "receipt",
+          "createdAtMs",
+          "expiresAtMs",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/IdempotencyRecordIdentifier"
+          },
+          "tenantId": {
+            "$ref": "#/components/schemas/IdempotencyIdentifier"
+          },
+          "key": {
+            "$ref": "#/components/schemas/IdempotencyIdentifier"
+          },
+          "units": {
+            "$ref": "#/components/schemas/IdempotencyUnits"
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/IdempotencyReceipt"
+          },
+          "createdAtMs": {
+            "$ref": "#/components/schemas/IdempotencyTimeMs"
+          },
+          "expiresAtMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20000
+          },
+          "status": {
+            "type": "string",
+            "enum": ["ACTIVE", "EXPIRED"]
+          }
+        }
+      },
+      "IdempotencyCallState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "phase", "pendingUnits"],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/IdempotencyIdentifier"
+          },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "NOT_STARTED",
+              "LOOKED_UP",
+              "WORK_DONE",
+              "RESULT_READY",
+              "RESPONDED",
+              "RESPONSE_LOST",
+              "CRASHED"
+            ]
+          },
+          "lookupDisposition": {
+            "type": "string",
+            "enum": ["BYPASSED", "MISSING", "MATCHED", "CONFLICT"]
+          },
+          "observedRecordId": {
+            "$ref": "#/components/schemas/IdempotencyRecordIdentifier"
+          },
+          "resolvedRecordId": {
+            "$ref": "#/components/schemas/IdempotencyRecordIdentifier"
+          },
+          "pendingUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000
+          },
+          "publishedEffectId": {
+            "$ref": "#/components/schemas/IdempotencyEffectIdentifier"
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/IdempotencyReceipt"
+          },
+          "resolution": {
+            "type": "string",
+            "enum": [
+              "EXECUTED",
+              "REPLAYED",
+              "PAYLOAD_CONFLICT",
+              "RESULT_SAVE_CONFLICT"
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "phase": {
+                  "const": "NOT_STARTED"
+                }
+              },
+              "required": ["phase"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "pendingUnits": {
+                  "const": 0
+                },
+                "lookupDisposition": false,
+                "observedRecordId": false,
+                "resolvedRecordId": false,
+                "publishedEffectId": false,
+                "receipt": false,
+                "resolution": false
+              }
+            },
+            "else": {
+              "type": "object",
+              "required": ["lookupDisposition"]
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "lookupDisposition": {
+                  "enum": ["BYPASSED", "MISSING"]
+                }
+              },
+              "required": ["lookupDisposition"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "observedRecordId": false
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "lookupDisposition": {
+                  "const": "BYPASSED"
+                }
+              },
+              "required": ["lookupDisposition"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "resolvedRecordId": false,
+                "pendingUnits": {
+                  "const": 0
+                },
+                "resolution": {
+                  "const": "EXECUTED"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "lookupDisposition": {
+                  "const": "MATCHED"
+                }
+              },
+              "required": ["lookupDisposition"]
+            },
+            "then": {
+              "type": "object",
+              "required": [
+                "observedRecordId",
+                "resolvedRecordId",
+                "resolution"
+              ],
+              "properties": {
+                "resolution": {
+                  "const": "REPLAYED"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "lookupDisposition": {
+                  "const": "CONFLICT"
+                }
+              },
+              "required": ["lookupDisposition"]
+            },
+            "then": {
+              "type": "object",
+              "required": [
+                "observedRecordId",
+                "resolvedRecordId",
+                "resolution"
+              ],
+              "properties": {
+                "resolution": {
+                  "const": "PAYLOAD_CONFLICT"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "phase": {
+                  "const": "LOOKED_UP"
+                }
+              },
+              "required": ["phase"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "pendingUnits": {
+                  "const": 0
+                },
+                "publishedEffectId": false
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "type": "object",
+                    "properties": {
+                      "lookupDisposition": {
+                        "enum": ["BYPASSED", "MISSING"]
+                      }
+                    },
+                    "required": ["lookupDisposition"]
+                  },
+                  "then": {
+                    "type": "object",
+                    "properties": {
+                      "resolvedRecordId": false,
+                      "receipt": false,
+                      "resolution": false
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "phase": {
+                  "const": "WORK_DONE"
+                },
+                "lookupDisposition": {
+                  "enum": ["BYPASSED", "MISSING"]
+                }
+              },
+              "required": ["phase", "lookupDisposition"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "resolvedRecordId": false,
+                "receipt": false,
+                "resolution": false
+              },
+              "oneOf": [
+                {
+                  "type": "object",
+                  "required": ["publishedEffectId"],
+                  "properties": {
+                    "pendingUnits": {
+                      "const": 0
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "pendingUnits": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "publishedEffectId": false
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "phase": {
+                  "enum": ["RESULT_READY", "RESPONDED", "RESPONSE_LOST"]
+                }
+              },
+              "required": ["phase"]
+            },
+            "then": {
+              "type": "object",
+              "required": ["resolution"],
+              "properties": {
+                "pendingUnits": {
+                  "const": 0
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "phase": {
+                  "const": "CRASHED"
+                }
+              },
+              "required": ["phase"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "pendingUnits": {
+                  "const": 0
+                },
+                "receipt": false
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "resolution": {
+                  "const": "EXECUTED"
+                }
+              },
+              "required": ["resolution"]
+            },
+            "then": {
+              "type": "object",
+              "required": ["publishedEffectId"],
+              "properties": {
+                "pendingUnits": {
+                  "const": 0
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "type": "object",
+                    "properties": {
+                      "phase": {
+                        "enum": [
+                          "LOOKED_UP",
+                          "WORK_DONE",
+                          "RESULT_READY",
+                          "RESPONDED",
+                          "RESPONSE_LOST"
+                        ]
+                      }
+                    },
+                    "required": ["phase"]
+                  },
+                  "then": {
+                    "type": "object",
+                    "required": ["receipt"]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "resolution": {
+                  "const": "REPLAYED"
+                }
+              },
+              "required": ["resolution"]
+            },
+            "then": {
+              "type": "object",
+              "required": ["resolvedRecordId"],
+              "properties": {
+                "pendingUnits": {
+                  "const": 0
+                },
+                "publishedEffectId": false
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "type": "object",
+                    "properties": {
+                      "phase": {
+                        "enum": [
+                          "LOOKED_UP",
+                          "WORK_DONE",
+                          "RESULT_READY",
+                          "RESPONDED",
+                          "RESPONSE_LOST"
+                        ]
+                      }
+                    },
+                    "required": ["phase"]
+                  },
+                  "then": {
+                    "type": "object",
+                    "required": ["receipt"]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "resolution": {
+                  "const": "PAYLOAD_CONFLICT"
+                }
+              },
+              "required": ["resolution"]
+            },
+            "then": {
+              "type": "object",
+              "required": ["resolvedRecordId"],
+              "properties": {
+                "pendingUnits": {
+                  "const": 0
+                },
+                "publishedEffectId": false,
+                "receipt": false
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "resolution": {
+                  "const": "RESULT_SAVE_CONFLICT"
+                }
+              },
+              "required": ["resolution"]
+            },
+            "then": {
+              "type": "object",
+              "required": ["resolvedRecordId", "publishedEffectId"],
+              "properties": {
+                "pendingUnits": {
+                  "const": 0
+                },
+                "receipt": false
+              }
+            }
+          }
+        ]
+      },
+      "IdempotencyState": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "calls",
+          "effects",
+          "keyRecords",
+          "publishedUnits",
+          "activeKeyCount",
+          "expiredKeyCount"
+        ],
+        "properties": {
+          "calls": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/IdempotencyCallState"
+            }
+          },
+          "effects": {
+            "type": "array",
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/IdempotencyEffect"
+            }
+          },
+          "keyRecords": {
+            "type": "array",
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/IdempotencyKeyRecord"
+            }
+          },
+          "publishedUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12000
+          },
+          "activeKeyCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "expiredKeyCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          }
+        }
+      },
+      "IdempotencyNoDedupState": {
+        "type": "object",
+        "properties": {
+          "keyRecords": {
+            "type": "array",
+            "maxItems": 0
+          },
+          "activeKeyCount": {
+            "const": 0
+          },
+          "expiredKeyCount": {
+            "const": 0
+          },
+          "calls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pendingUnits": {
+                  "const": 0
+                },
+                "lookupDisposition": {
+                  "const": "BYPASSED"
+                },
+                "observedRecordId": false,
+                "resolvedRecordId": false,
+                "resolution": {
+                  "const": "EXECUTED"
+                }
+              }
+            }
+          }
+        }
+      },
+      "IdempotencySplitState": {
+        "type": "object",
+        "properties": {
+          "calls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pendingUnits": {
+                  "const": 0
+                },
+                "lookupDisposition": {
+                  "enum": ["MISSING", "MATCHED", "CONFLICT"]
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "type": "object",
+                    "properties": {
+                      "resolution": {
+                        "const": "EXECUTED"
+                      }
+                    },
+                    "required": ["resolution"]
+                  },
+                  "then": {
+                    "type": "object",
+                    "required": ["resolvedRecordId"]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "IdempotencyAtomicState": {
+        "type": "object",
+        "properties": {
+          "calls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "lookupDisposition": {
+                  "enum": ["MISSING", "MATCHED", "CONFLICT"]
+                },
+                "resolution": {
+                  "enum": ["EXECUTED", "REPLAYED", "PAYLOAD_CONFLICT"]
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "type": "object",
+                    "properties": {
+                      "phase": {
+                        "enum": ["LOOKED_UP", "WORK_DONE"]
+                      }
+                    },
+                    "required": ["phase"]
+                  },
+                  "then": {
+                    "type": "object",
+                    "properties": {
+                      "publishedEffectId": false
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "type": "object",
+                    "properties": {
+                      "resolution": {
+                        "const": "EXECUTED"
+                      }
+                    },
+                    "required": ["resolution"]
+                  },
+                  "then": {
+                    "type": "object",
+                    "required": ["resolvedRecordId"]
+                  }
+                },
+                {
+                  "if": {
+                    "type": "object",
+                    "required": ["publishedEffectId"]
+                  },
+                  "then": {
+                    "type": "object",
+                    "required": ["resolution", "resolvedRecordId"],
+                    "properties": {
+                      "resolution": {
+                        "const": "EXECUTED"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "IdempotencyOutcome": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sequence",
+          "stepId",
+          "callId",
+          "timeMs",
+          "action",
+          "kind",
+          "postState",
+          "explanation"
+        ],
+        "properties": {
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 48
+          },
+          "stepId": {
+            "$ref": "#/components/schemas/IdempotencyIdentifier"
+          },
+          "callId": {
+            "$ref": "#/components/schemas/IdempotencyIdentifier"
+          },
+          "timeMs": {
+            "$ref": "#/components/schemas/IdempotencyTimeMs"
+          },
+          "action": {
+            "$ref": "#/components/schemas/IdempotencyAction"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "LOOKUP_BYPASSED",
+              "LOOKUP_MISSED",
+              "LOOKUP_REPLAYED",
+              "LOOKUP_CONFLICT",
+              "EFFECT_PUBLISHED",
+              "EFFECT_PREPARED",
+              "ACTION_SKIPPED",
+              "RESULT_READY",
+              "RESULT_STORED",
+              "RESULT_SAVE_CONFLICT",
+              "ATOMIC_COMMITTED",
+              "REPLAYED_AT_COMMIT",
+              "CONFLICT_AT_COMMIT",
+              "RESPONSE_RECEIVED",
+              "RESPONSE_LOST",
+              "HANDLER_CRASHED"
+            ]
+          },
+          "postState": {
+            "$ref": "#/components/schemas/IdempotencyState"
+          },
+          "explanation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "LOOKUP_BYPASSED",
+                    "LOOKUP_MISSED",
+                    "LOOKUP_REPLAYED",
+                    "LOOKUP_CONFLICT"
+                  ]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "const": "LOOKUP"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "enum": ["EFFECT_PUBLISHED", "EFFECT_PREPARED"]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "const": "WRITE_EFFECT"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "ACTION_SKIPPED"
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "enum": ["WRITE_EFFECT", "SAVE_RESULT"]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "RESULT_READY",
+                    "RESULT_STORED",
+                    "RESULT_SAVE_CONFLICT",
+                    "ATOMIC_COMMITTED",
+                    "REPLAYED_AT_COMMIT",
+                    "CONFLICT_AT_COMMIT"
+                  ]
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "const": "SAVE_RESULT"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "RESPONSE_RECEIVED"
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "const": "RESPOND"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "RESPONSE_LOST"
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "const": "LOSE_RESPONSE"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "HANDLER_CRASHED"
+                }
+              },
+              "required": ["kind"]
+            },
+            "then": {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "const": "CRASH_HANDLER"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "IdempotencyMetrics": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "calls",
+          "logicalOperations",
+          "publishedEffects",
+          "publishedUnits",
+          "operationsWithRepeatedEffects",
+          "extraEffects",
+          "activeKeyRecords",
+          "expiredKeyRecords",
+          "replayedCalls",
+          "payloadConflicts",
+          "resultSaveConflicts",
+          "responsesReceived",
+          "responsesLost",
+          "crashedCalls",
+          "crashedCallsWithEffects",
+          "receiptsReceived",
+          "finalTimeMs"
+        ],
+        "properties": {
+          "calls": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "logicalOperations": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "publishedEffects": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "publishedUnits": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12000
+          },
+          "operationsWithRepeatedEffects": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "extraEffects": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 11
+          },
+          "activeKeyRecords": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "expiredKeyRecords": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "replayedCalls": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "payloadConflicts": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "resultSaveConflicts": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "responsesReceived": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "responsesLost": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "crashedCalls": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "crashedCallsWithEffects": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "receiptsReceived": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "finalTimeMs": {
+            "$ref": "#/components/schemas/IdempotencyTimeMs"
+          }
+        }
+      },
+      "IdempotencyDescriptor": {
+        "title": "Idempotency model descriptor",
+        "description": "Closed metadata for the bounded original Java idempotency model. Preset references and input identities are checked separately; Java owns valid program execution.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "kind",
+          "schemaVersion",
+          "modelVersion",
+          "description",
+          "defaultPresetId",
+          "limits",
+          "presets",
+          "assumptions"
+        ],
+        "properties": {
+          "id": {
+            "const": "idempotency"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "kind": {
+            "const": "simulation"
+          },
+          "schemaVersion": {
+            "const": "1.0"
+          },
+          "modelVersion": {
+            "const": "1.0.0"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "defaultPresetId": {
+            "const": "unprotected-response-loss"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/IdempotencyLimits"
+          },
+          "presets": {
+            "type": "array",
+            "minItems": 9,
+            "maxItems": 9,
+            "items": {
+              "$ref": "#/components/schemas/IdempotencyPreset"
+            }
+          },
+          "assumptions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            }
+          }
+        }
+      },
+      "IdempotencyLimits": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "minCalls",
+          "maxCalls",
+          "minSteps",
+          "maxSteps",
+          "maxUnits",
+          "maxRetentionMs",
+          "maxTimeMs",
+          "maxIdLength",
+          "maxDerivedIdLength",
+          "maxExpiresAtMs",
+          "maxPublishedUnits"
+        ],
+        "properties": {
+          "minCalls": {
+            "type": "integer",
+            "const": 1
+          },
+          "maxCalls": {
+            "type": "integer",
+            "const": 12
+          },
+          "minSteps": {
+            "type": "integer",
+            "const": 2
+          },
+          "maxSteps": {
+            "type": "integer",
+            "const": 48
+          },
+          "maxUnits": {
+            "type": "integer",
+            "const": 1000
+          },
+          "maxRetentionMs": {
+            "type": "integer",
+            "const": 10000
+          },
+          "maxTimeMs": {
+            "type": "integer",
+            "const": 10000
+          },
+          "maxIdLength": {
+            "type": "integer",
+            "const": 32
+          },
+          "maxDerivedIdLength": {
+            "type": "integer",
+            "const": 39
+          },
+          "maxExpiresAtMs": {
+            "type": "integer",
+            "const": 20000
+          },
+          "maxPublishedUnits": {
+            "type": "integer",
+            "const": 12000
+          }
+        }
+      },
+      "IdempotencyPreset": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "question", "input"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "unprotected-response-loss",
+              "split-crash-gap",
+              "split-race",
+              "atomic-response-loss",
+              "atomic-race",
+              "payload-conflict",
+              "atomic-payload-race",
+              "retention-boundary",
+              "key-and-tenant-scope"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "input": {
+            "$ref": "#/components/schemas/IdempotencyInput"
+          }
+        }
       }
     }
   }

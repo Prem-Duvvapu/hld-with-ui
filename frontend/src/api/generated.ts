@@ -516,6 +516,43 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/simulations/idempotency": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Read the bounded Java idempotency descriptor */
+    get: operations["getIdempotencyDescriptor"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/simulations/idempotency/runs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Run a complete bounded ledger-add program and inspect effects, receipts and retained key history
+     * @description Strict closed versioned input with exact integral JSON tokens, duplicate-key and trailing-root rejection. Java validates the entire manually ordered program before execution. Lost responses, logical handler crashes, payload conflicts and split-write result-save conflicts return complete HTTP 200 evidence. Shared raw-body, process-local admission and whole-result serialization limits apply outside the pure model. No actual database, provider, networking, physical durability or exactly-once external effect is modeled.
+     */
+    post: operations["runIdempotency"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2478,6 +2515,296 @@ export interface components {
       explanation: string;
       postState: components["schemas"]["RetryState"];
     } & (unknown & unknown & unknown & unknown);
+    /**
+     * Idempotency model input
+     * @description Canonical closed input for one illustrative ledger-add endpoint, schema 1.0/model 1.0.0. The same complete authored program can run under no deduplication, split effect/result writes or atomic publication. Java validates unique IDs, typed tenant/key scope, audit-intent payload consistency, references, nondecreasing times and complete per-call grammar before any execution. JSON Schema validates parsed shape and bounds, not program order, execution semantics, duplicate JSON keys or integer token spelling. There is no randomness, real database, provider, broker, process crash or durability guarantee.
+     */
+    IdempotencyInput: {
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      modelVersion: "1.0.0";
+      /** @enum {string} */
+      mode: "NO_DEDUP" | "SPLIT_EFFECT_RECORD" | "ATOMIC_EFFECT_RECORD";
+      retentionMs: number;
+      calls: components["schemas"]["IdempotencyCall"][];
+      schedule: components["schemas"]["IdempotencyStep"][];
+    };
+    IdempotencyIdentifier: string;
+    IdempotencyUnits: number;
+    IdempotencyTimeMs: number;
+    /** @enum {string} */
+    IdempotencyAction:
+      | "LOOKUP"
+      | "WRITE_EFFECT"
+      | "SAVE_RESULT"
+      | "RESPOND"
+      | "LOSE_RESPONSE"
+      | "CRASH_HANDLER";
+    IdempotencyCall: {
+      id: components["schemas"]["IdempotencyIdentifier"];
+      /** @description Audit-only intent identity within its tenant; it never participates in server deduplication. */
+      operationId: components["schemas"]["IdempotencyIdentifier"];
+      tenantId: components["schemas"]["IdempotencyIdentifier"];
+      /** @description Server lookup uses the typed tenant/key tuple for this single fixed endpoint. */
+      key: components["schemas"]["IdempotencyIdentifier"];
+      units: components["schemas"]["IdempotencyUnits"];
+    };
+    IdempotencyStep: {
+      id: components["schemas"]["IdempotencyIdentifier"];
+      callId: components["schemas"]["IdempotencyIdentifier"];
+      timeMs: components["schemas"]["IdempotencyTimeMs"];
+      action: components["schemas"]["IdempotencyAction"];
+    };
+    /**
+     * Idempotency model result
+     * @description Complete finite Java evidence for one illustrative ledger-add endpoint. Closed state/phase/action capabilities distinguish public effects, retained or expired key history, private preparation and caller observation. Java owns identity association, typed scopes, exact input/outcome correspondence, arithmetic, receipt ownership, expiry ordering, atomic execution, metrics and exact replay. Historical record references may point to expired rows; a cached replay is not invalidated by later expiry. A modeled handler crash retains public state by rule, not physical durability. No global one-effect-per-intent guarantee follows from retained-key protection.
+     */
+    IdempotencyResult: {
+      /** @constant */
+      simulationId: "idempotency";
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      modelVersion: "1.0.0";
+      /** @constant */
+      kind: "simulation";
+      /** @constant */
+      status: "completed";
+      input: components["schemas"]["IdempotencyInput"];
+      initialState: components["schemas"]["IdempotencyState"] & {
+        calls?: {
+          /** @constant */
+          phase?: "NOT_STARTED";
+        }[];
+        effects?: unknown[];
+        keyRecords?: unknown[];
+        /** @constant */
+        publishedUnits?: 0;
+        /** @constant */
+        activeKeyCount?: 0;
+        /** @constant */
+        expiredKeyCount?: 0;
+      };
+      outcomes: components["schemas"]["IdempotencyOutcome"][];
+      finalState: components["schemas"]["IdempotencyState"] & {
+        calls?: {
+          /** @enum {unknown} */
+          phase?: "RESPONDED" | "RESPONSE_LOST" | "CRASHED";
+          /** @constant */
+          pendingUnits?: 0;
+        }[];
+      };
+      metrics: components["schemas"]["IdempotencyMetrics"];
+      assumptions: string[];
+    } & (unknown & unknown & unknown);
+    IdempotencyEffectIdentifier: string;
+    IdempotencyRecordIdentifier: string;
+    IdempotencyReceipt: {
+      effectId: components["schemas"]["IdempotencyEffectIdentifier"];
+      units: components["schemas"]["IdempotencyUnits"];
+    };
+    IdempotencyEffect: {
+      id: components["schemas"]["IdempotencyEffectIdentifier"];
+      callId: components["schemas"]["IdempotencyIdentifier"];
+      operationId: components["schemas"]["IdempotencyIdentifier"];
+      tenantId: components["schemas"]["IdempotencyIdentifier"];
+      units: components["schemas"]["IdempotencyUnits"];
+      publishedAtMs: components["schemas"]["IdempotencyTimeMs"];
+    };
+    IdempotencyKeyRecord: {
+      id: components["schemas"]["IdempotencyRecordIdentifier"];
+      tenantId: components["schemas"]["IdempotencyIdentifier"];
+      key: components["schemas"]["IdempotencyIdentifier"];
+      units: components["schemas"]["IdempotencyUnits"];
+      receipt: components["schemas"]["IdempotencyReceipt"];
+      createdAtMs: components["schemas"]["IdempotencyTimeMs"];
+      expiresAtMs: number;
+      /** @enum {string} */
+      status: "ACTIVE" | "EXPIRED";
+    };
+    IdempotencyCallState: {
+      id: components["schemas"]["IdempotencyIdentifier"];
+      /** @enum {string} */
+      phase:
+        | "NOT_STARTED"
+        | "LOOKED_UP"
+        | "WORK_DONE"
+        | "RESULT_READY"
+        | "RESPONDED"
+        | "RESPONSE_LOST"
+        | "CRASHED";
+      /** @enum {string} */
+      lookupDisposition?: "BYPASSED" | "MISSING" | "MATCHED" | "CONFLICT";
+      observedRecordId?: components["schemas"]["IdempotencyRecordIdentifier"];
+      resolvedRecordId?: components["schemas"]["IdempotencyRecordIdentifier"];
+      pendingUnits: number;
+      publishedEffectId?: components["schemas"]["IdempotencyEffectIdentifier"];
+      receipt?: components["schemas"]["IdempotencyReceipt"];
+      /** @enum {string} */
+      resolution?:
+        "EXECUTED" | "REPLAYED" | "PAYLOAD_CONFLICT" | "RESULT_SAVE_CONFLICT";
+    } & (unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown &
+      unknown);
+    IdempotencyState: {
+      calls: components["schemas"]["IdempotencyCallState"][];
+      effects: components["schemas"]["IdempotencyEffect"][];
+      keyRecords: components["schemas"]["IdempotencyKeyRecord"][];
+      publishedUnits: number;
+      activeKeyCount: number;
+      expiredKeyCount: number;
+    };
+    IdempotencyNoDedupState: {
+      keyRecords?: unknown[];
+      /** @constant */
+      activeKeyCount?: 0;
+      /** @constant */
+      expiredKeyCount?: 0;
+      calls?: {
+        /** @constant */
+        pendingUnits?: 0;
+        /** @constant */
+        lookupDisposition?: "BYPASSED";
+        observedRecordId?: never;
+        resolvedRecordId?: never;
+        /** @constant */
+        resolution?: "EXECUTED";
+      }[];
+    };
+    IdempotencySplitState: {
+      calls?: ({
+        /** @constant */
+        pendingUnits?: 0;
+        /** @enum {unknown} */
+        lookupDisposition?: "MISSING" | "MATCHED" | "CONFLICT";
+      } & unknown)[];
+    };
+    IdempotencyAtomicState: {
+      calls?: ({
+        /** @enum {unknown} */
+        lookupDisposition?: "MISSING" | "MATCHED" | "CONFLICT";
+        /** @enum {unknown} */
+        resolution?: "EXECUTED" | "REPLAYED" | "PAYLOAD_CONFLICT";
+      } & (unknown & unknown & unknown))[];
+    };
+    IdempotencyOutcome: {
+      sequence: number;
+      stepId: components["schemas"]["IdempotencyIdentifier"];
+      callId: components["schemas"]["IdempotencyIdentifier"];
+      timeMs: components["schemas"]["IdempotencyTimeMs"];
+      action: components["schemas"]["IdempotencyAction"];
+      /** @enum {string} */
+      kind:
+        | "LOOKUP_BYPASSED"
+        | "LOOKUP_MISSED"
+        | "LOOKUP_REPLAYED"
+        | "LOOKUP_CONFLICT"
+        | "EFFECT_PUBLISHED"
+        | "EFFECT_PREPARED"
+        | "ACTION_SKIPPED"
+        | "RESULT_READY"
+        | "RESULT_STORED"
+        | "RESULT_SAVE_CONFLICT"
+        | "ATOMIC_COMMITTED"
+        | "REPLAYED_AT_COMMIT"
+        | "CONFLICT_AT_COMMIT"
+        | "RESPONSE_RECEIVED"
+        | "RESPONSE_LOST"
+        | "HANDLER_CRASHED";
+      postState: components["schemas"]["IdempotencyState"];
+      explanation: string;
+    } & (unknown & unknown & unknown & unknown & unknown & unknown & unknown);
+    IdempotencyMetrics: {
+      calls: number;
+      logicalOperations: number;
+      publishedEffects: number;
+      publishedUnits: number;
+      operationsWithRepeatedEffects: number;
+      extraEffects: number;
+      activeKeyRecords: number;
+      expiredKeyRecords: number;
+      replayedCalls: number;
+      payloadConflicts: number;
+      resultSaveConflicts: number;
+      responsesReceived: number;
+      responsesLost: number;
+      crashedCalls: number;
+      crashedCallsWithEffects: number;
+      receiptsReceived: number;
+      finalTimeMs: components["schemas"]["IdempotencyTimeMs"];
+    };
+    /**
+     * Idempotency model descriptor
+     * @description Closed metadata for the bounded original Java idempotency model. Preset references and input identities are checked separately; Java owns valid program execution.
+     */
+    IdempotencyDescriptor: {
+      /** @constant */
+      id: "idempotency";
+      title: string;
+      /** @constant */
+      kind: "simulation";
+      /** @constant */
+      schemaVersion: "1.0";
+      /** @constant */
+      modelVersion: "1.0.0";
+      description: string;
+      /** @constant */
+      defaultPresetId: "unprotected-response-loss";
+      limits: components["schemas"]["IdempotencyLimits"];
+      presets: components["schemas"]["IdempotencyPreset"][];
+      assumptions: string[];
+    };
+    IdempotencyLimits: {
+      /** @constant */
+      minCalls: 1;
+      /** @constant */
+      maxCalls: 12;
+      /** @constant */
+      minSteps: 2;
+      /** @constant */
+      maxSteps: 48;
+      /** @constant */
+      maxUnits: 1000;
+      /** @constant */
+      maxRetentionMs: 10000;
+      /** @constant */
+      maxTimeMs: 10000;
+      /** @constant */
+      maxIdLength: 32;
+      /** @constant */
+      maxDerivedIdLength: 39;
+      /** @constant */
+      maxExpiresAtMs: 20000;
+      /** @constant */
+      maxPublishedUnits: 12000;
+    };
+    IdempotencyPreset: {
+      /** @enum {string} */
+      id:
+        | "unprotected-response-loss"
+        | "split-crash-gap"
+        | "split-race"
+        | "atomic-response-loss"
+        | "atomic-race"
+        | "payload-conflict"
+        | "atomic-payload-race"
+        | "retention-boundary"
+        | "key-and-tenant-scope";
+      title: string;
+      question: string;
+      input: components["schemas"]["IdempotencyInput"];
+    };
   };
   responses: never;
   parameters: {
@@ -3527,6 +3854,97 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["RetryResult"];
+        };
+      };
+      /** @description Structured error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description request_too_large: raw API POST body exceeds the configured byte limit (default 256 KiB), including unknown-length/chunked bodies. No model executes. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description result_too_large: complete serialized result exceeds the response limit. A structured error replaces the result; no partial successful JSON is sent. Reduce workload before retrying. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description internal_error: unexpected model or serialization failure, distinct from intentional whole-result byte limits. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description simulation_busy: all process-local run slots are occupied. Try again explicitly after the Retry-After hint; it does not guarantee capacity is free. */
+      503: {
+        headers: {
+          /** @description Retry hint in seconds. Capacity may remain occupied. */
+          "Retry-After"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  getIdempotencyDescriptor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdempotencyDescriptor"];
+        };
+      };
+    };
+  };
+  runIdempotency: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["IdempotencyInput"];
+      };
+    };
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IdempotencyResult"];
         };
       };
       /** @description Structured error */

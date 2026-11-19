@@ -109,7 +109,7 @@ for (const variant of ["baseline", "backoff", "deadline", "jitter"]) {
   }
 }
 
-// Pure idempotency evidence remains standalone: no endpoint or topic capability is registered.
+// Canonical Java idempotency pairs remain evidence alongside the registered draft API.
 for (const scenario of [
   "unprotected-response-loss",
   "split-crash-gap",
@@ -130,6 +130,12 @@ for (const scenario of [
     );
   }
 }
+
+validateSchema(
+  "contracts/idempotency.descriptor.schema.json",
+  readJson("contracts/examples/idempotency-descriptor.json"),
+  "idempotency descriptor",
+);
 
 unique(
   catalog.map((entry) => entry.id),

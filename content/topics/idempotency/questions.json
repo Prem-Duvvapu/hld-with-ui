@@ -1,0 +1,146 @@
+[
+  {
+    "id": "idem-lost-response-public-effect",
+    "topicId": "idempotency",
+    "level": "beginner",
+    "kind": "prediction",
+    "prompt": "In unprotected-response-loss, a publishes one unit and loses its response. b repeats the same intent. How many effects and received receipts exist at the end?",
+    "explanation": "Java reports two effects and two public units for one audited logical operation: one extra effect. a has a missing response; b receives its own effect-b receipt. A missing response does not undo a published write. There is one received receipt, not two.",
+    "modelAnswer": "Java reports two effects and two public units for one audited logical operation: one extra effect. a has a missing response; b receives its own effect-b receipt. A missing response does not undo a published write. There is one received receipt, not two.",
+    "rubric": [
+      "Separates response loss from public state",
+      "Counts two effects, one extra effect and one received receipt",
+      "Names effect-b as the received receipt"
+    ],
+    "followUp": "What changes when only mode becomes ATOMIC_EFFECT_RECORD?",
+    "sourceIds": ["aws-safe-idempotent-apis"]
+  },
+  {
+    "id": "idem-original-receipt",
+    "topicId": "idempotency",
+    "level": "beginner",
+    "kind": "prediction",
+    "prompt": "Change only the default mode to ATOMIC_EFFECT_RECORD. Which receipt should b receive, and how much is public?",
+    "explanation": "a atomically publishes effect-a and record-a at 0 ms. Its response is lost. At 10 ms b finds that live key and reuses the receipt naming effect-a with one unit. b publishes no effect-b. The final public total is one unit and one effect. Its current call identity remains b outside the original receipt.",
+    "modelAnswer": "a atomically publishes effect-a and record-a at 0 ms. Its response is lost. At 10 ms b finds that live key and reuses the receipt naming effect-a with one unit. b publishes no effect-b. The final public total is one unit and one effect. Its current call identity remains b outside the original receipt.",
+    "rubric": [
+      "Keeps the original effect-a identity",
+      "Counts one effect and one public unit",
+      "Explains key lookup and skipped writes"
+    ],
+    "followUp": "Does a cached receipt in a handler snapshot prove that caller received it?",
+    "sourceIds": ["aws-safe-idempotent-apis"]
+  },
+  {
+    "id": "idem-split-crash-gap",
+    "topicId": "idempotency",
+    "level": "intermediate",
+    "kind": "diagnosis",
+    "prompt": "In split-crash-gap, a publishes its effect and crashes before saving a key. Why does b publish again?",
+    "explanation": "The public effect and retained result were separate writes. a leaves effect-a but no record-a; the handler crash clears only private work and its cached receipt. b therefore observes a missing key and publishes effect-b. Two effects remain, with only b retaining a key. Public survival is an explicit model rule, not a physical durability demonstration.",
+    "modelAnswer": "The public effect and retained result were separate writes. a leaves effect-a but no record-a; the handler crash clears only private work and its cached receipt. b therefore observes a missing key and publishes effect-b. Two effects remain, with only b retaining a key. Public survival is an explicit model rule, not a physical durability demonstration.",
+    "rubric": [
+      "Identifies the effect-before-record gap",
+      "Reports two effects and one retained key",
+      "States the modeled crash boundary"
+    ],
+    "followUp": "Where would you put the publication boundary in a real single-database service?",
+    "sourceIds": ["aws-safe-idempotent-apis"]
+  },
+  {
+    "id": "idem-split-race-save-conflict",
+    "topicId": "idempotency",
+    "level": "intermediate",
+    "kind": "diagnosis",
+    "prompt": "Both split-race calls miss at lookup and publish work. b then loses the insert-if-absent result save. Does its received error prove that no duplicate effect exists?",
+    "explanation": "No. Both effect-a and effect-b were published before the save race. Only record-a wins. b resolves RESULT_SAVE_CONFLICT and receives no receipt, but its public effect remains. Java reports two public effects and one extra effect. A received error is a response, not a receipt and not evidence that previous writes were rolled back.",
+    "modelAnswer": "No. Both effect-a and effect-b were published before the save race. Only record-a wins. b resolves RESULT_SAVE_CONFLICT and receives no receipt, but its public effect remains. Java reports two public effects and one extra effect. A received error is a response, not a receipt and not evidence that previous writes were rolled back.",
+    "rubric": [
+      "Uses action order to explain the gap",
+      "Keeps effect-b despite its save conflict",
+      "Separates response, receipt and effect"
+    ],
+    "followUp": "What does the atomic mode do at the second save?",
+    "sourceIds": ["aws-safe-idempotent-apis"]
+  },
+  {
+    "id": "idem-recheck-current-key",
+    "topicId": "idempotency",
+    "level": "intermediate",
+    "kind": "prediction",
+    "prompt": "In atomic-race, both lookups miss. Why does the second SAVE_RESULT replay instead of publishing?",
+    "explanation": "LOOKUP only records an earlier observation. Atomic WRITE_EFFECT prepares private units. SAVE_RESULT rechecks the current scoped key in the same transition as publication. a has already stored record-a, so b discards its private unit and reuses effect-a. Java reports REPLAYED_AT_COMMIT, one effect and no extra effect; b still retains its earlier missing observation as history.",
+    "modelAnswer": "LOOKUP only records an earlier observation. Atomic WRITE_EFFECT prepares private units. SAVE_RESULT rechecks the current scoped key in the same transition as publication. a has already stored record-a, so b discards its private unit and reuses effect-a. Java reports REPLAYED_AT_COMMIT, one effect and no extra effect; b still retains its earlier missing observation as history.",
+    "rubric": [
+      "Does not treat a lookup miss as a reservation",
+      "Explains private preparation and current-key recheck",
+      "Preserves the earlier observation as history"
+    ],
+    "followUp": "What changes when b has different units and a different audit operation?",
+    "sourceIds": ["aws-safe-idempotent-apis"]
+  },
+  {
+    "id": "idem-payload-conflict-boundaries",
+    "topicId": "idempotency",
+    "level": "intermediate",
+    "kind": "prediction",
+    "prompt": "Compare payload-conflict and atomic-payload-race. b has a different intended operation and two units under a's same tenant/key. When is it rejected?",
+    "explanation": "In payload-conflict, b finds the existing one-unit record during lookup and resolves PAYLOAD_CONFLICT. In atomic-payload-race both initially miss; b is rejected at the current-key publication check with CONFLICT_AT_COMMIT. Either way b publishes no effect. operationId labels intent for auditing; it does not override the tenant/key lookup identity.",
+    "modelAnswer": "In payload-conflict, b finds the existing one-unit record during lookup and resolves PAYLOAD_CONFLICT. In atomic-payload-race both initially miss; b is rejected at the current-key publication check with CONFLICT_AT_COMMIT. Either way b publishes no effect. operationId labels intent for auditing; it does not override the tenant/key lookup identity.",
+    "rubric": [
+      "Distinguishes lookup rejection from publication rejection",
+      "Keeps the original effect and result unchanged",
+      "Explains audit identity versus lookup identity"
+    ],
+    "followUp": "Can identical payloads alone distinguish two legitimate intended writes?",
+    "sourceIds": ["aws-safe-idempotent-apis"]
+  },
+  {
+    "id": "idem-retention-equality",
+    "topicId": "idempotency",
+    "level": "intermediate",
+    "kind": "calculation",
+    "prompt": "In retention-boundary, a saves at 0 ms with 100 ms retention. b looks up at 99 ms and c at 100 ms. Count effects and active/expired records at the end.",
+    "explanation": "record-a expires at 0+100=100 ms. b observes it at 99 ms and replays its receipt; replay does not extend retention. Before c's action at 100 ms, that key expires, so c publishes effect-c and record-c. Two effects remain, with one active and one expired historical record, and one extra effect for the audited intent. Key expiry does not remove effect-a.",
+    "modelAnswer": "record-a expires at 0+100=100 ms. b observes it at 99 ms and replays its receipt; replay does not extend retention. Before c's action at 100 ms, that key expires, so c publishes effect-c and record-c. Two effects remain, with one active and one expired historical record, and one extra effect for the audited intent. Key expiry does not remove effect-a.",
+    "rubric": [
+      "Calculates equality at 100 ms",
+      "Does not refresh retention on replay",
+      "Counts two effects and one active/one expired record"
+    ],
+    "followUp": "What would a caller contract need to say about retries after retention?",
+    "sourceIds": ["stripe-idempotent-requests"]
+  },
+  {
+    "id": "idem-key-tenant-audit",
+    "topicId": "idempotency",
+    "level": "intermediate",
+    "kind": "diagnosis",
+    "prompt": "In key-and-tenant-scope, a uses (t,k), b uses (t,new) for the same audit operation, and c uses (other,k). Why are there three effects for two audited operations?",
+    "explanation": "The server looks up the typed tenant/key pair. Changing t's key to new permits another effect for that same audited operation; the other tenant independently uses k. Java reports three effects, three active key records, two audited logical operations and one extra effect. Audit operationId is not a deduplication key, and tenant namespacing is not implemented authorization.",
+    "modelAnswer": "The server looks up the typed tenant/key pair. Changing t's key to new permits another effect for that same audited operation; the other tenant independently uses k. Java reports three effects, three active key records, two audited logical operations and one extra effect. Audit operationId is not a deduplication key, and tenant namespacing is not implemented authorization.",
+    "rubric": [
+      "Uses the pair rather than operationId",
+      "Counts three effects, two audited operations and one extra effect",
+      "Avoids claiming an authorization system"
+    ],
+    "followUp": "How would an authenticated service derive tenant scope instead of trusting an arbitrary caller field?",
+    "sourceIds": ["aws-safe-idempotent-apis"]
+  },
+  {
+    "id": "idem-external-effect-transfer",
+    "topicId": "idempotency",
+    "level": "intermediate",
+    "kind": "design-decision",
+    "prompt": "A service atomically saves a report row and its idempotency receipt, then calls an external email provider. Does the local boundary prove one email per intended report?",
+    "explanation": "The local boundary protects only the modeled local publication. An external provider effect can fall on another failure boundary: its request may complete while its response is lost. Define the provider's own idempotency/receipt contract and a recoverable handoff or reconciliation policy, then verify actual failure cases. This model supplies no provider, durable handoff or cross-service exactly-once guarantee.",
+    "modelAnswer": "The local boundary protects only the modeled local publication. An external provider effect can fall on another failure boundary: its request may complete while its response is lost. Define the provider's own idempotency/receipt contract and a recoverable handoff or reconciliation policy, then verify actual failure cases. This model supplies no provider, durable handoff or cross-service exactly-once guarantee.",
+    "rubric": [
+      "Names the local boundary and remaining external ambiguity",
+      "Asks for provider identity/receipt and recovery evidence",
+      "Does not invent durability or once-only delivery"
+    ],
+    "followUp": "What evidence would distinguish a retryable missing observation from a new intended email?",
+    "sourceIds": ["aws-safe-idempotent-apis"]
+  }
+]

@@ -68,6 +68,11 @@ const RetryPage = lazy(() =>
     default: module.RetryPage,
   })),
 );
+const IdempotencyPage = lazy(() =>
+  import("../pages/IdempotencyPage").then((module) => ({
+    default: module.IdempotencyPage,
+  })),
+);
 const WorkshopPage = lazy(() =>
   import("../pages/WorkshopPage").then((module) => ({
     default: module.WorkshopPage,
@@ -147,6 +152,10 @@ export function App() {
             <Route
               path="/draft/topics/timeouts-retries"
               element={<RetryPage />}
+            />
+            <Route
+              path="/draft/topics/idempotency"
+              element={<IdempotencyPage />}
             />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

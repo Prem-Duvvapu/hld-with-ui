@@ -71,10 +71,16 @@ preserving real split crashes, cleared crash receipts and expired cached replay 
 Four focused fixtures verify that distinction. The first format check caught the newly
 added fixture formatting; final lint/format passed after formatting it. Assertions were retained.
 
-Required final-head CI, including the complete updated contract/browser/runtime suites,
-and actual PR delivery remain pending. Record their real results in the PR after completion.
-No API, catalog, OpenAPI component, frontend type or renderer has been registered. Human,
-hosted and publication checks for the existing drafts remain separate and are not completed here.
+Delivered in [PR #81](https://github.com/Prem-Duvvapu/hld-with-ui/pull/81), squash
+`bef3f5234a8874966ca143390b8677180c59daf6`, on 2026-10-28. Required CI run
+`40736584975` passed all three required jobs for source `48b4c762da76804479678b9482b5a2b58b359fc1`.
+It executed 962 Java tests with one existing opt-in skip, 785 frontend tests,
+1047 contract fixtures, 244 browser journeys, 20 browser performance groups and 20
+reading/cache groups, plus packaged-runtime checks. The first browser job failed downloading
+Maven before compilation; rerunning that failed job on the same source passed. See the PR
+for actual delivery evidence. No API, catalog, OpenAPI component, frontend type or renderer
+was registered by this foundation. HLD-19B adds that integration separately. Human, hosted
+and publication checks remain independent.
 
 ## Handoff
 
