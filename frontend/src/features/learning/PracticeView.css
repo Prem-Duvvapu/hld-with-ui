@@ -1,3 +1,18 @@
+.practice-view,
+.practice-view .practice-resume-target,
+.practice-view .question-card,
+.practice-view .interview-question label,
+.practice-view .interview-question textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+.practice-view .question-list {
+  grid-template-columns: minmax(0, 1fr);
+}
+.practice-view .question-card {
+  overflow-wrap: anywhere;
+}
+
 .practice-save-bar {
   display: flex;
   flex-wrap: wrap;

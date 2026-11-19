@@ -202,3 +202,14 @@ Never enable the authoring flag in CI or repair mismatches by rewriting evidence
 model goldens remain unchanged. Maximum-boundary serialization stays in memory/logs; see
 [HLD-19A](docs/work-items/HLD-19A.md) and the
 [idempotency plan](docs/IDEMPOTENCY_IMPLEMENTATION_PLAN.md) for actual checks and pending APIs/UI.
+
+HLD-19B adds an actual idempotency GET descriptor example. Intentionally author only that
+new descriptor through its explicit test/flag, then format and verify without authoring:
+
+```bash
+(cd backend && ./mvnw -B -Dtest=IdempotencyApiTest#descriptorSnapshotMatchesActualGetAndOnlyExplicitAuthoringCanWriteIt -Dhld.writeIdempotencyDescriptor=true test)
+(cd frontend && npx prettier --write ../contracts/examples/idempotency-descriptor.json)
+```
+
+Do not regenerate the nine model pairs to conceal a transport mismatch or enable authoring
+flags in CI. [HLD-19B](docs/work-items/HLD-19B.md) records actual API/UI/runtime checks.

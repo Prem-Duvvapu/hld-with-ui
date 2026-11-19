@@ -21,6 +21,7 @@ import "./validate-content-atomicity.fixtures.mjs";
 import "./validate-retries-contract.fixtures.mjs";
 import "./validate-idempotency-contract.fixtures.mjs";
 import "./validate-retry-http-contract.fixtures.mjs";
+import "./validate-idempotency-http-contract.fixtures.mjs";
 import "./validate-atomicity-http-contract.fixtures.mjs";
 import "./event-selector-capabilities.fixtures.mjs";
 

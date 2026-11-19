@@ -65,6 +65,17 @@ beforeEach(() => {
 });
 
 describe("saved practice answers", () => {
+  it("keeps a restored explanation out of its accessible name", () => {
+    store = makeStore(serializeAnswers([record]));
+    render(view());
+    const explanation = screen.getByRole("textbox", {
+      name: "Your explanation",
+    });
+    expect(explanation).toHaveValue("My saved explanation");
+    expect(explanation).toHaveAccessibleName("Your explanation");
+    fireEvent.change(explanation, { target: { value: "A revised answer" } });
+    expect(explanation).toHaveAccessibleName("Your explanation");
+  });
   it("restores revised explanations and reference state after unmount, without grading free text", () => {
     const rendered = render(view());
     fireEvent.change(screen.getByLabelText("Your explanation"), {

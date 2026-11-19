@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
+import { useId, useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import {
   useModuleActivity,
   usePanelActive,
@@ -129,6 +129,7 @@ function InterviewQuestion({
   question: Question;
   number: number;
 } & AnswerProps) {
+  const explanationLabel = useId();
   const answer = saved?.answer.kind === "text" ? saved.answer.text : "";
   const revealed = Boolean(
     saved?.referenceViewed && saved.contentVersion === contentVersion,
@@ -141,8 +142,9 @@ function InterviewQuestion({
       <h3>{question.prompt}</h3>
       <VersionNotice saved={saved} contentVersion={contentVersion} />
       <label>
-        Your explanation
+        <span id={explanationLabel}>Your explanation</span>
         <textarea
+          aria-labelledby={explanationLabel}
           rows={6}
           value={answer}
           maxLength={MAX_ANSWER_LENGTH}

@@ -8,6 +8,9 @@ import {
   CacheCompatibilityError,
 } from "./cacheCompatibility";
 import type {
+  IdempotencyInput,
+  IdempotencyResult,
+  IdempotencyDescriptor,
   RetryInput,
   RetryResult,
   RetryDescriptor,
@@ -78,6 +81,10 @@ async function request<T>(
 ): Promise<T> {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 10_000);
+  const externalSignal = init?.signal;
+  const cancel = () => controller.abort();
+  if (externalSignal?.aborted) cancel();
+  else externalSignal?.addEventListener("abort", cancel, { once: true });
   try {
     const response = await fetch(path, { ...init, signal: controller.signal });
     const body: unknown = await response.json().catch(() => null);
@@ -103,17 +110,57 @@ async function request<T>(
       throw new ApiClientError(error.message);
     }
     if (error instanceof DOMException && error.name === "AbortError") {
-      throw new ApiClientError("The server took too long to respond.");
+      throw new ApiClientError(
+        externalSignal?.aborted
+          ? "The request was cancelled."
+          : "The server took too long to respond.",
+      );
     }
     throw new ApiClientError(
       "Cannot reach the Java backend. Start it and try again.",
     );
   } finally {
     window.clearTimeout(timeout);
+    externalSignal?.removeEventListener("abort", cancel);
   }
 }
 
 export const api = {
+  getIdempotency: async (signal?: AbortSignal) => {
+    const { assertIdempotencyDescriptor } =
+      await import("./idempotencyCompatibility");
+    return request<IdempotencyDescriptor>(
+      "/api/v1/simulations/idempotency",
+      { signal },
+      deliveryValidation(assertIdempotencyDescriptor),
+    );
+  },
+  runIdempotency: async (input: IdempotencyInput, signal?: AbortSignal) => {
+    // Capture the whole nested workload before the first await, including the lazy import.
+    const payload = JSON.stringify(input);
+    const submitted: IdempotencyInput = JSON.parse(payload);
+    const { assertIdempotencyInput, assertIdempotencyResult } =
+      await import("./idempotencyCompatibility");
+    try {
+      assertIdempotencyInput(submitted);
+    } catch (cause: unknown) {
+      throw new ApiClientError(
+        cause instanceof Error
+          ? cause.message
+          : "Check the submitted idempotency input.",
+      );
+    }
+    return request<IdempotencyResult>(
+      "/api/v1/simulations/idempotency/runs",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+        signal,
+      },
+      deliveryValidation((body) => assertIdempotencyResult(body, submitted)),
+    );
+  },
   retryDescriptor: async () => {
     const { assertRetryDescriptor } = await import("./retryCompatibility");
     return request<RetryDescriptor>(

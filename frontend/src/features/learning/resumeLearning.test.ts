@@ -1,3 +1,6 @@
+import idempotencyQuestions from "../../../../content/topics/idempotency/questions.json";
+import retryQuestions from "../../../../content/topics/timeouts-retries/questions.json";
+import retryCheckpoints from "../../../../content/topics/timeouts-retries/checkpoints.json";
 import reservationCheckpoints from "../../../../content/topics/transactions-isolation/checkpoints.json";
 import reservationQuestions from "../../../../content/topics/transactions-isolation/questions.json";
 import { describe, expect, it } from "vitest";
@@ -433,3 +436,114 @@ it("resumes both atomicity saved activity types using the canonical transaction 
     });
   }
 });
+
+const idempotency = {
+  topic: entries.find((entry) => entry.id === "idempotency")!,
+  questions: idempotencyQuestions,
+  checkpoints: [],
+  lessonMarkdown: "Compare public effects with retained original receipts.",
+} as TopicDetail;
+const retry = {
+  topic: entries.find((entry) => entry.id === "timeouts-retries")!,
+  questions: retryQuestions,
+  checkpoints: retryCheckpoints,
+  lessonMarkdown:
+    "Caller waiting and accepted server work have separate lifetimes.",
+} as TopicDetail;
+
+it.each([idempotency, retry])(
+  "resumes the implemented $topic.id draft at its exact authored Practice question while preserving older saved work",
+  (detail) => {
+    const question = detail.questions[1]!;
+    const record: PracticeAnswer = {
+      ...saved,
+      topicId: detail.topic.id,
+      activityId: question.id,
+      contentVersion: "0.9.0",
+    };
+    const before = JSON.stringify({ detail, record });
+    expect(supportsDraftTopicResume(detail.topic.id)).toBe(true);
+    expect(draftTopicResumeTarget(record, detail)).toMatchObject({
+      path: `/draft/topics/${detail.topic.id}?view=practice&question=${question.id}`,
+      activity: question.prompt,
+      removed: false,
+    });
+    expect(JSON.stringify({ detail, record })).toBe(before);
+    expect(
+      draftTopicResumeTarget(
+        { ...record, activityId: "retired-question" },
+        detail,
+      ),
+    ).toMatchObject({
+      path: `/draft/topics/${detail.topic.id}`,
+      removed: true,
+    });
+    expect(() => topicResumeTarget(record, detail)).toThrow(/unavailable/);
+  },
+);
+
+it.each(["prediction", "tradeoff"])(
+  "resumes an actual retry Guided %s at the exact authored checkpoint",
+  (suffix) => {
+    const checkpoint = retry.checkpoints[4]!;
+    const record: PracticeAnswer = {
+      ...saved,
+      topicId: retry.topic.id,
+      activityId: `${checkpoint.id}-${suffix}`,
+      contentVersion: "1.0.0",
+    };
+    expect(draftTopicResumeTarget(record, retry)).toMatchObject({
+      path: `/draft/topics/timeouts-retries?view=guided&checkpoint=${checkpoint.id}`,
+      activity: checkpoint.title,
+      removed: false,
+    });
+    for (const activityId of [
+      `${checkpoint.id}-extra-${suffix}`,
+      "retired-checkpoint-prediction",
+    ])
+      expect(
+        draftTopicResumeTarget({ ...record, activityId }, retry),
+      ).toMatchObject({
+        path: "/draft/topics/timeouts-retries",
+        removed: true,
+      });
+    expect(
+      draftTopicResumeTarget(record, {
+        ...retry,
+        topic: {
+          ...retry.topic,
+          capabilities: retry.topic.capabilities.filter(
+            (item) => item !== "guided",
+          ),
+        },
+      }),
+    ).toMatchObject({ path: "/draft/topics/timeouts-retries", removed: true });
+  },
+);
+
+it.each([idempotency, retry])(
+  "keeps renderer, identity and capability guards when resuming $topic.id",
+  (detail) => {
+    const record: PracticeAnswer = {
+      ...saved,
+      topicId: detail.topic.id,
+      activityId: detail.questions[0]!.id,
+    };
+    for (const incompatible of [
+      { ...detail, topic: { ...detail.topic, status: "planned" as const } },
+      {
+        ...detail,
+        topic: { ...detail.topic, capabilities: ["study", "practice"] },
+      },
+      { ...detail, topic: { ...detail.topic, simulationIds: [] } },
+      { ...detail, lessonMarkdown: " " },
+    ] as TopicDetail[])
+      expect(() => draftTopicResumeTarget(record, incompatible)).toThrow(
+        /unavailable/,
+      );
+    expect(() =>
+      draftTopicResumeTarget({ ...record, topicId: "future-topic" }, detail),
+    ).toThrow(/unavailable/);
+    expect(supportsDraftTopicResume("future-topic")).toBe(false);
+  },
+);

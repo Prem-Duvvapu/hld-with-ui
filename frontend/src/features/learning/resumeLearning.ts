@@ -42,7 +42,9 @@ export function supportsDraftTopicResume(id: string) {
     id === "queues-tail-latency" ||
     id === "queues-delivery" ||
     id === "data-access-models" ||
-    id === "transactions-isolation"
+    id === "transactions-isolation" ||
+    id === "timeouts-retries" ||
+    id === "idempotency"
   );
 }
 

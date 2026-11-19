@@ -262,3 +262,24 @@ serialization is measured without committing a giant trace. Consult
 [HLD-19A](../docs/work-items/HLD-19A.md), [the staged plan](../docs/IDEMPOTENCY_IMPLEMENTATION_PLAN.md)
 and [decision 0040](../docs/decisions/0040-idempotency-effect-and-result-boundary.md) for actual
 checks and pending API/UI work. No real storage, provider or physical durability is claimed.
+
+## Idempotency HTTP and learning draft
+
+HLD-19B integrates the unchanged foundation through HTTP 1.13.0. GET
+`/api/v1/simulations/idempotency` exposes eleven Java-derived limits, the explicit
+`unprotected-response-loss` default and nine canonical presets. POST `/runs` accepts only
+the complete closed input program. Unknown/null/coerced/duplicate/trailing tokens reject;
+existing shared byte/result/admission guards retain their error/recovery semantics. Legal
+conflict, response loss and handler crash remain 200 completed simulation evidence.
+
+`idempotency.descriptor.schema.json` is the canonical descriptor source. The exporter
+resolves its reachable definitions into OpenAPI and a small lazy descriptor subset; generated
+TypeScript types are aliases over that HTTP contract. Input/result schemas and all nine model
+pairs remain unchanged. React checks shape and static captured-input/reference/history
+consistency, selects actual initial/post-step snapshots and displays Java metrics without
+recomputing behavior. No checkpoint family is added in this contribution.
+
+The actual GET descriptor example is authored only through the explicit method/flag in
+[CONTRIBUTING](../CONTRIBUTING.md#standalone-idempotency-examples); ordinary checks compare
+without writing. See [HLD-19B](../docs/work-items/HLD-19B.md) for actual integration checks.
+Guided/design, human/hosted/prerequisite release review and publication remain pending.

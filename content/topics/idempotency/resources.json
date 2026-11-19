@@ -1,0 +1,22 @@
+[
+  {
+    "id": "aws-safe-idempotent-apis",
+    "title": "Making retries safe with idempotent APIs",
+    "organization": "AWS",
+    "url": "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/",
+    "sourceType": "engineering-article",
+    "relevantSections": "Retries and semantic equivalence; late arriving requests; same client request ID, different intent",
+    "supports": "Request identity, equivalent results and atomic token/mutation recording. The Java endpoint and failure rules are original model choices, not AWS behavior.",
+    "reviewedAt": "2026-11-19"
+  },
+  {
+    "id": "stripe-idempotent-requests",
+    "title": "Idempotent requests",
+    "organization": "Stripe",
+    "url": "https://docs.stripe.com/api/idempotent_requests",
+    "sourceType": "documentation",
+    "relevantSections": "API v1 saved results, retention and parameter comparison; distinct API v2 behavior",
+    "supports": "An example of service-specific key retention, payload validation and response policies. No Stripe integration, retention recommendation or provider guarantee is modeled.",
+    "reviewedAt": "2026-11-19"
+  }
+]

@@ -147,3 +147,21 @@ export type RetryAttemptState = components["schemas"]["RetryAttemptState"];
 export type RetryWorkerState = components["schemas"]["RetryWorkerState"];
 export type RetryEvent = components["schemas"]["RetryEvent"];
 export type RetryMetrics = RetryResult["metrics"];
+
+export type IdempotencyInput = components["schemas"]["IdempotencyInput"];
+export type IdempotencyResult = components["schemas"]["IdempotencyResult"];
+export type IdempotencyDescriptor =
+  components["schemas"]["IdempotencyDescriptor"];
+export type IdempotencyLimits = components["schemas"]["IdempotencyLimits"];
+export type IdempotencyPreset = components["schemas"]["IdempotencyPreset"];
+export type IdempotencyCall = components["schemas"]["IdempotencyCall"];
+export type IdempotencyStep = components["schemas"]["IdempotencyStep"];
+export type IdempotencyCallState =
+  components["schemas"]["IdempotencyCallState"];
+export type IdempotencyState = components["schemas"]["IdempotencyState"];
+export type IdempotencyOutcome = components["schemas"]["IdempotencyOutcome"];
+export type IdempotencyEffect = components["schemas"]["IdempotencyEffect"];
+export type IdempotencyKeyRecord =
+  components["schemas"]["IdempotencyKeyRecord"];
+export type IdempotencyReceipt = components["schemas"]["IdempotencyReceipt"];
+export type IdempotencyMetrics = components["schemas"]["IdempotencyMetrics"];

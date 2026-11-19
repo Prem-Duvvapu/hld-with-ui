@@ -9,7 +9,7 @@ Learn high-level system design by reading, experimenting, diagnosing failures, a
 
 The idea is simple: **see a system work, change one condition, explain what happened, then choose a design.** Each module will help you answer both “How does this work?” and “How would I explain it to my team or in an interview?”
 
-**Status: four published modules, five draft topics and one draft workshop.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers ten authored stages from Requirements through Defense by direct link; publication checks and later roadmap modules remain pending.
+**Status: four published modules, six draft topics and one draft workshop.** The application includes a React/TypeScript learning shell, a Java/Spring Boot API, Request Flow & Load Balancing, Capacity Estimation, a deterministic Distributed Rate Limiter module, and a deterministic Cache-Aside module. A draft URL-shortener workshop offers ten authored stages from Requirements through Defense by direct link; publication checks and later roadmap modules remain pending.
 
 A draft **Queues & Tail Latency** module is available at
 `/draft/topics/queues-tail-latency`. It connects a strict Java API to editable worker/buffer/job
@@ -63,15 +63,21 @@ core draft views. Human/hosted/prerequisite release review and publication remai
 The model has no cancellation, durable storage, actual networking or idempotency. There
 are still four published modules. See the [retry plan](docs/TIMEOUTS_RETRIES_IMPLEMENTATION_PLAN.md).
 
-## Idempotency foundation
+## Idempotency draft
 
-The separate [idempotency foundation](docs/work-items/HLD-19A.md) adds a bounded Java
-model for lost responses, repeated effects, split writes, atomic publication, payload
-conflicts, key retention and tenant scope. Nine scenarios and standalone contracts establish
-the behavior before an API or learning UI is registered. It is not another runnable topic
-yet; published/draft counts above are unchanged. The
-[implementation plan](docs/IDEMPOTENCY_IMPLEMENTATION_PLAN.md) defines the remaining API,
-Playground, teaching and Guided/design work. No real database or provider is used.
+The direct draft `/draft/topics/idempotency` connects the separate Java foundation to
+strict APIs, nine editable scenarios, initial/post-step playback, Study and nine Practice
+questions. Compare unprotected writes, split effect/result writes and atomic current-key
+publication using the same calls. Inspect private units, the public ledger, retained key
+history, original receipts and caller observations separately. Saved Practice
+answers can resume their exact question through Continue Learning; retry draft answers
+and Guided checkpoints also use their implemented routes.
+
+[HLD-19B](docs/work-items/HLD-19B.md) records actual integration checks and remaining gates.
+Guided checkpoints and authored design views are the next bounded contribution. Four modules
+remain published; this draft stays outside discovery. The
+[idempotency plan](docs/IDEMPOTENCY_IMPLEMENTATION_PLAN.md) defines the model boundary.
+No actual database, provider, durability or universal exactly-once guarantee is modeled.
 
 ## Record your learning
 
