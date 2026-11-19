@@ -347,11 +347,18 @@ for (const theme of ["light", "dark"] as const) {
       await expect(
         resume(page).getByRole("combobox", { name: "Saved module" }),
       ).toBeFocused();
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= innerWidth,
-        ),
-      ).toBe(true);
+      // Resize and focus can settle on different frames. Keep the strict
+      // no-overflow requirement and also verify the requested viewport.
+      await expect
+        .poll(() =>
+          page.evaluate(
+            (expectedWidth) =>
+              innerWidth === expectedWidth &&
+              document.documentElement.scrollWidth <= innerWidth,
+            width,
+          ),
+        )
+        .toBe(true);
       expect(
         await resume(page)
           .locator(".continue-card")

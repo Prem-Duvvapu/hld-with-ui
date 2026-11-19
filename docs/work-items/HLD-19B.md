@@ -64,6 +64,17 @@ that shared fix. Native zoom exposed implicit grid minimum sizing for long Pract
 questions; bounded tracks, controls and word wrapping now keep the page within its viewport.
 The final visual refresh also applies the shared primary-button style to the run action.
 
+The first remote run (`44580922135`, source `f280b3d`) passed Quality and Packaged
+runtime, but the browser suite reported 265 passes and one existing Continue Learning
+resize check failure. It sampled document width immediately after resizing to 320 px.
+The captured DOM replays at 320/320 with no overflow; ten unchanged local repetitions
+also passed. The check now waits for the requested viewport and the same strict
+`scrollWidth <= innerWidth` condition rather than taking one resize-frame sample.
+Ten repeated checks passed after that synchronization change, with scoped lint/format
+checks. No Home layout or pixel tolerance was changed. Final-source CI remains the
+merge gate and its actual result belongs in the PR delivery record.
+
+
 Agent visual review inspected the following intentional screenshots. These are review
 artifacts, not proof of human newcomer or screen-reader review:
 
