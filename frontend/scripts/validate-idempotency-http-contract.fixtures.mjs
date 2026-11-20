@@ -44,8 +44,8 @@ const pairs = ids.map((id) => ({
   result: read(`../../contracts/examples/idempotency-${id}-result.json`),
 }));
 
-test("idempotency HTTP 1.13.0 registers direct GET/POST and complete shared errors", () => {
-  assert.equal(api.info.version, "1.13.0");
+test("idempotency HTTP 1.14.0 registers direct GET/POST and complete shared errors", () => {
+  assert.equal(api.info.version, "1.14.0");
   const path = "/api/v1/simulations/idempotency",
     get = api.paths[path].get,
     post = api.paths[path + "/runs"].post;

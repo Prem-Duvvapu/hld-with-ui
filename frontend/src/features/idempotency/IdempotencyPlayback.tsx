@@ -5,32 +5,56 @@ import { IdempotencyStateView } from "./IdempotencyStateView";
 import { outcomeLabels } from "./idempotencyLabels";
 export function IdempotencyPlayback({ result }: { result: IdempotencyResult }) {
   const scope = useId();
-  const [position, setPosition] = useState(0),
-    [playing, setPlaying] = useState(false),
-    [intervalMs, setIntervalMs] = useState(700),
+  const active = usePanelActive();
+  const [playback, setPlayback] = useState({
+    position: 0,
+    playing: false,
+    active,
+    session: 0,
+  });
+  const { position, playing, session } = playback;
+  const [intervalMs, setIntervalMs] = useState(700),
     [filter, setFilter] = useState("");
-  const active = usePanelActive(),
-    [wasActive, setWasActive] = useState(active);
-  if (active !== wasActive) {
-    setWasActive(active);
-    if (!active) setPlaying(false);
+  if (active !== playback.active) {
+    setPlayback((current) => ({
+      ...current,
+      active,
+      playing: false,
+      session: current.session + 1,
+    }));
   }
   const last = result.outcomes.length;
   useEffect(() => {
     if (!playing || !active) return;
     const timer = window.setTimeout(() => {
-      setPosition((previous) => Math.min(previous + 1, last));
-      if (position + 1 >= last) setPlaying(false);
+      // A queued task can outlive timer cleanup. Check ownership when the update applies.
+      setPlayback((current) => {
+        if (!current.active || !current.playing || current.session !== session)
+          return current;
+        const next = Math.min(current.position + 1, last);
+        return { ...current, position: next, playing: next < last };
+      });
     }, intervalMs);
     return () => window.clearTimeout(timer);
-  }, [playing, active, position, last, intervalMs]);
+  }, [playing, active, position, session, last, intervalMs]);
   const outcome = position ? result.outcomes[position - 1] : undefined;
   const caption = outcome
     ? `Step ${outcome.sequence} of ${last} · ${outcome.timeMs} ms · ${outcome.stepId}`
     : `Initial state · ${last} authored steps`;
   function seek(next: number) {
-    setPlaying(false);
-    setPosition(Math.max(0, Math.min(last, next)));
+    setPlayback((current) => ({
+      ...current,
+      playing: false,
+      position: Math.max(0, Math.min(last, next)),
+      session: current.session + 1,
+    }));
+  }
+  function pause() {
+    setPlayback((current) => ({
+      ...current,
+      playing: false,
+      session: current.session + 1,
+    }));
   }
   return (
     <section
@@ -53,11 +77,15 @@ export function IdempotencyPlayback({ result }: { result: IdempotencyResult }) {
             playing ? "Pause idempotency trace" : "Play idempotency trace"
           }
           onClick={() => {
-            if (playing) setPlaying(false);
-            else {
-              if (position >= last) setPosition(0);
-              setPlaying(true);
-            }
+            setPlayback((current) => ({
+              ...current,
+              position:
+                !current.playing && current.position >= last
+                  ? 0
+                  : current.position,
+              playing: current.active && !current.playing,
+              session: current.session + 1,
+            }));
           }}
         >
           {playing ? "Pause" : "Play"}
@@ -87,7 +115,7 @@ export function IdempotencyPlayback({ result }: { result: IdempotencyResult }) {
             aria-label="Idempotency playback speed"
             value={intervalMs}
             onChange={(event) => {
-              setPlaying(false);
+              pause();
               setIntervalMs(Number(event.target.value));
             }}
           >
@@ -156,7 +184,7 @@ export function IdempotencyPlayback({ result }: { result: IdempotencyResult }) {
             aria-label="Idempotency call filter"
             value={filter}
             onChange={(event) => {
-              setPlaying(false);
+              pause();
               setFilter(event.target.value);
             }}
           >

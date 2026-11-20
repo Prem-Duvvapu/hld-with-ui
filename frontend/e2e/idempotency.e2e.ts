@@ -247,7 +247,7 @@ test("idempotency Study and Practice preserve local answers and never run implic
       exact: true,
     }),
   ).toBeVisible();
-  await expect(page.getByRole("tab")).toHaveCount(3);
+  await expect(page.getByRole("tab")).toHaveCount(6);
   await page.getByRole("tab", { name: "Practice", exact: true }).click();
   const answer = page.getByLabel("Your explanation", { exact: true }).first();
   await answer.fill(
@@ -428,7 +428,16 @@ test("idempotency playback is keyboard operable and pauses when hidden", async (
   await page
     .getByRole("button", { name: "Play idempotency trace", exact: true })
     .click();
-  await page.getByRole("tab", { name: "Study", exact: true }).click();
+  const study = page.getByRole("tab", { name: "Study", exact: true });
+  await study.click();
+  await expect(study).toHaveAttribute("aria-selected", "true");
+  await expect(
+    page.getByRole("tabpanel", {
+      name: "Playground",
+      exact: true,
+      includeHidden: true,
+    }),
+  ).toBeHidden();
   // A presentation timer would have advanced while reading if the hidden panel were active.
   const hiddenPosition = await position.inputValue();
   await page.waitForTimeout(800);

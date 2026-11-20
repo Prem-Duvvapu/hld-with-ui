@@ -59,9 +59,10 @@ split effect/result publication and one atomic current-key recheck. Operation id
 audit-only; tenant/key scope, stored receipts and expiry define the protection boundary.
 [HLD-19B](work-items/HLD-19B.md) adds strict APIs and the direct draft Playground/Study/Practice,
 with editable calls/steps and actual initial/post-step snapshots. Its work item records actual
-checks; publication remains separate. Follow the
-[frozen idempotency plan](IDEMPOTENCY_IMPLEMENTATION_PLAN.md) next for HLD-19C Guided/design,
-then Notification composition.
+checks; publication remains separate. [HLD-19C](work-items/HLD-19C.md) adds eight
+Java-targeted Guided checkpoints, inspectable Architecture and three manual Call sequences.
+Consult its actual verification before Notification composition; the
+[frozen idempotency plan](IDEMPOTENCY_IMPLEMENTATION_PLAN.md) defines the unchanged boundary.
 Physical durability, SQL isolation, external providers and publication remain separate.
 
 ## 1. Objective and scope

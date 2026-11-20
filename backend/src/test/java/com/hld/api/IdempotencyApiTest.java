@@ -260,15 +260,17 @@ class IdempotencyApiTest {
         assertThat(success(post(mapper.writeValueAsBytes(IdempotencyPresets.baseline()))).path("status").asString()).isEqualTo("completed");
     }
 
-    @Test void directDraftHasThreeCapabilitiesAndRemainsOutsidePublishedDiscovery() throws Exception {
+    @Test void directDraftHasGuidedCapabilitiesAndRemainsOutsidePublishedDiscovery() throws Exception {
         var detail = success(get("/api/v1/draft/topics/idempotency"));
         assertThat(detail.at("/topic/id").asString()).isEqualTo("idempotency");
         assertThat(detail.at("/topic/status").asString()).isEqualTo("draft");
-        assertThat(detail.at("/topic/contentVersion").asString()).isEqualTo("1.0.0");
+        assertThat(detail.at("/topic/contentVersion").asString()).isEqualTo("1.1.0");
         var capabilities = new ArrayList<String>();
         for (JsonNode capability : detail.at("/topic/capabilities")) capabilities.add(capability.asString());
-        assertThat(capabilities).containsExactlyInAnyOrder("study", "simulation", "practice");
-        assertThat(detail.path("checkpoints").isMissingNode() || detail.path("checkpoints").isEmpty()).isTrue();
+        assertThat(capabilities).containsExactlyInAnyOrder("study", "simulation", "guided", "practice");
+        assertThat(detail.path("checkpoints").size()).isEqualTo(8);
+        assertThat(detail.path("checkpoints")).isEqualTo(mapper.readTree(Files.readAllBytes(
+                Path.of("../content/topics/idempotency/checkpoints.json"))));
         assertThat(detail.path("questions").size()).isEqualTo(9);
         assertThat(detail.path("questions")).isEqualTo(mapper.readTree(Files.readAllBytes(
                 Path.of("../content/topics/idempotency/questions.json"))));
@@ -277,7 +279,7 @@ class IdempotencyApiTest {
         assertThat(detail.at("/topic/lessonPath").asString()).isEqualTo("topics/idempotency/lesson.md");
         assertThat(detail.at("/topic/questionsPath").asString()).isEqualTo("topics/idempotency/questions.json");
         assertThat(detail.at("/topic/resourcesPath").asString()).isEqualTo("topics/idempotency/resources.json");
-        assertThat(detail.at("/topic/checkpointsPath").isMissingNode()).isTrue();
+        assertThat(detail.at("/topic/checkpointsPath").asString()).isEqualTo("topics/idempotency/checkpoints.json");
         assertThat(detail.at("/topic/simulationIds")).isEqualTo(mapper.valueToTree(List.of("idempotency")));
         assertThat(detail.at("/topic/prerequisites")).isEqualTo(mapper.valueToTree(List.of("transactions-isolation", "queues-delivery")));
         assertThat(get("/api/v1/topics/idempotency").statusCode()).isEqualTo(404);

@@ -1085,3 +1085,140 @@ test("reject a retry attempt capability made optional by a contract drift", () =
     },
   );
 });
+
+function checkIdempotencyTarget(
+  target,
+  expected,
+  expectedStatus = 1,
+  mutateApi = () => {},
+) {
+  checkChange(
+    () => {},
+    expected,
+    () => {},
+    (fixture) => {
+      const checkpointPath = join(
+        fixture,
+        "content/topics/idempotency/checkpoints.json",
+      );
+      const checkpoints = JSON.parse(readFileSync(checkpointPath, "utf8"));
+      checkpoints[0].target = target;
+      writeFileSync(checkpointPath, JSON.stringify(checkpoints));
+      const apiPath = join(fixture, "contracts/openapi.json");
+      const api = JSON.parse(readFileSync(apiPath, "utf8"));
+      mutateApi(api);
+      writeFileSync(apiPath, JSON.stringify(api));
+    },
+    expectedStatus,
+  );
+}
+const idempotencyTarget = {
+  stepId: "lost-a",
+  kind: "RESPONSE_LOST",
+  occurrence: 1,
+};
+test("accept an actual idempotency scheduled-step checkpoint without fabricating an event family", () => {
+  checkIdempotencyTarget(idempotencyTarget, /Validated/, 0);
+});
+for (const [name, target, expected] of [
+  [
+    "reservation kind",
+    { ...idempotencyTarget, kind: "READ_OBSERVED" },
+    /idempotency never returns outcome kind READ_OBSERVED/,
+  ],
+  [
+    "atomicity kind",
+    { ...idempotencyTarget, kind: "TRANSACTION_COMMITTED" },
+    /idempotency never returns outcome kind TRANSACTION_COMMITTED/,
+  ],
+  [
+    "unknown kind",
+    { ...idempotencyTarget, kind: "UNKNOWN" },
+    /idempotency never returns outcome kind UNKNOWN/,
+  ],
+  [
+    "repeat occurrence",
+    { ...idempotencyTarget, occurrence: 2 },
+    /must be equal to constant/,
+  ],
+  [
+    "newline identity",
+    { ...idempotencyTarget, stepId: "lost-a\n" },
+    /must NOT be valid/,
+  ],
+  ["null identity", { ...idempotencyTarget, stepId: null }, /must be string/],
+  [
+    "mixed request identity",
+    { ...idempotencyTarget, requestId: "a" },
+    /additional properties/,
+  ],
+  [
+    "mixed current call identity",
+    { ...idempotencyTarget, callId: "a" },
+    /additional properties/,
+  ],
+  [
+    "access selector",
+    { operationId: "query-a", kind: "INSERT", occurrence: 1 },
+    /idempotency outcomes do not support target selector operationId/,
+  ],
+  [
+    "cache selector",
+    { operation: 1, kind: "cache.fill", occurrence: 1 },
+    /idempotency events do not support target selector operation/,
+  ],
+])
+  test(`reject idempotency checkpoint ${name}`, () =>
+    checkIdempotencyTarget(target, expected));
+for (const simulationId of [
+  "transactions-isolation",
+  "transaction-atomicity",
+]) {
+  test(`reject idempotency outcome kinds on ${simulationId}`, () => {
+    const target = {
+      stepId: "save-b",
+      kind: "ATOMIC_COMMITTED",
+      occurrence: 1,
+    };
+    if (simulationId === "transaction-atomicity")
+      checkAtomicityTarget(
+        target,
+        /transaction-atomicity never returns outcome kind ATOMIC_COMMITTED/,
+      );
+    else
+      rejectCheckpointTarget(
+        simulationId,
+        target,
+        /transactions-isolation never returns outcome kind ATOMIC_COMMITTED/,
+      );
+  });
+}
+for (const [name, mutateApi] of [
+  [
+    "unresolved scalar",
+    (api) => {
+      api.components.schemas.IdempotencyOutcome.properties.stepId.$ref =
+        "#/components/schemas/MissingIdempotencyIdentity";
+    },
+  ],
+  [
+    "optional identity",
+    (api) => {
+      const outcome = api.components.schemas.IdempotencyOutcome;
+      outcome.required = outcome.required.filter((field) => field !== "stepId");
+    },
+  ],
+  [
+    "nullable scalar",
+    (api) => {
+      api.components.schemas.IdempotencyIdentifier.type = ["string", "null"];
+    },
+  ],
+])
+  test(`reject idempotency selector capability drift: ${name}`, () =>
+    checkIdempotencyTarget(
+      idempotencyTarget,
+      /idempotency outcomes do not support target selector stepId/,
+      1,
+      mutateApi,
+    ));

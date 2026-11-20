@@ -6,6 +6,9 @@ import { ModuleShell } from "../components/ModuleShell";
 import { StudyView } from "../features/learning/StudyView";
 import { PracticeView } from "../features/learning/PracticeView";
 import { IdempotencyPlayground } from "../features/idempotency/IdempotencyPlayground";
+import { IdempotencyGuided } from "../features/idempotency/IdempotencyGuided";
+import { IdempotencyArchitectureView } from "../features/idempotency/IdempotencyArchitectureView";
+import { IdempotencySequenceView } from "../features/idempotency/IdempotencySequenceView";
 import { NotFoundPage } from "./NotFoundPage";
 const id = "idempotency";
 export function IdempotencyPage() {
@@ -19,15 +22,15 @@ export function IdempotencyPage() {
   useEffect(() => {
     let active = true;
     Promise.all([api.draftTopic(id), api.getIdempotency()])
-      .then(([topic, descriptor]) => {
+      .then(async ([topic, descriptor]) => {
         if (!active) return;
         if (
           topic.topic?.id !== id ||
           topic.topic.kind !== "topic" ||
           topic.topic.status !== "draft" ||
           !Array.isArray(topic.topic.capabilities) ||
-          !(["study", "simulation", "practice"] as const).every((capability) =>
-            topic.topic.capabilities.includes(capability),
+          !(["study", "simulation", "practice", "guided"] as const).every(
+            (capability) => topic.topic.capabilities.includes(capability),
           ) ||
           !Array.isArray(topic.topic.simulationIds) ||
           !topic.topic.simulationIds.includes(id) ||
@@ -35,6 +38,8 @@ export function IdempotencyPage() {
           !topic.lessonMarkdown.trim() ||
           !Array.isArray(topic.questions) ||
           !topic.questions.length ||
+          !Array.isArray(topic.checkpoints) ||
+          !topic.checkpoints.length ||
           descriptor.id !== id ||
           !descriptor.presets.some(
             (preset) => preset.id === descriptor.defaultPresetId,
@@ -45,6 +50,10 @@ export function IdempotencyPage() {
           );
           return;
         }
+        const { assertIdempotencyCheckpoints } =
+          await import("../api/idempotencyCompatibility");
+        if (!active) return;
+        assertIdempotencyCheckpoints(topic.checkpoints, descriptor);
         setData({ topic, descriptor });
       })
       .catch((cause: unknown) => {
@@ -101,6 +110,9 @@ export function IdempotencyPage() {
         topic={data.topic.topic}
         tabs={[
           { id: "playground", label: "Playground" },
+          { id: "guided", label: "Guided" },
+          { id: "architecture", label: "Architecture" },
+          { id: "sequence", label: "Call sequence" },
           { id: "study", label: "Study" },
           { id: "practice", label: "Practice" },
         ]}
@@ -112,6 +124,15 @@ export function IdempotencyPage() {
               descriptor={data.descriptor}
             />
           ),
+          guided: (
+            <IdempotencyGuided
+              checkpoints={data.topic.checkpoints}
+              descriptor={data.descriptor}
+              contentVersion={data.topic.topic.contentVersion}
+            />
+          ),
+          architecture: <IdempotencyArchitectureView />,
+          sequence: <IdempotencySequenceView descriptor={data.descriptor} />,
           study: (
             <StudyView
               markdown={data.topic.lessonMarkdown}

@@ -1,3 +1,4 @@
+import idempotencyCheckpoints from "../../../../content/topics/idempotency/checkpoints.json";
 import idempotencyQuestions from "../../../../content/topics/idempotency/questions.json";
 import retryQuestions from "../../../../content/topics/timeouts-retries/questions.json";
 import retryCheckpoints from "../../../../content/topics/timeouts-retries/checkpoints.json";
@@ -545,5 +546,49 @@ it.each([idempotency, retry])(
       draftTopicResumeTarget({ ...record, topicId: "future-topic" }, detail),
     ).toThrow(/unavailable/);
     expect(supportsDraftTopicResume("future-topic")).toBe(false);
+  },
+);
+
+it.each(["prediction", "tradeoff"])(
+  "resumes the actual idempotency Guided %s with its semantic checkpoint and saved content version intact",
+  (suffix) => {
+    const detail = {
+      ...idempotency,
+      checkpoints: idempotencyCheckpoints,
+    } as TopicDetail;
+    const checkpoint = detail.checkpoints[4]!;
+    const record: PracticeAnswer = {
+      ...saved,
+      topicId: detail.topic.id,
+      activityId: `${checkpoint.id}-${suffix}`,
+      contentVersion: "1.0.0",
+    };
+    const before = JSON.stringify({ detail, record });
+    expect(draftTopicResumeTarget(record, detail)).toMatchObject({
+      path: `/draft/topics/idempotency?view=guided&checkpoint=${checkpoint.id}`,
+      activity: checkpoint.title,
+      removed: false,
+    });
+    expect(JSON.stringify({ detail, record })).toBe(before);
+    expect(record.contentVersion).toBe("1.0.0");
+    expect(detail.topic.contentVersion).toBe("1.1.0");
+    for (const activityId of [
+      `${checkpoint.id}-extra-${suffix}`,
+      "retired-checkpoint-prediction",
+    ])
+      expect(
+        draftTopicResumeTarget({ ...record, activityId }, detail),
+      ).toMatchObject({ path: "/draft/topics/idempotency", removed: true });
+    expect(
+      draftTopicResumeTarget(record, {
+        ...detail,
+        topic: {
+          ...detail.topic,
+          capabilities: detail.topic.capabilities.filter(
+            (item) => item !== "guided",
+          ),
+        },
+      }),
+    ).toMatchObject({ path: "/draft/topics/idempotency", removed: true });
   },
 );

@@ -215,3 +215,14 @@ Reopened 2026-10-28. Original explanations, constants and traces; no source code
 The fixed endpoint, units-only payload, modes, private preparation, complete program grammar,
 exact expiry equality, history snapshots and receipt/error policy are original model choices.
 No arbitrary production timeout/retention recommendation or real storage guarantee follows.
+
+
+## 8. Current technical handoff
+
+HLD-19A merged the pure foundation; HLD-19B merged the runnable draft in PR #82,
+`d25de1a`, after final-source CI run `44595024420` passed all three jobs.
+[HLD-19C](work-items/HLD-19C.md) records Guided, Architecture and three manual Call sequences,
+including actual verification status. The authored target IDs and manual paths are original
+teaching material tied to the unchanged Java programs. Human/hosted, prerequisite release
+and publication gates remain open. Next composition is the Notification Service workshop;
+it must keep provider outcome uncertainty separate from locally protected effects.

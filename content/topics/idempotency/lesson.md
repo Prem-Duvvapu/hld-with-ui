@@ -129,6 +129,19 @@ Moving a step changes authored order; it does not repair the per-call program or
 its time automatically. Fix invalid programs before running. Editing inputs preserves the
 previous run with a changed-input notice; it does not make that result evidence for the edit.
 
+### Learn it one checkpoint at a time
+
+In **Guided**, predict a single boundary before revealing its Java evidence. A lost
+response can leave a public effect; a losing split save can leave its earlier write;
+an atomic save can discard private work and reuse the original receipt. The selected
+snapshot shows only that step. The caller may still be waiting even when the server
+already has a result. Explain those facts before choosing the tradeoff.
+
+Use **Architecture** to inspect who owns the key, private work, ledger and caller
+observation. In **Call sequence**, manually compare a protected lost response, a split
+race and the same race with atomic publication. These are labeled authored illustrations,
+verified against the corresponding Java programs. Playground edits do not change them.
+
 ## Failures and tradeoffs
 
 A tempting explanation is: “The second split save failed, so there was no duplicate write.”

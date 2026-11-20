@@ -402,13 +402,14 @@ test("reservation step target stays closed, unique and separate from every legac
     assert.equal(validatesTarget(value), false, JSON.stringify(value));
 });
 
-test("transaction step target union equals both actual models without allowing cross-model kinds", () => {
+test("scheduled step target union equals all three actual models without allowing cross-model kinds", () => {
   const target = checkpoints.items.properties.target.oneOf.find((branch) =>
     branch.required.includes("stepId"),
   );
   const references = {
     "#/components/schemas/ReservationIdentifier": schemas.ReservationIdentifier,
     "#/components/schemas/AtomicityIdentifier": schemas.AtomicityIdentifier,
+    "#/components/schemas/IdempotencyIdentifier": schemas.IdempotencyIdentifier,
   };
   const reservationKinds = kindsSupportingSelectors(
     schemas.ReservationOutcome,
@@ -420,10 +421,18 @@ test("transaction step target union equals both actual models without allowing c
     ["stepId"],
     references,
   );
+  const idempotencyKinds = kindsSupportingSelectors(
+    schemas.IdempotencyOutcome,
+    ["stepId"],
+    references,
+  );
+  assert.equal(reservationKinds.length, 3);
   assert.equal(atomicityKinds.length, 9);
+  assert.equal(idempotencyKinds.length, 16);
   assert.deepEqual(target.properties.kind.enum, [
     ...reservationKinds,
     ...atomicityKinds,
+    ...idempotencyKinds,
   ]);
   const ajv = new Ajv2020({ strict: true, strictRequired: false });
   const validatesTarget = ajv.compile(checkpoints.items.properties.target);
@@ -691,4 +700,126 @@ test("retry target shapes accept all closed kinds and keep request-only versus p
     { attemptId: "a-a1", kind: "WORK_COMPLETED", occurrence: 1 },
   ])
     assert.equal(validate(target), false, JSON.stringify(target));
+});
+
+test("idempotency step selectors derive all sixteen actual kinds with an explicit scalar owner", () => {
+  const input = read("idempotency.input.schema.json");
+  const canonical = read("idempotency.result.schema.json");
+  const outcome = canonical.$defs.outcome;
+  // The result's local identifier is a reference alias. The helper must not follow guessed chains.
+  assert.deepEqual(
+    kindsSupportingSelectors(outcome, ["stepId"], {
+      "#/$defs/identifier": canonical.$defs.identifier,
+    }),
+    [],
+  );
+  assert.deepEqual(
+    kindsSupportingSelectors(outcome, ["stepId"], {
+      "#/$defs/identifier": input.$defs.identifier,
+    }),
+    outcome.properties.kind.enum,
+  );
+  const references = {
+    "#/components/schemas/IdempotencyIdentifier": schemas.IdempotencyIdentifier,
+  };
+  const kinds = kindsSupportingSelectors(
+    schemas.IdempotencyOutcome,
+    ["stepId"],
+    references,
+  );
+  assert.equal(kinds.length, 16);
+  assert.deepEqual(kinds, outcome.properties.kind.enum);
+  for (const kind of kinds) {
+    for (const foreign of [
+      schemas.ReservationOutcome,
+      schemas.AtomicityOutcome,
+    ])
+      assert.equal(
+        eventSupportsSelector(foreign, kind, "stepId", references),
+        false,
+      );
+    for (const selector of [
+      "operation",
+      "jobId",
+      "messageId",
+      "attemptId",
+      "operationId",
+      "requestId",
+    ])
+      assert.equal(
+        eventSupportsSelector(
+          schemas.IdempotencyOutcome,
+          kind,
+          selector,
+          references,
+        ),
+        false,
+      );
+  }
+  const optional = structuredClone(schemas.IdempotencyOutcome);
+  optional.required = optional.required.filter((field) => field !== "stepId");
+  assert.equal(
+    eventSupportsSelector(optional, "ATOMIC_COMMITTED", "stepId", references),
+    false,
+  );
+  for (const owner of [
+    null,
+    { type: ["string", "null"] },
+    { $ref: "#/components/schemas/IdempotencyIdentifier" },
+  ])
+    assert.equal(
+      eventSupportsSelector(
+        schemas.IdempotencyOutcome,
+        "ATOMIC_COMMITTED",
+        "stepId",
+        {
+          "#/components/schemas/IdempotencyIdentifier": owner,
+        },
+      ),
+      false,
+    );
+  assert.equal(
+    eventSupportsSelector(
+      schemas.IdempotencyOutcome,
+      "ATOMIC_COMMITTED",
+      "stepId",
+    ),
+    false,
+  );
+});
+
+test("idempotency step targets accept their model kinds and reject malformed or mixed selectors", () => {
+  const ajv = new Ajv2020({ strict: true, strictRequired: false });
+  const validatesTarget = ajv.compile(checkpoints.items.properties.target);
+  const base = { stepId: "save-b", kind: "REPLAYED_AT_COMMIT", occurrence: 1 };
+  for (const kind of schemas.IdempotencyOutcome.properties.kind.enum)
+    assert.equal(validatesTarget({ ...base, kind }), true);
+  assert.equal(validatesTarget({ ...base, stepId: "s".repeat(32) }), true);
+  for (const value of [
+    null,
+    [],
+    true,
+    "save-b",
+    {},
+    { ...base, occurrence: 0 },
+    { ...base, occurrence: 2 },
+    { ...base, occurrence: 1.5 },
+    { ...base, occurrence: "1" },
+    { ...base, stepId: null },
+    { ...base, stepId: "save-b\n" },
+    { ...base, stepId: "s".repeat(33) },
+    { ...base, kind: "UNKNOWN" },
+    { ...base, kind: "REQUEST_SUCCEEDED" },
+    ...[
+      "operation",
+      "jobId",
+      "messageId",
+      "attemptId",
+      "operationId",
+      "requestId",
+      "callId",
+      "unknown",
+    ].map((field) => ({ ...base, [field]: null })),
+  ])
+    assert.equal(validatesTarget(value), false, JSON.stringify(value));
 });

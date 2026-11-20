@@ -1,0 +1,294 @@
+.idem-design {
+  min-width: 0;
+  padding-block: 24px;
+}
+.idem-design
+  :is(
+    h2,
+    h3,
+    h4,
+    h5,
+    p,
+    li,
+    dt,
+    dd,
+    label,
+    span,
+    button,
+    small,
+    strong,
+    summary
+  ) {
+  overflow-wrap: anywhere;
+}
+.idem-design-intro {
+  max-width: 900px;
+  margin-bottom: 24px;
+}
+.idem-design-intro h2 {
+  margin: 6px 0 12px;
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+}
+.idem-design-intro p {
+  line-height: 1.65;
+}
+.idem-design-scope {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.65;
+}
+.idem-topology {
+  padding: 22px;
+  margin-bottom: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  min-width: 0;
+}
+.idem-topology > h3 {
+  margin-top: 0;
+}
+.idem-topology-flow {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+  margin: 24px 0 0;
+  padding: 0;
+}
+.idem-topology-flow > li {
+  min-width: 0;
+}
+.idem-topology-flow button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  text-align: left;
+  min-width: 0;
+  min-height: 210px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.idem-topology-flow button[aria-pressed="true"] {
+  border-color: var(--green);
+  box-shadow: inset 0 3px var(--green);
+  background: color-mix(in srgb, var(--green) 6%, var(--surface));
+}
+.idem-topology-flow strong {
+  font-size: 0.95rem;
+}
+.idem-topology-flow button > span:not(.eyebrow) {
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+.idem-topology-flow .eyebrow {
+  margin: 0;
+}
+.idem-public-pair {
+  display: grid;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+.idem-public-pair > span {
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+.idem-topology-edge {
+  display: flex;
+  align-items: start;
+  gap: 8px;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+.idem-topology-edge > span:first-child {
+  color: var(--green);
+  font-size: 1.1rem;
+}
+.idem-design-card,
+.idem-full-sequence {
+  min-width: 0;
+  padding: 22px;
+  margin-bottom: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.idem-design-card :is(h3, h4) {
+  margin-top: 0;
+}
+.idem-design-card p,
+.idem-design-card li,
+.idem-full-sequence p {
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+.idem-design-card ol {
+  padding-left: 22px;
+}
+.idem-design-card ol li {
+  margin-block: 12px;
+  padding-left: 4px;
+}
+.idem-design-takeaway {
+  padding: 12px 16px;
+  border-left: 3px solid var(--green);
+  background: var(--surface-2);
+}
+.idem-path-choice {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  min-width: 0;
+  padding: 0;
+  margin: 0 0 24px;
+  border: 0;
+}
+.idem-path-choice legend {
+  padding: 0 0 12px;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+.idem-path-choice label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  min-width: 0;
+}
+.idem-path-choice label:has(input:checked) {
+  border-color: var(--green);
+  background: color-mix(in srgb, var(--green) 6%, var(--surface));
+}
+.idem-path-choice input {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  accent-color: var(--green);
+}
+.idem-scene-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.idem-scene-heading p {
+  margin: 0;
+}
+.idem-scene-heading > span {
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--muted);
+  font: 0.75rem var(--mono);
+}
+.idem-path-edge {
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.idem-path-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+.idem-path-controls button {
+  min-height: 42px;
+  max-width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.idem-path-controls button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.idem-design :is(button, input, summary):focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}
+.idem-full-sequence summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.6;
+}
+.idem-full-sequence > section {
+  margin-top: 22px;
+}
+.idem-full-sequence ol {
+  padding-left: 22px;
+}
+.idem-full-sequence ol > li {
+  padding: 16px;
+  margin-bottom: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  min-width: 0;
+}
+.idem-full-sequence ol > li[aria-current="step"] {
+  border-color: var(--green);
+  background: var(--surface-2);
+}
+.idem-full-sequence h4 {
+  margin: 6px 0 10px;
+}
+.idem-authored-snapshot {
+  margin-top: 16px;
+  min-width: 0;
+}
+@media (max-width: 1050px) {
+  .idem-topology-flow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .idem-topology-flow button {
+    min-height: 0;
+    gap: 8px;
+  }
+  .idem-topology-edge > span:first-child {
+    transform: rotate(90deg);
+  }
+  .idem-path-choice {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .idem-topology,
+  .idem-design-card,
+  .idem-full-sequence {
+    padding: 16px;
+  }
+}
+@media (max-width: 400px) {
+  .idem-full-sequence ol {
+    padding-left: 16px;
+  }
+  .idem-full-sequence ol > li {
+    padding: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .idem-design * {
+    scroll-behavior: auto;
+  }
+}
