@@ -351,8 +351,8 @@ for (const [attempt, kinds] of [
       "Retry checkpoint kinds differ from actual request/attempt selector capabilities.",
     );
 }
-const transactionTarget = checkpoints.items.properties.target.oneOf.find(
-  (branch) => branch.required.includes("stepId"),
+const stepTarget = checkpoints.items.properties.target.oneOf.find((branch) =>
+  branch.required.includes("stepId"),
 );
 const reservationOutcome = read(
   "contracts/transactions-isolation.result.schema.json",
@@ -376,13 +376,26 @@ const atomicityIdentifier = read(
 const atomicityKinds = kindsSupportingSelectors(atomicityOutcome, ["stepId"], {
   [`${atomicityInputId}#/$defs/identifier`]: atomicityIdentifier,
 });
-const transactionKinds = [...new Set([...reservationKinds, ...atomicityKinds])];
+const idempotencyOutcome = read("contracts/idempotency.result.schema.json")
+  .$defs.outcome;
+const idempotencyIdentifier = read("contracts/idempotency.input.schema.json")
+  .$defs.identifier;
+const idempotencyKinds = kindsSupportingSelectors(
+  idempotencyOutcome,
+  ["stepId"],
+  {
+    // The result's local identifier is an alias; supply its canonical scalar owner explicitly.
+    "#/$defs/identifier": idempotencyIdentifier,
+  },
+);
+const stepKinds = [
+  ...new Set([...reservationKinds, ...atomicityKinds, ...idempotencyKinds]),
+];
 if (
-  JSON.stringify(transactionTarget?.properties.kind.enum) !==
-  JSON.stringify(transactionKinds)
+  JSON.stringify(stepTarget?.properties.kind.enum) !== JSON.stringify(stepKinds)
 )
   throw new Error(
-    "Transaction checkpoint kinds differ from actual reservation and atomicity outcome selector capabilities.",
+    "Step checkpoint kinds differ from actual reservation, atomicity and idempotency outcome selector capabilities.",
   );
 
 // The lazy delivery client needs only its descriptor's reachable schemas, not the entire API.

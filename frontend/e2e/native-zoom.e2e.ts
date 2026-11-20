@@ -1069,12 +1069,66 @@ for (const theme of ["light", "dark"] as const) {
             exact: true,
           }),
         ).toContainText("effect-b");
-        for (const view of ["Study", "Practice", "Playground"]) {
+        for (const view of [
+          "Guided",
+          "Architecture",
+          "Call sequence",
+          "Study",
+          "Practice",
+          "Playground",
+        ]) {
           const tab = page.getByRole("tab", { name: view, exact: true });
           await tab.focus();
           await page.keyboard.press("Enter");
           await expect(tab).toBeFocused();
           await expect(tab).toHaveAttribute("aria-selected", "true");
+          await expect
+            .poll(() =>
+              page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth + 1,
+              ),
+            )
+            .toBe(true);
+          const panel = page.getByRole("tabpanel", { name: view, exact: true });
+          if (view === "Guided") {
+            await panel
+              .getByRole("button", { name: "Run and reveal", exact: true })
+              .click();
+            await expect(
+              panel.getByRole("region", {
+                name: "Java idempotency evidence at this checkpoint",
+                exact: true,
+              }),
+            ).toBeVisible();
+          } else if (view === "Architecture") {
+            const inspect = panel.getByRole("button", {
+              name: "Inspect Publication boundary",
+              exact: true,
+            });
+            await inspect.focus();
+            await page.keyboard.press("Enter");
+            await expect(inspect).toBeFocused();
+            await expect(
+              panel.getByRole("region", {
+                name: "Selected idempotency responsibility",
+                exact: true,
+              }),
+            ).toContainText("current");
+          } else if (view === "Call sequence") {
+            const next = panel.getByRole("button", {
+              name: "Next idempotency path step",
+              exact: true,
+            });
+            await next.focus();
+            await page.keyboard.press("Enter");
+            await expect(next).toBeFocused();
+            await expect(
+              panel.getByRole("region", {
+                name: "Selected idempotency path step",
+                exact: true,
+              }),
+            ).toBeVisible();
+          }
           await expect
             .poll(() =>
               page.evaluate(

@@ -470,3 +470,19 @@ equal-time actions remain separate and no browser expiry event is invented. Publ
 private units, active/expired key history, cached receipt identity and caller observations
 remain distinguishable. Final counters cover the whole program, not the selected prefix.
 See [HLD-19B](work-items/HLD-19B.md) for actual integration evidence and remaining review.
+
+
+## Idempotency Guided evidence
+
+[HLD-19C](work-items/HLD-19C.md) selects eight actual outcomes by step ID, closed model kind
+and occurrence exactly one. The shared step family preserves reservation/atomicity targets;
+model-specific content/client checks reject foreign kinds and unknown preset/step references.
+Java tests resolve each authored target and verify complete selected states. A lookup miss
+is historical observation; a publication-time recheck can resolve through a later record.
+
+Guided renders only the selected outcome and its postState. It excludes later steps and
+whole-run metrics. Server receipts, public effects, private units and caller observations
+remain distinct. Three clearly authored manual sequences contain 27 Java-verified states;
+manual stepping sends no simulation request and is independent of Playground edits.
+Schema 1.0 / model 1.0.0 and all original examples remain unchanged. Human/hosted and
+publication review are separate from these technical checks.

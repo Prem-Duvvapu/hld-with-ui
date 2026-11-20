@@ -635,7 +635,7 @@ export interface components {
       title: string;
       simulationId: string;
       presetId: string;
-      /** @description Select exactly one identity family: cache operation, capacity job ID, delivery messageId/attemptId, data-access operationId, or transaction stepId (reservation or atomicity). Retry requestId selects request-level evidence or pairs with its actual attemptId. Kind and occurrence select actual Java evidence; each untimed operation/step has one outcome. */
+      /** @description Select exactly one identity family: cache operation, capacity job ID, delivery messageId/attemptId, data-access operationId, or scheduled stepId (reservation, atomicity or idempotency). Retry requestId selects request-level evidence or pairs with its actual attemptId. Kind and occurrence select actual Java evidence; every unique operation/step has one outcome. */
       target:
         | {
             operation: number;
@@ -686,7 +686,23 @@ export interface components {
               | "ALLOCATION_STAGED"
               | "WORK_SKIPPED"
               | "TRANSACTION_COMMITTED"
-              | "TRANSACTION_ABORTED";
+              | "TRANSACTION_ABORTED"
+              | "LOOKUP_BYPASSED"
+              | "LOOKUP_MISSED"
+              | "LOOKUP_REPLAYED"
+              | "LOOKUP_CONFLICT"
+              | "EFFECT_PUBLISHED"
+              | "EFFECT_PREPARED"
+              | "ACTION_SKIPPED"
+              | "RESULT_READY"
+              | "RESULT_STORED"
+              | "RESULT_SAVE_CONFLICT"
+              | "ATOMIC_COMMITTED"
+              | "REPLAYED_AT_COMMIT"
+              | "CONFLICT_AT_COMMIT"
+              | "RESPONSE_RECEIVED"
+              | "RESPONSE_LOST"
+              | "HANDLER_CRASHED";
             /** @constant */
             occurrence: 1;
           }

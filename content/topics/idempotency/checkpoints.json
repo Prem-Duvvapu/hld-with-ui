@@ -1,0 +1,242 @@
+[
+  {
+    "id": "idem-guided-response-ambiguity",
+    "title": "A missing response does not remove the write",
+    "simulationId": "idempotency",
+    "presetId": "unprotected-response-loss",
+    "target": {
+      "stepId": "lost-a",
+      "kind": "RESPONSE_LOST",
+      "occurrence": 1
+    },
+    "prompt": "Call a wrote one unit and prepared its receipt, but the response is lost at 0 ms. Predict what remains public, what a knows, and whether b has started.",
+    "lookFor": "The ledger still has effect-a and one published unit. a is response-lost with a cached server receipt; b has not started. No key record exists.",
+    "explanation": "The response is an observation of a result, not the write itself. Java leaves effect-a public when a loses its response. The server-side receipt still names effect-a with one unit, but that does not mean its caller received it. At this selected step b has not looked up a key or written anything. A later retry may add another effect in this unprotected mode; that later effect is not present in this snapshot.",
+    "tradeoff": {
+      "prompt": "A caller says the request failed. Which next step follows from this evidence?",
+      "options": [
+        {
+          "id": "inspect-publication",
+          "label": "Check publication evidence and the request contract before issuing another write",
+          "feedback": "The missing response leaves the caller uncertain. The public effect demonstrates why retry safety needs an explicit boundary."
+        },
+        {
+          "id": "assume-rollback",
+          "label": "Assume no write happened because no response arrived",
+          "feedback": "effect-a is already in the public ledger. Response loss does not undo it in this model."
+        }
+      ],
+      "recommendedOptionId": "inspect-publication"
+    }
+  },
+  {
+    "id": "idem-guided-original-receipt",
+    "title": "A retry receives the original effect identity",
+    "simulationId": "idempotency",
+    "presetId": "atomic-response-loss",
+    "target": {
+      "stepId": "respond-b",
+      "kind": "RESPONSE_RECEIVED",
+      "occurrence": 1
+    },
+    "prompt": "a published its effect and retained result together, then lost its response. At 10 ms b repeats the same tenant, key and units. Predict its receipt and the public effect count.",
+    "lookFor": "b receives the receipt for effect-a with one unit. Only effect-a exists, record-a is active until 100 ms, and b owns no new effect.",
+    "explanation": "The atomic publication at 0 ms stored effect-a and its original receipt under record-a. Losing a's response left that public state unchanged. b found the matching retained result at 10 ms, skipped new work and returned the receipt naming effect-a. Its current call identity remains b outside the receipt. a still has a lost response; b has a received receipt. One public effect does not imply that every caller observed the same response.",
+    "tradeoff": {
+      "prompt": "Which identity should a replayed receipt expose?",
+      "options": [
+        {
+          "id": "keep-original",
+          "label": "Keep the original effect-a identity and report b separately as the current call",
+          "feedback": "The retained receipt identifies the original effect. Replacing that ID would conceal that the result was reused."
+        },
+        {
+          "id": "replace-identity",
+          "label": "Replace effect-a with effect-b because b received the response",
+          "feedback": "No effect-b was published. A new call identity is not a new effect identity."
+        }
+      ],
+      "recommendedOptionId": "keep-original"
+    }
+  },
+  {
+    "id": "idem-guided-crash-gap",
+    "title": "A public effect can have no retained key",
+    "simulationId": "idempotency",
+    "presetId": "split-crash-gap",
+    "target": {
+      "stepId": "lookup-b",
+      "kind": "LOOKUP_MISSED",
+      "occurrence": 1
+    },
+    "prompt": "a wrote one unit and crashed before saving its result. When b looks up the same tenant/key at 10 ms, predict the key lookup, ledger and a's private state.",
+    "lookFor": "b finds no active result even though effect-a remains public. a is crashed with zero private units and no cached receipt. There are no key records.",
+    "explanation": "Split mode publishes the effect before inserting its retained result. a stopped in that gap, so the ledger contains effect-a while the result store has no record-a. The modeled crash clears private work and the cached receipt; it does not remove public data. b therefore observes a missing key. It has not published effect-b yet at this checkpoint. The missing result is not evidence that the earlier effect is absent, and retained public state here is a model rule rather than proof of physical crash recovery.",
+    "tradeoff": {
+      "prompt": "What must a production fix address?",
+      "options": [
+        {
+          "id": "close-boundary",
+          "label": "Close or recover the gap between the local effect and its retained result",
+          "feedback": "The two facts must agree at an explicit storage or recovery boundary. Looking only at the key misses the already published effect."
+        },
+        {
+          "id": "more-lookups",
+          "label": "Add another ordinary lookup and assume it proves the write never happened",
+          "feedback": "Repeated missing-key observations cannot discover an effect whose retained result was never saved."
+        }
+      ],
+      "recommendedOptionId": "close-boundary"
+    }
+  },
+  {
+    "id": "idem-guided-late-save-conflict",
+    "title": "A failed save cannot undo an earlier effect",
+    "simulationId": "idempotency",
+    "presetId": "split-race",
+    "target": {
+      "stepId": "save-b",
+      "kind": "RESULT_SAVE_CONFLICT",
+      "occurrence": 1
+    },
+    "prompt": "Both calls missed the key, then both published a unit. a saved its retained result first. At b's save step, predict the ledger, winning record and b's receipt.",
+    "lookFor": "Two effects and two units remain public. record-a is the only retained record. b has a result-save conflict and no receipt, but its effect-b remains.",
+    "explanation": "The unique retained key chooses one saved result after both writes already happened. a inserted record-a. b cannot insert another current record, so Java reports RESULT_SAVE_CONFLICT and resolves the conflict through record-a without issuing a receipt. Its earlier effect-b stays public. Both handlers are only result-ready at this 0 ms checkpoint; neither caller has received the later 1 ms response. A save error is not rollback, and counting one retained record would hide the extra effect.",
+    "tradeoff": {
+      "prompt": "Which claim is supported by the failed second save?",
+      "options": [
+        {
+          "id": "separate-ledger",
+          "label": "One retained result won, while both earlier effects remain public",
+          "feedback": "Inspect both stores. The key constraint protects the result record but does not erase an earlier separate effect."
+        },
+        {
+          "id": "one-effect",
+          "label": "Only one effect exists because only one result record was stored",
+          "feedback": "The ledger already contains effect-a and effect-b. The result-save conflict occurred too late to prevent either write."
+        }
+      ],
+      "recommendedOptionId": "separate-ledger"
+    }
+  },
+  {
+    "id": "idem-guided-current-key-recheck",
+    "title": "An old lookup miss is not permission to publish",
+    "simulationId": "idempotency",
+    "presetId": "atomic-race",
+    "target": {
+      "stepId": "save-b",
+      "kind": "REPLAYED_AT_COMMIT",
+      "occurrence": 1
+    },
+    "prompt": "Both calls saw a missing key and privately prepared one unit. a then published first. At b's save step, predict its private work, receipt, lookup history and public effect.",
+    "lookFor": "b discards its private unit and reuses effect-a's receipt through record-a. Its earlier missing lookup remains history. There is one public effect and no effect-b.",
+    "explanation": "Atomic save checks the current tenant/key in the same transition as possible publication. a has already created record-a, so b must use that current result rather than act on its earlier miss. Java clears b's private units, resolves REPLAYED and caches the original effect-a receipt. b's lookup disposition remains MISSING and observedRecordId stays absent; resolvedRecordId names record-a found at the later check. Both calls are result-ready, so a server replay has happened before either caller receives a response.",
+    "tradeoff": {
+      "prompt": "Which boundary prevents the second effect in this race?",
+      "options": [
+        {
+          "id": "current-check",
+          "label": "Recheck the current key together with effect/result publication",
+          "feedback": "The check and publication share one modeled transition. A concurrent winner cannot slip between those actions."
+        },
+        {
+          "id": "trust-old-miss",
+          "label": "Trust the earlier lookup miss because both handlers already prepared work",
+          "feedback": "The miss is now stale. Private preparation does not reserve the key or grant publication authority."
+        }
+      ],
+      "recommendedOptionId": "current-check"
+    }
+  },
+  {
+    "id": "idem-guided-payload-race",
+    "title": "Different work loses the publication recheck",
+    "simulationId": "idempotency",
+    "presetId": "atomic-payload-race",
+    "target": {
+      "stepId": "save-b",
+      "kind": "CONFLICT_AT_COMMIT",
+      "occurrence": 1
+    },
+    "prompt": "a prepared one unit and b prepared two under the same tenant/key, with different audited operation IDs. Both initially missed. After a publishes, predict b's save result.",
+    "lookFor": "b gets a payload conflict through record-a, discards its two private units, and has no receipt or public effect. effect-a and the retained one-unit result remain unchanged.",
+    "explanation": "The current key already belongs to a one-unit result when b tries to publish two units. Atomic save rejects that changed payload instead of replaying a different request or publishing effect-b. b keeps its earlier missing lookup as history, clears private work and resolves PAYLOAD_CONFLICT through record-a. Its different operationId describes intended work for auditing; it does not override the server's tenant/key lookup identity. b is still result-ready here, so the later received error must not be shown as already observed.",
+    "tradeoff": {
+      "prompt": "How should a caller represent genuinely different intended work?",
+      "options": [
+        {
+          "id": "new-intent-key",
+          "label": "Use an intentional new key according to the API contract, while preserving the original result",
+          "feedback": "A new intent needs distinct request identity. The server can reject conflicting reuse of the live old key."
+        },
+        {
+          "id": "audit-overrides-key",
+          "label": "Change only operationId and expect it to bypass the retained key",
+          "feedback": "operationId is audit-only in this model. b already changed it and still encountered the payload conflict."
+        }
+      ],
+      "recommendedOptionId": "new-intent-key"
+    }
+  },
+  {
+    "id": "idem-guided-retention-equality",
+    "title": "Expiry forgets protection without removing the effect",
+    "simulationId": "idempotency",
+    "presetId": "retention-boundary",
+    "target": {
+      "stepId": "save-c",
+      "kind": "ATOMIC_COMMITTED",
+      "occurrence": 1
+    },
+    "prompt": "record-a was saved at 0 ms with 100 ms retention. b replayed at 99 ms; c acts at 100 ms. After c's save, predict effects, key history and whose receipt c holds.",
+    "lookFor": "effect-a and effect-c publish two units. record-a is expired; record-c is active until 200 ms. c has its own ready effect-c receipt, while b previously received effect-a.",
+    "explanation": "Replay at 99 ms did not extend record-a's expiry. Before c's first action at exactly 100 ms, Java marked that record expired. c therefore found no active result and published effect-c with record-c. The old effect-a remains public, and its expired key row remains teaching history. At this checkpoint there is one active and one expired record. c has not responded yet. The finite retention interval limits recognition of later calls; it is not a universal once-only promise or a recommended production retention duration.",
+    "tradeoff": {
+      "prompt": "What should an API contract make explicit about late retries?",
+      "options": [
+        {
+          "id": "state-retention",
+          "label": "State how long recognition lasts and what callers should do after it ends",
+          "feedback": "The example shows a new effect at the expiry boundary. Real recovery and retention requirements must be chosen for that service."
+        },
+        {
+          "id": "expiry-erases-write",
+          "label": "Promise that removing old key protection also removes its original effect",
+          "feedback": "The ledger retains effect-a. Forgetting the key changes lookup behavior, not the history of published work."
+        }
+      ],
+      "recommendedOptionId": "state-retention"
+    }
+  },
+  {
+    "id": "idem-guided-key-tenant-scope",
+    "title": "The key scope defines recognition; audit labels do not",
+    "simulationId": "idempotency",
+    "presetId": "key-and-tenant-scope",
+    "target": {
+      "stepId": "respond-c",
+      "kind": "RESPONSE_RECEIVED",
+      "occurrence": 1
+    },
+    "prompt": "a uses (t,k), b uses (t,new) for the same audited operation, and c uses (other,k). At c's response at 20 ms, predict effects, retained scopes and receipt identities.",
+    "lookFor": "Three effects and three active retained records exist. a, b and c each received their own effect receipt. The scopes are (t,k), (t,new) and (other,k).",
+    "explanation": "The server recognizes calls by the typed pair of tenant and key. b's fresh key allowed another effect for t's same audited operation. c's different tenant independently uses k. Java reports three effects for two audited logical operations and one extra effect. The original receipts name effect-a, effect-b and effect-c; record expiries are 100, 110 and 120 ms. operationId does not deduplicate, and tenant namespacing here does not implement authentication or authorization. Whether a fresh key was appropriate depends on the caller's intent and contract.",
+    "tradeoff": {
+      "prompt": "A retry accidentally generates a fresh key. What can the retained-key design infer?",
+      "options": [
+        {
+          "id": "preserve-intent-key",
+          "label": "It sees a new lookup identity, so callers must preserve a stable key for the intended retry",
+          "feedback": "The audit label alone cannot join the calls for server deduplication. Investigate caller identity and intent as well as the ledger."
+        },
+        {
+          "id": "audit-dedup",
+          "label": "It must reuse the result because operationId is unchanged",
+          "feedback": "b kept the audit operation but changed the key and published effect-b. The lookup identity is the tenant/key pair."
+        }
+      ],
+      "recommendedOptionId": "preserve-intent-key"
+    }
+  }
+]

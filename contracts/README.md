@@ -282,4 +282,9 @@ recomputing behavior. No checkpoint family is added in this contribution.
 The actual GET descriptor example is authored only through the explicit method/flag in
 [CONTRIBUTING](../CONTRIBUTING.md#standalone-idempotency-examples); ordinary checks compare
 without writing. See [HLD-19B](../docs/work-items/HLD-19B.md) for actual integration checks.
-Guided/design, human/hosted/prerequisite release review and publication remain pending.
+HLD-19C advances HTTP to 1.14.0 and extends the existing closed step-selector family
+with the sixteen actual idempotency outcome kinds. Old selector shapes remain valid;
+content/client checks resolve model-specific capabilities. Eight new checkpoint activities
+use content 1.1.0. The model pairs and reachable lazy descriptor schema remain unchanged.
+See [HLD-19C](../docs/work-items/HLD-19C.md) for actual Guided/design verification.
+Human/hosted/prerequisite release review and publication remain pending.

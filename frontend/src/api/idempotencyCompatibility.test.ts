@@ -1,6 +1,8 @@
+import authoredCheckpoints from "../../../content/topics/idempotency/checkpoints.json";
 import { describe, expect, it } from "vitest";
 import {
   assertIdempotencyDescriptor,
+  assertIdempotencyCheckpoints,
   assertIdempotencyInput,
   assertIdempotencyResult,
   IdempotencyCompatibilityError,
@@ -221,5 +223,106 @@ describe("idempotency evidence compatibility", () => {
     evidence.metrics.publishedUnits = 999;
     expect(() => assertIdempotencyResult(evidence, input)).not.toThrow();
     // Compatibility checks reported references; Java semantic tests verify formulas and decisions.
+  });
+});
+
+describe("idempotency authored checkpoint compatibility", () => {
+  it("accepts the actual authored checkpoints against the actual Java descriptor without mutation", () => {
+    const before = JSON.stringify({ authoredCheckpoints, descriptor });
+    expect(() =>
+      assertIdempotencyCheckpoints(authoredCheckpoints, descriptor),
+    ).not.toThrow();
+    expect(JSON.stringify({ authoredCheckpoints, descriptor })).toBe(before);
+  });
+  it("rejects absent, empty and non-array checkpoint collections", () => {
+    for (const value of [undefined, null, [], {}, true, "checkpoints"])
+      expect(() => assertIdempotencyCheckpoints(value, descriptor)).toThrow(
+        IdempotencyCompatibilityError,
+      );
+  });
+  it("rejects duplicate IDs, foreign simulations/kinds and missing preset or scheduled step references", () => {
+    const mutations: ((value: typeof authoredCheckpoints) => void)[] = [
+      (value) => {
+        value[1]!.id = value[0]!.id;
+      },
+      (value) => {
+        value[0]!.simulationId = "transaction-atomicity";
+      },
+      (value) => {
+        value[0]!.presetId = "unknown-preset";
+      },
+      (value) => {
+        value[0]!.target.stepId = "unknown-step";
+      },
+      (value) => {
+        value[0]!.target.kind = "TRANSACTION_COMMITTED";
+      },
+      (value) => {
+        value[0]!.target.kind = "READ_OBSERVED";
+      },
+      (value) => {
+        value[0]!.target.kind = "REQUEST_SUCCEEDED";
+      },
+      (value) => {
+        value[0]!.target.kind = "UNKNOWN";
+      },
+    ];
+    for (const mutate of mutations) {
+      const value = structuredClone(authoredCheckpoints);
+      mutate(value);
+      expect(() => assertIdempotencyCheckpoints(value, descriptor)).toThrow(
+        IdempotencyCompatibilityError,
+      );
+    }
+  });
+  it("rejects malformed, nullable, mixed and extra target fields and non-unique occurrences", () => {
+    const checkpoint = authoredCheckpoints[0]!;
+    for (const target of [
+      null,
+      [],
+      {},
+      { ...checkpoint.target, stepId: null },
+      { ...checkpoint.target, stepId: "lost-a\n" },
+      { ...checkpoint.target, stepId: "s".repeat(33) },
+      { ...checkpoint.target, occurrence: 2 },
+      { ...checkpoint.target, occurrence: 0 },
+      { ...checkpoint.target, occurrence: 1.5 },
+      { ...checkpoint.target, occurrence: "1" },
+      ...[
+        "operation",
+        "jobId",
+        "messageId",
+        "attemptId",
+        "operationId",
+        "requestId",
+        "callId",
+        "eventId",
+        "unknown",
+      ].map((field) => ({ ...checkpoint.target, [field]: null })),
+      { kind: checkpoint.target.kind, occurrence: 1 },
+      { stepId: checkpoint.target.stepId, occurrence: 1 },
+      { stepId: checkpoint.target.stepId, kind: checkpoint.target.kind },
+    ])
+      expect(() =>
+        assertIdempotencyCheckpoints([{ ...checkpoint, target }], descriptor),
+      ).toThrow(IdempotencyCompatibilityError);
+    expect(() =>
+      assertIdempotencyCheckpoints(
+        [{ ...checkpoint, invented: true }],
+        descriptor,
+      ),
+    ).toThrow(IdempotencyCompatibilityError);
+    expect(() =>
+      assertIdempotencyCheckpoints(
+        [{ ...checkpoint, tradeoff: null }],
+        descriptor,
+      ),
+    ).toThrow(IdempotencyCompatibilityError);
+  });
+  it("checks references without recomputing which outcome an action should produce", () => {
+    const value = structuredClone(authoredCheckpoints);
+    value[0]!.target.kind = "ATOMIC_COMMITTED";
+    expect(() => assertIdempotencyCheckpoints(value, descriptor)).not.toThrow();
+    // This static guard cannot prove that kind occurs. Java checkpoint tests and the evidence resolver do.
   });
 });

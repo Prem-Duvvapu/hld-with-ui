@@ -367,7 +367,7 @@ tuple; operation identity is audit-only. Append-only effects, active/expired res
 private preparation and caller response visibility remain distinct. One immutable outcome
 captures each step; virtual time and equal-time order come from the validated schedule.
 No randomness, real network, SQL transaction, storage persistence or process recovery is implied.
-The runnable API/Playground/Study/Practice and later Guided/design contributions remain pending.
+HLD-19B connects this foundation to strict APIs and the draft learning workbench.
 
 ## Runnable idempotency draft
 
@@ -378,8 +378,13 @@ shared request, result and admission guards preserve 400/413/422/503 semantics; 
 conflicts, response loss and handler crashes are completed 200 simulation evidence.
 
 HTTP 1.13 adds canonical schema exports and generated/lazy validation. The draft catalog
-advertises only Study/Simulation/Practice. React captures input before asynchronous loading,
+initially advertised Study/Simulation/Practice. React captures input before asynchronous loading,
 then selects initialState or an actual step postState. It renders private work, public ledger,
 key history and caller observations separately. Whole-run metrics stay distinct from selected
 prefix evidence. See [decision 0041](decisions/0041-idempotency-api-and-playback.md).
-Guided/design, human/hosted/prerequisite review and publication remain separate gates.
+HLD-19C extends the existing step selector with idempotency outcome kinds and adds eight
+Guided checkpoints. Its adapter selects only an actual outcome post-state; original
+Architecture and three manual Call sequences are independently labeled. Java tests compare
+all 27 manual states with the corresponding programs. Content 1.1.0 and HTTP 1.14.0 preserve
+model replay versions and prior activity identities. See [decision 0042](decisions/0042-idempotency-guided-prefixes.md).
+Human/hosted/prerequisite review and publication remain separate gates.

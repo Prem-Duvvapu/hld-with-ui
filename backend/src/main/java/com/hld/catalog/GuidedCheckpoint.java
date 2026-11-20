@@ -5,6 +5,8 @@ import com.hld.atomicity.AtomicityResult;
 import com.hld.dataaccess.DataAccessInput;
 import com.hld.delivery.DeliveryEvent.Kind;
 import com.hld.delivery.DeliveryInput;
+import com.hld.idempotency.IdempotencyInput;
+import com.hld.idempotency.IdempotencyResult;
 import com.hld.simulation.engine.SimulationBudget;
 import com.hld.retries.RetryInput;
 import com.hld.retries.RetryResult;
@@ -115,14 +117,17 @@ public record GuidedCheckpoint(
             } else if (stepId != null) {
                 if (!Pattern.matches(ReservationInput.ID_PATTERN, stepId)
                         || !Pattern.matches(AtomicityInput.ID_PATTERN, stepId)
+                        || !Pattern.matches(IdempotencyInput.ID_PATTERN, stepId)
                         || kind == null
                         || java.util.Arrays.stream(ReservationResult.Kind.values())
                                 .noneMatch(candidate -> candidate.name().equals(kind))
                             && java.util.Arrays.stream(AtomicityResult.Kind.values())
                                 .noneMatch(candidate -> candidate.name().equals(kind))
+                            && java.util.Arrays.stream(IdempotencyResult.Kind.values())
+                                .noneMatch(candidate -> candidate.name().equals(kind))
                         || occurrence != 1) {
                     throw new IllegalArgumentException(
-                            "A transaction checkpoint requires a supported stepId, outcome kind"
+                            "A step checkpoint requires a supported stepId, outcome kind"
                                     + " and occurrence 1");
                 }
             } else if (operationId != null) {

@@ -2,11 +2,13 @@ import Ajv2020 from "ajv/dist/2020.js";
 import inputSchema from "../../../contracts/idempotency.input.schema.json";
 import resultSchema from "../../../contracts/idempotency.result.schema.json";
 import descriptorSchema from "./schemas/idempotency-descriptor.schema.json";
+import checkpointsSchema from "../../../contracts/checkpoints.schema.json";
 import type {
   IdempotencyDescriptor,
   IdempotencyInput,
   IdempotencyResult,
   IdempotencyState,
+  GuidedCheckpoint,
 } from "./types";
 
 const ajv = new Ajv2020({
@@ -17,6 +19,10 @@ const ajv = new Ajv2020({
 const validInput = ajv.compile(inputSchema);
 const validResult = ajv.compile(resultSchema);
 const validDescriptor = ajv.compile(descriptorSchema);
+const validCheckpoints = ajv.compile(checkpointsSchema);
+const checkpointKinds = new Set<string>(
+  resultSchema.$defs.outcome.properties.kind.enum,
+);
 const unique = (values: readonly string[]) =>
   new Set(values).size === values.length;
 export class IdempotencyCompatibilityError extends Error {
@@ -96,6 +102,35 @@ export function assertIdempotencyDescriptor(body: unknown): void {
   )
     throw new IdempotencyCompatibilityError();
 }
+/** Validate authored shape and static references; only Java verifies the target's actual outcome. */
+export function assertIdempotencyCheckpoints(
+  checkpoints: unknown,
+  descriptor: IdempotencyDescriptor,
+): void {
+  if (!validCheckpoints(checkpoints)) throw new IdempotencyCompatibilityError();
+  const authored = checkpoints as GuidedCheckpoint[];
+  const presets = new Map<string, IdempotencyDescriptor["presets"][number]>(
+    descriptor.presets.map((preset) => [preset.id, preset]),
+  );
+  if (
+    !unique(authored.map((checkpoint) => checkpoint.id)) ||
+    !authored.every((checkpoint) => {
+      const target = checkpoint.target;
+      const preset = presets.get(checkpoint.presetId);
+      return (
+        checkpoint.simulationId === "idempotency" &&
+        "stepId" in target &&
+        Object.keys(target).sort().join(",") === "kind,occurrence,stepId" &&
+        checkpointKinds.has(target.kind) &&
+        target.occurrence === 1 &&
+        preset !== undefined &&
+        preset.input.schedule.some((step) => step.id === target.stepId)
+      );
+    })
+  )
+    throw new IdempotencyCompatibilityError();
+}
+
 function stateReferences(
   state: IdempotencyState,
   input: IdempotencyInput,

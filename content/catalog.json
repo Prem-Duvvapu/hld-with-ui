@@ -346,13 +346,14 @@
       "Explain original receipts, payload conflicts and scoped key retention.",
       "Defend a retry-safe local boundary while stating external-effect and durability limits."
     ],
-    "capabilities": ["study", "simulation", "practice"],
+    "capabilities": ["study", "simulation", "guided", "practice"],
+    "checkpointsPath": "topics/idempotency/checkpoints.json",
     "lessonPath": "topics/idempotency/lesson.md",
     "questionsPath": "topics/idempotency/questions.json",
     "resourcesPath": "topics/idempotency/resources.json",
     "simulationIds": ["idempotency"],
     "estimatorIds": [],
-    "contentVersion": "1.0.0",
+    "contentVersion": "1.1.0",
     "reviewedAt": "2026-11-19",
     "sourceIds": ["aws-safe-idempotent-apis", "stripe-idempotent-requests"]
   }

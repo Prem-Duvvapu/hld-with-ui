@@ -98,6 +98,14 @@ Required final-source CI and actual squash delivery are verified after push and 
 in the contribution PR's delivery record. A preview check does not prove hosted backend
 freshness or publication. No replay version or original input/result pair changed.
 
+## Delivery
+
+PR #82 squash merged as `d25de1a` on 2026-11-19 at 19:21:26 UTC. All three CI jobs passed
+on final source `1c91158`, run `44595024420`: Quality, Packaged runtime and Browser journeys
+(266 journeys, twenty UI performance groups, twenty reading-load groups and launcher smoke).
+Owner main was fast-forwarded preserving unrelated `output/`; only the owned branch was deleted.
+The PR retains the complete source/check/delivery record.
+
 ## Handoff
 
 Next unblocked contribution is HLD-19C: Java-resolved Guided checkpoints and inspectable

@@ -74,7 +74,9 @@ answers can resume their exact question through Continue Learning; retry draft a
 and Guided checkpoints also use their implemented routes.
 
 [HLD-19B](docs/work-items/HLD-19B.md) records actual integration checks and remaining gates.
-Guided checkpoints and authored design views are the next bounded contribution. Four modules
+[HLD-19C](docs/work-items/HLD-19C.md) adds eight Java-targeted Guided checkpoints, inspectable
+Architecture and three manual Call sequences. Six core draft views are implemented; consult
+the work item for actual verification status. Four modules
 remain published; this draft stays outside discovery. The
 [idempotency plan](docs/IDEMPOTENCY_IMPLEMENTATION_PLAN.md) defines the model boundary.
 No actual database, provider, durability or universal exactly-once guarantee is modeled.
